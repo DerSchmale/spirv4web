@@ -1,0 +1,117 @@
+import { Bitset } from "./Bitset";
+import { BuiltIn, FPRoundingMode } from "../spirv";
+
+export enum ExtendedDecorations
+{
+    // Marks if a buffer block is re-packed, i.e. member declaration might be subject to PhysicalTypeID remapping and padding.
+    SPIRVCrossDecorationBufferBlockRepacked = 0,
+
+    // A type in a buffer block might be declared with a different physical type than the logical type.
+    // If this is not set, PhysicalTypeID == the SPIR-V type as declared.
+    SPIRVCrossDecorationPhysicalTypeID,
+
+    // Marks if the physical type is to be declared with tight packing rules, i.e. packed_floatN on MSL and friends.
+    // If this is set, PhysicalTypeID might also be set. It can be set to same as logical type if all we're doing
+    // is converting float3 to packed_float3 for example.
+    // If this is marked on a struct, it means the struct itself must use only Packed types for all its members.
+    SPIRVCrossDecorationPhysicalTypePacked,
+
+    // The padding in bytes before declaring this struct member.
+    // If used on a struct type, marks the target size of a struct.
+    SPIRVCrossDecorationPaddingTarget,
+
+    SPIRVCrossDecorationInterfaceMemberIndex,
+    SPIRVCrossDecorationInterfaceOrigID,
+    SPIRVCrossDecorationResourceIndexPrimary,
+    // Used for decorations like resource indices for samplers when part of combined image samplers.
+    // A variable might need to hold two resource indices in this case.
+    SPIRVCrossDecorationResourceIndexSecondary,
+    // Used for resource indices for multiplanar images when part of combined image samplers.
+    SPIRVCrossDecorationResourceIndexTertiary,
+    SPIRVCrossDecorationResourceIndexQuaternary,
+
+    // Marks a buffer block for using explicit offsets (GLSL/HLSL).
+    SPIRVCrossDecorationExplicitOffset,
+
+    // Apply to a variable in the Input storage class; marks it as holding the base group passed to vkCmdDispatchBase(),
+    // or the base vertex and instance indices passed to vkCmdDrawIndexed().
+    // In MSL, this is used to adjust the WorkgroupId and GlobalInvocationId variables in compute shaders,
+    // and to hold the BaseVertex and BaseInstance variables in vertex shaders.
+    SPIRVCrossDecorationBuiltInDispatchBase,
+
+    // Apply to a variable that is a function parameter; marks it as being a "dynamic"
+    // combined image-sampler. In MSL, this is used when a function parameter might hold
+    // either a regular combined image-sampler or one that has an attached sampler
+    // Y'CbCr conversion.
+    SPIRVCrossDecorationDynamicImageSampler,
+
+    // Apply to a variable in the Input storage class; marks it as holding the size of the stage
+    // input grid.
+    // In MSL, this is used to hold the vertex and instance counts in a tessellation pipeline
+    // vertex shader.
+    SPIRVCrossDecorationBuiltInStageInputSize,
+
+    // Apply to any access chain of a tessellation I/O variable; stores the type of the sub-object
+    // that was chained to, as recorded in the input variable itself. This is used in case the pointer
+    // is itself used as the base of an access chain, to calculate the original type of the sub-object
+    // chained to, in case a swizzle needs to be applied. This should not happen normally with valid
+    // SPIR-V, but the MSL backend can change the type of input variables, necessitating the
+    // addition of swizzles to keep the generated code compiling.
+    SPIRVCrossDecorationTessIOOriginalInputTypeID,
+
+    // Apply to any access chain of an interface variable used with pull-model interpolation, where the variable is a
+    // vector but the resulting pointer is a scalar; stores the component index that is to be accessed by the chain.
+    // This is used when emitting calls to interpolation functions on the chain in MSL: in this case, the component
+    // must be applied to the result, since pull-model interpolants in MSL cannot be swizzled directly, but the
+    // results of interpolation can.
+    SPIRVCrossDecorationInterpolantComponentExpr,
+
+    SPIRVCrossDecorationCount
+}
+
+export class MetaDecorationExtended
+{
+    flags: Bitset = new Bitset();
+    values: Uint32Array = new Uint32Array(ExtendedDecorations.SPIRVCrossDecorationCount);
+}
+
+export class MetaDecoration
+{
+    alias: string;
+    qualified_alias: string;
+    hlsl_semantic: string;
+    decoration_flags: Bitset = new Bitset();
+    builtin_type = BuiltIn.BuiltInMax;
+    location: number = 0;
+    component: number = 0;
+    set: number = 0;
+    binding: number = 0;
+    offset: number = 0;
+    xfb_buffer: number = 0;
+    xfb_stride: number = 0;
+    stream: number = 0;
+    array_stride: number = 0;
+    matrix_stride: number = 0;
+    input_attachment: number = 0;
+    spec_id: number = 0;
+    index: number = 0;
+    fp_rounding_mode: FPRoundingMode = FPRoundingMode.FPRoundingModeMax;
+    builtin: boolean = false;
+
+    extended: MetaDecorationExtended = new MetaDecorationExtended();
+}
+
+export class Meta
+{
+    decoration = new MetaDecoration();
+
+    // Intentionally not a SmallVector. Decoration is large and somewhat rare.
+    members: MetaDecoration[] = [];
+
+    decoration_word_offset: number[] = [];
+
+    // For SPV_GOOGLE_hlsl_functionality1.
+    hlsl_is_magic_counter_buffer: boolean = false;
+    // ID for the sibling counter buffer.
+    hlsl_magic_counter_buffer: number = 0;
+}
