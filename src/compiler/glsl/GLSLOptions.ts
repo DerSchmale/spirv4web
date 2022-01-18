@@ -1,6 +1,7 @@
 import { GLSLVertexOptions } from "./GLSLVertexOptions";
 import { GLSLFragmentOptions } from "./GLSLFragmentOptions";
 
+// TODO: Remove options and code referring to it that isn't relevant for WebGL
 export class GLSLOptions
 {
     // The shading language version. Corresponds to #version $VALUE.

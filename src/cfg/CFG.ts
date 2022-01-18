@@ -1,7 +1,8 @@
 import { Compiler } from "../compiler/Compiler";
 import { SPIRFunction } from "../common/SPIRFunction";
 import { VisitOrder } from "./VisitOrder";
-import { SPIRBlock, SPIRBlockMerge } from "../common/SPIRBlock";
+import { SPIRBlock, SPIRBlockMerge, SPIRBlockTerminator } from "../common/SPIRBlock";
+import { DominatorBuilder } from "./DominatorBuilder";
 
 export class CFG
 {
@@ -133,5 +134,61 @@ export class CFG
         }
 
         return block_id;
+    }
+
+    node_terminates_control_flow_in_sub_graph(from: BlockID, to: BlockID): boolean
+    {
+        // Walk backwards, starting from "to" block.
+        // Only follow pred edges if they have a 1:1 relationship, or a merge relationship.
+        // If we cannot find a path to "from", we must assume that to is inside control flow in some way.
+
+        const compiler = this.compiler;
+        const from_block = compiler.get<SPIRBlock>(SPIRBlock, from);
+        let ignore_block_id: BlockID = 0;
+        if (from_block.merge === SPIRBlockMerge.MergeLoop)
+            ignore_block_id = from_block.merge_block;
+
+        while (to != from)
+        {
+            const pred_itr_second = this.preceding_edges[to];
+            if (!pred_itr_second)
+                return false;
+
+            const builder = new DominatorBuilder(this);
+            for (let edge of pred_itr_second)
+                builder.add_block(edge);
+
+            const dominator = builder.get_dominator();
+            if (dominator === 0)
+                return false;
+
+            const dom = compiler.get<SPIRBlock>(SPIRBlock, dominator);
+
+            let true_path_ignore = false;
+            let false_path_ignore = false;
+            if (ignore_block_id && dom.terminator === SPIRBlockTerminator.Select)
+            {
+                const true_block = compiler.get<SPIRBlock>(SPIRBlock, dom.true_block);
+                const false_block = compiler.get<SPIRBlock>(SPIRBlock, dom.false_block);
+                const ignore_block = compiler.get<SPIRBlock>(SPIRBlock, ignore_block_id);
+                true_path_ignore = compiler.execution_is_branchless(true_block, ignore_block);
+                false_path_ignore = compiler.execution_is_branchless(false_block, ignore_block);
+            }
+
+            if ((dom.merge === SPIRBlockMerge.MergeSelection && dom.next_block == to) ||
+                (dom.merge === SPIRBlockMerge.MergeLoop && dom.merge_block == to) ||
+                (dom.terminator == SPIRBlockTerminator.Direct && dom.next_block == to) ||
+                (dom.terminator == SPIRBlockTerminator.Select && dom.true_block == to && false_path_ignore) ||
+                (dom.terminator == SPIRBlockTerminator.Select && dom.false_block == to && true_path_ignore))
+            {
+                // Allow walking selection constructs if the other branch reaches out of a loop construct.
+                // It cannot be in-scope anymore.
+                to = dominator;
+            }
+            else
+                return false;
+        }
+
+        return true;
     }
 }

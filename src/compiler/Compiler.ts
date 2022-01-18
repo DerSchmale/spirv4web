@@ -2,7 +2,7 @@
 import { count } from "@derschmale/array-utils";
 import { BlockMetaFlagBits, ParsedIR } from "../parser/ParsedIR";
 import { SPIRType, SPIRTypeBaseType } from "../common/SPIRType";
-import { BuiltIn, Decoration, Dim, ExecutionModel, Op, StorageClass } from "../spirv";
+import { BuiltIn, Decoration, Dim, ExecutionMode, ExecutionModel, ImageFormat, Op, StorageClass } from "../spirv";
 import { Types } from "../common/Types";
 import { SPIRConstant } from "../common/SPIRConstant";
 import { SPIRVariable } from "../common/SPIRVariable";
@@ -13,7 +13,7 @@ import { EntryPoint } from "./EntryPoint";
 import { DummySamplerForCombinedImageHandler } from "./DummySamplerForCombinedImageHandler";
 import { SPIRFunction } from "../common/SPIRFunction";
 import { SPIRExpression } from "../common/SPIRExpression";
-import { SPIRBlock, SPIRBlockCase, SPIRBlockMerge } from "../common/SPIRBlock";
+import { SPIRBlock, SPIRBlockCase, SPIRBlockMerge, SPIRBlockTerminator } from "../common/SPIRBlock";
 import { SPIRAccessChain } from "../common/SPIRAccessChain";
 import { SPIRConstantOp } from "../common/SPIRConstantOp";
 import { SPIRCombinedImageSampler } from "../common/SPIRCombinedImageSampler";
@@ -34,8 +34,13 @@ import { maplike_get } from "../utils/maplike_get";
 import { Pair } from "../utils/Pair";
 import { DominatorBuilder } from "../cfg/DominatorBuilder";
 import { StaticExpressionAccessHandler } from "./StaticExpressionAccessHandler";
+import { ActiveBuiltinHandler } from "./ActiveBuiltinHandler";
+import { CombinedImageSamplerDrefHandler } from "./CombinedImageSamplerDrefHandler";
+import { CombinedImageSamplerUsageHandler } from "./CombinedImageSamplerUsageHandler";
+import { InterlockedResourceAccessPrepassHandler } from "./InterlockedResourceAccessPrepassHandler";
+import { InterlockedResourceAccessHandler } from "./InterlockedResourceAccessHandler";
 
-type VariableTypeRemapCallback = (type: SPIRType, name: string, out: string) => void;
+type VariableTypeRemapCallback = (type: SPIRType, name: string, type_name: string) => string;
 
 export abstract class Compiler
 {
@@ -51,15 +56,32 @@ export abstract class Compiler
     protected active_interface_variables: Set<VariableID> = new Set();
     protected check_active_interface_variables: boolean = false;
 
+    protected invalid_expressions: Set<number> = new Set();
+
     protected is_force_recompile: boolean = false;
     combined_image_samplers: CombinedImageSampler[] = [];
 
     protected variable_remap_callback: VariableTypeRemapCallback;
+
     protected forced_temporaries: Set<number> = new Set();
     protected forwarded_temporaries: Set<number> = new Set();
     protected suppressed_usage_tracking: Set<number> = new Set();
     protected hoisted_temporaries: Set<number> = new Set();
     protected forced_invariant_temporaries: Set<number> = new Set();
+
+    active_input_builtins: Bitset = new Bitset();
+    active_output_builtins: Bitset = new Bitset();
+    clip_distance_count: number = 0;
+    cull_distance_count: number = 0;
+    position_invariant: boolean = false;
+
+    // If a variable ID or parameter ID is found in this set, a sampler is actually a shadow/comparison sampler.
+    // SPIR-V does not support this distinction, so we must keep track of this information outside the type system.
+    // There might be unrelated IDs found in this set which do not correspond to actual variables.
+    // This set should only be queried for the existence of samplers which are already known to be variables or parameter IDs.
+    // Similar is implemented for images, as well as if subpass inputs are needed.
+    protected comparison_ids: Set<number> = new Set<number>();
+    protected need_subpass_input: boolean = false;
 
     // In certain backends, we will need to use a dummy sampler to be able to emit code.
     // GLSL does not support texelFetch on texture2D objects, but SPIR-V does,
@@ -67,6 +89,10 @@ export abstract class Compiler
     dummy_sampler_id: number;
 
     protected function_cfgs: CFG[]; // std::unordered_map<uint32_t, std::unique_ptr<CFG>>
+
+    // The set of all resources written while inside the critical section, if present.
+    interlocked_resources: Set<number> = new Set();
+    protected interlocked_is_complex: boolean = false;
 
     protected declared_block_names: string[] = [];
 
@@ -205,7 +231,7 @@ export abstract class Compiler
                     return;
 
                 const list = var_.storage === StorageClass.StorageClassInput ? res.builtin_inputs : res.builtin_outputs;
-                let resource: BuiltInResource;
+                const resource: BuiltInResource = new BuiltInResource();
 
                 if (this.has_decoration(type.self, Decoration.DecorationBlock)) {
                     resource.resource = new Resource(
@@ -406,6 +432,50 @@ export abstract class Compiler
         }
     }
 
+    // Traverses all reachable opcodes and sets active_builtins to a bitmask of all builtin variables which are accessed in the shader.
+    update_active_builtins()
+    {
+        const ir = this.ir;
+
+        this.active_input_builtins.reset();
+        this.active_output_builtins.reset();
+        this.cull_distance_count = 0;
+        this.clip_distance_count = 0;
+        const handler = new ActiveBuiltinHandler(this);
+
+        this.traverse_all_reachable_opcodes(this.get<SPIRFunction>(SPIRFunction, ir.default_entry_point), handler);
+
+        ir.for_each_typed_id<SPIRVariable>(SPIRVariable, (_, var_: SPIRVariable) =>
+        {
+            if (var_.storage != StorageClass.StorageClassOutput)
+                return;
+
+            if (!this.interface_variable_exists_in_entry_point(var_.self))
+                return;
+
+            // Also, make sure we preserve output variables which are only initialized, but never accessed by any code.
+            if (var_.initializer != <ID>(0))
+                handler.add_if_builtin_or_block(var_.self);
+        });
+    }
+
+    has_active_builtin(builtin: BuiltIn, storage: StorageClass): boolean
+    {
+        let flags: Bitset;
+        switch (storage) {
+            case StorageClass.StorageClassInput:
+                flags = this.active_input_builtins;
+                break;
+            case StorageClass.StorageClassOutput:
+                flags = this.active_output_builtins;
+                break;
+
+            default:
+                return false;
+        }
+        return flags.get(builtin);
+    }
+
     get_execution_model(): ExecutionModel
     {
         return this.get_entry_point().model;
@@ -535,6 +605,25 @@ export abstract class Compiler
         }
     }
 
+    execution_is_branchless(from: SPIRBlock, to: SPIRBlock): boolean
+    {
+        let start = from;
+        for (; ;) {
+            if (start.self === to.self)
+                return true;
+
+            if (start.terminator === SPIRBlockTerminator.Direct && start.merge == SPIRBlockMerge.MergeNone)
+                start = this.get<SPIRBlock>(SPIRBlock, start.next_block);
+            else
+                return false;
+        }
+    }
+
+    execution_is_direct_branch(from: SPIRBlock, to: SPIRBlock): boolean
+    {
+        return from.terminator === SPIRBlockTerminator.Direct && from.merge === SPIRBlockMerge.MergeNone && from.next_block == to.self;
+    }
+
     protected force_recompile()
     {
         this.is_force_recompile = true;
@@ -575,6 +664,14 @@ export abstract class Compiler
 
         const execution = this.get_entry_point();
         return execution.interface_variables.indexOf(id) >= 0;
+    }
+
+    protected remap_variable_type_name(type: SPIRType, var_name: string, type_name: string)
+    {
+        if (this.variable_remap_callback)
+            return this.variable_remap_callback(type, var_name, type_name);
+
+        return type_name;
     }
 
     protected set_ir(ir: ParsedIR): void
@@ -794,8 +891,14 @@ export abstract class Compiler
     }
 
     // Gets the SPIR-V type underlying the given type, which might be a pointer.
-    get_pointee_type(type: SPIRType): SPIRType
+    get_pointee_type<T>(type: SPIRType): SPIRType;
+    get_pointee_type<T>(type: number): SPIRType;
+    get_pointee_type<T>(type: SPIRType | number): SPIRType
     {
+        if (typeof type === "number") {
+            return this.get_pointee_type(this.get<SPIRType>(SPIRType, type))
+        }
+
         let p_type = type;
         if (p_type.pointer) {
             console.assert(p_type.parent_type);
@@ -904,6 +1007,16 @@ export abstract class Compiler
                     return true;
 
         return false;
+    }
+
+    protected is_matrix(type: SPIRType): boolean
+    {
+        return type.vecsize > 1 && type.columns > 1;
+    }
+
+    protected is_array(type: SPIRType): boolean
+    {
+        return type.array.length > 0;
     }
 
     protected expression_type_id(id: number): number
@@ -1031,6 +1144,30 @@ export abstract class Compiler
         return true;
     }
 
+    analyze_image_and_sampler_usage()
+    {
+        const ir = this.ir;
+        const dref_handler = new CombinedImageSamplerDrefHandler(this);
+        this.traverse_all_reachable_opcodes(this.get<SPIRFunction>(SPIRFunction, ir.default_entry_point), dref_handler);
+
+        const handler = new CombinedImageSamplerUsageHandler(this, dref_handler.dref_combined_samplers);
+        this.traverse_all_reachable_opcodes(this.get<SPIRFunction>(SPIRFunction, ir.default_entry_point), handler);
+
+        // Need to run this traversal twice. First time, we propagate any comparison sampler usage from leaf functions
+        // down to main().
+        // In the second pass, we can propagate up forced depth state coming from main() up into leaf functions.
+        handler.dependency_hierarchy = [];
+        this.traverse_all_reachable_opcodes(this.get<SPIRFunction>(SPIRFunction, ir.default_entry_point), handler);
+
+        this.comparison_ids = handler.comparison_ids;
+        this.need_subpass_input = handler.need_subpass_input;
+
+        // Forward information from separate images and samplers into combined image samplers.
+        for (let combined of this.combined_image_samplers)
+            if (this.comparison_ids.has(combined.sampler_id))
+                this.comparison_ids.add(combined.combined_id);
+    }
+
     protected build_function_control_flow_graphs_and_analyze()
     {
         const ir = this.ir;
@@ -1072,6 +1209,19 @@ export abstract class Compiler
                 }
             }
         });
+    }
+
+    get_cfg_for_current_function()
+    {
+        console.assert(this.current_function);
+        return this.get_cfg_for_function(this.current_function.self);
+    }
+
+    get_cfg_for_function(id: number): CFG
+    {
+        const cfg = this.function_cfgs[id];
+        console.assert(cfg);
+        return cfg;
     }
 
     // variable_to_blocks = map<uint32_t, set<uint32_t>>
@@ -1512,7 +1662,7 @@ export abstract class Compiler
         });
     }
 
-    may_read_undefined_variable_in_block(block: SPIRBlock, var_: number): boolean
+    protected may_read_undefined_variable_in_block(block: SPIRBlock, var_: number): boolean
     {
         for (let op of block.ops) {
             const ops = this.stream(op);
@@ -1581,6 +1731,31 @@ export abstract class Compiler
         return true;
     }
 
+    protected analyze_interlocked_resource_usage()
+    {
+        if (this.get_execution_model() === ExecutionModel.ExecutionModelFragment &&
+            (this.get_entry_point().flags.get(ExecutionMode.ExecutionModePixelInterlockOrderedEXT) ||
+                this.get_entry_point().flags.get(ExecutionMode.ExecutionModePixelInterlockUnorderedEXT) ||
+                this.get_entry_point().flags.get(ExecutionMode.ExecutionModeSampleInterlockOrderedEXT) ||
+                this.get_entry_point().flags.get(ExecutionMode.ExecutionModeSampleInterlockUnorderedEXT))) {
+            const ir = this.ir;
+            const prepass_handler = new InterlockedResourceAccessPrepassHandler(this, ir.default_entry_point);
+            this.traverse_all_reachable_opcodes(this.get<SPIRFunction>(SPIRFunction, ir.default_entry_point), prepass_handler);
+
+            const handler = new InterlockedResourceAccessHandler(this, ir.default_entry_point);
+            handler.interlock_function_id = prepass_handler.interlock_function_id;
+            handler.split_function_case = prepass_handler.split_function_case;
+            handler.control_flow_interlock = prepass_handler.control_flow_interlock;
+            handler.use_critical_section = !handler.split_function_case && !handler.control_flow_interlock;
+
+            this.traverse_all_reachable_opcodes(this.get<SPIRFunction>(SPIRFunction, ir.default_entry_point), handler);
+
+            // For GLSL. If we hit any of these cases, we have to fall back to conservative approach.
+            this.interlocked_is_complex =
+                !handler.use_critical_section || handler.interlock_function_id != ir.default_entry_point;
+        }
+    }
+
     instruction_to_result_type(result: { result_type: number, result_id: number }, op: Op, args: Uint32Array, length: number): boolean
     {
         // Most instructions follow the pattern of <result-type> <result-id> <arguments>.
@@ -1620,6 +1795,20 @@ export abstract class Compiler
         }
     }
 
+    protected get_extended_decoration(id: number, decoration: ExtendedDecorations): number
+    {
+        const m = this.ir.find_meta(id);
+        if (!m)
+            return 0;
+
+        const dec = m.decoration;
+
+        if (!dec.extended.flags.get(decoration))
+            return get_default_extended_decoration(decoration);
+
+        return dec.extended.values[decoration];
+    }
+
     protected has_extended_decoration(id: number, decoration: ExtendedDecorations): boolean
     {
         const m = this.ir.find_meta(id);
@@ -1634,6 +1823,11 @@ export abstract class Compiler
     {
         return !type.pointer && (type.basetype === SPIRTypeBaseType.SampledImage || type.basetype === SPIRTypeBaseType.Image ||
             type.basetype === SPIRTypeBaseType.Sampler);
+    }
+
+    protected is_depth_image(type: SPIRType, id: number): boolean
+    {
+        return (type.image.depth && type.image.format === ImageFormat.ImageFormatUnknown) || this.comparison_ids.has(id);
     }
 
     protected reflection_ssbo_instance_name_is_significant(): boolean
@@ -1762,4 +1956,20 @@ function exists_unaccessed_path_to_return(cfg: CFG, block: number, blocks: Set<n
     }
 
     return false;
+}
+
+function get_default_extended_decoration(decoration: ExtendedDecorations): number
+{
+    switch (decoration)
+    {
+        case ExtendedDecorations.SPIRVCrossDecorationResourceIndexPrimary:
+        case ExtendedDecorations.SPIRVCrossDecorationResourceIndexSecondary:
+        case ExtendedDecorations.SPIRVCrossDecorationResourceIndexTertiary:
+        case ExtendedDecorations.SPIRVCrossDecorationResourceIndexQuaternary:
+        case ExtendedDecorations.SPIRVCrossDecorationInterfaceMemberIndex:
+            return ~0;
+
+        default:
+            return 0;
+    }
 }

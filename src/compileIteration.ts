@@ -37,10 +37,12 @@ export function compile_iteration(args: Args, spirv_file: Uint32Array): string
 
     if (args.variable_type_remaps.length !== 0)
     {
-        const remap_cb = (type, name, out) => {
+        const remap_cb = (type, name) => {
             for (let remap of args.variable_type_remaps)
                 if (name === remap.variable_name)
-                    out = remap.new_variable_type;
+                    return remap.new_variable_type;
+
+            return name;
         };
 
         compiler.set_variable_type_remap_callback(remap_cb);

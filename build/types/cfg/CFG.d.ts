@@ -19,4 +19,5 @@ export declare class CFG {
     get_succeeding_edges(block: number): number[];
     walk_from(seen_blocks: Set<number>, block: number, op: (block: number) => boolean): void;
     find_loop_dominator(block_id: number): number;
+    node_terminates_control_flow_in_sub_graph(from: BlockID, to: BlockID): boolean;
 }

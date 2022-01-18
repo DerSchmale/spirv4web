@@ -7,6 +7,9 @@ class SPIREntryPointWorkgroupSize
     x: number = 0;
     y: number = 0;
     z: number = 0;
+    id_x: number = 0;
+    id_y: number = 0;
+    id_z: number = 0;
     constant: number = 0; // Workgroup size can be expressed as a constant/spec-constant instead.
 
     clone() { return defaultClone(SPIREntryPointWorkgroupSize, this); }

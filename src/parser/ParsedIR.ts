@@ -915,6 +915,33 @@ export class ParsedIR
         this.meta_needing_name_fixup.clear();
     }
 
+    static sanitize_underscores(str: string): string
+    {
+        // Compact adjacent underscores to make it valid.
+        return str.replace(/_+/g, "_");
+        /*let dst = 0;
+        let src = dst;
+        let saw_underscore = false;
+        while (src !== str.length)
+        {
+            let is_underscore = str.charAt(src) === '_';
+            if (saw_underscore && is_underscore)
+            {
+                src++;
+            }
+            else
+            {
+                if (dst !== src) {
+                    str = str.substring(0, dst) + str.charAt(src) + str.substring(dst + 1);
+                }
+                dst++;
+                src++;
+                saw_underscore = is_underscore;
+            }
+        }
+        return str.substring(0, dst);*/
+    }
+
     get_spirv_version(): number
     {
         return this.spirv[1];
@@ -924,33 +951,6 @@ export class ParsedIR
     {
         return variant_get(classRef, this.ids[id]);
     }
-}
-
-function sanitize_underscores(str: string): string
-{
-    // Compact adjacent underscores to make it valid.
-    return str.replace(/_+/g, "_");
-    /*let dst = 0;
-    let src = dst;
-    let saw_underscore = false;
-    while (src !== str.length)
-    {
-        let is_underscore = str.charAt(src) === '_';
-        if (saw_underscore && is_underscore)
-        {
-            src++;
-        }
-        else
-        {
-            if (dst !== src) {
-                str = str.substring(0, dst) + str.charAt(src) + str.substring(dst + 1);
-            }
-            dst++;
-            src++;
-            saw_underscore = is_underscore;
-        }
-    }
-    return str.substring(0, dst);*/
 }
 
 function sanitize_identifier(name: string, member: boolean, allow_reserved_prefixes: boolean): string
@@ -1082,7 +1082,7 @@ function ensure_valid_identifier(name: string): string
         }
     }
 
-    return sanitize_underscores(str);
+    return ParsedIR.sanitize_underscores(str);
 }
 
 function make_unreserved_identifier(name: string): string
