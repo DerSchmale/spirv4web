@@ -68,7 +68,7 @@ export declare class ParsedIR {
     get_member_decoration(id: TypeID, index: number, decoration: Decoration): number;
     get_member_decoration_string(id: TypeID, index: number, decoration: Decoration): string;
     has_member_decoration(id: TypeID, index: number, decoration: Decoration): boolean;
-    get_member_decoration_bitset(id: TypeID, index: number, clone?: boolean): Bitset;
+    get_member_decoration_bitset(id: TypeID, index: number): Bitset;
     unset_member_decoration(id: TypeID, index: number, decoration: Decoration): void;
     mark_used_as_array_length(id: ID): void;
     get_buffer_block_flags(var_: SPIRVariable): Bitset;

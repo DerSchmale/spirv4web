@@ -591,10 +591,10 @@ export class ParsedIR
 
     has_member_decoration(id: TypeID, index: number, decoration: Decoration): boolean
     {
-        return this.get_member_decoration_bitset(id, index, false).get(decoration);
+        return this.get_member_decoration_bitset(id, index).get(decoration);
     }
 
-    get_member_decoration_bitset(id: TypeID, index: number, clone: boolean = true): Bitset
+    get_member_decoration_bitset(id: TypeID, index: number): Bitset
     {
         const m = this.find_meta(id);
         if (m) {
@@ -702,14 +702,16 @@ export class ParsedIR
         let base_flags: Bitset;
         const m = this.find_meta(var_.self);
         if (m)
-            base_flags = m.decoration.decoration_flags;
+            base_flags = m.decoration.decoration_flags.clone();
+        else
+            base_flags = new Bitset();
 
         if (type.member_types.length === 0)
-            return base_flags.clone() || new Bitset();
+            return base_flags?.clone() || new Bitset();
 
         const all_members_flags = this.get_buffer_block_type_flags(type);
         base_flags.merge_or(all_members_flags);
-        return base_flags.clone() || new Bitset();
+        return base_flags;
     }
 
     get_buffer_block_type_flags(type: SPIRType): Bitset
@@ -717,9 +719,10 @@ export class ParsedIR
         if (type.member_types.length === 0)
             return new Bitset();
 
-        const all_members_flags = this.get_member_decoration_bitset(type.self, 0);
+        // make sure we're not overriding anything, so clone
+        const all_members_flags = this.get_member_decoration_bitset(type.self, 0).clone();
         for (let i = 1; i < type.member_types.length; i++)
-            all_members_flags.merge_and(this.get_member_decoration_bitset(type.self, i, false));
+            all_members_flags.merge_and(this.get_member_decoration_bitset(type.self, i));
         return all_members_flags;
     }
 

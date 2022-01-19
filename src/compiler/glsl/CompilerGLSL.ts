@@ -4860,8 +4860,9 @@ export class CompilerGLSL extends Compiler
         // SPIRVCrossDecorationPacked is set by layout_for_variable earlier to mark that we need to emit offset qualifiers.
         // This is only done selectively in GLSL as needed.
         if (this.has_extended_decoration(type.self, ExtendedDecorations.SPIRVCrossDecorationExplicitOffset) &&
-            dec.decoration_flags.get(Decoration.DecorationOffset))
+            dec.decoration_flags.get(Decoration.DecorationOffset)) {
             attr.push("offset = " + dec.offset);
+        }
         else if (type.storage === StorageClass.StorageClassOutput && dec.decoration_flags.get(Decoration.DecorationOffset))
             attr.push("xfb_offset = " + dec.offset);
 
@@ -5116,8 +5117,10 @@ export class CompilerGLSL extends Compiler
         if (can_use_binding && flags.get(Decoration.DecorationBinding))
             attr.push("binding = " + this.get_decoration(var_.self, Decoration.DecorationBinding));
 
-        if (var_.storage !== StorageClass.StorageClassOutput && flags.get(Decoration.DecorationOffset))
+        if (var_.storage !== StorageClass.StorageClassOutput && flags.get(Decoration.DecorationOffset)) {
+            console.log(var_);
             attr.push("offset = " + this.get_decoration(var_.self, Decoration.DecorationOffset));
+        }
 
         // Instead of adding explicit offsets for every element here, just assume we're using std140 or std430.
         // If SPIR-V does not comply with either layout, we cannot really work around it.

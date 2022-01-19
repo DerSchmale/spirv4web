@@ -3365,9 +3365,9 @@ var ParsedIR = /** @class */ (function () {
             return this.empty_string;
     };
     ParsedIR.prototype.has_member_decoration = function (id, index, decoration) {
-        return this.get_member_decoration_bitset(id, index, false).get(decoration);
+        return this.get_member_decoration_bitset(id, index).get(decoration);
     };
-    ParsedIR.prototype.get_member_decoration_bitset = function (id, index, clone) {
+    ParsedIR.prototype.get_member_decoration_bitset = function (id, index) {
         var m = this.find_meta(id);
         if (m) {
             if (index >= m.members.length)
@@ -3451,19 +3451,22 @@ var ParsedIR = /** @class */ (function () {
         var base_flags;
         var m = this.find_meta(var_.self);
         if (m)
-            base_flags = m.decoration.decoration_flags;
+            base_flags = m.decoration.decoration_flags.clone();
+        else
+            base_flags = new Bitset();
         if (type.member_types.length === 0)
-            return base_flags.clone() || new Bitset();
+            return (base_flags === null || base_flags === void 0 ? void 0 : base_flags.clone()) || new Bitset();
         var all_members_flags = this.get_buffer_block_type_flags(type);
         base_flags.merge_or(all_members_flags);
-        return base_flags.clone() || new Bitset();
+        return base_flags;
     };
     ParsedIR.prototype.get_buffer_block_type_flags = function (type) {
         if (type.member_types.length === 0)
             return new Bitset();
-        var all_members_flags = this.get_member_decoration_bitset(type.self, 0);
+        // make sure we're not overriding anything, so clone
+        var all_members_flags = this.get_member_decoration_bitset(type.self, 0).clone();
         for (var i = 1; i < type.member_types.length; i++)
-            all_members_flags.merge_and(this.get_member_decoration_bitset(type.self, i, false));
+            all_members_flags.merge_and(this.get_member_decoration_bitset(type.self, i));
         return all_members_flags;
     };
     ParsedIR.prototype.add_typed_id = function (type, id) {
@@ -13089,8 +13092,9 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // SPIRVCrossDecorationPacked is set by layout_for_variable earlier to mark that we need to emit offset qualifiers.
         // This is only done selectively in GLSL as needed.
         if (this.has_extended_decoration(type.self, ExtendedDecorations.SPIRVCrossDecorationExplicitOffset) &&
-            dec.decoration_flags.get(Decoration.DecorationOffset))
+            dec.decoration_flags.get(Decoration.DecorationOffset)) {
             attr.push("offset = " + dec.offset);
+        }
         else if (type.storage === StorageClass.StorageClassOutput && dec.decoration_flags.get(Decoration.DecorationOffset))
             attr.push("xfb_offset = " + dec.offset);
         if (attr.length === 0)
@@ -13296,8 +13300,10 @@ var CompilerGLSL = /** @class */ (function (_super) {
             can_use_binding = false;
         if (can_use_binding && flags.get(Decoration.DecorationBinding))
             attr.push("binding = " + this.get_decoration(var_.self, Decoration.DecorationBinding));
-        if (var_.storage !== StorageClass.StorageClassOutput && flags.get(Decoration.DecorationOffset))
+        if (var_.storage !== StorageClass.StorageClassOutput && flags.get(Decoration.DecorationOffset)) {
+            console.log(var_);
             attr.push("offset = " + this.get_decoration(var_.self, Decoration.DecorationOffset));
+        }
         // Instead of adding explicit offsets for every element here, just assume we're using std140 or std430.
         // If SPIR-V does not comply with either layout, we cannot really work around it.
         if (can_use_buffer_blocks && (ubo_block || emulated_ubo)) {
