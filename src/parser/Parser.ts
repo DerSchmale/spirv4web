@@ -72,7 +72,6 @@ export class Parser
         // Endian-swap if we need to (for web: we don't, actually).
         if (s[0] === swap_endian(MagicNumber)) {
             transform(s, (c: number) => swap_endian(c));
-            console.log("swapped");
         }
 
         if (s[0] !== MagicNumber || !is_valid_spirv_version(s[1]))

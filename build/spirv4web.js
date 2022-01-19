@@ -2279,6 +2279,9 @@ var SPIRV = (function (exports) {
             _this.is_used_as_array_length = false;
             // If true, this is a LUT, and should always be declared in the outer scope.
             _this.is_used_as_lut = false;
+            // For composites which are constant arrays, etc.
+            // should be ConstantID[]
+            _this.subconstants = new Uint32Array();
             // Non-Vulkan GLSL, HLSL and sometimes MSL emits defines for each specialization constant,
             // and uses them to initialize the constant. This allows the user
             // to still be able to specialize the value by supplying corresponding
@@ -3440,17 +3443,6 @@ var SPIRV = (function (exports) {
                     throw new Error("Shouldn't reach this branch");
             }
         };
-        ParsedIR.prototype.increase_bound_by = function (incr_amount) {
-            var curr_bound = this.ids.length;
-            var new_bound = curr_bound + incr_amount;
-            this.ids.length += incr_amount;
-            for (var i = 0; i < incr_amount; i++)
-                // original is: ids.emplace_back(pool_group.get());
-                // which calls the constructor for Variant with the pointer to pool_group
-                this.ids[i] = new Variant(this.pool_group);
-            this.block_meta.length = new_bound;
-            return curr_bound;
-        };
         ParsedIR.prototype.get_buffer_block_flags = function (var_) {
             var type = this.get(SPIRType, var_.basetype);
             if (type.basetype !== SPIRTypeBaseType.Struct) {
@@ -3600,13 +3592,20 @@ var SPIRV = (function (exports) {
         ParsedIR.prototype.fixup_reserved_names = function () {
             for (var it = this.meta_needing_name_fixup.values(), id = null; (id = it.next().value);) {
                 var m = this.get_meta(id);
-                m.decoration.alias = sanitize_identifier(m.decoration.alias, false, false);
+                m.decoration.alias = ParsedIR.sanitize_identifier(m.decoration.alias, false, false);
                 for (var _i = 0, _a = m.members; _i < _a.length; _i++) {
                     var memb = _a[_i];
-                    memb.alias = sanitize_identifier(memb.alias, true, false);
+                    memb.alias = ParsedIR.sanitize_identifier(memb.alias, true, false);
                 }
             }
             this.meta_needing_name_fixup.clear();
+        };
+        ParsedIR.sanitize_identifier = function (name, member, allow_reserved_prefixes) {
+            if (!is_valid_identifier(name))
+                name = ensure_valid_identifier(name);
+            if (is_reserved_identifier(name, member, allow_reserved_prefixes))
+                name = make_unreserved_identifier(name);
+            return name;
         };
         ParsedIR.sanitize_underscores = function (str) {
             // Compact adjacent underscores to make it valid.
@@ -3633,6 +3632,20 @@ var SPIRV = (function (exports) {
             }
             return str.substring(0, dst);*/
         };
+        ParsedIR.is_globally_reserved_identifier = function (str, allow_reserved_prefixes) {
+            return is_reserved_identifier(str, false, allow_reserved_prefixes);
+        };
+        ParsedIR.prototype.increase_bound_by = function (incr_amount) {
+            var curr_bound = this.ids.length;
+            var new_bound = curr_bound + incr_amount;
+            this.ids.length += incr_amount;
+            for (var i = 0; i < incr_amount; i++)
+                // original is: ids.emplace_back(pool_group.get());
+                // which calls the constructor for Variant with the pointer to pool_group
+                this.ids[i] = new Variant(this.pool_group);
+            this.block_meta.length = new_bound;
+            return curr_bound;
+        };
         ParsedIR.prototype.get_spirv_version = function () {
             return this.spirv[1];
         };
@@ -3641,13 +3654,6 @@ var SPIRV = (function (exports) {
         };
         return ParsedIR;
     }());
-    function sanitize_identifier(name, member, allow_reserved_prefixes) {
-        if (!is_valid_identifier(name))
-            name = ensure_valid_identifier(name);
-        if (is_reserved_identifier(name, member, allow_reserved_prefixes))
-            name = make_unreserved_identifier(name);
-        return name;
-    }
     // Roll our own versions of these functions to avoid potential locale shenanigans.
     function is_alpha(c) {
         return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
@@ -3834,7 +3840,6 @@ var SPIRV = (function (exports) {
             // Endian-swap if we need to (for web: we don't, actually).
             if (s[0] === swap_endian(MagicNumber)) {
                 transform(s, function (c) { return swap_endian(c); });
-                console.log("swapped");
             }
             if (s[0] !== MagicNumber || !is_valid_spirv_version(s[1]))
                 throw new Error("Invalid SPIRV format.");
@@ -4135,7 +4140,7 @@ var SPIRV = (function (exports) {
                     var width = ops[1];
                     var signedness = ops[2] !== 0;
                     var type = this.set(SPIRType, id);
-                    type.basetype = signedness ? to_signed_basetype(width) : to_unsigned_basetype(width);
+                    type.basetype = signedness ? to_signed_basetype$1(width) : to_unsigned_basetype$1(width);
                     type.width = width;
                     break;
                 }
@@ -4785,7 +4790,7 @@ var SPIRV = (function (exports) {
                 return false;
         }
     }
-    function to_signed_basetype(width) {
+    function to_signed_basetype$1(width) {
         switch (width) {
             case 8:
                 return SPIRTypeBaseType.SByte;
@@ -4799,7 +4804,7 @@ var SPIRV = (function (exports) {
                 throw new Error("Invalid bit width.");
         }
     }
-    function to_unsigned_basetype(width) {
+    function to_unsigned_basetype$1(width) {
         switch (width) {
             case 8:
                 return SPIRTypeBaseType.UByte;
@@ -5100,7 +5105,7 @@ var SPIRV = (function (exports) {
                         offset += 3;
                         for (var i = 0; i < count; i++) {
                             var var_ = compiler.maybe_get(SPIRVariable, args[offset + i]);
-                            if (var_ && storage_class_is_interface(var_.storage))
+                            if (var_ && storage_class_is_interface$1(var_.storage))
                                 variables.add(args[offset + i]);
                         }
                         break;
@@ -5114,7 +5119,7 @@ var SPIRV = (function (exports) {
                         offset += 3;
                         for (var i = 0; i < count; i++) {
                             var var_ = compiler.maybe_get(SPIRVariable, args[offset + i]);
-                            if (var_ && storage_class_is_interface(var_.storage))
+                            if (var_ && storage_class_is_interface$1(var_.storage))
                                 variables.add(args[offset + i]);
                         }
                         break;
@@ -5128,7 +5133,7 @@ var SPIRV = (function (exports) {
                         offset += 2;
                         for (var i = 0; i < count; i += 2) {
                             var var_ = compiler.maybe_get(SPIRVariable, args[offset + i]);
-                            if (var_ && storage_class_is_interface(var_.storage))
+                            if (var_ && storage_class_is_interface$1(var_.storage))
                                 variables.add(args[offset + i]);
                         }
                         break;
@@ -5145,10 +5150,10 @@ var SPIRV = (function (exports) {
                         if (length < 2)
                             return false;
                         var var_ = compiler.maybe_get(SPIRVariable, args[offset]);
-                        if (var_ && storage_class_is_interface(var_.storage))
+                        if (var_ && storage_class_is_interface$1(var_.storage))
                             variables.add(args[offset]);
                         var_ = compiler.maybe_get(SPIRVariable, args[offset + 1]);
-                        if (var_ && storage_class_is_interface(var_.storage))
+                        if (var_ && storage_class_is_interface$1(var_.storage))
                             variables.add(args[offset + 1]);
                         break;
                     }
@@ -5167,7 +5172,7 @@ var SPIRV = (function (exports) {
                                         case GLSLstd450.GLSLstd450InterpolateAtOffset:
                                             {
                                                 var var_ = compiler.maybe_get(SPIRVariable, args[offset + 4]);
-                                                if (var_ && storage_class_is_interface(var_.storage))
+                                                if (var_ && storage_class_is_interface$1(var_.storage))
                                                     variables.add(args[offset + 4]);
                                                 break;
                                             }
@@ -5175,7 +5180,7 @@ var SPIRV = (function (exports) {
                                         case GLSLstd450.GLSLstd450Fract:
                                             {
                                                 var var_ = compiler.maybe_get(SPIRVariable, args[offset + 5]);
-                                                if (var_ && storage_class_is_interface(var_.storage))
+                                                if (var_ && storage_class_is_interface$1(var_.storage))
                                                     variables.add(args[offset + 5]);
                                                 break;
                                             }
@@ -5190,7 +5195,7 @@ var SPIRV = (function (exports) {
                                         case InterpolateAtVertexAMD:
                                             {
                                                 var var_ = compiler.maybe_get(SPIRVariable, args[offset + 4]);
-                                                if (var_ && storage_class_is_interface(var_.storage))
+                                                if (var_ && storage_class_is_interface$1(var_.storage))
                                                     variables.add(args[offset + 4]);
                                                 break;
                                             }
@@ -5230,14 +5235,14 @@ var SPIRV = (function (exports) {
             }
             if (variable) {
                 var var_ = compiler.maybe_get(SPIRVariable, variable);
-                if (var_ && storage_class_is_interface(var_.storage))
+                if (var_ && storage_class_is_interface$1(var_.storage))
                     variables.add(variable);
             }
             return true;
         };
         return InterfaceVariableAccessHandler;
     }(OpcodeHandler));
-    function storage_class_is_interface(storage) {
+    function storage_class_is_interface$1(storage) {
         switch (storage) {
             case StorageClass.StorageClassInput:
             case StorageClass.StorageClassOutput:
@@ -6634,6 +6639,145 @@ var SPIRV = (function (exports) {
         return InterlockedResourceAccessHandler;
     }(OpcodeHandler));
 
+    var PhysicalBlockMeta = /** @class */ (function () {
+        function PhysicalBlockMeta() {
+            this.alignment = 0;
+        }
+        return PhysicalBlockMeta;
+    }());
+
+    var PhysicalStorageBufferPointerHandler = /** @class */ (function (_super) {
+        __extends(PhysicalStorageBufferPointerHandler, _super);
+        function PhysicalStorageBufferPointerHandler(compiler) {
+            var _this = _super.call(this) || this;
+            _this.non_block_types = new Set();
+            _this.physical_block_type_meta = []; // map<uint32_t, PhysicalBlockMeta>
+            _this.access_chain_to_physical_block = []; // map<uint32_t, PhysicalBlockMeta *>
+            _this.compiler = compiler;
+            return _this;
+        }
+        PhysicalStorageBufferPointerHandler.prototype.handle = function (op, args, length) {
+            // When a BDA pointer comes to life, we need to keep a mapping of SSA ID -> type ID for the pointer type.
+            // For every load and store, we'll need to be able to look up the type ID being accessed and mark any alignment
+            // requirements.
+            switch (op) {
+                case Op.OpConvertUToPtr:
+                case Op.OpBitcast:
+                case Op.OpCompositeExtract:
+                    // Extract can begin a new chain if we had a struct or array of pointers as input.
+                    // We don't begin chains before we have a pure scalar pointer.
+                    this.setup_meta_chain(args[0], args[1]);
+                    break;
+                case Op.OpAccessChain:
+                case Op.OpInBoundsAccessChain:
+                case Op.OpPtrAccessChain:
+                case Op.OpCopyObject:
+                    {
+                        var itr_second = this.access_chain_to_physical_block[args[2]];
+                        if (itr_second)
+                            this.access_chain_to_physical_block[args[1]] = itr_second;
+                        break;
+                    }
+                case Op.OpLoad:
+                    {
+                        this.setup_meta_chain(args[0], args[1]);
+                        if (length >= 4)
+                            this.mark_aligned_access(args[2], args.slice(3), length - 3);
+                        break;
+                    }
+                case Op.OpStore:
+                    {
+                        if (length >= 3)
+                            this.mark_aligned_access(args[0], args.slice(3), length - 2);
+                        break;
+                    }
+            }
+            return true;
+        };
+        PhysicalStorageBufferPointerHandler.prototype.mark_aligned_access = function (id, args, length) {
+            var mask = args[0];
+            var offset = 0;
+            length--;
+            if (length && (mask & MemoryAccessMask.MemoryAccessVolatileMask) != 0) {
+                offset++;
+                length--;
+            }
+            if (length && (mask & MemoryAccessMask.MemoryAccessAlignedMask) != 0) {
+                var alignment = args[offset];
+                var meta = this.find_block_meta(id);
+                // This makes the assumption that the application does not rely on insane edge cases like:
+                // Bind buffer with ADDR = 8, use block offset of 8 bytes, load/store with 16 byte alignment.
+                // If we emit the buffer with alignment = 16 here, the first element at offset = 0 should
+                // actually have alignment of 8 bytes, but this is too theoretical and awkward to support.
+                // We could potentially keep track of any offset in the access chain, but it's
+                // practically impossible for high level compilers to emit code like that,
+                // so deducing overall alignment requirement based on maximum observed Alignment value is probably fine.
+                if (meta && alignment > meta.alignment)
+                    meta.alignment = alignment;
+            }
+        };
+        PhysicalStorageBufferPointerHandler.prototype.find_block_meta = function (id) {
+            var itr_second = this.access_chain_to_physical_block[id];
+            return itr_second || null;
+        };
+        PhysicalStorageBufferPointerHandler.prototype.type_is_bda_block_entry = function (type_id) {
+            var type = this.compiler.get(SPIRType, type_id);
+            return type.storage == StorageClass.StorageClassPhysicalStorageBufferEXT && type.pointer &&
+                type.pointer_depth == 1 && !this.compiler.type_is_array_of_pointers(type);
+        };
+        PhysicalStorageBufferPointerHandler.prototype.setup_meta_chain = function (type_id, var_id) {
+            if (this.type_is_bda_block_entry(type_id)) {
+                var meta = maplike_get(PhysicalBlockMeta, this.physical_block_type_meta, type_id);
+                this.access_chain_to_physical_block[var_id] = meta;
+                var type = this.compiler.get(SPIRType, type_id);
+                if (type.basetype != SPIRTypeBaseType.Struct)
+                    this.non_block_types.add(type_id);
+                if (meta.alignment == 0)
+                    meta.alignment = this.get_minimum_scalar_alignment(this.compiler.get_pointee_type(type));
+            }
+        };
+        PhysicalStorageBufferPointerHandler.prototype.get_minimum_scalar_alignment = function (type) {
+            if (type.storage == StorageClass.StorageClassPhysicalStorageBufferEXT)
+                return 8;
+            else if (type.basetype === SPIRTypeBaseType.Struct) {
+                var alignment = 0;
+                for (var _i = 0, _a = type.member_types; _i < _a.length; _i++) {
+                    var member_type = _a[_i];
+                    var member_align = this.get_minimum_scalar_alignment(this.compiler.get(SPIRType, member_type));
+                    if (member_align > alignment)
+                        alignment = member_align;
+                }
+                return alignment;
+            }
+            else
+                return type.width / 8;
+        };
+        PhysicalStorageBufferPointerHandler.prototype.analyze_non_block_types_from_block = function (type) {
+            for (var _i = 0, _a = type.member_types; _i < _a.length; _i++) {
+                var member = _a[_i];
+                var subtype = this.compiler.get(SPIRType, member);
+                if (subtype.basetype !== SPIRTypeBaseType.Struct && subtype.pointer &&
+                    subtype.storage === StorageClass.StorageClassPhysicalStorageBufferEXT) {
+                    this.non_block_types.add(this.get_base_non_block_type_id(member));
+                }
+                else if (subtype.basetype === SPIRTypeBaseType.Struct && !subtype.pointer)
+                    this.analyze_non_block_types_from_block(subtype);
+            }
+        };
+        PhysicalStorageBufferPointerHandler.prototype.get_base_non_block_type_id = function (type_id) {
+            var type = this.compiler.get(SPIRType, type_id);
+            while (type.pointer &&
+                type.storage == StorageClass.StorageClassPhysicalStorageBufferEXT &&
+                !this.type_is_bda_block_entry(type_id)) {
+                type_id = type.parent_type;
+                type = this.compiler.get(SPIRType, type_id);
+            }
+            console.assert(this.type_is_bda_block_entry(type_id));
+            return type_id;
+        };
+        return PhysicalStorageBufferPointerHandler;
+    }(OpcodeHandler));
+
     var Compiler = /** @class */ (function () {
         function Compiler(parsedIR) {
             // Marks variables which have global scope and variables which can alias with other variables
@@ -6663,6 +6807,8 @@ var SPIRV = (function (exports) {
             // Similar is implemented for images, as well as if subpass inputs are needed.
             this.comparison_ids = new Set();
             this.need_subpass_input = false;
+            this.physical_storage_non_block_pointer_types = [];
+            this.physical_storage_type_to_alignment = []; // map<uint32_t, PhysicalBlockMeta>
             // The set of all resources written while inside the critical section, if present.
             this.interlocked_resources = new Set();
             this.interlocked_is_complex = false;
@@ -6688,9 +6834,59 @@ var SPIRV = (function (exports) {
             this.ir.set_name(id, name);
         };
         // Gets a bitmask for the decorations which are applied to ID.
-        // I.e. (1ull << spv::DecorationFoo) | (1ull << spv::DecorationBar)
+        // I.e. (1ull << Op.DecorationFoo) | (1ull << Op.DecorationBar)
         Compiler.prototype.get_decoration_bitset = function (id) {
             return this.ir.get_decoration_bitset(id);
+        };
+        // Returns the effective size of a buffer block struct member.
+        Compiler.prototype.get_declared_struct_member_size = function (struct_type, index) {
+            if (struct_type.member_types.length === 0)
+                throw new Error("Declared struct in block cannot be empty.");
+            var flags = this.get_member_decoration_bitset(struct_type.self, index);
+            var type = this.get(SPIRType, struct_type.member_types[index]);
+            switch (type.basetype) {
+                case SPIRTypeBaseType.Unknown:
+                case SPIRTypeBaseType.Void:
+                case SPIRTypeBaseType.Boolean: // Bools are purely logical, and cannot be used for externally visible types.
+                case SPIRTypeBaseType.AtomicCounter:
+                case SPIRTypeBaseType.Image:
+                case SPIRTypeBaseType.SampledImage:
+                case SPIRTypeBaseType.Sampler:
+                    throw new Error("Querying size for object with opaque size.");
+            }
+            if (type.pointer && type.storage === StorageClass.StorageClassPhysicalStorageBuffer) {
+                // Check if this is a top-level pointer type, and not an array of pointers.
+                if (type.pointer_depth > this.get(SPIRType, type.parent_type).pointer_depth)
+                    return 8;
+            }
+            if (type.array.length > 0) {
+                // For arrays, we can use ArrayStride to get an easy check.
+                var array_size_literal = type.array_size_literal[type.array_size_literal.length - 1];
+                var array_size = array_size_literal ? type.array[type.array.length - 1] : this.evaluate_constant_u32(type.array[type.array.length - 1]);
+                return this.type_struct_member_array_stride(struct_type, index) * array_size;
+            }
+            else if (type.basetype === SPIRTypeBaseType.Struct) {
+                return this.get_declared_struct_size(type);
+            }
+            else {
+                var vecsize = type.vecsize;
+                var columns = type.columns;
+                // Vectors.
+                if (columns === 1) {
+                    var component_size = type.width / 8;
+                    return vecsize * component_size;
+                }
+                else {
+                    var matrix_stride = this.type_struct_member_matrix_stride(struct_type, index);
+                    // Per SPIR-V spec, matrices must be tightly packed and aligned up for vec3 accesses.
+                    if (flags.get(Decoration.DecorationRowMajor))
+                        return matrix_stride * vecsize;
+                    else if (flags.get(Decoration.DecorationColMajor))
+                        return matrix_stride * columns;
+                    else
+                        throw new Error("Either row-major or column-major must be declared for matrices.");
+                }
+            }
         };
         // Returns a set of all global variables which are statically accessed
         // by the control flow graph from the current entry point.
@@ -6851,6 +7047,27 @@ var SPIRV = (function (exports) {
             });
             return res;
         };
+        Compiler.prototype.get_common_basic_type = function (type) {
+            var base_type;
+            if (type.basetype === SPIRTypeBaseType.Struct) {
+                base_type = SPIRTypeBaseType.Unknown;
+                for (var _i = 0, _a = type.member_types; _i < _a.length; _i++) {
+                    var member_type = _a[_i];
+                    var member_base = this.get_common_basic_type(this.get(SPIRType, member_type));
+                    if (member_base === undefined)
+                        return undefined;
+                    if (base_type === SPIRTypeBaseType.Unknown)
+                        base_type = member_base;
+                    else if (base_type !== member_base)
+                        return undefined;
+                }
+                return base_type;
+            }
+            else {
+                base_type = type.basetype;
+                return base_type;
+            }
+        };
         // Remapped variables are considered built-in variables and a backend will
         // not emit a declaration for this variable.
         // This is mostly useful for making use of builtins which are dependent on extensions.
@@ -6932,12 +7149,12 @@ var SPIRV = (function (exports) {
             var handler = new ActiveBuiltinHandler(this);
             this.traverse_all_reachable_opcodes(this.get(SPIRFunction, ir.default_entry_point), handler);
             ir.for_each_typed_id(SPIRVariable, function (_, var_) {
-                if (var_.storage != StorageClass.StorageClassOutput)
+                if (var_.storage !== StorageClass.StorageClassOutput)
                     return;
                 if (!_this.interface_variable_exists_in_entry_point(var_.self))
                     return;
                 // Also, make sure we preserve output variables which are only initialized, but never accessed by any code.
-                if (var_.initializer != (0))
+                if (var_.initializer !== (0))
                     handler.add_if_builtin_or_block(var_.self);
             });
         };
@@ -7066,14 +7283,62 @@ var SPIRV = (function (exports) {
             for (;;) {
                 if (start.self === to.self)
                     return true;
-                if (start.terminator === SPIRBlockTerminator.Direct && start.merge == SPIRBlockMerge.MergeNone)
+                if (start.terminator === SPIRBlockTerminator.Direct && start.merge === SPIRBlockMerge.MergeNone)
                     start = this.get(SPIRBlock, start.next_block);
                 else
                     return false;
             }
         };
         Compiler.prototype.execution_is_direct_branch = function (from, to) {
-            return from.terminator === SPIRBlockTerminator.Direct && from.merge === SPIRBlockMerge.MergeNone && from.next_block == to.self;
+            return from.terminator === SPIRBlockTerminator.Direct && from.merge === SPIRBlockMerge.MergeNone && from.next_block === to.self;
+        };
+        // A variant which takes two sets of names. The secondary is only used to verify there are no collisions,
+        // but the set is not updated when we have found a new name.
+        // Used primarily when adding block interface names.
+        Compiler.prototype.update_name_cache = function (cache_primary, cache_secondary, name) {
+            if (!name) {
+                // first overload
+                name = cache_secondary;
+                cache_secondary = cache_primary;
+            }
+            if (name === null)
+                return;
+            var find_name = function (n) {
+                if (cache_primary.has(n))
+                    return true;
+                if (cache_primary !== cache_secondary)
+                    if (cache_secondary.has(n))
+                        return true;
+                return false;
+            };
+            var insert_name = function (n) {
+                cache_primary.add(n);
+            };
+            if (!find_name(name)) {
+                insert_name(name);
+                return name;
+            }
+            var counter = 0;
+            var tmpname = name;
+            var use_linked_underscore = true;
+            if (tmpname === "_") {
+                // We cannot just append numbers, as we will end up creating internally reserved names.
+                // Make it like _0_<counter> instead.
+                tmpname += "0";
+            }
+            else if (tmpname.charAt(tmpname.length - 1) === "_") {
+                // The last_character is an underscore, so we don't need to link in underscore.
+                // This would violate double underscore rules.
+                use_linked_underscore = false;
+            }
+            // If there is a collision (very rare),
+            // keep tacking on extra identifier until it's unique.
+            do {
+                counter++;
+                name = tmpname + (use_linked_underscore ? "_" : "") + convert_to_string(counter);
+            } while (find_name(name));
+            insert_name(name);
+            return name;
         };
         Compiler.prototype.force_recompile = function () {
             this.is_force_recompile = true;
@@ -7184,7 +7449,7 @@ var SPIRV = (function (exports) {
             return this.ir.has_decoration(id, decoration);
         };
         // Gets the value for decorations which take arguments.
-        // If the decoration is a boolean (i.e. spv::DecorationNonWritable),
+        // If the decoration is a boolean (i.e. Op.DecorationNonWritable),
         // 1 will be returned.
         // If decoration doesn't exist or decoration is not recognized,
         // 0 will be returned.
@@ -7202,6 +7467,11 @@ var SPIRV = (function (exports) {
         // Mostly used with Resource::type_id and Resource::base_type_id to parse the underlying type of a resource.
         Compiler.prototype.get_type = function (id) {
             return this.get(SPIRType, id);
+        };
+        // If get_name() is an empty string, get the fallback name which will be used
+        // instead in the disassembled source.
+        Compiler.prototype.get_fallback_name = function (id) {
+            return "_" + id;
         };
         // If get_name() of a Block struct is an empty string, get the fallback name.
         // This needs to be per-variable as multiple variables can use the same block type.
@@ -7260,6 +7530,24 @@ var SPIRV = (function (exports) {
         // Gets the fallback name for a member, similar to get_fallback_name.
         Compiler.prototype.get_fallback_member_name = function (index) {
             return "_" + index;
+        };
+        // Returns the effective size of a buffer block.
+        Compiler.prototype.get_declared_struct_size = function (type) {
+            if (type.member_types.length === 0)
+                throw new Error("Declared struct in block cannot be empty.");
+            // Offsets can be declared out of order, so we need to deduce the actual size
+            // based on last member instead.
+            var member_index = 0;
+            var highest_offset = 0;
+            for (var i = 0; i < type.member_types.length; i++) {
+                var offset = this.type_struct_member_offset(type, i);
+                if (offset > highest_offset) {
+                    highest_offset = offset;
+                    member_index = i;
+                }
+            }
+            var size = this.get_declared_struct_member_size(type, member_index);
+            return highest_offset + size;
         };
         Compiler.prototype.maybe_get = function (classRef, id) {
             var ir = this.ir;
@@ -7371,6 +7659,40 @@ var SPIRV = (function (exports) {
                 }
             return false;
         };
+        Compiler.prototype.is_hidden_variable = function (var_, include_builtins) {
+            if (include_builtins === void 0) { include_builtins = false; }
+            if ((this.is_builtin_variable(var_) && !include_builtins) || var_.remapped_variable)
+                return true;
+            // Combined image samplers are always considered active as they are "magic" variables.
+            var rs = this.combined_image_samplers.find(function (samp) { return samp.combined_id === var_.self; });
+            if (rs) {
+                return false;
+            }
+            var ir = this.ir;
+            // In SPIR-V 1.4 and up we must also use the active variable interface to disable global variables
+            // which are not part of the entry point.
+            if (ir.get_spirv_version() >= 0x10400 && var_.storage !== StorageClass.StorageClassGeneric &&
+                var_.storage !== StorageClass.StorageClassFunction && !this.interface_variable_exists_in_entry_point(var_.self)) {
+                return true;
+            }
+            return this.check_active_interface_variables && storage_class_is_interface(var_.storage) && this.active_interface_variables.has(var_.self);
+        };
+        Compiler.prototype.is_member_builtin = function (type, index) {
+            var type_meta = this.ir.find_meta(type.self);
+            if (type_meta) {
+                var memb = type_meta.members;
+                if (index < memb.length && memb[index].builtin) {
+                    return memb[index].builtin_type;
+                }
+            }
+            return undefined;
+        };
+        Compiler.prototype.is_scalar = function (type) {
+            return type.basetype !== SPIRTypeBaseType.Struct && type.vecsize === 1 && type.columns === 1;
+        };
+        Compiler.prototype.is_vector = function (type) {
+            return type.vecsize > 1 && type.columns == 1;
+        };
         Compiler.prototype.is_matrix = function (type) {
             return type.vecsize > 1 && type.columns > 1;
         };
@@ -7430,7 +7752,7 @@ var SPIRV = (function (exports) {
         };
         Compiler.prototype.is_single_block_loop = function (next) {
             var block = this.get(SPIRBlock, next);
-            return block.merge == SPIRBlockMerge.MergeLoop && block.continue_block === (next);
+            return block.merge === SPIRBlockMerge.MergeLoop && block.continue_block === (next);
         };
         Compiler.prototype.traverse_all_reachable_opcodes = function (param0, handler) {
             if (param0 instanceof SPIRFunction) {
@@ -7586,6 +7908,24 @@ var SPIRV = (function (exports) {
                     arg.read_count++;
             }
         };
+        Compiler.prototype.analyze_non_block_pointer_types = function () {
+            var _this = this;
+            var ir = this.ir;
+            var handler = new PhysicalStorageBufferPointerHandler(this);
+            this.traverse_all_reachable_opcodes(this.get(SPIRFunction, ir.default_entry_point), handler);
+            // Analyze any block declaration we have to make. It might contain
+            // physical pointers to POD types which we never used, and thus never added to the list.
+            // We'll need to add those pointer types to the set of types we declare.
+            ir.for_each_typed_id(SPIRType, function (_, type) {
+                if (_this.has_decoration(type.self, Decoration.DecorationBlock) || _this.has_decoration(type.self, Decoration.DecorationBufferBlock))
+                    handler.analyze_non_block_types_from_block(type);
+            });
+            handler.non_block_types.forEach(function (type) {
+                return _this.physical_storage_non_block_pointer_types.push(type);
+            });
+            this.physical_storage_non_block_pointer_types.sort();
+            this.physical_storage_type_to_alignment = handler.physical_block_type_meta;
+        };
         Compiler.prototype.analyze_variable_scope = function (entry, handler) {
             var _this = this;
             // First, we map out all variable access within a function.
@@ -7609,7 +7949,7 @@ var SPIRV = (function (exports) {
                 }
                 else {
                     var loop_dominator = cfg.find_loop_dominator(block_id);
-                    if (loop_dominator != block_id)
+                    if (loop_dominator !== block_id)
                         block.loop_dominator = loop_dominator;
                     else
                         block.loop_dominator = SPIRBlock.NoDominator;
@@ -7636,7 +7976,7 @@ var SPIRV = (function (exports) {
                         // so we will have to lift the dominator up to the relevant loop header instead.
                         builder.add_block(ir.continue_block_to_loop_header[block]);
                         // Arrays or structs cannot be loop variables.
-                        if (type.vecsize == 1 && type.columns == 1 && type.basetype !== SPIRTypeBaseType.Struct && type.array.length === 0) {
+                        if (type.vecsize === 1 && type.columns === 1 && type.basetype !== SPIRTypeBaseType.Struct && type.array.length === 0) {
                             // The variable is used in multiple continue blocks, this is not a loop
                             // candidate, signal that by setting block to -1u.
                             var potential = maplike_get(0, potential_loop_variables, varFirst);
@@ -7664,9 +8004,9 @@ var SPIRV = (function (exports) {
                         var preserve = _this.may_read_undefined_variable_in_block(block, varFirst);
                         if (preserve) {
                             // Find the outermost loop scope.
-                            while (block.loop_dominator != (SPIRBlock.NoDominator))
+                            while (block.loop_dominator !== (SPIRBlock.NoDominator))
                                 block = _this.get(SPIRBlock, block.loop_dominator);
-                            if (block.self != dominating_block) {
+                            if (block.self !== dominating_block) {
                                 builder.add_block(block.self);
                                 dominating_block = builder.get_dominator();
                             }
@@ -7704,7 +8044,7 @@ var SPIRV = (function (exports) {
                         // Any temporary we access in the continue block must be declared before the loop.
                         // This is moot for complex loops however.
                         var loop_header_block = _this.get(SPIRBlock, ir.continue_block_to_loop_header[block]);
-                        console.assert(loop_header_block.merge == SPIRBlockMerge.MergeLoop);
+                        console.assert(loop_header_block.merge === SPIRBlockMerge.MergeLoop);
                         builder.add_block(loop_header_block.self);
                         used_in_header_hoisted_continue_block = true;
                     }
@@ -7777,7 +8117,7 @@ var SPIRV = (function (exports) {
                     if (ir.continue_block_to_loop_header.hasOwnProperty(block)) {
                         header = ir.continue_block_to_loop_header[block];
                     }
-                    else if (_this.get(SPIRBlock, block).continue_block == block) {
+                    else if (_this.get(SPIRBlock, block).continue_block === block) {
                         // Also check for self-referential continue block.
                         header = block;
                     }
@@ -7793,7 +8133,7 @@ var SPIRV = (function (exports) {
                 // Walk from the dominator, if there is one straight edge connecting
                 // dominator and loop header, we statically know the loop initializer.
                 var static_loop_init = true;
-                while (dominator != header) {
+                while (dominator !== header) {
                     if (blocks.has(dominator))
                         has_accessed_variable = true;
                     var succ = cfg.get_succeeding_edges(dominator);
@@ -7872,7 +8212,7 @@ var SPIRV = (function (exports) {
                         return;
                     // We write to the variable in more than one block.
                     var write_blocks = itr_second;
-                    if (write_blocks.size != 1)
+                    if (write_blocks.size !== 1)
                         return;
                     // The write needs to happen in the dominating block.
                     var builder_1 = new DominatorBuilder(cfg);
@@ -7885,10 +8225,10 @@ var SPIRV = (function (exports) {
                     var static_expression_handler = new StaticExpressionAccessHandler(_this, var_.self);
                     _this.traverse_all_reachable_opcodes(_this.get(SPIRBlock, dominator), static_expression_handler);
                     // We want one, and exactly one write
-                    if (static_expression_handler.write_count != 1 || static_expression_handler.static_expression == 0)
+                    if (static_expression_handler.write_count !== 1 || static_expression_handler.static_expression === 0)
                         return;
                     // Is it a constant expression?
-                    if (ir.ids[static_expression_handler.static_expression].get_type() != Types.TypeConstant)
+                    if (ir.ids[static_expression_handler.static_expression].get_type() !== Types.TypeConstant)
                         return;
                     // We found a LUT!
                     static_constant_expression = static_expression_handler.static_expression;
@@ -7973,7 +8313,7 @@ var SPIRV = (function (exports) {
                 this.traverse_all_reachable_opcodes(this.get(SPIRFunction, ir.default_entry_point), handler);
                 // For GLSL. If we hit any of these cases, we have to fall back to conservative approach.
                 this.interlocked_is_complex =
-                    !handler.use_critical_section || handler.interlock_function_id != ir.default_entry_point;
+                    !handler.use_critical_section || handler.interlock_function_id !== ir.default_entry_point;
             }
         };
         Compiler.prototype.instruction_to_result_type = function (result, op, args, length) {
@@ -8012,6 +8352,59 @@ var SPIRV = (function (exports) {
                         return false;
             }
         };
+        Compiler.prototype.combined_decoration_for_member = function (type, index) {
+            var flags = new Bitset();
+            var type_meta = this.ir.find_meta(type.self);
+            if (type_meta) {
+                var members = type_meta.members;
+                if (index >= members.length)
+                    return flags;
+                var dec = members[index];
+                flags.merge_or(dec.decoration_flags);
+                var member_type = this.get(SPIRType, type.member_types[index]);
+                // If our member type is a struct, traverse all the child members as well recursively.
+                var member_childs = member_type.member_types;
+                for (var i = 0; i < member_childs.length; i++) {
+                    var child_member_type = this.get(SPIRType, member_childs[i]);
+                    if (!child_member_type.pointer)
+                        flags.merge_or(this.combined_decoration_for_member(member_type, i));
+                }
+            }
+            return flags;
+        };
+        Compiler.prototype.is_desktop_only_format = function (format) {
+            switch (format) {
+                // Desktop-only formats
+                case ImageFormat.ImageFormatR11fG11fB10f:
+                case ImageFormat.ImageFormatR16f:
+                case ImageFormat.ImageFormatRgb10A2:
+                case ImageFormat.ImageFormatR8:
+                case ImageFormat.ImageFormatRg8:
+                case ImageFormat.ImageFormatR16:
+                case ImageFormat.ImageFormatRg16:
+                case ImageFormat.ImageFormatRgba16:
+                case ImageFormat.ImageFormatR16Snorm:
+                case ImageFormat.ImageFormatRg16Snorm:
+                case ImageFormat.ImageFormatRgba16Snorm:
+                case ImageFormat.ImageFormatR8Snorm:
+                case ImageFormat.ImageFormatRg8Snorm:
+                case ImageFormat.ImageFormatR8ui:
+                case ImageFormat.ImageFormatRg8ui:
+                case ImageFormat.ImageFormatR16ui:
+                case ImageFormat.ImageFormatRgb10a2ui:
+                case ImageFormat.ImageFormatR8i:
+                case ImageFormat.ImageFormatRg8i:
+                case ImageFormat.ImageFormatR16i:
+                    return true;
+            }
+            return false;
+        };
+        Compiler.prototype.set_extended_decoration = function (id, decoration, value) {
+            if (value === void 0) { value = 0; }
+            var dec = maplike_get(Meta, this.ir.meta, id).decoration;
+            dec.extended.flags.set(decoration);
+            dec.extended.values[decoration] = value;
+        };
         Compiler.prototype.get_extended_decoration = function (id, decoration) {
             var m = this.ir.find_meta(id);
             if (!m)
@@ -8027,6 +8420,51 @@ var SPIRV = (function (exports) {
                 return false;
             var dec = m.decoration;
             return dec.extended.flags.get(decoration);
+        };
+        Compiler.prototype.set_extended_member_decoration = function (type, index, decoration, value) {
+            if (value === void 0) { value = 0; }
+            var members = maplike_get(Meta, this.ir.meta, type).members;
+            if (index === members.length) {
+                members.push(new MetaDecoration());
+            }
+            var dec = members[index];
+            dec.extended.flags.set(decoration);
+            dec.extended.values[decoration] = value;
+        };
+        Compiler.prototype.get_extended_member_decoration = function (type, index, decoration) {
+            var m = this.ir.find_meta(type);
+            if (!m)
+                return 0;
+            if (index >= m.members.length)
+                return 0;
+            var dec = m.members[index];
+            if (!dec.extended.flags.get(decoration))
+                return get_default_extended_decoration(decoration);
+            return dec.extended.values[decoration];
+        };
+        Compiler.prototype.has_extended_member_decoration = function (type, index, decoration) {
+            var m = this.ir.find_meta(type);
+            if (!m)
+                return false;
+            if (index >= m.members.length)
+                return false;
+            var dec = m.members[index];
+            return dec.extended.flags.get(decoration);
+        };
+        Compiler.prototype.unset_extended_member_decoration = function (type, index, decoration) {
+            var members = maplike_get(Meta, this.ir.meta, type).members;
+            if (index === members.length) {
+                members.push(new MetaDecoration());
+            }
+            var dec = members[index];
+            dec.extended.flags.clear(decoration);
+            dec.extended.values[decoration] = 0;
+        };
+        Compiler.prototype.type_is_array_of_pointers = function (type) {
+            if (!type.pointer)
+                return false;
+            // If parent type has same pointer depth, we must have an array of pointers.
+            return type.pointer_depth === this.get(SPIRType, type.parent_type).pointer_depth;
         };
         Compiler.prototype.type_is_opaque_value = function (type) {
             return !type.pointer && (type.basetype === SPIRTypeBaseType.SampledImage || type.basetype === SPIRTypeBaseType.Image ||
@@ -8063,6 +8501,53 @@ var SPIRV = (function (exports) {
             // If the block name is aliased, assume we have HLSL-style UAV declarations.
             return aliased_ssbo_types;
         };
+        // API for querying buffer objects.
+        // The type passed in here should be the base type of a resource, i.e.
+        // get_type(resource.base_type_id)
+        // as decorations are set in the basic Block type.
+        // The type passed in here must have these decorations set, or an exception is raised.
+        // Only UBOs and SSBOs or sub-structs which are part of these buffer types will have these decorations set.
+        Compiler.prototype.type_struct_member_offset = function (type, index) {
+            var type_meta = this.ir.find_meta(type.self);
+            if (type_meta) {
+                // Decoration must be set in valid SPIR-V, otherwise throw.
+                var dec = type_meta.members[index];
+                if (dec.decoration_flags.get(Decoration.DecorationOffset))
+                    return dec.offset;
+                else
+                    throw new Error("Struct member does not have Offset set.");
+            }
+            else
+                throw new Error("Struct member does not have Offset set.");
+        };
+        Compiler.prototype.type_struct_member_array_stride = function (type, index) {
+            var type_meta = this.ir.find_meta(type.self);
+            if (type_meta) {
+                // Decoration must be set in valid SPIR-V, otherwise throw.
+                // ArrayStride is part of the array type not OpMemberDecorate.
+                var dec = type_meta.decoration;
+                if (dec.decoration_flags.get(Decoration.DecorationArrayStride))
+                    return dec.array_stride;
+                else
+                    throw new Error("Struct member does not have ArrayStride set.");
+            }
+            else
+                throw new Error("Struct member does not have ArrayStride set.");
+        };
+        Compiler.prototype.type_struct_member_matrix_stride = function (type, index) {
+            var type_meta = this.ir.find_meta(type.self);
+            if (type_meta) {
+                // Decoration must be set in valid SPIR-V, otherwise throw.
+                // MatrixStride is part of OpMemberDecorate.
+                var dec = type_meta.members[index];
+                if (dec.decoration_flags.get(Decoration.DecorationMatrixStride))
+                    return dec.matrix_stride;
+                else
+                    throw new Error("Struct member does not have MatrixStride set.");
+            }
+            else
+                throw new Error("Struct member does not have MatrixStride set.");
+        };
         Compiler.prototype.get_remapped_declared_block_name = function (id, fallback_prefer_instance_name) {
             var itr = this.declared_block_names[id];
             if (itr) {
@@ -8082,7 +8567,7 @@ var SPIRV = (function (exports) {
             }
         };
         Compiler.prototype.type_is_block_like = function (type) {
-            if (type.basetype != SPIRTypeBaseType.Struct)
+            if (type.basetype !== SPIRTypeBaseType.Struct)
                 return false;
             if (this.has_decoration(type.self, Decoration.DecorationBlock) || this.has_decoration(type.self, Decoration.DecorationBufferBlock)) {
                 return true;
@@ -8092,6 +8577,129 @@ var SPIRV = (function (exports) {
                 if (this.has_member_decoration(type.self, i, Decoration.DecorationOffset))
                     return true;
             return false;
+        };
+        Compiler.prototype.evaluate_spec_constant_u32 = function (spec) {
+            var _this = this;
+            var result_type = this.get(SPIRType, spec.basetype);
+            if (result_type.basetype !== SPIRTypeBaseType.UInt && result_type.basetype !== SPIRTypeBaseType.Int &&
+                result_type.basetype !== SPIRTypeBaseType.Boolean) {
+                throw new Error("Only 32-bit integers and booleans are currently supported when evaluating specialization constants.");
+            }
+            if (!this.is_scalar(result_type))
+                throw new Error("Spec constant evaluation must be a scalar.\n");
+            var value = 0;
+            var eval_u32 = function (id) {
+                var type = _this.expression_type(id);
+                if (type.basetype !== SPIRTypeBaseType.UInt && type.basetype !== SPIRTypeBaseType.Int && type.basetype !== SPIRTypeBaseType.Boolean) {
+                    throw new Error("Only 32-bit integers and booleans are currently supported when evaluating specialization constants.");
+                }
+                if (!_this.is_scalar(type))
+                    throw new Error("Spec constant evaluation must be a scalar.");
+                var c = _this.maybe_get(SPIRConstant, id);
+                if (c)
+                    return c.scalar();
+                else
+                    return _this.evaluate_spec_constant_u32(_this.get(SPIRConstantOp, id));
+            };
+            // Support the basic opcodes which are typically used when computing array sizes.
+            switch (spec.opcode) {
+                case Op.OpIAdd:
+                    value = eval_u32(spec.arguments[0]) + eval_u32(spec.arguments[1]);
+                    break;
+                case Op.OpISub:
+                    value = eval_u32(spec.arguments[0]) - eval_u32(spec.arguments[1]);
+                    break;
+                case Op.OpIMul:
+                    value = eval_u32(spec.arguments[0]) * eval_u32(spec.arguments[1]);
+                    break;
+                case Op.OpBitwiseAnd:
+                    value = eval_u32(spec.arguments[0]) & eval_u32(spec.arguments[1]);
+                    break;
+                case Op.OpBitwiseOr:
+                    value = eval_u32(spec.arguments[0]) | eval_u32(spec.arguments[1]);
+                    break;
+                case Op.OpBitwiseXor:
+                    value = eval_u32(spec.arguments[0]) ^ eval_u32(spec.arguments[1]);
+                    break;
+                case Op.OpLogicalAnd:
+                    value = eval_u32(spec.arguments[0]) & eval_u32(spec.arguments[1]);
+                    break;
+                case Op.OpLogicalOr:
+                    value = eval_u32(spec.arguments[0]) | eval_u32(spec.arguments[1]);
+                    break;
+                case Op.OpShiftLeftLogical:
+                    value = eval_u32(spec.arguments[0]) << eval_u32(spec.arguments[1]);
+                    break;
+                case Op.OpShiftRightLogical:
+                case Op.OpShiftRightArithmetic:
+                    value = eval_u32(spec.arguments[0]) >> eval_u32(spec.arguments[1]);
+                    break;
+                case Op.OpLogicalEqual:
+                case Op.OpIEqual:
+                    value = eval_u32(spec.arguments[0]) == eval_u32(spec.arguments[1]) ? 1 : 0;
+                    break;
+                case Op.OpLogicalNotEqual:
+                case Op.OpINotEqual:
+                    value = eval_u32(spec.arguments[0]) != eval_u32(spec.arguments[1]) ? 1 : 0;
+                    break;
+                case Op.OpULessThan:
+                case Op.OpSLessThan:
+                    value = eval_u32(spec.arguments[0]) < eval_u32(spec.arguments[1]) ? 1 : 0;
+                    break;
+                case Op.OpULessThanEqual:
+                case Op.OpSLessThanEqual:
+                    value = eval_u32(spec.arguments[0]) <= eval_u32(spec.arguments[1]) ? 1 : 0;
+                    break;
+                case Op.OpUGreaterThan:
+                case Op.OpSGreaterThan:
+                    value = eval_u32(spec.arguments[0]) > eval_u32(spec.arguments[1]) ? 1 : 0;
+                    break;
+                case Op.OpUGreaterThanEqual:
+                case Op.OpSGreaterThanEqual:
+                    value = eval_u32(spec.arguments[0]) >= eval_u32(spec.arguments[1]) ? 1 : 0;
+                    break;
+                case Op.OpLogicalNot:
+                    value = eval_u32(spec.arguments[0]) ? 0 : 1;
+                    break;
+                case Op.OpNot:
+                    value = ~eval_u32(spec.arguments[0]);
+                    break;
+                case Op.OpSNegate:
+                    value = -eval_u32(spec.arguments[0]);
+                    break;
+                case Op.OpSelect:
+                    value = eval_u32(spec.arguments[0]) ? eval_u32(spec.arguments[1]) : eval_u32(spec.arguments[2]);
+                    break;
+                case Op.OpUMod:
+                case Op.OpSMod:
+                case Op.OpSRem: {
+                    var a = eval_u32(spec.arguments[0]);
+                    var b = eval_u32(spec.arguments[1]);
+                    if (b === 0)
+                        throw new Error("Undefined behavior in Mod, b === 0.\n");
+                    value = a % b;
+                    break;
+                }
+                case Op.OpUDiv:
+                case Op.OpSDiv: {
+                    var a = eval_u32(spec.arguments[0]);
+                    var b = eval_u32(spec.arguments[1]);
+                    if (b === 0)
+                        throw new Error("Undefined behavior in Div, b === 0.\n");
+                    value = a / b;
+                    break;
+                }
+                default:
+                    throw new Error("Unsupported spec constant opcode for evaluation.\n");
+            }
+            return value;
+        };
+        Compiler.prototype.evaluate_constant_u32 = function (id) {
+            var c = this.maybe_get(SPIRConstant, id);
+            if (c)
+                return c.scalar();
+            else
+                return this.evaluate_spec_constant_u32(this.get(SPIRConstantOp, id));
         };
         Compiler.prototype.get_case_list = function (block) {
             var ir = this.ir;
@@ -8149,6 +8757,64 @@ var SPIRV = (function (exports) {
                 return ~0;
             default:
                 return 0;
+        }
+    }
+    function storage_class_is_interface(storage) {
+        switch (storage) {
+            case StorageClass.StorageClassInput:
+            case StorageClass.StorageClassOutput:
+            case StorageClass.StorageClassUniform:
+            case StorageClass.StorageClassUniformConstant:
+            case StorageClass.StorageClassAtomicCounter:
+            case StorageClass.StorageClassPushConstant:
+            case StorageClass.StorageClassStorageBuffer:
+                return true;
+            default:
+                return false;
+        }
+    }
+    function opcode_is_sign_invariant(opcode) {
+        switch (opcode) {
+            case Op.OpIEqual:
+            case Op.OpINotEqual:
+            case Op.OpISub:
+            case Op.OpIAdd:
+            case Op.OpIMul:
+            case Op.OpShiftLeftLogical:
+            case Op.OpBitwiseOr:
+            case Op.OpBitwiseXor:
+            case Op.OpBitwiseAnd:
+                return true;
+            default:
+                return false;
+        }
+    }
+    function to_signed_basetype(width) {
+        switch (width) {
+            case 8:
+                return SPIRTypeBaseType.SByte;
+            case 16:
+                return SPIRTypeBaseType.Short;
+            case 32:
+                return SPIRTypeBaseType.Int;
+            case 64:
+                return SPIRTypeBaseType.Int64;
+            default:
+                throw new Error("Invalid bit width.");
+        }
+    }
+    function to_unsigned_basetype(width) {
+        switch (width) {
+            case 8:
+                return SPIRTypeBaseType.UByte;
+            case 16:
+                return SPIRTypeBaseType.UShort;
+            case 32:
+                return SPIRTypeBaseType.UInt;
+            case 64:
+                return SPIRTypeBaseType.UInt64;
+            default:
+                throw new Error("Invalid bit width.");
         }
     }
 
@@ -8264,6 +8930,9 @@ var SPIRV = (function (exports) {
             }
             this._str = (_a = this._str).concat.apply(_a, args);
         };
+        StringStream.prototype.reset = function () {
+            this._str = "";
+        };
         return StringStream;
     }());
 
@@ -8276,26 +8945,152 @@ var SPIRV = (function (exports) {
             type.basetype === SPIRTypeBaseType.Int64 || type.basetype === SPIRTypeBaseType.UInt64;
     }
 
+    var AccessChainMeta = /** @class */ (function () {
+        function AccessChainMeta() {
+            this.storage_physical_type = 0;
+            this.need_transpose = false;
+            this.storage_is_packed = false;
+            this.storage_is_invariant = false;
+            this.flattened_struct = false;
+        }
+        return AccessChainMeta;
+    }());
+
+    var AccessChainFlagBits;
+    (function (AccessChainFlagBits) {
+        AccessChainFlagBits[AccessChainFlagBits["ACCESS_CHAIN_INDEX_IS_LITERAL_BIT"] = 1] = "ACCESS_CHAIN_INDEX_IS_LITERAL_BIT";
+        AccessChainFlagBits[AccessChainFlagBits["ACCESS_CHAIN_CHAIN_ONLY_BIT"] = 2] = "ACCESS_CHAIN_CHAIN_ONLY_BIT";
+        AccessChainFlagBits[AccessChainFlagBits["ACCESS_CHAIN_PTR_CHAIN_BIT"] = 4] = "ACCESS_CHAIN_PTR_CHAIN_BIT";
+        AccessChainFlagBits[AccessChainFlagBits["ACCESS_CHAIN_SKIP_REGISTER_EXPRESSION_READ_BIT"] = 8] = "ACCESS_CHAIN_SKIP_REGISTER_EXPRESSION_READ_BIT";
+        AccessChainFlagBits[AccessChainFlagBits["ACCESS_CHAIN_LITERAL_MSB_FORCE_ID"] = 16] = "ACCESS_CHAIN_LITERAL_MSB_FORCE_ID";
+        AccessChainFlagBits[AccessChainFlagBits["ACCESS_CHAIN_FLATTEN_ALL_MEMBERS_BIT"] = 32] = "ACCESS_CHAIN_FLATTEN_ALL_MEMBERS_BIT";
+        AccessChainFlagBits[AccessChainFlagBits["ACCESS_CHAIN_FORCE_COMPOSITE_BIT"] = 64] = "ACCESS_CHAIN_FORCE_COMPOSITE_BIT";
+    })(AccessChainFlagBits || (AccessChainFlagBits = {}));
+
+    var BufferPackingStandard;
+    (function (BufferPackingStandard) {
+        BufferPackingStandard[BufferPackingStandard["BufferPackingStd140"] = 0] = "BufferPackingStd140";
+        BufferPackingStandard[BufferPackingStandard["BufferPackingStd430"] = 1] = "BufferPackingStd430";
+        BufferPackingStandard[BufferPackingStandard["BufferPackingStd140EnhancedLayout"] = 2] = "BufferPackingStd140EnhancedLayout";
+        BufferPackingStandard[BufferPackingStandard["BufferPackingStd430EnhancedLayout"] = 3] = "BufferPackingStd430EnhancedLayout";
+        BufferPackingStandard[BufferPackingStandard["_BufferPackingHLSLCbuffer"] = 4] = "_BufferPackingHLSLCbuffer";
+        BufferPackingStandard[BufferPackingStandard["_BufferPackingHLSLCbufferPackOffset"] = 5] = "_BufferPackingHLSLCbufferPackOffset";
+        BufferPackingStandard[BufferPackingStandard["BufferPackingScalar"] = 6] = "BufferPackingScalar";
+        BufferPackingStandard[BufferPackingStandard["BufferPackingScalarEnhancedLayout"] = 7] = "BufferPackingScalarEnhancedLayout";
+    })(BufferPackingStandard || (BufferPackingStandard = {}));
+
     var swizzle = [
         [".x", ".y", ".z", ".w"],
         [".xy", ".yz", ".zw"],
         [".xyz", ".yzw"],
         [""]
     ];
+    var ops = [];
+    ops[Op.OpSNegate] = "-";
+    ops[Op.OpNot] = "~";
+    ops[Op.OpIAdd] = "+";
+    ops[Op.OpISub] = "-";
+    ops[Op.OpIMul] = "*";
+    ops[Op.OpSDiv] = "/";
+    ops[Op.OpUDiv] = "/";
+    ops[Op.OpUMod] = "%";
+    ops[Op.OpSMod] = "%";
+    ops[Op.OpShiftRightLogical] = ">>";
+    ops[Op.OpShiftRightArithmetic] = ">>";
+    ops[Op.OpShiftLeftLogical] = ">>";
+    ops[Op.OpBitwiseOr] = "|";
+    ops[Op.OpBitwiseXor] = "^";
+    ops[Op.OpBitwiseAnd] = "&";
+    ops[Op.OpLogicalOr] = "||";
+    ops[Op.OpLogicalAnd] = "&&";
+    ops[Op.OpLogicalNot] = "!";
+    ops[Op.OpLogicalEqual] = "==";
+    ops[Op.OpLogicalNotEqual] = "!=";
+    ops[Op.OpIEqual] = "==";
+    ops[Op.OpINotEqual] = "!=";
+    ops[Op.OpULessThan] = "<";
+    ops[Op.OpSLessThan] = "<";
+    ops[Op.OpULessThanEqual] = "<=";
+    ops[Op.OpSLessThanEqual] = "<=";
+    ops[Op.OpUGreaterThan] = ">";
+    ops[Op.OpSGreaterThan] = ">";
+    ops[Op.OpSGreaterThanEqual] = ">=";
+    ops[Op.OpSGreaterThanEqual] = ">=";
     var expectedVecComps = ["x", "y", "z", "w"];
+    var keywords = new Set([
+        "abs", "acos", "acosh", "all", "any", "asin", "asinh", "atan", "atanh",
+        "atomicAdd", "atomicCompSwap", "atomicCounter", "atomicCounterDecrement", "atomicCounterIncrement",
+        "atomicExchange", "atomicMax", "atomicMin", "atomicOr", "atomicXor",
+        "bitCount", "bitfieldExtract", "bitfieldInsert", "bitfieldReverse",
+        "ceil", "cos", "cosh", "cross", "degrees",
+        "dFdx", "dFdxCoarse", "dFdxFine",
+        "dFdy", "dFdyCoarse", "dFdyFine",
+        "distance", "dot", "EmitStreamVertex", "EmitVertex", "EndPrimitive", "EndStreamPrimitive", "equal", "exp", "exp2",
+        "faceforward", "findLSB", "findMSB", "float16BitsToInt16", "float16BitsToUint16", "floatBitsToInt", "floatBitsToUint", "floor", "fma", "fract",
+        "frexp", "fwidth", "fwidthCoarse", "fwidthFine",
+        "greaterThan", "greaterThanEqual", "groupMemoryBarrier",
+        "imageAtomicAdd", "imageAtomicAnd", "imageAtomicCompSwap", "imageAtomicExchange", "imageAtomicMax", "imageAtomicMin", "imageAtomicOr", "imageAtomicXor",
+        "imageLoad", "imageSamples", "imageSize", "imageStore", "imulExtended", "int16BitsToFloat16", "intBitsToFloat", "interpolateAtOffset", "interpolateAtCentroid", "interpolateAtSample",
+        "inverse", "inversesqrt", "isinf", "isnan", "ldexp", "length", "lessThan", "lessThanEqual", "log", "log2",
+        "matrixCompMult", "max", "memoryBarrier", "memoryBarrierAtomicCounter", "memoryBarrierBuffer", "memoryBarrierImage", "memoryBarrierShared",
+        "min", "mix", "mod", "modf", "noise", "noise1", "noise2", "noise3", "noise4", "normalize", "not", "notEqual",
+        "outerProduct", "packDouble2x32", "packHalf2x16", "packInt2x16", "packInt4x16", "packSnorm2x16", "packSnorm4x8",
+        "packUint2x16", "packUint4x16", "packUnorm2x16", "packUnorm4x8", "pow",
+        "radians", "reflect", "refract", "round", "roundEven", "sign", "sin", "sinh", "smoothstep", "sqrt", "step",
+        "tan", "tanh", "texelFetch", "texelFetchOffset", "texture", "textureGather", "textureGatherOffset", "textureGatherOffsets",
+        "textureGrad", "textureGradOffset", "textureLod", "textureLodOffset", "textureOffset", "textureProj", "textureProjGrad",
+        "textureProjGradOffset", "textureProjLod", "textureProjLodOffset", "textureProjOffset", "textureQueryLevels", "textureQueryLod", "textureSamples", "textureSize",
+        "transpose", "trunc", "uaddCarry", "uint16BitsToFloat16", "uintBitsToFloat", "umulExtended", "unpackDouble2x32", "unpackHalf2x16", "unpackInt2x16", "unpackInt4x16",
+        "unpackSnorm2x16", "unpackSnorm4x8", "unpackUint2x16", "unpackUint4x16", "unpackUnorm2x16", "unpackUnorm4x8", "usubBorrow",
+        "active", "asm", "atomic_uint", "attribute", "bool", "break", "buffer",
+        "bvec2", "bvec3", "bvec4", "case", "cast", "centroid", "class", "coherent", "common", "const", "continue", "default", "discard",
+        "dmat2", "dmat2x2", "dmat2x3", "dmat2x4", "dmat3", "dmat3x2", "dmat3x3", "dmat3x4", "dmat4", "dmat4x2", "dmat4x3", "dmat4x4",
+        "do", "double", "dvec2", "dvec3", "dvec4", "else", "enum", "extern", "external", "false", "filter", "fixed", "flat", "float",
+        "for", "fvec2", "fvec3", "fvec4", "goto", "half", "highp", "hvec2", "hvec3", "hvec4", "if", "iimage1D", "iimage1DArray",
+        "iimage2D", "iimage2DArray", "iimage2DMS", "iimage2DMSArray", "iimage2DRect", "iimage3D", "iimageBuffer", "iimageCube",
+        "iimageCubeArray", "image1D", "image1DArray", "image2D", "image2DArray", "image2DMS", "image2DMSArray", "image2DRect",
+        "image3D", "imageBuffer", "imageCube", "imageCubeArray", "in", "inline", "inout", "input", "int", "interface", "invariant",
+        "isampler1D", "isampler1DArray", "isampler2D", "isampler2DArray", "isampler2DMS", "isampler2DMSArray", "isampler2DRect",
+        "isampler3D", "isamplerBuffer", "isamplerCube", "isamplerCubeArray", "ivec2", "ivec3", "ivec4", "layout", "long", "lowp",
+        "mat2", "mat2x2", "mat2x3", "mat2x4", "mat3", "mat3x2", "mat3x3", "mat3x4", "mat4", "mat4x2", "mat4x3", "mat4x4", "mediump",
+        "namespace", "noinline", "noperspective", "out", "output", "packed", "partition", "patch", "precise", "precision", "public", "readonly",
+        "resource", "restrict", "return", "sample", "sampler1D", "sampler1DArray", "sampler1DArrayShadow",
+        "sampler1DShadow", "sampler2D", "sampler2DArray", "sampler2DArrayShadow", "sampler2DMS", "sampler2DMSArray",
+        "sampler2DRect", "sampler2DRectShadow", "sampler2DShadow", "sampler3D", "sampler3DRect", "samplerBuffer",
+        "samplerCube", "samplerCubeArray", "samplerCubeArrayShadow", "samplerCubeShadow", "shared", "short", "sizeof", "smooth", "static",
+        "struct", "subroutine", "superp", "switch", "template", "this", "true", "typedef", "uimage1D", "uimage1DArray", "uimage2D",
+        "uimage2DArray", "uimage2DMS", "uimage2DMSArray", "uimage2DRect", "uimage3D", "uimageBuffer", "uimageCube",
+        "uimageCubeArray", "uint", "uniform", "union", "unsigned", "usampler1D", "usampler1DArray", "usampler2D", "usampler2DArray",
+        "usampler2DMS", "usampler2DMSArray", "usampler2DRect", "usampler3D", "usamplerBuffer", "usamplerCube",
+        "usamplerCubeArray", "using", "uvec2", "uvec3", "uvec4", "varying", "vec2", "vec3", "vec4", "void", "volatile",
+        "while", "writeonly"
+    ]);
     var CompilerGLSL = /** @class */ (function (_super) {
         __extends(CompilerGLSL, _super);
         function CompilerGLSL(parsedIR) {
             var _this = _super.call(this, parsedIR) || this;
             _this.buffer = new StringStream();
+            _this.options = new GLSLOptions();
+            _this.local_variable_names = new Set();
+            _this.resource_names = new Set();
+            _this.block_input_names = new Set();
+            _this.block_output_names = new Set();
+            _this.block_ubo_names = new Set();
+            _this.block_ssbo_names = new Set();
+            _this.block_names = new Set(); // A union of all block_*_names.
+            _this.function_overloads = {}; //map<string, set<uint64_t>>
+            _this.preserved_aliases = []; //map<uint32_t, string>
             _this.backend = new BackendVariations();
             _this.indent = 0;
+            // Ensure that we declare phi-variable copies even if the original declaration isn't deferred
+            _this.flushed_phi_variables = new Set();
             _this.flattened_buffer_blocks = new Set();
             _this.flattened_structs = []; //map<uint32_t, bool>
             // Usage tracking. If a temporary is used more than once, use the temporary instead to
             // avoid AST explosion when SPIRV is generated with pure SSA and doesn't write stuff to variables.
             _this.expression_usage_counts = []; // std::unordered_map<uint32_t, uint32_t>
             _this.forced_extensions = [];
+            _this.header_lines = [];
             _this.statement_count = 0;
             _this.requires_transpose_2x2 = false;
             _this.requires_transpose_3x3 = false;
@@ -8305,7 +9100,6 @@ var SPIRV = (function (exports) {
             _this.inout_color_attachments = [];
             _this.masked_output_locations = new Set();
             _this.masked_output_builtins = new Set();
-            _this.options = new GLSLOptions();
             _this.init();
             return _this;
         }
@@ -8339,7 +9133,7 @@ var SPIRV = (function (exports) {
             var var_ = this.get(SPIRVariable, id);
             var type = this.get(SPIRType, var_.basetype);
             var name = this.to_name(type.self, false);
-            var flags = this.ir.meta[type.self].decoration.decoration_flags;
+            var flags = maplike_get(Meta, this.ir.meta, type.self).decoration.decoration_flags;
             if (type.array.length > 0)
                 throw new Error(name + " is an array of UBOs.");
             if (type.basetype !== SPIRTypeBaseType.Struct)
@@ -8363,6 +9157,33 @@ var SPIRV = (function (exports) {
         CompilerGLSL.prototype.mask_stage_output_by_builtin = function (builtin) {
             this.masked_output_builtins.add(builtin);
         };
+        CompilerGLSL.prototype.reset = function () {
+            // We do some speculative optimizations which should pretty much always work out,
+            // but just in case the SPIR-V is rather weird, recompile until it's happy.
+            // This typically only means one extra pass.
+            this.clear_force_recompile();
+            // Clear invalid expression tracking.
+            this.invalid_expressions.clear();
+            this.current_function = null;
+            // Clear temporary usage tracking.
+            this.expression_usage_counts = [];
+            this.forwarded_temporaries.clear();
+            this.suppressed_usage_tracking.clear();
+            // Ensure that we declare phi-variable copies even if the original declaration isn't deferred
+            this.flushed_phi_variables.clear();
+            this.reset_name_caches();
+            var ir = this.ir;
+            ir.for_each_typed_id(SPIRFunction, function (_, func) {
+                func.active = false;
+                func.flush_undeclared = true;
+            });
+            ir.for_each_typed_id(SPIRVariable, function (_, var_) { return var_.dependees = []; });
+            ir.reset_all_of_type(SPIRExpression);
+            ir.reset_all_of_type(SPIRAccessChain);
+            this.statement_count = 0;
+            this.indent = 0;
+            this.current_loop_level = 0;
+        };
         CompilerGLSL.prototype.has_extension = function (ext) {
             return this.forced_extensions.indexOf(ext) >= 0;
         };
@@ -8372,12 +9193,500 @@ var SPIRV = (function (exports) {
                 this.force_recompile();
             }
         };
+        CompilerGLSL.prototype.emit_header = function () {
+            var execution = this.get_entry_point();
+            var options = this.options;
+            // const ir = this.ir;
+            // WEBGL 1 doesn't support version number
+            if (options.version !== 100)
+                this.statement("#version ", options.version, options.es && options.version > 100 ? " es" : "");
+            if (!options.es && options.version < 420) {
+                // Needed for binding = # on UBOs, etc.
+                if (options.enable_420pack_extension) {
+                    this.statement("#ifdef GL_ARB_shading_language_420pack");
+                    this.statement("#extension GL_ARB_shading_language_420pack : require");
+                    this.statement("#endif");
+                }
+                // Needed for: layout(early_fragment_tests) in;
+                if (execution.flags.get(ExecutionMode.ExecutionModeEarlyFragmentTests))
+                    this.require_extension_internal("GL_ARB_shader_image_load_store");
+            }
+            // Needed for: layout(post_depth_coverage) in;
+            if (execution.flags.get(ExecutionMode.ExecutionModePostDepthCoverage))
+                this.require_extension_internal("GL_ARB_post_depth_coverage");
+            // Needed for: layout({pixel,sample}_interlock_[un]ordered) in;
+            var interlock_used = execution.flags.get(ExecutionMode.ExecutionModePixelInterlockOrderedEXT) ||
+                execution.flags.get(ExecutionMode.ExecutionModePixelInterlockUnorderedEXT) ||
+                execution.flags.get(ExecutionMode.ExecutionModeSampleInterlockOrderedEXT) ||
+                execution.flags.get(ExecutionMode.ExecutionModeSampleInterlockUnorderedEXT);
+            if (interlock_used) {
+                if (options.es) {
+                    if (options.version < 310)
+                        throw new Error("At least ESSL 3.10 required for fragment shader interlock.");
+                    this.require_extension_internal("GL_NV_fragment_shader_interlock");
+                }
+                else {
+                    if (options.version < 420)
+                        this.require_extension_internal("GL_ARB_shader_image_load_store");
+                    this.require_extension_internal("GL_ARB_fragment_shader_interlock");
+                }
+            }
+            for (var _i = 0, _a = this.forced_extensions; _i < _a.length; _i++) {
+                var ext = _a[_i];
+                if (ext === "GL_EXT_shader_explicit_arithmetic_types_float16") {
+                    // Special case, this extension has a potential fallback to another vendor extension in normal GLSL.
+                    // GL_AMD_gpu_shader_half_float is a superset, so try that first.
+                    this.statement("#if defined(GL_AMD_gpu_shader_half_float)");
+                    this.statement("#extension GL_AMD_gpu_shader_half_float : require");
+                    // if (!options.vulkan_semantics)
+                    // {
+                    this.statement("#elif defined(GL_NV_gpu_shader5)");
+                    this.statement("#extension GL_NV_gpu_shader5 : require");
+                    /*}
+                    else
+                    {
+                        statement("#elif defined(GL_EXT_shader_explicit_arithmetic_types_float16)");
+                        statement("#extension GL_EXT_shader_explicit_arithmetic_types_float16 : require");
+                    }*/
+                    this.statement("#else");
+                    this.statement("#error No extension available for FP16.");
+                    this.statement("#endif");
+                }
+                else if (ext === "GL_EXT_shader_explicit_arithmetic_types_int16") {
+                    // if (options.vulkan_semantics)
+                    //     statement("#extension GL_EXT_shader_explicit_arithmetic_types_int16 : require");
+                    // else
+                    // {
+                    this.statement("#if defined(GL_AMD_gpu_shader_int16)");
+                    this.statement("#extension GL_AMD_gpu_shader_int16 : require");
+                    this.statement("#elif defined(GL_NV_gpu_shader5)");
+                    this.statement("#extension GL_NV_gpu_shader5 : require");
+                    this.statement("#else");
+                    this.statement("#error No extension available for Int16.");
+                    this.statement("#endif");
+                    // }
+                }
+                else if (ext === "GL_ARB_post_depth_coverage") {
+                    if (options.es)
+                        this.statement("#extension GL_EXT_post_depth_coverage : require");
+                    else {
+                        this.statement("#if defined(GL_ARB_post_depth_coverge)");
+                        this.statement("#extension GL_ARB_post_depth_coverage : require");
+                        this.statement("#else");
+                        this.statement("#extension GL_EXT_post_depth_coverage : require");
+                        this.statement("#endif");
+                    }
+                }
+                else if ( /*!options.vulkan_semantics &&*/ext === "GL_ARB_shader_draw_parameters") {
+                    // Soft-enable this extension on plain GLSL.
+                    this.statement("#ifdef ", ext);
+                    this.statement("#extension ", ext, " : enable");
+                    this.statement("#endif");
+                }
+                else if (ext === "GL_EXT_control_flow_attributes") {
+                    // These are just hints so we can conditionally enable and fallback in the shader.
+                    this.statement("#if defined(GL_EXT_control_flow_attributes)");
+                    this.statement("#extension GL_EXT_control_flow_attributes : require");
+                    this.statement("#define SPIRV_CROSS_FLATTEN [[flatten]]");
+                    this.statement("#define SPIRV_CROSS_BRANCH [[dont_flatten]]");
+                    this.statement("#define SPIRV_CROSS_UNROLL [[unroll]]");
+                    this.statement("#define SPIRV_CROSS_LOOP [[dont_unroll]]");
+                    this.statement("#else");
+                    this.statement("#define SPIRV_CROSS_FLATTEN");
+                    this.statement("#define SPIRV_CROSS_BRANCH");
+                    this.statement("#define SPIRV_CROSS_UNROLL");
+                    this.statement("#define SPIRV_CROSS_LOOP");
+                    this.statement("#endif");
+                }
+                else if (ext === "GL_NV_fragment_shader_interlock") {
+                    this.statement("#extension GL_NV_fragment_shader_interlock : require");
+                    this.statement("#define SPIRV_Cross_beginInvocationInterlock() beginInvocationInterlockNV()");
+                    this.statement("#define SPIRV_Cross_endInvocationInterlock() endInvocationInterlockNV()");
+                }
+                else if (ext === "GL_ARB_fragment_shader_interlock") {
+                    this.statement("#ifdef GL_ARB_fragment_shader_interlock");
+                    this.statement("#extension GL_ARB_fragment_shader_interlock : enable");
+                    this.statement("#define SPIRV_Cross_beginInvocationInterlock() beginInvocationInterlockARB()");
+                    this.statement("#define SPIRV_Cross_endInvocationInterlock() endInvocationInterlockARB()");
+                    this.statement("#elif defined(GL_INTEL_fragment_shader_ordering)");
+                    this.statement("#extension GL_INTEL_fragment_shader_ordering : enable");
+                    this.statement("#define SPIRV_Cross_beginInvocationInterlock() beginFragmentShaderOrderingINTEL()");
+                    this.statement("#define SPIRV_Cross_endInvocationInterlock()");
+                    this.statement("#endif");
+                }
+                else
+                    this.statement("#extension ", ext, " : require");
+            }
+            // subgroups not supported
+            /*if (!options.vulkan_semantics)
+            {
+                const Supp = ShaderSubgroupSupportHelper;
+                const result = shader_subgroup_supporter.resolve();
+
+                for (let feature_index = 0; feature_index < Supp::FeatureCount; feature_index++)
+                {
+                    auto feature = static_cast<Supp::Feature>(feature_index);
+                    if (!shader_subgroup_supporter.is_feature_requested(feature))
+                        continue;
+
+                    auto exts = Supp::get_candidates_for_feature(feature, result);
+                    if (exts.empty())
+                        continue;
+
+                    statement("");
+
+                    for (auto &ext : exts)
+                    {
+                        const char *name = Supp::get_extension_name(ext);
+                        const char *extra_predicate = Supp::get_extra_required_extension_predicate(ext);
+                        auto extra_names = Supp::get_extra_required_extension_names(ext);
+                        statement(&ext !== &exts.front() ? "#elif" : "#if", " defined(", name, ")",
+                            (*extra_predicate !== '\0' ? " && " : ""), extra_predicate);
+                        for (const auto &e : extra_names)
+                        statement("#extension ", e, " : enable");
+                        statement("#extension ", name, " : require");
+                    }
+
+                    if (!Supp::can_feature_be_implemented_without_extensions(feature))
+                    {
+                        statement("#else");
+                        statement("#error No extensions available to emulate requested subgroup feature.");
+                    }
+
+                    statement("#endif");
+                }
+            }*/
+            for (var _b = 0, _c = this.header_lines; _b < _c.length; _b++) {
+                var header = _c[_b];
+                this.statement(header);
+            }
+            var inputs = [];
+            var outputs = [];
+            switch (execution.model) {
+                case ExecutionModel.ExecutionModelVertex:
+                    if (options.ovr_multiview_view_count)
+                        inputs.push("num_views = " + options.ovr_multiview_view_count);
+                    break;
+                /*case ExecutionModelGeometry:
+                    if ((execution.flags.get(ExecutionModeInvocations)) && execution.invocations !== 1)
+                        inputs.push(join("invocations = ", execution.invocations));
+                    if (execution.flags.get(ExecutionModeInputPoints))
+                        inputs.push("points");
+                    if (execution.flags.get(ExecutionModeInputLines))
+                        inputs.push("lines");
+                    if (execution.flags.get(ExecutionModeInputLinesAdjacency))
+                        inputs.push("lines_adjacency");
+                    if (execution.flags.get(ExecutionModeTriangles))
+                        inputs.push("triangles");
+                    if (execution.flags.get(ExecutionModeInputTrianglesAdjacency))
+                        inputs.push("triangles_adjacency");
+
+                    if (!execution.geometry_passthrough)
+                    {
+                        // For passthrough, these are implies and cannot be declared in shader.
+                        outputs.push(join("max_vertices = ", execution.output_vertices));
+                        if (execution.flags.get(ExecutionModeOutputTriangleStrip))
+                            outputs.push("triangle_strip");
+                        if (execution.flags.get(ExecutionModeOutputPoints))
+                            outputs.push("points");
+                        if (execution.flags.get(ExecutionModeOutputLineStrip))
+                            outputs.push("line_strip");
+                    }
+                    break;
+
+                case ExecutionModelTessellationControl:
+                    if (execution.flags.get(ExecutionModeOutputVertices))
+                        outputs.push(join("vertices = ", execution.output_vertices));
+                    break;
+
+                case ExecutionModelTessellationEvaluation:
+                    if (execution.flags.get(ExecutionModeQuads))
+                        inputs.push("quads");
+                    if (execution.flags.get(ExecutionModeTriangles))
+                        inputs.push("triangles");
+                    if (execution.flags.get(ExecutionModeIsolines))
+                        inputs.push("isolines");
+                    if (execution.flags.get(ExecutionModePointMode))
+                        inputs.push("point_mode");
+
+                    if (!execution.flags.get(ExecutionModeIsolines))
+                    {
+                        if (execution.flags.get(ExecutionModeVertexOrderCw))
+                            inputs.push("cw");
+                        if (execution.flags.get(ExecutionModeVertexOrderCcw))
+                            inputs.push("ccw");
+                    }
+
+                    if (execution.flags.get(ExecutionModeSpacingFractionalEven))
+                        inputs.push("fractional_even_spacing");
+                    if (execution.flags.get(ExecutionModeSpacingFractionalOdd))
+                        inputs.push("fractional_odd_spacing");
+                    if (execution.flags.get(ExecutionModeSpacingEqual))
+                        inputs.push("equal_spacing");
+                    break;
+
+                case ExecutionModelGLCompute:
+                {
+                    if (execution.workgroup_size.constant !== 0 || execution.flags.get(ExecutionModeLocalSizeId))
+                    {
+                        SpecializationConstant wg_x, wg_y, wg_z;
+                        get_work_group_size_specialization_constants(wg_x, wg_y, wg_z);
+
+                        // If there are any spec constants on legacy GLSL, defer declaration, we need to set up macro
+                        // declarations before we can emit the work group size.
+                        if (options.vulkan_semantics ||
+                            ((wg_x.id === ConstantID(0)) && (wg_y.id === ConstantID(0)) && (wg_z.id === ConstantID(0))))
+                            build_workgroup_size(inputs, wg_x, wg_y, wg_z);
+                    }
+                    else
+                    {
+                        inputs.push(join("local_size_x = ", execution.workgroup_size.x));
+                        inputs.push(join("local_size_y = ", execution.workgroup_size.y));
+                        inputs.push(join("local_size_z = ", execution.workgroup_size.z));
+                    }
+                    break;
+                }*/
+                case ExecutionModel.ExecutionModelFragment:
+                    if (options.es) {
+                        switch (options.fragment.default_float_precision) {
+                            case GLSLPrecision.Lowp:
+                                this.statement("precision lowp float;");
+                                break;
+                            case GLSLPrecision.Mediump:
+                                this.statement("precision mediump float;");
+                                break;
+                            case GLSLPrecision.Highp:
+                                this.statement("precision highp float;");
+                                break;
+                        }
+                        switch (options.fragment.default_int_precision) {
+                            case GLSLPrecision.Lowp:
+                                this.statement("precision lowp int;");
+                                break;
+                            case GLSLPrecision.Mediump:
+                                this.statement("precision mediump int;");
+                                break;
+                            case GLSLPrecision.Highp:
+                                this.statement("precision highp int;");
+                                break;
+                        }
+                    }
+                    if (execution.flags.get(ExecutionMode.ExecutionModeEarlyFragmentTests))
+                        inputs.push("early_fragment_tests");
+                    if (execution.flags.get(ExecutionMode.ExecutionModePostDepthCoverage))
+                        inputs.push("post_depth_coverage");
+                    if (interlock_used)
+                        this.statement("#if defined(GL_ARB_fragment_shader_interlock)");
+                    if (execution.flags.get(ExecutionMode.ExecutionModePixelInterlockOrderedEXT))
+                        this.statement("layout(pixel_interlock_ordered) in;");
+                    else if (execution.flags.get(ExecutionMode.ExecutionModePixelInterlockUnorderedEXT))
+                        this.statement("layout(pixel_interlock_unordered) in;");
+                    else if (execution.flags.get(ExecutionMode.ExecutionModeSampleInterlockOrderedEXT))
+                        this.statement("layout(sample_interlock_ordered) in;");
+                    else if (execution.flags.get(ExecutionMode.ExecutionModeSampleInterlockUnorderedEXT))
+                        this.statement("layout(sample_interlock_unordered) in;");
+                    if (interlock_used) {
+                        this.statement("#elif !defined(GL_INTEL_fragment_shader_ordering)");
+                        this.statement("#error Fragment Shader Interlock/Ordering extension missing!");
+                        this.statement("#endif");
+                    }
+                    if (!options.es && execution.flags.get(ExecutionMode.ExecutionModeDepthGreater))
+                        this.statement("layout(depth_greater) out float gl_FragDepth;");
+                    else if (!options.es && execution.flags.get(ExecutionMode.ExecutionModeDepthLess))
+                        this.statement("layout(depth_less) out float gl_FragDepth;");
+                    break;
+            }
+            /*for (let cap of ir.declared_capabilities)
+                if (cap === Capability.CapabilityRayTraversalPrimitiveCullingKHR) {
+                    throw new error("Raytracing not supported");
+                    this.statement("layout(primitive_culling);");
+                }*/
+            if (inputs.length > 0)
+                this.statement("layout(", inputs.join(", "), ") in;");
+            if (outputs.length > 0)
+                this.statement("layout(", outputs.join(", "), ") out;");
+            this.statement("");
+        };
+        CompilerGLSL.prototype.emit_struct_member = function (type, member_type_id, index, qualifier, base_offset) {
+            if (qualifier === void 0) { qualifier = ""; }
+            var membertype = this.get(SPIRType, member_type_id);
+            var ir = this.ir;
+            var memberflags;
+            var memb = maplike_get(Meta, ir.meta, type.self).members;
+            if (index < memb.length)
+                memberflags = memb[index].decoration_flags;
+            else
+                memberflags = new Bitset();
+            var qualifiers = "";
+            var flags = maplike_get(Meta, ir.meta, type.self).decoration.decoration_flags;
+            var is_block = flags.get(Decoration.DecorationBlock) || flags.get(Decoration.DecorationBufferBlock);
+            if (is_block)
+                qualifiers = this.to_interpolation_qualifiers(memberflags);
+            this.statement(this.layout_for_member(type, index), qualifiers, qualifier, this.flags_to_qualifiers_glsl(membertype, memberflags), this.variable_decl(membertype, this.to_member_name(type, index)), ";");
+        };
+        CompilerGLSL.prototype.emit_struct_padding_target = function (_) {
+        };
+        CompilerGLSL.prototype.emit_buffer_block = function (var_) {
+            var type = this.get(SPIRType, var_.basetype);
+            var ubo_block = var_.storage === StorageClass.StorageClassUniform && this.has_decoration(type.self, Decoration.DecorationBlock);
+            var options = this.options;
+            if (this.flattened_buffer_blocks.has(var_.self))
+                this.emit_buffer_block_flattened(var_);
+            else if (this.is_legacy() || (!options.es && options.version === 130) ||
+                (ubo_block && options.emit_uniform_buffer_as_plain_uniforms))
+                this.emit_buffer_block_legacy(var_);
+            else
+                this.emit_buffer_block_native(var_);
+        };
+        CompilerGLSL.prototype.emit_push_constant_block = function (var_) {
+            var options = this.options;
+            if (this.flattened_buffer_blocks.has(var_.self))
+                this.emit_buffer_block_flattened(var_);
+            // else if (options.vulkan_semantics)
+            //         this.emit_push_constant_block_vulkan(var_);
+            else if (options.emit_push_constant_as_uniform_buffer)
+                this.emit_buffer_block_native(var_);
+            else
+                this.emit_push_constant_block_glsl(var_);
+        };
+        CompilerGLSL.prototype.emit_buffer_block_legacy = function (var_) {
+            var type = this.get(SPIRType, var_.basetype);
+            var ir = this.ir;
+            var ssbo = var_.storage === StorageClass.StorageClassStorageBuffer ||
+                ir.meta[type.self].decoration.decoration_flags.get(Decoration.DecorationBufferBlock);
+            if (ssbo)
+                throw new Error("SSBOs not supported in legacy targets.");
+            // We're emitting the push constant block as a regular struct, so disable the block qualifier temporarily.
+            // Otherwise, we will end up emitting layout() qualifiers on naked structs which is not allowed.
+            var block_flags = ir.meta[type.self].decoration.decoration_flags;
+            var block_flag = block_flags.get(Decoration.DecorationBlock);
+            block_flags.clear(Decoration.DecorationBlock);
+            this.emit_struct(type);
+            if (block_flag)
+                block_flags.set(Decoration.DecorationBlock);
+            this.emit_uniform(var_);
+            this.statement("");
+        };
+        CompilerGLSL.prototype.emit_buffer_block_flattened = function (var_) {
+            var type = this.get(SPIRType, var_.basetype);
+            // Block names should never alias.
+            var buffer_name = this.to_name(type.self, false);
+            var buffer_size = (this.get_declared_struct_size(type) + 15) / 16;
+            var basic_type = this.get_common_basic_type(type);
+            if (basic_type !== undefined) {
+                var tmp = new SPIRType();
+                tmp.basetype = basic_type;
+                tmp.vecsize = 4;
+                if (basic_type !== SPIRTypeBaseType.Float && basic_type !== SPIRTypeBaseType.Int && basic_type !== SPIRTypeBaseType.UInt)
+                    throw new Error("Basic types in a flattened UBO must be float, int or uint.");
+                var flags = this.ir.get_buffer_block_flags(var_);
+                this.statement("uniform ", this.flags_to_qualifiers_glsl(tmp, flags), this.type_to_glsl(tmp), " ", buffer_name, "[", buffer_size, "];");
+            }
+            else
+                throw new Error("All basic types in a flattened block must be the same.");
+        };
+        CompilerGLSL.prototype.emit_flattened_io_block = function (var_, qual) {
+            var var_type = this.get(SPIRType, var_.basetype);
+            if (var_type.array.length > 0)
+                throw new Error("Array of varying structs cannot be flattened to legacy-compatible varyings.");
+            // Emit flattened types based on the type alias. Normally, we are never supposed to emit
+            // struct declarations for aliased types.
+            var type = var_type.type_alias ? this.get(SPIRType, var_type.type_alias) : var_type;
+            var ir = this.ir;
+            var dec = maplike_get(Meta, ir.meta, type.self).decoration;
+            var old_flags = dec.decoration_flags.clone();
+            // Emit the members as if they are part of a block to get all qualifiers.
+            dec.decoration_flags.set(Decoration.DecorationBlock);
+            type.member_name_cache.clear();
+            var member_indices = [];
+            member_indices.push(0);
+            var basename = this.to_name(var_.self);
+            var i = 0;
+            for (var _i = 0, _a = type.member_types; _i < _a.length; _i++) {
+                var member = _a[_i];
+                this.add_member_name(type, i);
+                var membertype = this.get(SPIRType, member);
+                member_indices[member_indices.length - 1] = i;
+                if (membertype.basetype === SPIRTypeBaseType.Struct)
+                    this.emit_flattened_io_block_struct(basename, type, qual, member_indices);
+                else
+                    this.emit_flattened_io_block_member(basename, type, qual, member_indices);
+                i++;
+            }
+            dec.decoration_flags = old_flags;
+            // Treat this variable as fully flattened from now on.
+            this.flattened_structs[var_.self] = true;
+        };
+        CompilerGLSL.prototype.emit_flattened_io_block_struct = function (basename, type, qual, indices) {
+            var sub_indices = indices.concat();
+            sub_indices.push(0);
+            var member_type = type;
+            for (var _i = 0, indices_1 = indices; _i < indices_1.length; _i++) {
+                var index = indices_1[_i];
+                member_type = this.get(SPIRType, member_type.member_types[index]);
+            }
+            console.assert(member_type.basetype === SPIRTypeBaseType.Struct);
+            if (member_type.array.length > 0)
+                throw new Error("Cannot flatten array of structs in I/O blocks.");
+            for (var i = 0; i < member_type.member_types.length; i++) {
+                sub_indices[sub_indices.length - 1] = i;
+                if (this.get(SPIRType, member_type.member_types[i]).basetype === SPIRTypeBaseType.Struct)
+                    this.emit_flattened_io_block_struct(basename, type, qual, sub_indices);
+                else
+                    this.emit_flattened_io_block_member(basename, type, qual, sub_indices);
+            }
+        };
+        CompilerGLSL.prototype.emit_flattened_io_block_member = function (basename, type, qual, indices) {
+            var member_type_id = type.self;
+            var member_type = type;
+            var parent_type = null;
+            var flattened_name = basename;
+            for (var _i = 0, indices_2 = indices; _i < indices_2.length; _i++) {
+                var index = indices_2[_i];
+                flattened_name += "_";
+                flattened_name += this.to_member_name(member_type, index);
+                parent_type = member_type;
+                member_type_id = member_type.member_types[index];
+                member_type = this.get(SPIRType, member_type_id);
+            }
+            console.assert(member_type.basetype !== SPIRTypeBaseType.Struct);
+            // We're overriding struct member names, so ensure we do so on the primary type.
+            if (parent_type.type_alias)
+                parent_type = this.get(SPIRType, parent_type.type_alias);
+            // Sanitize underscores because joining the two identifiers might create more than 1 underscore in a row,
+            // which is not allowed.
+            flattened_name = ParsedIR.sanitize_underscores(flattened_name);
+            var last_index = indices[indices.length - 1];
+            // Pass in the varying qualifier here so it will appear in the correct declaration order.
+            // Replace member name while emitting it so it encodes both struct name and member name.
+            this.get_member_name(parent_type.self, last_index);
+            var member_name = this.to_member_name(parent_type, last_index);
+            this.set_member_name(parent_type.self, last_index, flattened_name);
+            this.emit_struct_member(parent_type, member_type_id, last_index, qual);
+            // Restore member name.
+            this.set_member_name(parent_type.self, last_index, member_name);
+        };
+        CompilerGLSL.prototype.emit_uniform = function (var_) {
+            var type = this.get(SPIRType, var_.basetype);
+            var options = this.options;
+            if (type.basetype === SPIRTypeBaseType.Image && type.image.sampled === 2 && type.image.dim !== Dim.DimSubpassData) {
+                if (!options.es && options.version < 420)
+                    this.require_extension_internal("GL_ARB_shader_image_load_store");
+                else if (options.es && options.version < 310)
+                    throw new Error("At least ESSL 3.10 required for shader image load store.");
+            }
+            this.add_resource_name(var_.self);
+            this.statement(this.layout_for_variable(var_), this.variable_decl(var_), ";");
+        };
         // Converts the format of the current expression from packed to unpacked,
         // by wrapping the expression in a constructor of the appropriate type.
         // GLSL does not support packed formats, so simply return the expression.
         // Subclasses that do will override.
         CompilerGLSL.prototype.unpack_expression_type = function (expr_str, _0, _1, _2, _3) {
             return expr_str;
+        };
+        CompilerGLSL.prototype.builtin_translates_to_nonarray = function (_) {
+            return false;
         };
         CompilerGLSL.prototype.statement_inner = function () {
             var args = [];
@@ -8968,13 +10277,191 @@ var SPIRV = (function (exports) {
                 return res;
             }
         };
+        CompilerGLSL.prototype.constant_op_expression = function (cop) {
+            var type = this.get(SPIRType, cop.basetype);
+            var binary = false;
+            var unary = false;
+            var op = "";
+            if (this.is_legacy() && is_unsigned_opcode(cop.opcode))
+                throw new Error("Unsigned integers are not supported on legacy targets.");
+            // TODO: Find a clean way to reuse emit_instruction.
+            switch (cop.opcode) {
+                case Op.OpSConvert:
+                case Op.OpUConvert:
+                case Op.OpFConvert:
+                    op = this.type_to_glsl_constructor(type);
+                    break;
+                case Op.OpSNegate:
+                case Op.OpNot:
+                case Op.OpLogicalNot:
+                    unary = true;
+                    op = ops[cop.opcode];
+                    break;
+                case Op.OpIAdd:
+                case Op.OpISub:
+                case Op.OpIMul:
+                case Op.OpSDiv:
+                case Op.OpUDiv:
+                case Op.OpUMod:
+                case Op.OpSMod:
+                case Op.OpShiftRightLogical:
+                case Op.OpShiftRightArithmetic:
+                case Op.OpShiftLeftLogical:
+                case Op.OpBitwiseOr:
+                case Op.OpBitwiseXor:
+                case Op.OpBitwiseAnd:
+                case Op.OpLogicalOr:
+                case Op.OpLogicalAnd:
+                case Op.OpLogicalEqual:
+                case Op.OpLogicalNotEqual:
+                case Op.OpIEqual:
+                case Op.OpINotEqual:
+                case Op.OpULessThan:
+                case Op.OpSLessThan:
+                case Op.OpULessThanEqual:
+                case Op.OpSLessThanEqual:
+                case Op.OpUGreaterThan:
+                case Op.OpSGreaterThan:
+                case Op.OpUGreaterThanEqual:
+                case Op.OpSGreaterThanEqual:
+                    binary = true;
+                    op = ops[cop.opcode];
+                    break;
+                case Op.OpSRem: {
+                    var op0 = cop.arguments[0];
+                    var op1 = cop.arguments[1];
+                    return this.to_enclosed_expression(op0) + " - " + this.to_enclosed_expression(op1) + " * (",
+                        this.to_enclosed_expression(op0) + " / " + this.to_enclosed_expression(op1) + ")";
+                }
+                case Op.OpSelect: {
+                    if (cop.arguments.length < 3)
+                        throw new Error("Not enough arguments to OpSpecConstantOp.");
+                    // This one is pretty annoying. It's triggered from
+                    // uint(bool), int(bool) from spec constants.
+                    // In order to preserve its compile-time constness in Vulkan GLSL,
+                    // we need to reduce the OpSelect expression back to this simplified model.
+                    // If we cannot, fail.
+                    var _op = this.to_trivial_mix_op(type, cop.arguments[2], cop.arguments[1], cop.arguments[0]);
+                    if (_op) {
+                        op = _op;
+                        // Implement as a simple cast down below.
+                    }
+                    else {
+                        // Implement a ternary and pray the compiler understands it :)
+                        return this.to_ternary_expression(type, cop.arguments[0], cop.arguments[1], cop.arguments[2]);
+                    }
+                    break;
+                }
+                case Op.OpVectorShuffle: {
+                    var expr = this.type_to_glsl_constructor(type);
+                    expr += "(";
+                    var left_components = this.expression_type(cop.arguments[0]).vecsize;
+                    var left_arg = this.to_enclosed_expression(cop.arguments[0]);
+                    var right_arg = this.to_enclosed_expression(cop.arguments[1]);
+                    for (var i = 2; i < cop.arguments.length; i++) {
+                        var index = cop.arguments[i];
+                        if (index >= left_components)
+                            expr += right_arg + "." + "xyzw"[index - left_components];
+                        else
+                            expr += left_arg + "." + "xyzw"[index];
+                        if (i + 1 < cop.arguments.length)
+                            expr += ", ";
+                    }
+                    expr += ")";
+                    return expr;
+                }
+                case Op.OpCompositeExtract: {
+                    var expr = this.access_chain_internal(cop.arguments[0], cop.arguments.slice(1), cop.arguments.length - 1, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, null);
+                    return expr;
+                }
+                case Op.OpCompositeInsert:
+                    throw new Error("OpCompositeInsert spec constant op is not supported.");
+                default:
+                    // Some opcodes are unimplemented here, these are currently not possible to test from glslang.
+                    throw new Error("Unimplemented spec constant op.");
+            }
+            var bit_width = 0;
+            if (unary || binary || cop.opcode === Op.OpSConvert || cop.opcode === Op.OpUConvert)
+                bit_width = this.expression_type(cop.arguments[0]).width;
+            var input_type;
+            var skip_cast_if_equal_type = opcode_is_sign_invariant(cop.opcode);
+            switch (cop.opcode) {
+                case Op.OpIEqual:
+                case Op.OpINotEqual:
+                    input_type = to_signed_basetype(bit_width);
+                    break;
+                case Op.OpSLessThan:
+                case Op.OpSLessThanEqual:
+                case Op.OpSGreaterThan:
+                case Op.OpSGreaterThanEqual:
+                case Op.OpSMod:
+                case Op.OpSDiv:
+                case Op.OpShiftRightArithmetic:
+                case Op.OpSConvert:
+                case Op.OpSNegate:
+                    input_type = to_signed_basetype(bit_width);
+                    break;
+                case Op.OpULessThan:
+                case Op.OpULessThanEqual:
+                case Op.OpUGreaterThan:
+                case Op.OpUGreaterThanEqual:
+                case Op.OpUMod:
+                case Op.OpUDiv:
+                case Op.OpShiftRightLogical:
+                case Op.OpUConvert:
+                    input_type = to_unsigned_basetype(bit_width);
+                    break;
+                default:
+                    input_type = type.basetype;
+                    break;
+            }
+            if (binary) {
+                if (cop.arguments.length < 2)
+                    throw new Error("Not enough arguments to OpSpecConstantOp.");
+                var props = { cast_op0: "", cast_op1: "", input_type: input_type };
+                var expected_type = this.binary_op_bitcast_helper(props, cop.arguments[0], cop.arguments[1], skip_cast_if_equal_type);
+                input_type = props.input_type;
+                if (type.basetype !== input_type && type.basetype !== SPIRTypeBaseType.Boolean) {
+                    expected_type.basetype = input_type;
+                    var expr = this.bitcast_glsl_op(type, expected_type);
+                    expr += "(" + props.cast_op0 + " " + op + " " + props.cast_op1 + ")";
+                    return expr;
+                }
+                else
+                    return "(" + props.cast_op0 + " " + op + " " + props.cast_op1 + ")";
+            }
+            else if (unary) {
+                if (cop.arguments.length < 1)
+                    throw new Error("Not enough arguments to OpSpecConstantOp.");
+                // Auto-bitcast to result type as needed.
+                // Works around various casting scenarios in glslang as there is no OpBitcast for specialization constants.
+                return "(" + op + this.bitcast_glsl(type, cop.arguments[0]) + ")";
+            }
+            else if (cop.opcode === Op.OpSConvert || cop.opcode === Op.OpUConvert) {
+                if (cop.arguments.length < 1)
+                    throw new Error("Not enough arguments to OpSpecConstantOp.");
+                var arg_type = this.expression_type(cop.arguments[0]);
+                if (arg_type.width < type.width && input_type !== arg_type.basetype) {
+                    var expected = arg_type;
+                    expected.basetype = input_type;
+                    return op + "(" + this.bitcast_glsl(expected, cop.arguments[0]) + ")";
+                }
+                else
+                    return op + "(" + this.to_expression(cop.arguments[0]) + ")";
+            }
+            else {
+                if (cop.arguments.length < 1)
+                    throw new Error("Not enough arguments to OpSpecConstantOp.");
+                return op + "(" + this.to_expression(cop.arguments[0]) + ")";
+            }
+        };
         CompilerGLSL.prototype.constant_expression_vector = function (c, vector) {
             var type = this.get(SPIRType, c.constant_type);
             type.columns = 1;
             var scalar_type = type;
             scalar_type.vecsize = 1;
             var backend = this.backend;
-            var res;
+            var res = "";
             var splat = backend.use_constructor_splatting && c.vector_size() > 1;
             var swizzle_splat = backend.can_swizzle_scalar && c.vector_size() > 1;
             if (!type_is_floating_point(type)) {
@@ -9290,6 +10777,53 @@ var SPIRV = (function (exports) {
                 this.buffer.append("\n");
             }
         };
+        CompilerGLSL.prototype.statement_no_indent = function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            var old_indent = this.indent;
+            this.indent = 0;
+            this.statement.apply(this, args);
+            this.indent = old_indent;
+        };
+        CompilerGLSL.prototype.begin_scope = function () {
+            this.statement("{");
+            this.indent++;
+        };
+        CompilerGLSL.prototype.end_scope = function (trailer) {
+            if (!this.indent)
+                throw new Error("Popping empty indent stack.");
+            this.indent--;
+            if (trailer)
+                this.statement("}", trailer);
+            else
+                this.statement("}");
+        };
+        CompilerGLSL.prototype.end_scope_decl = function (decl) {
+            if (!this.indent)
+                throw new Error("Popping empty indent stack.");
+            this.indent--;
+            if (decl)
+                this.statement("} ", decl, ";");
+            else
+                this.statement("};");
+        };
+        CompilerGLSL.prototype.add_resource_name = function (id) {
+            var dec = maplike_get(Meta, this.ir.meta, id).decoration;
+            dec.alias = this.add_variable(this.resource_names, this.block_names, dec.alias);
+        };
+        CompilerGLSL.prototype.add_member_name = function (type, index) {
+            var memb = maplike_get(Meta, this.ir.meta, type.self).members;
+            if (index < memb.length && memb[index].alias !== "") {
+                var name_2 = memb[index].alias;
+                if (name_2 === "")
+                    return;
+                name_2 = ParsedIR.sanitize_identifier(name_2, true, true);
+                name_2 = this.update_name_cache(type.member_name_cache, name_2);
+                memb[index].alias = name_2;
+            }
+        };
         CompilerGLSL.prototype.type_to_array_glsl = function (type) {
             if (type.pointer && type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT && type.basetype !== SPIRTypeBaseType.Struct) {
                 // We are using a wrapped pointer type, and we should not emit any array declarations here.
@@ -9346,7 +10880,21 @@ var SPIRV = (function (exports) {
             else
                 return "";
         };
+        CompilerGLSL.prototype.to_array_size_literal = function (type, index) {
+            if (index === undefined)
+                index = type.array.length - 1;
+            console.assert(type.array.length === type.array_size_literal.length);
+            if (type.array_size_literal[index]) {
+                return type.array[index];
+            }
+            else {
+                // Use the default spec constant value.
+                // This is the best we can do.
+                return this.evaluate_constant_u32(type.array[index]);
+            }
+        };
         CompilerGLSL.prototype.variable_decl = function (variable, name, id) {
+            if (id === void 0) { id = 0; }
             if (name !== undefined) {
                 // first overload
                 var type_1 = variable;
@@ -9380,6 +10928,38 @@ var SPIRV = (function (exports) {
         };
         CompilerGLSL.prototype.variable_decl_is_remapped_storage = function (var_, storage) {
             return var_.storage === storage;
+        };
+        CompilerGLSL.prototype.is_non_native_row_major_matrix = function (id) {
+            // Natively supported row-major matrices do not need to be converted.
+            // Legacy targets do not support row major.
+            if (this.backend.native_row_major_matrix && !this.is_legacy())
+                return false;
+            var e = this.maybe_get(SPIRExpression, id);
+            if (e)
+                return e.need_transpose;
+            else
+                return this.has_decoration(id, Decoration.DecorationRowMajor);
+        };
+        CompilerGLSL.prototype.member_is_non_native_row_major_matrix = function (type, index) {
+            // Natively supported row-major matrices do not need to be converted.
+            if (this.backend.native_row_major_matrix && !this.is_legacy())
+                return false;
+            // Non-matrix or column-major matrix types do not need to be converted.
+            if (!this.has_member_decoration(type.self, index, Decoration.DecorationRowMajor))
+                return false;
+            // Only square row-major matrices can be converted at this time.
+            // Converting non-square matrices will require defining custom GLSL function that
+            // swaps matrix elements while retaining the original dimensional form of the matrix.
+            var mbr_type = this.get(SPIRType, type.member_types[index]);
+            if (mbr_type.columns !== mbr_type.vecsize)
+                throw new Error("Row-major matrices must be square on this platform.");
+            return true;
+        };
+        CompilerGLSL.prototype.member_is_remapped_physical_type = function (type, index) {
+            return this.has_extended_member_decoration(type.self, index, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID);
+        };
+        CompilerGLSL.prototype.member_is_packed_physical_type = function (type, index) {
+            return this.has_extended_member_decoration(type.self, index, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked);
         };
         // Wraps the expression string in a function call that converts the
         // row_major matrix result of the expression to a column_major matrix.
@@ -9431,6 +11011,814 @@ var SPIRV = (function (exports) {
             else
                 return "transpose(".concat(exp_str, ")");
         };
+        CompilerGLSL.prototype.preserve_alias_on_reset = function (id) {
+            this.preserved_aliases[id] = this.get_name(id);
+        };
+        CompilerGLSL.prototype.reset_name_caches = function () {
+            var _this = this;
+            this.preserved_aliases.forEach(function (preserved_second, preserved_first) {
+                return _this.set_name(preserved_first, preserved_second);
+            });
+            this.preserved_aliases = [];
+            this.resource_names.clear();
+            this.block_input_names.clear();
+            this.block_output_names.clear();
+            this.block_ubo_names.clear();
+            this.block_ssbo_names.clear();
+            this.block_names.clear();
+            this.function_overloads = {};
+        };
+        CompilerGLSL.prototype.emit_struct = function (type) {
+            // Struct types can be stamped out multiple times
+            // with just different offsets, matrix layouts, etc ...
+            // Type-punning with these types is legal, which complicates things
+            // when we are storing struct and array types in an SSBO for example.
+            // If the type master is packed however, we can no longer assume that the struct declaration will be redundant.
+            if (type.type_alias !== (0) && !this.has_extended_decoration(type.type_alias, ExtendedDecorations.SPIRVCrossDecorationBufferBlockRepacked))
+                return;
+            this.add_resource_name(type.self);
+            var name = this.type_to_glsl(type);
+            var backend = this.backend;
+            this.statement(!backend.explicit_struct_type ? "struct " : "", name);
+            this.begin_scope();
+            type.member_name_cache.clear();
+            var i = 0;
+            var emitted = false;
+            for (var _i = 0, _a = type.member_types; _i < _a.length; _i++) {
+                var member = _a[_i];
+                this.add_member_name(type, i);
+                this.emit_struct_member(type, member, i);
+                i++;
+                emitted = true;
+            }
+            // Don't declare empty structs in GLSL, this is not allowed.
+            if (this.type_is_empty(type) && !backend.supports_empty_struct) {
+                this.statement("int empty_struct_member;");
+                emitted = true;
+            }
+            if (this.has_extended_decoration(type.self, ExtendedDecorations.SPIRVCrossDecorationPaddingTarget))
+                this.emit_struct_padding_target(type);
+            this.end_scope_decl();
+            if (emitted)
+                this.statement("");
+        };
+        CompilerGLSL.prototype.emit_resources = function () {
+            var _this = this;
+            var execution = this.get_entry_point();
+            var options = this.options;
+            var ir = this.ir;
+            this.replace_illegal_names();
+            // Legacy GL uses gl_FragData[], redeclare all fragment outputs
+            // with builtins.
+            if (execution.model === ExecutionModel.ExecutionModelFragment && this.is_legacy())
+                this.replace_fragment_outputs();
+            // Emit PLS blocks if we have such variables.
+            if (this.pls_inputs.length > 0 || this.pls_outputs.length > 0)
+                this.emit_pls();
+            /*switch (execution.model)
+            {
+                case ExecutionModelGeometry:
+                case ExecutionModelTessellationControl:
+                case ExecutionModelTessellationEvaluation:
+                    fixup_implicit_builtin_block_names();
+                    break;
+
+                default:
+                    break;
+            }*/
+            // Emit custom gl_PerVertex for SSO compatibility.
+            if (options.separate_shader_objects && !options.es && execution.model !== ExecutionModel.ExecutionModelFragment) {
+                switch (execution.model) {
+                    /*case ExecutionModelGeometry:
+                    case ExecutionModelTessellationControl:
+                    case ExecutionModelTessellationEvaluation:
+                        emit_declared_builtin_block(StorageClassInput, execution.model);
+                        emit_declared_builtin_block(StorageClassOutput, execution.model);
+                        break;*/
+                    case ExecutionModel.ExecutionModelVertex:
+                        this.emit_declared_builtin_block(StorageClass.StorageClassOutput, execution.model);
+                        break;
+                }
+            }
+            else if (this.should_force_emit_builtin_block(StorageClass.StorageClassOutput)) {
+                this.emit_declared_builtin_block(StorageClass.StorageClassOutput, execution.model);
+            }
+            else if (execution.geometry_passthrough) {
+                // Need to declare gl_in with Passthrough.
+                // If we're doing passthrough, we cannot emit an output block, so the output block test above will never pass.
+                this.emit_declared_builtin_block(StorageClass.StorageClassInput, execution.model);
+            }
+            else {
+                // Need to redeclare clip/cull distance with explicit size to use them.
+                // SPIR-V mandates these builtins have a size declared.
+                var storage = execution.model === ExecutionModel.ExecutionModelFragment ? "in" : "out";
+                if (this.clip_distance_count !== 0)
+                    this.statement(storage, " float gl_ClipDistance[", this.clip_distance_count, "];");
+                if (this.cull_distance_count !== 0)
+                    this.statement(storage, " float gl_CullDistance[", this.cull_distance_count, "];");
+                if (this.clip_distance_count !== 0 || this.cull_distance_count !== 0)
+                    this.statement("");
+            }
+            if (this.position_invariant) {
+                this.statement("invariant gl_Position;");
+                this.statement("");
+            }
+            var emitted = false;
+            // If emitted Vulkan GLSL,
+            // emit specialization constants as actual floats,
+            // spec op expressions will redirect to the constant name.
+            //
+            {
+                var loop_lock = ir.create_loop_hard_lock();
+                for (var _i = 0, _a = ir.ids_for_constant_or_type; _i < _a.length; _i++) {
+                    var id_ = _a[_i];
+                    var id = ir.ids[id_];
+                    if (id.get_type() === Types.TypeConstant) {
+                        var c = id.get(SPIRConstant);
+                        var needs_declaration = c.specialization || c.is_used_as_lut;
+                        if (needs_declaration) {
+                            if ( /*!options.vulkan_semantics &&*/c.specialization) {
+                                c.specialization_constant_macro_name =
+                                    this.constant_value_macro_name(this.get_decoration(c.self, Decoration.DecorationSpecId));
+                            }
+                            this.emit_constant(c);
+                            emitted = true;
+                        }
+                    }
+                    else if (id.get_type() === Types.TypeConstantOp) {
+                        this.emit_specialization_constant_op(id.get(SPIRConstantOp));
+                        emitted = true;
+                    }
+                    else if (id.get_type() === Types.TypeType) {
+                        var type = id.get(SPIRType);
+                        var is_natural_struct = type.basetype === SPIRTypeBaseType.Struct && type.array.length === 0 && type.pointer &&
+                            (!this.has_decoration(type.self, Decoration.DecorationBlock) &&
+                                !this.has_decoration(type.self, Decoration.DecorationBufferBlock));
+                        // Special case, ray payload and hit attribute blocks are not really blocks, just regular structs.
+                        /*if (type.basetype === SPIRTypeBaseType.Struct && type.pointer &&
+                            this.has_decoration(type.self, Decoration.DecorationBlock) &&
+                            (type.storage === StorageClass.StorageClassRayPayloadKHR || type.storage === StorageClass.StorageClassIncomingRayPayloadKHR ||
+                            type.storage === StorageClass.StorageClassHitAttributeKHR))
+                        {
+                            type = this.get<SPIRType>(SPIRType, type.parent_type);
+                            is_natural_struct = true;
+                        }*/
+                        if (is_natural_struct) {
+                            if (emitted)
+                                this.statement("");
+                            emitted = false;
+                            this.emit_struct(type);
+                        }
+                    }
+                }
+                loop_lock.dispose();
+            }
+            if (emitted)
+                this.statement("");
+            // If we needed to declare work group size late, check here.
+            // If the work group size depends on a specialization constant, we need to declare the layout() block
+            // after constants (and their macros) have been declared.
+            /*if (execution.model === ExecutionModelGLCompute && !options.vulkan_semantics &&
+                (execution.workgroup_size.constant !== 0 || execution.flags.get(ExecutionModeLocalSizeId)))
+            {
+                SpecializationConstant wg_x, wg_y, wg_z;
+                get_work_group_size_specialization_constants(wg_x, wg_y, wg_z);
+
+                if ((wg_x.id !== ConstantID(0)) || (wg_y.id !== ConstantID(0)) || (wg_z.id !== ConstantID(0)))
+                {
+                    SmallVector<string> inputs;
+                    build_workgroup_size(inputs, wg_x, wg_y, wg_z);
+                    statement("layout(", merge(inputs), ") in;");
+                    statement("");
+                }
+            }*/
+            emitted = false;
+            if (ir.addressing_model === AddressingModel.AddressingModelPhysicalStorageBuffer64EXT) {
+                for (var _b = 0, _c = this.physical_storage_non_block_pointer_types; _b < _c.length; _b++) {
+                    var type = _c[_b];
+                    this.emit_buffer_reference_block(type, false);
+                }
+                // Output buffer reference blocks.
+                // Do this in two stages, one with forward declaration,
+                // and one without. Buffer reference blocks can reference themselves
+                // to support things like linked lists.
+                ir.for_each_typed_id(SPIRType, function (self, type) {
+                    if (type.basetype === SPIRTypeBaseType.Struct && type.pointer &&
+                        type.pointer_depth === 1 && !_this.type_is_array_of_pointers(type) &&
+                        type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT) {
+                        _this.emit_buffer_reference_block(self, true);
+                    }
+                });
+                ir.for_each_typed_id(SPIRType, function (self, type) {
+                    if (type.basetype === SPIRTypeBaseType.Struct &&
+                        type.pointer && type.pointer_depth === 1 && !_this.type_is_array_of_pointers(type) &&
+                        type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT) {
+                        _this.emit_buffer_reference_block(self, false);
+                    }
+                });
+            }
+            // Output UBOs and SSBOs
+            ir.for_each_typed_id(SPIRVariable, function (_, var_) {
+                var type = _this.get(SPIRType, var_.basetype);
+                var is_block_storage = type.storage === StorageClass.StorageClassStorageBuffer ||
+                    type.storage === StorageClass.StorageClassUniform ||
+                    type.storage === StorageClass.StorageClassShaderRecordBufferKHR;
+                var has_block_flags = maplike_get(Meta, ir.meta, type.self).decoration.decoration_flags.get(Decoration.DecorationBlock) ||
+                    maplike_get(Meta, ir.meta, type.self).decoration.decoration_flags.get(Decoration.DecorationBufferBlock);
+                if (var_.storage !== StorageClass.StorageClassFunction && type.pointer && is_block_storage &&
+                    !_this.is_hidden_variable(var_) && has_block_flags) {
+                    _this.emit_buffer_block(var_);
+                }
+            });
+            // Output push constant blocks
+            ir.for_each_typed_id(SPIRVariable, function (_, var_) {
+                var type = _this.get(SPIRType, var_.basetype);
+                if (var_.storage !== StorageClass.StorageClassFunction && type.pointer &&
+                    type.storage === StorageClass.StorageClassPushConstant && !_this.is_hidden_variable(var_)) {
+                    _this.emit_push_constant_block(var_);
+                }
+            });
+            // Output Uniform Constants (values, samplers, images, etc).
+            ir.for_each_typed_id(SPIRVariable, function (_, var_) {
+                var type = _this.get(SPIRType, var_.basetype);
+                // If we're remapping separate samplers and images, only emit the combined samplers.
+                {
+                    // Sampler buffers are always used without a sampler, and they will also work in regular GL.
+                    var sampler_buffer = type.basetype === SPIRTypeBaseType.Image && type.image.dim === Dim.DimBuffer;
+                    var separate_image = type.basetype === SPIRTypeBaseType.Image && type.image.sampled === 1;
+                    var separate_sampler = type.basetype === SPIRTypeBaseType.Sampler;
+                    if (!sampler_buffer && (separate_image || separate_sampler))
+                        return;
+                }
+                if (var_.storage !== StorageClass.StorageClassFunction && type.pointer &&
+                    (type.storage === StorageClass.StorageClassUniformConstant || type.storage === StorageClass.StorageClassAtomicCounter ||
+                        type.storage === StorageClass.StorageClassRayPayloadKHR || type.storage === StorageClass.StorageClassIncomingRayPayloadKHR ||
+                        type.storage === StorageClass.StorageClassCallableDataKHR || type.storage === StorageClass.StorageClassIncomingCallableDataKHR ||
+                        type.storage === StorageClass.StorageClassHitAttributeKHR) && !_this.is_hidden_variable(var_)) {
+                    _this.emit_uniform(var_);
+                    emitted = true;
+                }
+            });
+            if (emitted)
+                this.statement("");
+            emitted = false;
+            var emitted_base_instance = false;
+            // Output in/out interfaces.
+            ir.for_each_typed_id(SPIRVariable, function (_, var_) {
+                var type = _this.get(SPIRType, var_.basetype);
+                var is_hidden = _this.is_hidden_variable(var_);
+                // Unused output I/O variables might still be required to implement framebuffer fetch.
+                if (var_.storage === StorageClass.StorageClassOutput && !_this.is_legacy() &&
+                    _this.location_is_framebuffer_fetch(_this.get_decoration(var_.self, Decoration.DecorationLocation)) /* !== 0*/) {
+                    is_hidden = false;
+                }
+                if (var_.storage !== StorageClass.StorageClassFunction && type.pointer &&
+                    (var_.storage === StorageClass.StorageClassInput || var_.storage === StorageClass.StorageClassOutput) &&
+                    _this.interface_variable_exists_in_entry_point(var_.self) && !is_hidden) {
+                    if (options.es && _this.get_execution_model() === ExecutionModel.ExecutionModelVertex &&
+                        var_.storage === StorageClass.StorageClassInput && type.array.length === 1) {
+                        throw new Error("OpenGL ES doesn't support array input variables in vertex shader.");
+                    }
+                    _this.emit_interface_block(var_);
+                    emitted = true;
+                }
+                else if (_this.is_builtin_variable(var_)) {
+                    var builtin = (_this.get_decoration(var_.self, Decoration.DecorationBuiltIn));
+                    // For gl_InstanceIndex emulation on GLES, the API user needs to
+                    // supply this uniform.
+                    // The draw parameter extension is soft-enabled on GL with some fallbacks.
+                    // if (!options.vulkan_semantics)
+                    // {
+                    if (!emitted_base_instance &&
+                        ((options.vertex.support_nonzero_base_instance && builtin === BuiltIn.BuiltInInstanceIndex) ||
+                            (builtin === BuiltIn.BuiltInBaseInstance))) {
+                        _this.statement("#ifdef GL_ARB_shader_draw_parameters");
+                        _this.statement("#define SPIRV_Cross_BaseInstance gl_BaseInstanceARB");
+                        _this.statement("#else");
+                        // A crude, but simple workaround which should be good enough for non-indirect draws.
+                        _this.statement("uniform int SPIRV_Cross_BaseInstance;");
+                        _this.statement("#endif");
+                        emitted = true;
+                        emitted_base_instance = true;
+                    }
+                    else if (builtin === BuiltIn.BuiltInBaseVertex) {
+                        _this.statement("#ifdef GL_ARB_shader_draw_parameters");
+                        _this.statement("#define SPIRV_Cross_BaseVertex gl_BaseVertexARB");
+                        _this.statement("#else");
+                        // A crude, but simple workaround which should be good enough for non-indirect draws.
+                        _this.statement("uniform int SPIRV_Cross_BaseVertex;");
+                        _this.statement("#endif");
+                    }
+                    else if (builtin === BuiltIn.BuiltInDrawIndex) {
+                        _this.statement("#ifndef GL_ARB_shader_draw_parameters");
+                        // Cannot really be worked around.
+                        _this.statement("#error GL_ARB_shader_draw_parameters is not supported.");
+                        _this.statement("#endif");
+                    }
+                    // }
+                }
+            });
+            // Global variables.
+            for (var _d = 0, _e = this.global_variables; _d < _e.length; _d++) {
+                var global_1 = _e[_d];
+                var var_ = this.get(SPIRVariable, global_1);
+                if (this.is_hidden_variable(var_, true))
+                    continue;
+                if (var_.storage !== StorageClass.StorageClassOutput) {
+                    if (!this.variable_is_lut(var_)) {
+                        this.add_resource_name(var_.self);
+                        var initializer = "";
+                        if (options.force_zero_initialized_variables && var_.storage === StorageClass.StorageClassPrivate &&
+                            !var_.initializer && !var_.static_expression && this.type_can_zero_initialize(this.get_variable_data_type(var_))) {
+                            initializer = " = " + this.to_zero_initialized_expression(this.get_variable_data_type_id(var_));
+                        }
+                        this.statement(this.variable_decl(var_), initializer, ";");
+                        emitted = true;
+                    }
+                }
+                else if (var_.initializer && this.maybe_get(SPIRConstant, var_.initializer) !== null) {
+                    this.emit_output_variable_initializer(var_);
+                }
+            }
+            if (emitted)
+                this.statement("");
+            this.declare_undefined_values();
+        };
+        CompilerGLSL.prototype.emit_buffer_block_native = function (var_) {
+            var type = this.get(SPIRType, var_.basetype);
+            var ir = this.ir;
+            var flags = ir.get_buffer_block_flags(var_);
+            var dec = maplike_get(Meta, ir.meta, type.self).decoration;
+            var ssbo = var_.storage === StorageClass.StorageClassStorageBuffer || var_.storage === StorageClass.StorageClassShaderRecordBufferKHR ||
+                dec.decoration_flags.get(Decoration.DecorationBufferBlock);
+            var is_restrict = ssbo && flags.get(Decoration.DecorationRestrict);
+            var is_writeonly = ssbo && flags.get(Decoration.DecorationNonReadable);
+            var is_readonly = ssbo && flags.get(Decoration.DecorationNonWritable);
+            var is_coherent = ssbo && flags.get(Decoration.DecorationCoherent);
+            // Block names should never alias, but from HLSL input they kind of can because block types are reused for UAVs ...
+            var buffer_name = this.to_name(type.self, false);
+            var block_namespace = ssbo ? this.block_ssbo_names : this.block_ubo_names;
+            // Shaders never use the block by interface name, so we don't
+            // have to track this other than updating name caches.
+            // If we have a collision for any reason, just fallback immediately.
+            if (dec.alias === "" || block_namespace.has(buffer_name) || this.resource_names.has(buffer_name)) {
+                buffer_name = this.get_block_fallback_name(var_.self);
+            }
+            // Make sure we get something unique for both global name scope and block name scope.
+            // See GLSL 4.5 spec: section 4.3.9 for details.
+            buffer_name = this.add_variable(block_namespace, this.resource_names, buffer_name);
+            // If for some reason buffer_name is an illegal name, make a final fallback to a workaround name.
+            // This cannot conflict with anything else, so we're safe now.
+            // We cannot reuse this fallback name in neither global scope (blocked by block_names) nor block name scope.
+            if (buffer_name === "")
+                buffer_name = "_" + this.get(SPIRType, var_.basetype).self + "_" + var_.self;
+            this.block_names.add(buffer_name);
+            block_namespace.add(buffer_name);
+            // Save for post-reflection later.
+            this.declared_block_names[var_.self] = buffer_name;
+            this.statement(this.layout_for_variable(var_), is_coherent ? "coherent " : "", is_restrict ? "restrict " : "", is_writeonly ? "writeonly " : "", is_readonly ? "readonly " : "", ssbo ? "buffer " : "uniform ", buffer_name);
+            this.begin_scope();
+            type.member_name_cache.clear();
+            var i = 0;
+            for (var _i = 0, _a = type.member_types; _i < _a.length; _i++) {
+                var member = _a[_i];
+                this.add_member_name(type, i);
+                this.emit_struct_member(type, member, i);
+                i++;
+            }
+            // var_.self can be used as a backup name for the block name,
+            // so we need to make sure we don't disturb the name here on a recompile.
+            // It will need to be reset if we have to recompile.
+            this.preserve_alias_on_reset(var_.self);
+            this.add_resource_name(var_.self);
+            this.end_scope_decl(this.to_name(var_.self) + this.type_to_array_glsl(type));
+            this.statement("");
+        };
+        CompilerGLSL.prototype.emit_buffer_reference_block = function (type_id, forward_declaration) {
+            var type = this.get(SPIRType, type_id);
+            var buffer_name = "";
+            var ir = this.ir;
+            if (forward_declaration) {
+                // Block names should never alias, but from HLSL input they kind of can because block types are reused for UAVs ...
+                // Allow aliased name since we might be declaring the block twice. Once with buffer reference (forward declared) and one proper declaration.
+                // The names must match up.
+                buffer_name = this.to_name(type.self, false);
+                // Shaders never use the block by interface name, so we don't
+                // have to track this other than updating name caches.
+                // If we have a collision for any reason, just fallback immediately.
+                if (maplike_get(Meta, ir.meta, type.self).decoration.alias.length === 0 ||
+                    this.block_ssbo_names.has(buffer_name) ||
+                    this.resource_names.has(buffer_name)) {
+                    buffer_name = "_" + type.self;
+                }
+                // Make sure we get something unique for both global name scope and block name scope.
+                // See GLSL 4.5 spec: section 4.3.9 for details.
+                buffer_name = this.add_variable(this.block_ssbo_names, this.resource_names, buffer_name);
+                // If for some reason buffer_name is an illegal name, make a final fallback to a workaround name.
+                // This cannot conflict with anything else, so we're safe now.
+                // We cannot reuse this fallback name in neither global scope (blocked by block_names) nor block name scope.
+                if (buffer_name.length === 0)
+                    buffer_name = "_" + type.self;
+                this.block_names.add(buffer_name);
+                this.block_ssbo_names.add(buffer_name);
+                // Ensure we emit the correct name when emitting non-forward pointer type.
+                ir.meta[type.self].decoration.alias = buffer_name;
+            }
+            else if (type.basetype !== SPIRTypeBaseType.Struct)
+                buffer_name = this.type_to_glsl(type);
+            else
+                buffer_name = this.to_name(type.self, false);
+            if (!forward_declaration) {
+                var itr_second = this.physical_storage_type_to_alignment[type_id];
+                var alignment = 0;
+                if (itr_second)
+                    alignment = itr_second.alignment;
+                if (type.basetype === SPIRTypeBaseType.Struct) {
+                    var attributes = ["buffer_reference"];
+                    if (alignment)
+                        attributes.push("buffer_reference_align = " + alignment);
+                    attributes.push(this.buffer_to_packing_standard(type, true));
+                    var flags = ir.get_buffer_block_type_flags(type);
+                    var decorations = "";
+                    if (flags.get(Decoration.DecorationRestrict))
+                        decorations += " restrict";
+                    if (flags.get(Decoration.DecorationCoherent))
+                        decorations += " coherent";
+                    if (flags.get(Decoration.DecorationNonReadable))
+                        decorations += " writeonly";
+                    if (flags.get(Decoration.DecorationNonWritable))
+                        decorations += " readonly";
+                    this.statement("layout(", attributes.join(", "), ")", decorations, " buffer ", buffer_name);
+                }
+                else if (alignment)
+                    this.statement("layout(buffer_reference, buffer_reference_align = ", alignment, ") buffer ", buffer_name);
+                else
+                    this.statement("layout(buffer_reference) buffer ", buffer_name);
+                this.begin_scope();
+                if (type.basetype === SPIRTypeBaseType.Struct) {
+                    type.member_name_cache.clear();
+                    var i = 0;
+                    for (var _i = 0, _a = type.member_types; _i < _a.length; _i++) {
+                        var member = _a[_i];
+                        this.add_member_name(type, i);
+                        this.emit_struct_member(type, member, i);
+                        i++;
+                    }
+                }
+                else {
+                    var pointee_type = this.get_pointee_type(type);
+                    this.statement(this.type_to_glsl(pointee_type), " value", this.type_to_array_glsl(pointee_type), ";");
+                }
+                this.end_scope_decl();
+                this.statement("");
+            }
+            else {
+                this.statement("layout(buffer_reference) buffer ", buffer_name, ";");
+            }
+        };
+        CompilerGLSL.prototype.emit_declared_builtin_block = function (storage, model) {
+            var _this = this;
+            var emitted_builtins = new Bitset();
+            var global_builtins = new Bitset();
+            var emitted_block = false;
+            var builtin_array = false;
+            // Need to use declared size in the type.
+            // These variables might have been declared, but not statically used, so we haven't deduced their size yet.
+            var cull_distance_size = 0;
+            var clip_distance_size = 0;
+            var have_xfb_buffer_stride = false;
+            var have_geom_stream = false;
+            var have_any_xfb_offset = false;
+            var xfb_stride = 0, xfb_buffer = 0, geom_stream = 0;
+            var builtin_xfb_offsets = []; //std::unordered_map<uint32_t, uint32_t> ;
+            var _a = this, ir = _a.ir, options = _a.options;
+            ir.for_each_typed_id(SPIRVariable, function (_, var_) {
+                var type = _this.get(SPIRType, var_.basetype);
+                var block = _this.has_decoration(type.self, Decoration.DecorationBlock);
+                var builtins = new Bitset();
+                if (var_.storage === storage && block && _this.is_builtin_variable(var_)) {
+                    var index = 0;
+                    for (var _i = 0, _a = maplike_get(Meta, ir.meta, type.self).members; _i < _a.length; _i++) {
+                        var m = _a[_i];
+                        if (m.builtin) {
+                            builtins.set(m.builtin_type);
+                            if (m.builtin_type === BuiltIn.BuiltInCullDistance)
+                                cull_distance_size = _this.to_array_size_literal(_this.get(SPIRType, type.member_types[index]));
+                            else if (m.builtin_type === BuiltIn.BuiltInClipDistance)
+                                clip_distance_size = _this.to_array_size_literal(_this.get(SPIRType, type.member_types[index]));
+                            if (is_block_builtin(m.builtin_type) && m.decoration_flags.get(Decoration.DecorationOffset)) {
+                                have_any_xfb_offset = true;
+                                builtin_xfb_offsets[m.builtin_type] = m.offset;
+                            }
+                            if (is_block_builtin(m.builtin_type) && m.decoration_flags.get(Decoration.DecorationStream)) {
+                                var stream = m.stream;
+                                if (have_geom_stream && geom_stream !== stream)
+                                    throw new Error("IO block member Stream mismatch.");
+                                have_geom_stream = true;
+                                geom_stream = stream;
+                            }
+                        }
+                        index++;
+                    }
+                    if (storage === StorageClass.StorageClassOutput && _this.has_decoration(var_.self, Decoration.DecorationXfbBuffer) &&
+                        _this.has_decoration(var_.self, Decoration.DecorationXfbStride)) {
+                        var buffer_index = _this.get_decoration(var_.self, Decoration.DecorationXfbBuffer);
+                        var stride = _this.get_decoration(var_.self, Decoration.DecorationXfbStride);
+                        if (have_xfb_buffer_stride && buffer_index !== xfb_buffer)
+                            throw new Error("IO block member XfbBuffer mismatch.");
+                        if (have_xfb_buffer_stride && stride !== xfb_stride)
+                            throw new Error("IO block member XfbBuffer mismatch.");
+                        have_xfb_buffer_stride = true;
+                        xfb_buffer = buffer_index;
+                        xfb_stride = stride;
+                    }
+                    if (storage === StorageClass.StorageClassOutput && _this.has_decoration(var_.self, Decoration.DecorationStream)) {
+                        var stream = _this.get_decoration(var_.self, Decoration.DecorationStream);
+                        if (have_geom_stream && geom_stream !== stream)
+                            throw new Error("IO block member Stream mismatch.");
+                        have_geom_stream = true;
+                        geom_stream = stream;
+                    }
+                }
+                else if (var_.storage === storage && !block && _this.is_builtin_variable(var_)) {
+                    // While we're at it, collect all declared global builtins (HLSL mostly ...).
+                    var m = maplike_get(Meta, ir.meta, var_.self).decoration;
+                    if (m.builtin) {
+                        global_builtins.set(m.builtin_type);
+                        if (m.builtin_type === BuiltIn.BuiltInCullDistance)
+                            cull_distance_size = _this.to_array_size_literal(type);
+                        else if (m.builtin_type === BuiltIn.BuiltInClipDistance)
+                            clip_distance_size = _this.to_array_size_literal(type);
+                        if (is_block_builtin(m.builtin_type) && m.decoration_flags.get(Decoration.DecorationXfbStride) &&
+                            m.decoration_flags.get(Decoration.DecorationXfbBuffer) && m.decoration_flags.get(Decoration.DecorationOffset)) {
+                            have_any_xfb_offset = true;
+                            builtin_xfb_offsets[m.builtin_type] = m.offset;
+                            var buffer_index = m.xfb_buffer;
+                            var stride = m.xfb_stride;
+                            if (have_xfb_buffer_stride && buffer_index !== xfb_buffer)
+                                throw new Error("IO block member XfbBuffer mismatch.");
+                            if (have_xfb_buffer_stride && stride !== xfb_stride)
+                                throw new Error("IO block member XfbBuffer mismatch.");
+                            have_xfb_buffer_stride = true;
+                            xfb_buffer = buffer_index;
+                            xfb_stride = stride;
+                        }
+                        if (is_block_builtin(m.builtin_type) && m.decoration_flags.get(Decoration.DecorationStream)) {
+                            var stream = _this.get_decoration(var_.self, Decoration.DecorationStream);
+                            if (have_geom_stream && geom_stream !== stream)
+                                throw new Error("IO block member Stream mismatch.");
+                            have_geom_stream = true;
+                            geom_stream = stream;
+                        }
+                    }
+                }
+                if (builtins.empty())
+                    return;
+                if (emitted_block)
+                    throw new Error("Cannot use more than one builtin I/O block.");
+                emitted_builtins = builtins;
+                emitted_block = true;
+                builtin_array = type.array.length > 0;
+            });
+            global_builtins = new Bitset(global_builtins.get_lower());
+            global_builtins.set(BuiltIn.BuiltInPosition);
+            global_builtins.set(BuiltIn.BuiltInPointSize);
+            global_builtins.set(BuiltIn.BuiltInClipDistance);
+            global_builtins.set(BuiltIn.BuiltInCullDistance);
+            // Try to collect all other declared builtins.
+            if (!emitted_block)
+                emitted_builtins = global_builtins;
+            // Can't declare an empty interface block.
+            if (emitted_builtins.empty())
+                return;
+            if (storage === StorageClass.StorageClassOutput) {
+                var attr = [];
+                if (have_xfb_buffer_stride && have_any_xfb_offset) {
+                    if (!options.es) {
+                        if (options.version < 440 && options.version >= 140)
+                            this.require_extension_internal("GL_ARB_enhanced_layouts");
+                        else if (options.version < 140)
+                            throw new Error("Component decoration is not supported in targets below GLSL 1.40.");
+                        if (!options.es && options.version < 440)
+                            this.require_extension_internal("GL_ARB_enhanced_layouts");
+                    }
+                    else if (options.es)
+                        throw new Error("Need GL_ARB_enhanced_layouts for xfb_stride or xfb_buffer.");
+                    attr.push("xfb_buffer = ".concat(xfb_buffer, ", xfb_stride = ").concat(xfb_stride));
+                }
+                if (have_geom_stream) {
+                    if (this.get_execution_model() !== ExecutionModel.ExecutionModelGeometry)
+                        throw new Error("Geometry streams can only be used in geometry shaders.");
+                    if (options.es)
+                        throw new Error("Multiple geometry streams not supported in ESSL.");
+                    if (options.version < 400)
+                        this.require_extension_internal("GL_ARB_transform_feedback3");
+                    attr.push("stream = " + geom_stream);
+                }
+                if (attr.length > 0)
+                    this.statement("layout(", attr.join(", "), ") out gl_PerVertex");
+                else
+                    this.statement("out gl_PerVertex");
+            }
+            else {
+                // If we have passthrough, there is no way PerVertex cannot be passthrough.
+                if (this.get_entry_point().geometry_passthrough)
+                    this.statement("layout(passthrough) in gl_PerVertex");
+                else
+                    this.statement("in gl_PerVertex");
+            }
+            this.begin_scope();
+            if (emitted_builtins.get(BuiltIn.BuiltInPosition)) {
+                var itr_second = builtin_xfb_offsets[BuiltIn.BuiltInPosition];
+                if (itr_second)
+                    this.statement("layout(xfb_offset = ", itr_second, ") vec4 gl_Position;");
+                else
+                    this.statement("vec4 gl_Position;");
+            }
+            if (emitted_builtins.get(BuiltIn.BuiltInPointSize)) {
+                var itr_second = builtin_xfb_offsets.find[BuiltIn.BuiltInPointSize];
+                if (itr_second)
+                    this.statement("layout(xfb_offset = ", itr_second, ") float gl_PointSize;");
+                else
+                    this.statement("float gl_PointSize;");
+            }
+            if (emitted_builtins.get(BuiltIn.BuiltInClipDistance)) {
+                var itr_second = builtin_xfb_offsets[BuiltIn.BuiltInClipDistance];
+                if (itr_second)
+                    this.statement("layout(xfb_offset = ", itr_second, ") float gl_ClipDistance[", clip_distance_size, "];");
+                else
+                    this.statement("float gl_ClipDistance[", clip_distance_size, "];");
+            }
+            if (emitted_builtins.get(BuiltIn.BuiltInCullDistance)) {
+                var itr_second = builtin_xfb_offsets[BuiltIn.BuiltInCullDistance];
+                if (itr_second)
+                    this.statement("layout(xfb_offset = ", itr_second, ") float gl_CullDistance[", cull_distance_size, "];");
+                else
+                    this.statement("float gl_CullDistance[", cull_distance_size, "];");
+            }
+            if (builtin_array) ;
+            else
+                this.end_scope_decl();
+            this.statement("");
+        };
+        CompilerGLSL.prototype.should_force_emit_builtin_block = function (storage) {
+            // If the builtin block uses XFB, we need to force explicit redeclaration of the builtin block.
+            var _this = this;
+            if (storage !== StorageClass.StorageClassOutput)
+                return false;
+            var should_force = false;
+            var ir = this.ir;
+            ir.for_each_typed_id(SPIRVariable, function (_, var_) {
+                if (should_force)
+                    return;
+                var type = _this.get(SPIRType, var_.basetype);
+                var block = _this.has_decoration(type.self, Decoration.DecorationBlock);
+                if (var_.storage === storage && block && _this.is_builtin_variable(var_)) {
+                    var member_count = type.member_types.length;
+                    for (var i = 0; i < member_count; i++) {
+                        if (_this.has_member_decoration(type.self, i, Decoration.DecorationBuiltIn) &&
+                            is_block_builtin((_this.get_member_decoration(type.self, i, Decoration.DecorationBuiltIn))) &&
+                            _this.has_member_decoration(type.self, i, Decoration.DecorationOffset)) {
+                            should_force = true;
+                        }
+                    }
+                }
+                else if (var_.storage === storage && !block && _this.is_builtin_variable(var_)) {
+                    if (is_block_builtin((_this.get_decoration(type.self, Decoration.DecorationBuiltIn))) &&
+                        _this.has_decoration(var_.self, Decoration.DecorationOffset)) {
+                        should_force = true;
+                    }
+                }
+            });
+            // If we're declaring clip/cull planes with control points we need to force block declaration.
+            /*if (this.get_execution_model() === ExecutionModel.ExecutionModelTessellationControl &&
+                (clip_distance_count || cull_distance_count))
+            {
+                should_force = true;
+            }*/
+            return should_force;
+        };
+        CompilerGLSL.prototype.emit_push_constant_block_glsl = function (var_) {
+            var ir = this.ir;
+            // OpenGL has no concept of push constant blocks, implement it as a uniform struct.
+            var type = this.get(SPIRType, var_.basetype);
+            var flags = maplike_get(Meta, ir.meta, var_.self).decoration.decoration_flags;
+            flags.clear(Decoration.DecorationBinding);
+            flags.clear(Decoration.DecorationDescriptorSet);
+            /*#if 0
+            if (flags & ((1ull << DecorationBinding) | (1ull << DecorationDescriptorSet)))
+            throw new Error("Push constant blocks cannot be compiled to GLSL with Binding or Set syntax. "
+            "Remap to location with reflection API first or disable these decorations.");
+            #endif
+            */
+            // We're emitting the push constant block as a regular struct, so disable the block qualifier temporarily.
+            // Otherwise, we will end up emitting layout() qualifiers on naked structs which is not allowed.
+            var block_flags = maplike_get(Meta, ir.meta, type.self).decoration.decoration_flags;
+            var block_flag = block_flags.get(Decoration.DecorationBlock);
+            block_flags.clear(Decoration.DecorationBlock);
+            this.emit_struct(type);
+            if (block_flag)
+                block_flags.set(Decoration.DecorationBlock);
+            this.emit_uniform(var_);
+            this.statement("");
+        };
+        CompilerGLSL.prototype.emit_interface_block = function (var_) {
+            var type = this.get(SPIRType, var_.basetype);
+            var _a = this, ir = _a.ir, options = _a.options;
+            if (var_.storage === StorageClass.StorageClassInput && type.basetype === SPIRTypeBaseType.Double &&
+                !options.es && options.version < 410) {
+                this.require_extension_internal("GL_ARB_vertex_attrib_64bit");
+            }
+            // Either make it plain in/out or in/out blocks depending on what shader is doing ...
+            var block = maplike_get(Meta, ir.meta, type.self).decoration.decoration_flags.get(Decoration.DecorationBlock);
+            var qual = this.to_storage_qualifiers_glsl(var_);
+            if (block) {
+                // ESSL earlier than 310 and GLSL earlier than 150 did not support
+                // I/O variables which are struct types.
+                // To support this, flatten the struct into separate varyings instead.
+                if (options.force_flattened_io_blocks || (options.es && options.version < 310) ||
+                    (!options.es && options.version < 150)) {
+                    // I/O blocks on ES require version 310 with Android Extension Pack extensions, or core version 320.
+                    // On desktop, I/O blocks were introduced with geometry shaders in GL 3.2 (GLSL 150).
+                    this.emit_flattened_io_block(var_, qual);
+                }
+                else {
+                    if (options.es && options.version < 320) {
+                        // Geometry and tessellation extensions imply this extension.
+                        if (!this.has_extension("GL_EXT_geometry_shader") && !this.has_extension("GL_EXT_tessellation_shader"))
+                            this.require_extension_internal("GL_EXT_shader_io_blocks");
+                    }
+                    // Workaround to make sure we can emit "patch in/out" correctly.
+                    this.fixup_io_block_patch_qualifiers(var_);
+                    // Block names should never alias.
+                    var block_name = this.to_name(type.self, false);
+                    // The namespace for I/O blocks is separate from other variables in GLSL.
+                    var block_namespace = type.storage === StorageClass.StorageClassInput ? this.block_input_names : this.block_output_names;
+                    // Shaders never use the block by interface name, so we don't
+                    // have to track this other than updating name caches.
+                    if (block_name.length === 0 || block_namespace.has(block_name))
+                        block_name = this.get_fallback_name(type.self);
+                    else
+                        block_namespace.add(block_name);
+                    // If for some reason buffer_name is an illegal name, make a final fallback to a workaround name.
+                    // This cannot conflict with anything else, so we're safe now.
+                    if (block_name.length === 0)
+                        block_name = "_" + this.get(SPIRType, var_.basetype).self + "_" + var_.self;
+                    // Instance names cannot alias block names.
+                    this.resource_names.add(block_name);
+                    var is_patch = this.has_decoration(var_.self, Decoration.DecorationPatch);
+                    this.statement(this.layout_for_variable(var_), (is_patch ? "patch " : ""), qual, block_name);
+                    this.begin_scope();
+                    type.member_name_cache.clear();
+                    var i = 0;
+                    for (var _i = 0, _b = type.member_types; _i < _b.length; _i++) {
+                        var member = _b[_i];
+                        this.add_member_name(type, i);
+                        this.emit_struct_member(type, member, i);
+                        i++;
+                    }
+                    this.add_resource_name(var_.self);
+                    this.end_scope_decl(this.to_name(var_.self) + this.type_to_array_glsl(type));
+                    this.statement("");
+                }
+            }
+            else {
+                // ESSL earlier than 310 and GLSL earlier than 150 did not support
+                // I/O variables which are struct types.
+                // To support this, flatten the struct into separate varyings instead.
+                if (type.basetype === SPIRTypeBaseType.Struct &&
+                    (options.force_flattened_io_blocks || (options.es && options.version < 310) ||
+                        (!options.es && options.version < 150))) {
+                    this.emit_flattened_io_block(var_, qual);
+                }
+                else {
+                    this.add_resource_name(var_.self);
+                    // Tessellation control and evaluation shaders must have either gl_MaxPatchVertices or unsized arrays for input arrays.
+                    // Opt for unsized as it's the more "correct" variant to use.
+                    /*const control_point_input_array = type.storage === StorageClass.StorageClassInput && type.array.length > 0 &&
+                        !this.has_decoration(var_.self, Decoration.DecorationPatch) &&
+                        (this.get_entry_point().model === ExecutionModel.ExecutionModelTessellationControl ||
+                        this.get_entry_point().model === ExecutionModel.ExecutionModelTessellationEvaluation);*/
+                    /*let old_array_size = 0;
+                    let old_array_size_literal = true;
+
+                    if (control_point_input_array)
+                    {
+                        swap(type.array.back(), old_array_size);
+                        swap(type.array_size_literal.back(), old_array_size_literal);
+                    }*/
+                    this.statement(this.layout_for_variable(var_), this.to_qualifiers_glsl(var_.self), this.variable_decl(type, this.to_name(var_.self), var_.self), ";");
+                    /*if (control_point_input_array)
+                    {
+                        swap(type.array.back(), old_array_size);
+                        swap(type.array_size_literal.back(), old_array_size_literal);
+                    }*/
+                }
+            }
+        };
+        CompilerGLSL.prototype.constant_value_macro_name = function (id) {
+            return "SPIRV_CROSS_CONSTANT_ID_" + id;
+        };
         CompilerGLSL.prototype.get_constant_mapping_to_workgroup_component = function (c) {
             var entry_point = this.get_entry_point();
             var index = -1;
@@ -9446,6 +11834,191 @@ var SPIRV = (function (exports) {
             }
             return index;
         };
+        CompilerGLSL.prototype.emit_constant = function (constant) {
+            var type = this.get(SPIRType, constant.constant_type);
+            var name = this.to_name(constant.self);
+            // only relevant to Compute Shaders
+            /*const wg_x = new SpecializationConstant(),
+                wg_y = new SpecializationConstant(),
+                wg_z = new SpecializationConstant();
+
+            /*const workgroup_size_id = this.get_work_group_size_specialization_constants(wg_x, wg_y, wg_z);
+
+            // This specialization constant is implicitly declared by emitting layout() in;
+            if (constant.self === workgroup_size_id)
+                return;
+
+            // These specialization constants are implicitly declared by emitting layout() in;
+            // In legacy GLSL, we will still need to emit macros for these, so a layout() in; declaration
+            // later can use macro overrides for work group size.
+            bool is_workgroup_size_constant = ConstantID(constant.self) === wg_x.id || ConstantID(constant.self) === wg_y.id ||
+            ConstantID(constant.self) === wg_z.id;
+
+            if (options.vulkan_semantics && is_workgroup_size_constant)
+            {
+                // Vulkan GLSL does not need to declare workgroup spec constants explicitly, it is handled in layout().
+                return;
+            }
+            else if (!options.vulkan_semantics && is_workgroup_size_constant &&
+                !has_decoration(constant.self, DecorationSpecId))
+            {
+                // Only bother declaring a workgroup size if it is actually a specialization constant, because we need macros.
+                return;
+            }*/
+            // Only scalars have constant IDs.
+            if (this.has_decoration(constant.self, Decoration.DecorationSpecId)) {
+                /*if (options.vulkan_semantics)
+                {
+                    statement("layout(constant_id = ", get_decoration(constant.self, DecorationSpecId), ") const ",
+                        variable_decl(type, name), " = ", constant_expression(constant), ";");
+                }
+                else
+                {*/
+                var macro_name = constant.specialization_constant_macro_name;
+                this.statement("#ifndef ", macro_name);
+                this.statement("#define ", macro_name, " ", this.constant_expression(constant));
+                this.statement("#endif");
+                // For workgroup size constants, only emit the macros.
+                // if (!is_workgroup_size_constant)
+                this.statement("const ", this.variable_decl(type, name), " = ", macro_name, ";");
+                // }
+            }
+            else {
+                this.statement("const ", this.variable_decl(type, name), " = ", this.constant_expression(constant), ";");
+            }
+        };
+        CompilerGLSL.prototype.emit_specialization_constant_op = function (constant) {
+            var type = this.get(SPIRType, constant.basetype);
+            var name = this.to_name(constant.self);
+            this.statement("const ", this.variable_decl(type, name), " = ", this.constant_op_expression(constant), ";");
+        };
+        CompilerGLSL.prototype.should_dereference = function (id) {
+            var type = this.expression_type(id);
+            // Non-pointer expressions don't need to be dereferenced.
+            if (!type.pointer)
+                return false;
+            // Handles shouldn't be dereferenced either.
+            if (!this.expression_is_lvalue(id))
+                return false;
+            // If id is a variable but not a phi variable, we should not dereference it.
+            var var_ = this.maybe_get(SPIRVariable, id);
+            if (var_)
+                return var_.phi_variable;
+            // If id is an access chain, we should not dereference it.
+            var expr = this.maybe_get(SPIRExpression, id);
+            if (expr)
+                return !expr.access_chain;
+            // Otherwise, we should dereference this pointer expression.
+            return true;
+        };
+        CompilerGLSL.prototype.to_trivial_mix_op = function (type, left, right, lerp) {
+            var backend = this.backend;
+            var cleft = this.maybe_get(SPIRConstant, left);
+            var cright = this.maybe_get(SPIRConstant, right);
+            var lerptype = this.expression_type(lerp);
+            // If our targets aren't constants, we cannot use construction.
+            if (!cleft || !cright)
+                return undefined;
+            // If our targets are spec constants, we cannot use construction.
+            if (cleft.specialization || cright.specialization)
+                return undefined;
+            var value_type = this.get(SPIRType, cleft.constant_type);
+            if (lerptype.basetype !== SPIRTypeBaseType.Boolean)
+                return undefined;
+            if (value_type.basetype === SPIRTypeBaseType.Struct || this.is_array(value_type))
+                return undefined;
+            if (!backend.use_constructor_splatting && value_type.vecsize !== lerptype.vecsize)
+                return undefined;
+            // Only valid way in SPIR-V 1.4 to use matrices in select is a scalar select.
+            // matrix(scalar) constructor fills in diagnonals, so gets messy very quickly.
+            // Just avoid this case.
+            if (value_type.columns > 1)
+                return undefined;
+            // If our bool selects between 0 and 1, we can cast from bool instead, making our trivial constructor.
+            var ret = true;
+            for (var row = 0; ret && row < value_type.vecsize; row++) {
+                switch (type.basetype) {
+                    case SPIRTypeBaseType.Short:
+                    case SPIRTypeBaseType.UShort:
+                        ret = cleft.scalar_u16(0, row) === 0 && cright.scalar_u16(0, row) === 1;
+                        break;
+                    case SPIRTypeBaseType.Int:
+                    case SPIRTypeBaseType.UInt:
+                        ret = cleft.scalar(0, row) === 0 && cright.scalar(0, row) === 1;
+                        break;
+                    case SPIRTypeBaseType.Half:
+                        ret = cleft.scalar_f16(0, row) === 0.0 && cright.scalar_f16(0, row) === 1.0;
+                        break;
+                    case SPIRTypeBaseType.Float:
+                        ret = cleft.scalar_f32(0, row) === 0.0 && cright.scalar_f32(0, row) === 1.0;
+                        break;
+                    case SPIRTypeBaseType.Double:
+                        ret = cleft.scalar_f64(0, row) === 0.0 && cright.scalar_f64(0, row) === 1.0;
+                        break;
+                    case SPIRTypeBaseType.Int64:
+                    case SPIRTypeBaseType.UInt64:
+                        ret = cleft.scalar_u64(0, row) === BigInt(0) && cright.scalar_u64(0, row) === BigInt(1);
+                        break;
+                    default:
+                        ret = false;
+                        break;
+                }
+            }
+            if (ret)
+                return this.type_to_glsl_constructor(type);
+            return undefined;
+        };
+        CompilerGLSL.prototype.binary_op_bitcast_helper = function (props, op0, op1, skip_cast_if_equal_type) {
+            var type0 = this.expression_type(op0);
+            var type1 = this.expression_type(op1);
+            // We have to bitcast if our inputs are of different type, or if our types are not equal to expected inputs.
+            // For some functions like OpIEqual and INotEqual, we don't care if inputs are of different types than expected
+            // since equality test is exactly the same.
+            var cast = (type0.basetype !== type1.basetype) || (!skip_cast_if_equal_type && type0.basetype !== props.input_type);
+            // Create a fake type so we can bitcast to it.
+            // We only deal with regular arithmetic types here like int, uints and so on.
+            var expected_type = new SPIRType();
+            expected_type.basetype = props.input_type;
+            expected_type.vecsize = type0.vecsize;
+            expected_type.columns = type0.columns;
+            expected_type.width = type0.width;
+            if (cast) {
+                props.cast_op0 = this.bitcast_glsl(expected_type, op0);
+                props.cast_op1 = this.bitcast_glsl(expected_type, op1);
+            }
+            else {
+                // If we don't cast, our actual input type is that of the first (or second) argument.
+                props.cast_op0 = this.to_enclosed_unpacked_expression(op0);
+                props.cast_op1 = this.to_enclosed_unpacked_expression(op1);
+                props.input_type = type0.basetype;
+            }
+            return expected_type;
+        };
+        CompilerGLSL.prototype.to_ternary_expression = function (restype, select, true_value, false_value) {
+            var _this = this;
+            var expr;
+            var lerptype = this.expression_type(select);
+            if (lerptype.vecsize === 1)
+                expr = this.to_enclosed_expression(select) + " ? " + this.to_enclosed_pointer_expression(true_value) + " : " + this.to_enclosed_pointer_expression(false_value);
+            else {
+                var swiz = function (expression, i) {
+                    return _this.to_extract_component_expression(expression, i);
+                };
+                expr = this.type_to_glsl_constructor(restype);
+                expr += "(";
+                for (var i = 0; i < restype.vecsize; i++) {
+                    expr += swiz(select, i);
+                    expr += " ? ";
+                    expr += swiz(true_value, i);
+                    expr += " : ";
+                    expr += swiz(false_value, i);
+                    if (i + 1 < restype.vecsize)
+                        expr += ", ";
+                }
+                expr += ")";
+            }
+            return expr;
+        };
         CompilerGLSL.prototype.expression_is_forwarded = function (id) {
             return this.forwarded_temporaries.has(id);
         };
@@ -9459,6 +12032,342 @@ var SPIRV = (function (exports) {
             // If we're emitting code at a deeper loop level than when we emitted the expression,
             // we're probably reading the same expression over and over.
             return this.current_loop_level > expr.emitted_loop_level;
+        };
+        CompilerGLSL.prototype.access_chain_internal_append_index = function (expr, base, type, flags, access_chain_is_arrayed, index) {
+            var index_is_literal = (flags & AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT) !== 0;
+            var register_expression_read = (flags & AccessChainFlagBits.ACCESS_CHAIN_SKIP_REGISTER_EXPRESSION_READ_BIT) === 0;
+            expr += "[";
+            if (index_is_literal)
+                expr += convert_to_string(index);
+            else
+                expr += this.to_unpacked_expression(index, register_expression_read);
+            expr += "]";
+            return expr;
+        };
+        CompilerGLSL.prototype.access_chain_internal = function (base, indices, count, flags, meta) {
+            var _this = this;
+            var expr = "";
+            var _a = this, backend = _a.backend, options = _a.options, ir = _a.ir;
+            var index_is_literal = (flags & AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT) !== 0;
+            var msb_is_id = (flags & AccessChainFlagBits.ACCESS_CHAIN_LITERAL_MSB_FORCE_ID) !== 0;
+            var chain_only = (flags & AccessChainFlagBits.ACCESS_CHAIN_CHAIN_ONLY_BIT) !== 0;
+            var ptr_chain = (flags & AccessChainFlagBits.ACCESS_CHAIN_PTR_CHAIN_BIT) !== 0;
+            var register_expression_read = (flags & AccessChainFlagBits.ACCESS_CHAIN_SKIP_REGISTER_EXPRESSION_READ_BIT) === 0;
+            var flatten_member_reference = (flags & AccessChainFlagBits.ACCESS_CHAIN_FLATTEN_ALL_MEMBERS_BIT) !== 0;
+            if (!chain_only) {
+                // We handle transpose explicitly, so don't resolve that here.
+                var e = this.maybe_get(SPIRExpression, base);
+                var old_transpose = e && e.need_transpose;
+                if (e)
+                    e.need_transpose = false;
+                expr = this.to_enclosed_expression(base, register_expression_read);
+                if (e)
+                    e.need_transpose = old_transpose;
+            }
+            // Start traversing type hierarchy at the proper non-pointer types,
+            // but keep type_id referencing the original pointer for use below.
+            var type_id = this.expression_type_id(base);
+            if (!backend.native_pointers) {
+                if (ptr_chain)
+                    throw new Error("Backend does not support native pointers and does not support OpPtrAccessChain.");
+                // Wrapped buffer reference pointer types will need to poke into the internal "value" member before
+                // continuing the access chain.
+                if (this.should_dereference(base)) {
+                    var type_2 = this.get(SPIRType, type_id);
+                    expr = this.dereference_expression(type_2, expr);
+                }
+            }
+            var type = this.get_pointee_type(type_id);
+            var access_chain_is_arrayed = expr.indexOf("[") >= 0;
+            var row_major_matrix_needs_conversion = this.is_non_native_row_major_matrix(base);
+            var is_packed = this.has_extended_decoration(base, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked);
+            var physical_type = this.get_extended_decoration(base, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID);
+            var is_invariant = this.has_decoration(base, Decoration.DecorationInvariant);
+            var pending_array_enclose = false;
+            var dimension_flatten = false;
+            var append_index = function (index, is_literal) {
+                var mod_flags = flags;
+                if (!is_literal)
+                    mod_flags &= ~AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT;
+                expr = _this.access_chain_internal_append_index(expr, base, type, mod_flags, access_chain_is_arrayed, index);
+            };
+            for (var i = 0; i < count; i++) {
+                var index = indices[i];
+                var is_literal = index_is_literal;
+                if (is_literal && msb_is_id && (index >> 31) !== 0) {
+                    is_literal = false;
+                    index &= 0x7fffffff;
+                }
+                // Pointer chains
+                if (ptr_chain && i === 0) {
+                    // If we are flattening multidimensional arrays, only create opening bracket on first
+                    // array index.
+                    if (options.flatten_multidimensional_arrays) {
+                        dimension_flatten = type.array.length >= 1;
+                        pending_array_enclose = dimension_flatten;
+                        if (pending_array_enclose)
+                            expr += "[";
+                    }
+                    if (options.flatten_multidimensional_arrays && dimension_flatten) {
+                        // If we are flattening multidimensional arrays, do manual stride computation.
+                        if (is_literal)
+                            expr += convert_to_string(index);
+                        else
+                            expr += this.to_enclosed_expression(index, register_expression_read);
+                        for (var j = type.array.length; j; j--) {
+                            expr += " * ";
+                            expr += this.enclose_expression(this.to_array_size(type, j - 1));
+                        }
+                        if (type.array.length === 0)
+                            pending_array_enclose = false;
+                        else
+                            expr += " + ";
+                        if (!pending_array_enclose)
+                            expr += "]";
+                    }
+                    else {
+                        append_index(index, is_literal);
+                    }
+                    if (type.basetype === SPIRTypeBaseType.ControlPointArray) {
+                        type_id = type.parent_type;
+                        type = this.get(SPIRType, type_id);
+                    }
+                    access_chain_is_arrayed = true;
+                }
+                // Arrays
+                else if (type.array.length > 0) {
+                    // If we are flattening multidimensional arrays, only create opening bracket on first
+                    // array index.
+                    if (options.flatten_multidimensional_arrays && !pending_array_enclose) {
+                        dimension_flatten = type.array.length > 1;
+                        pending_array_enclose = dimension_flatten;
+                        if (pending_array_enclose)
+                            expr += "[";
+                    }
+                    console.assert(type.parent_type);
+                    var var_ = this.maybe_get(SPIRVariable, base);
+                    if (backend.force_gl_in_out_block && i === 0 && var_ && this.is_builtin_variable(var_) &&
+                        !this.has_decoration(type.self, Decoration.DecorationBlock)) {
+                        // This deals with scenarios for tesc/geom where arrays of gl_Position[] are declared.
+                        // Normally, these variables live in blocks when compiled from GLSL,
+                        // but HLSL seems to just emit straight arrays here.
+                        // We must pretend this access goes through gl_in/gl_out arrays
+                        // to be able to access certain builtins as arrays.
+                        var builtin = maplike_get(Meta, ir.meta, base).decoration.builtin_type;
+                        switch (builtin) {
+                            // case BuiltInCullDistance: // These are already arrays, need to figure out rules for these in tess/geom.
+                            // case BuiltInClipDistance:
+                            case BuiltIn.BuiltInPosition:
+                            case BuiltIn.BuiltInPointSize:
+                                if (var_.storage === StorageClass.StorageClassInput)
+                                    expr = "gl_in[" + this.to_expression(index, register_expression_read);
+                                else if (var_.storage === StorageClass.StorageClassOutput)
+                                    expr = "gl_out[" + this.to_expression(index, register_expression_read);
+                                else
+                                    append_index(index, is_literal);
+                                break;
+                            default:
+                                append_index(index, is_literal);
+                                break;
+                        }
+                    }
+                    else if (options.flatten_multidimensional_arrays && dimension_flatten) {
+                        // If we are flattening multidimensional arrays, do manual stride computation.
+                        var parent_type = this.get(SPIRType, type.parent_type);
+                        if (is_literal)
+                            expr += convert_to_string(index);
+                        else
+                            expr += this.to_enclosed_expression(index, register_expression_read);
+                        for (var j = parent_type.array.length; j; j--) {
+                            expr += " * ";
+                            expr += this.enclose_expression(this.to_array_size(parent_type, j - 1));
+                        }
+                        if (parent_type.array.length === 0)
+                            pending_array_enclose = false;
+                        else
+                            expr += " + ";
+                        if (!pending_array_enclose)
+                            expr += "]";
+                    }
+                    // Some builtins are arrays in SPIR-V but not in other languages, e.g. gl_SampleMask[] is an array in SPIR-V but not in Metal.
+                    // By throwing away the index, we imply the index was 0, which it must be for gl_SampleMask.
+                    else if (!this.builtin_translates_to_nonarray((this.get_decoration(base, Decoration.DecorationBuiltIn)))) {
+                        append_index(index, is_literal);
+                    }
+                    type_id = type.parent_type;
+                    type = this.get(SPIRType, type_id);
+                    access_chain_is_arrayed = true;
+                }
+                // For structs, the index refers to a constant, which indexes into the members, possibly through a redirection mapping.
+                // We also check if this member is a builtin, since we then replace the entire expression with the builtin one.
+                else if (type.basetype === SPIRTypeBaseType.Struct) {
+                    if (!is_literal)
+                        index = this.evaluate_constant_u32(index);
+                    if (index < type.member_type_index_redirection.length)
+                        index = type.member_type_index_redirection[index];
+                    if (index >= type.member_types.length)
+                        throw new Error("Member index is out of bounds!");
+                    var builtin = this.is_member_builtin(type, index);
+                    if (builtin !== undefined && this.access_chain_needs_stage_io_builtin_translation(base)) {
+                        if (access_chain_is_arrayed) {
+                            expr += ".";
+                            expr += this.builtin_to_glsl(builtin, type.storage);
+                        }
+                        else
+                            expr = this.builtin_to_glsl(builtin, type.storage);
+                    }
+                    else {
+                        // If the member has a qualified name, use it as the entire chain
+                        var qual_mbr_name = this.get_member_qualified_name(type_id, index);
+                        if (qual_mbr_name !== "")
+                            expr = qual_mbr_name;
+                        else if (flatten_member_reference)
+                            expr += "_" + this.to_member_name(type, index);
+                        else
+                            expr += this.to_member_reference(base, type, index, ptr_chain);
+                    }
+                    if (this.has_member_decoration(type.self, index, Decoration.DecorationInvariant))
+                        is_invariant = true;
+                    is_packed = this.member_is_packed_physical_type(type, index);
+                    if (this.member_is_remapped_physical_type(type, index))
+                        physical_type = this.get_extended_member_decoration(type.self, index, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID);
+                    else
+                        physical_type = 0;
+                    row_major_matrix_needs_conversion = this.member_is_non_native_row_major_matrix(type, index);
+                    type = this.get(SPIRType, type.member_types[index]);
+                }
+                // Matrix -> Vector
+                else if (type.columns > 1) {
+                    // If we have a row-major matrix here, we need to defer any transpose in case this access chain
+                    // is used to store a column. We can resolve it right here and now if we access a scalar directly,
+                    // by flipping indexing order of the matrix.
+                    expr += "[";
+                    if (is_literal)
+                        expr += convert_to_string(index);
+                    else
+                        expr += this.to_unpacked_expression(index, register_expression_read);
+                    expr += "]";
+                    type_id = type.parent_type;
+                    type = this.get(SPIRType, type_id);
+                }
+                // Vector -> Scalar
+                else if (type.vecsize > 1) {
+                    var deferred_index = "";
+                    if (row_major_matrix_needs_conversion) {
+                        // Flip indexing order.
+                        var column_index = expr.lastIndexOf("[");
+                        if (column_index >= 0) {
+                            deferred_index = expr.substring(column_index);
+                            expr = expr.substring(0, column_index);
+                        }
+                    }
+                    // Internally, access chain implementation can also be used on composites,
+                    // ignore scalar access workarounds in this case.
+                    var effective_storage = StorageClass.StorageClassGeneric;
+                    var ignore_potential_sliced_writes = false;
+                    if ((flags & AccessChainFlagBits.ACCESS_CHAIN_FORCE_COMPOSITE_BIT) === 0) {
+                        if (this.expression_type(base).pointer)
+                            effective_storage = this.get_expression_effective_storage_class(base);
+                        // Special consideration for control points.
+                        // Control points can only be written by InvocationID, so there is no need
+                        // to consider scalar access chains here.
+                        // Cleans up some cases where it's very painful to determine the accurate storage class
+                        // since blocks can be partially masked ...
+                        /*const var_ = maybe_get_backing_variable(base);
+                        if (var_ && var_.storage === StorageClass.StorageClassOutput &&
+                            get_execution_model() === ExecutionModelTessellationControl &&
+                            !has_decoration(var_.self, DecorationPatch))
+                        {
+                            ignore_potential_sliced_writes = true;
+                        }*/
+                    }
+                    else
+                        ignore_potential_sliced_writes = true;
+                    if (!row_major_matrix_needs_conversion && !ignore_potential_sliced_writes) {
+                        // On some backends, we might not be able to safely access individual scalars in a vector.
+                        // To work around this, we might have to cast the access chain reference to something which can,
+                        // like a pointer to scalar, which we can then index into.
+                        expr = this.prepare_access_chain_for_scalar_access(expr, this.get(SPIRType, type.parent_type), effective_storage, is_packed);
+                    }
+                    if (is_literal) {
+                        var out_of_bounds = (index >= type.vecsize);
+                        if (!is_packed && !row_major_matrix_needs_conversion) {
+                            expr += ".";
+                            expr += this.index_to_swizzle(out_of_bounds ? 0 : index);
+                        }
+                        else {
+                            // For packed vectors, we can only access them as an array, not by swizzle.
+                            expr += "[" + (out_of_bounds ? 0 : index) + "]";
+                        }
+                    }
+                    else if (ir.ids[index].get_type() === Types.TypeConstant && !is_packed && !row_major_matrix_needs_conversion) {
+                        var c = this.get(SPIRConstant, index);
+                        var out_of_bounds = (c.scalar() >= type.vecsize);
+                        if (c.specialization) {
+                            // If the index is a spec constant, we cannot turn extract into a swizzle.
+                            expr += "[" + (out_of_bounds ? "0" : this.to_expression(index)) + "]";
+                        }
+                        else {
+                            expr += "." + this.index_to_swizzle(out_of_bounds ? 0 : c.scalar());
+                        }
+                    }
+                    else {
+                        expr += "[" + this.to_unpacked_expression(index, register_expression_read) + "]";
+                    }
+                    if (row_major_matrix_needs_conversion && !ignore_potential_sliced_writes) {
+                        expr = this.prepare_access_chain_for_scalar_access(expr, this.get(SPIRType, type.parent_type), effective_storage, is_packed);
+                    }
+                    expr += deferred_index;
+                    row_major_matrix_needs_conversion = false;
+                    is_packed = false;
+                    physical_type = 0;
+                    type_id = type.parent_type;
+                    type = this.get(SPIRType, type_id);
+                }
+                else if (!backend.allow_truncated_access_chain)
+                    throw new Error("Cannot subdivide a scalar value!");
+            }
+            if (pending_array_enclose) {
+                throw new Error("Flattening of multidimensional arrays were enabled, " +
+                    "but the access chain was terminated in the middle of a multidimensional array. " +
+                    "This is not supported.");
+            }
+            if (meta) {
+                meta.need_transpose = row_major_matrix_needs_conversion;
+                meta.storage_is_packed = is_packed;
+                meta.storage_is_invariant = is_invariant;
+                meta.storage_physical_type = physical_type;
+            }
+            return expr;
+        };
+        CompilerGLSL.prototype.get_expression_effective_storage_class = function (ptr) {
+            var var_ = this.maybe_get_backing_variable(ptr);
+            // If the expression has been lowered to a temporary, we need to use the Generic storage class.
+            // We're looking for the effective storage class of a given expression.
+            // An access chain or forwarded OpLoads from such access chains
+            // will generally have the storage class of the underlying variable, but if the load was not forwarded
+            // we have lost any address space qualifiers.
+            var forced_temporary = this.ir.ids[ptr].get_type() === Types.TypeExpression && !this.get(SPIRExpression, ptr).access_chain &&
+                (this.forced_temporaries.has(ptr) || !this.forwarded_temporaries.has(ptr));
+            if (var_ && !forced_temporary) {
+                if (this.variable_decl_is_remapped_storage(var_, StorageClass.StorageClassWorkgroup))
+                    return StorageClass.StorageClassWorkgroup;
+                if (this.variable_decl_is_remapped_storage(var_, StorageClass.StorageClassStorageBuffer))
+                    return StorageClass.StorageClassStorageBuffer;
+                // Normalize SSBOs to StorageBuffer here.
+                if (var_.storage === StorageClass.StorageClassUniform && this.has_decoration(this.get(SPIRType, var_.basetype).self, Decoration.DecorationBufferBlock))
+                    return StorageClass.StorageClassStorageBuffer;
+                else
+                    return var_.storage;
+            }
+            else
+                return this.expression_type(ptr).storage;
+        };
+        CompilerGLSL.prototype.access_chain_needs_stage_io_builtin_translation = function (_) {
+            return true;
+        };
+        CompilerGLSL.prototype.prepare_access_chain_for_scalar_access = function (expr, type, storage, is_packed) {
+            return expr;
         };
         CompilerGLSL.prototype.index_to_swizzle = function (index) {
             switch (index) {
@@ -9586,7 +12495,7 @@ var SPIRV = (function (exports) {
                         return this.load_flattened_struct(this.to_name(id), this.get(SPIRType, var_.basetype));
                     }
                     else {
-                        var dec = ir.meta[var_.self].decoration;
+                        var dec = maplike_get(Meta, ir.meta, var_.self).decoration;
                         if (dec.builtin)
                             return this.builtin_to_glsl(dec.builtin_type, var_.storage);
                         else
@@ -9625,6 +12534,25 @@ var SPIRV = (function (exports) {
             else
                 return this.to_expression(id, register_expression_read);
         };
+        CompilerGLSL.prototype.to_enclosed_unpacked_expression = function (id, register_expression_read) {
+            if (register_expression_read === void 0) { register_expression_read = true; }
+            return this.enclose_expression(this.to_unpacked_expression(id, register_expression_read));
+        };
+        CompilerGLSL.prototype.to_enclosed_pointer_expression = function (id, register_expression_read) {
+            if (register_expression_read === void 0) { register_expression_read = true; }
+            var type = this.expression_type(id);
+            if (type.pointer && this.expression_is_lvalue(id) && !this.should_dereference(id))
+                return this.address_of_expression(this.to_enclosed_expression(id, register_expression_read));
+            else
+                return this.to_enclosed_unpacked_expression(id, register_expression_read);
+        };
+        CompilerGLSL.prototype.to_extract_component_expression = function (id, index) {
+            var expr = this.to_enclosed_expression(id);
+            if (this.has_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked))
+                return expr + "[" + index + "]";
+            else
+                return expr + "." + this.index_to_swizzle(index);
+        };
         CompilerGLSL.prototype.enclose_expression = function (expr) {
             var need_parens = false;
             var exprLength = expr.length;
@@ -9660,6 +12588,37 @@ var SPIRV = (function (exports) {
             else
                 return expr;
         };
+        CompilerGLSL.prototype.dereference_expression = function (expr_type, expr) {
+            // If this expression starts with an address-of operator ('&'), then
+            // just return the part after the operator.
+            // TODO: Strip parens if unnecessary?
+            if (expr.charAt(0) === "&")
+                return expr.substring(1);
+            else if (this.backend.native_pointers)
+                return "*" + expr;
+            else if (expr_type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT && expr_type.basetype !== SPIRTypeBaseType.Struct &&
+                expr_type.pointer_depth === 1) {
+                return this.enclose_expression(expr) + ".value";
+            }
+            else
+                return expr;
+        };
+        CompilerGLSL.prototype.address_of_expression = function (expr) {
+            if (expr.length > 3 && expr.charAt(0) === "(" && expr.charAt(1) === "*" && expr.charAt(expr.length - 1) === ")") {
+                // If we have an expression which looks like (*foo), taking the address of it is the same as stripping
+                // the first two and last characters. We might have to enclose the expression.
+                // This doesn't work for cases like (*foo + 10),
+                // but this is an r-value expression which we cannot take the address of anyways.
+                return this.enclose_expression(expr.substring(2, expr.length - 1));
+            }
+            else if (expr.charAt(0) === "*") {
+                // If this expression starts with a dereference operator ('*'), then
+                // just return the part after the operator.
+                return expr.substr(1);
+            }
+            else
+                return "&" + this.enclose_expression(expr);
+        };
         // Sometimes we proactively enclosed an expression where it turns out we might have not needed it after all.
         CompilerGLSL.prototype.strip_enclosed_expression = function (expr) {
             var exprLength = expr.length;
@@ -9693,6 +12652,9 @@ var SPIRV = (function (exports) {
             else
                 return "_m" + index;
         };
+        CompilerGLSL.prototype.to_member_reference = function (_, type, index, __) {
+            return "." + this.to_member_name(type, index);
+        };
         CompilerGLSL.prototype.type_to_glsl_constructor = function (type) {
             var options = this.options;
             var backend = this.backend;
@@ -9714,7 +12676,7 @@ var SPIRV = (function (exports) {
         CompilerGLSL.prototype.to_qualifiers_glsl = function (id) {
             var ir = this.ir;
             var backend = this.backend;
-            var flags = ir.meta[id].decoration.decoration_flags;
+            var flags = maplike_get(Meta, ir.meta, id).decoration.decoration_flags;
             var res = "";
             var var_ = this.maybe_get(SPIRVariable, id);
             if (var_ && var_.storage === StorageClass.StorageClassWorkgroup && !backend.shared_is_implied)
@@ -9745,6 +12707,151 @@ var SPIRV = (function (exports) {
             res += this.to_precision_qualifiers_glsl(id);
             return res;
         };
+        CompilerGLSL.prototype.fixup_io_block_patch_qualifiers = function (var_) {
+            // Works around weird behavior in glslangValidator where
+            // a patch out block is translated to just block members getting the decoration.
+            // To make glslang not complain when we compile again, we have to transform this back to a case where
+            // the variable itself has Patch decoration, and not members.
+            var type = this.get(SPIRType, var_.basetype);
+            if (this.has_decoration(type.self, Decoration.DecorationBlock)) {
+                var member_count = type.member_types.length;
+                for (var i = 0; i < member_count; i++) {
+                    if (this.has_member_decoration(type.self, i, Decoration.DecorationPatch)) {
+                        this.set_decoration(var_.self, Decoration.DecorationPatch);
+                        break;
+                    }
+                }
+                if (this.has_decoration(var_.self, Decoration.DecorationPatch))
+                    for (var i = 0; i < member_count; i++)
+                        this.unset_member_decoration(type.self, i, Decoration.DecorationPatch);
+            }
+        };
+        CompilerGLSL.prototype.emit_output_variable_initializer = function (var_) {
+            var _this = this;
+            var ir = this.ir;
+            // If a StorageClassOutput variable has an initializer, we need to initialize it in main().
+            var entry_func = this.get(SPIRFunction, ir.default_entry_point);
+            var type = this.get(SPIRType, var_.basetype);
+            var is_patch = this.has_decoration(var_.self, Decoration.DecorationPatch);
+            var is_block = this.has_decoration(type.self, Decoration.DecorationBlock);
+            var is_control_point = this.get_execution_model() === ExecutionModel.ExecutionModelTessellationControl && !is_patch;
+            if (is_block) {
+                var member_count = type.member_types.length;
+                var type_is_array_1 = type.array.length === 1;
+                var array_size = 1;
+                if (type_is_array_1)
+                    array_size = this.to_array_size_literal(type);
+                var iteration_count = is_control_point ? 1 : array_size;
+                var _loop_1 = function (i) {
+                    // These outputs might not have been properly declared, so don't initialize them in that case.
+                    if (this_1.has_member_decoration(type.self, i, Decoration.DecorationBuiltIn)) {
+                        if (this_1.get_member_decoration(type.self, i, Decoration.DecorationBuiltIn) === BuiltIn.BuiltInCullDistance &&
+                            !this_1.cull_distance_count)
+                            return "continue";
+                        if (this_1.get_member_decoration(type.self, i, Decoration.DecorationBuiltIn) === BuiltIn.BuiltInClipDistance &&
+                            !this_1.clip_distance_count)
+                            return "continue";
+                    }
+                    // We need to build a per-member array first, essentially transposing from AoS to SoA.
+                    // This code path hits when we have an array of blocks.
+                    var lut_name;
+                    if (type_is_array_1) {
+                        lut_name = "_".concat(var_.self, "_").concat(i, "_init");
+                        var member_type_id = this_1.get(SPIRType, var_.basetype).member_types[i];
+                        var member_type = this_1.get(SPIRType, member_type_id);
+                        var array_type = member_type;
+                        array_type.parent_type = member_type_id;
+                        array_type.array.push(array_size);
+                        array_type.array_size_literal.push(true);
+                        var exprs = [];
+                        // exprs.reserve(array_size);
+                        var c = this_1.get(SPIRConstant, var_.initializer);
+                        for (var j = 0; j < array_size; j++)
+                            exprs.push(this_1.to_expression(this_1.get(SPIRConstant, c.subconstants[j]).subconstants[i]));
+                        this_1.statement("const ", this_1.type_to_glsl(array_type), " ", lut_name, this_1.type_to_array_glsl(array_type), " = ", this_1.type_to_glsl_constructor(array_type), "(", exprs.join(", "), ");");
+                    }
+                    var _loop_2 = function (j) {
+                        entry_func.fixup_hooks_in.push(function () {
+                            var meta = new AccessChainMeta();
+                            var c = _this.get(SPIRConstant, var_.initializer);
+                            var invocation_id = 0;
+                            var member_index_id = 0;
+                            if (is_control_point) {
+                                var ids = ir.increase_bound_by(3);
+                                var uint_type = new SPIRType();
+                                uint_type.basetype = SPIRTypeBaseType.UInt;
+                                uint_type.width = 32;
+                                _this.set(SPIRType, ids, uint_type);
+                                _this.set(SPIRExpression, ids + 1, _this.builtin_to_glsl(BuiltIn.BuiltInInvocationId, StorageClass.StorageClassInput), ids, true);
+                                _this.set(SPIRConstant, ids + 2, ids, i, false);
+                                invocation_id = ids + 1;
+                                member_index_id = ids + 2;
+                            }
+                            if (is_patch) {
+                                _this.statement("if (gl_InvocationID === 0)");
+                                _this.begin_scope();
+                            }
+                            if (type_is_array_1 && !is_control_point) {
+                                var indices = [j, i];
+                                var chain = _this.access_chain_internal(var_.self, indices, 2, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, meta);
+                                _this.statement(chain, " = ", lut_name, "[", j, "];");
+                            }
+                            else if (is_control_point) {
+                                var indices = [invocation_id, member_index_id];
+                                var chain = _this.access_chain_internal(var_.self, indices, 2, 0, meta);
+                                _this.statement(chain, " = ", lut_name, "[", _this.builtin_to_glsl(BuiltIn.BuiltInInvocationId, StorageClass.StorageClassInput), "];");
+                            }
+                            else {
+                                var chain = _this.access_chain_internal(var_.self, [i], 1, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, meta);
+                                _this.statement(chain, " = ", _this.to_expression(c.subconstants[i]), ";");
+                            }
+                            if (is_patch)
+                                _this.end_scope();
+                        });
+                    };
+                    for (var j = 0; j < iteration_count; j++) {
+                        _loop_2(j);
+                    }
+                };
+                var this_1 = this;
+                // If the initializer is a block, we must initialize each block member one at a time.
+                for (var i = 0; i < member_count; i++) {
+                    _loop_1(i);
+                }
+            }
+            else if (is_control_point) {
+                var lut_name_1 = "_".concat(var_.self, "_init");
+                this.statement("const ", this.type_to_glsl(type), " ", lut_name_1, this.type_to_array_glsl(type), " = ", this.to_expression(var_.initializer), ";");
+                entry_func.fixup_hooks_in.push(function () {
+                    _this.statement(_this.to_expression(var_.self), "[gl_InvocationID] = ", lut_name_1, "[gl_InvocationID];");
+                });
+            }
+            else if (this.has_decoration(var_.self, Decoration.DecorationBuiltIn) &&
+                this.get_decoration(var_.self, Decoration.DecorationBuiltIn) === BuiltIn.BuiltInSampleMask) {
+                // We cannot copy the array since gl_SampleMask is unsized in GLSL. Unroll time! <_<
+                entry_func.fixup_hooks_in.push(function () {
+                    var c = _this.get(SPIRConstant, var_.initializer);
+                    var num_constants = c.subconstants.length;
+                    for (var i = 0; i < num_constants; i++) {
+                        // Don't use to_expression on constant since it might be uint, just fish out the raw int.
+                        _this.statement(_this.to_expression(var_.self), "[", i, "] = ", convert_to_string(_this.get(SPIRConstant, c.subconstants[i]).scalar_i32()), ";");
+                    }
+                });
+            }
+            else {
+                var lut_name_2 = "".concat(var_.self, "_init");
+                this.statement("const ", this.type_to_glsl(type), " ", lut_name_2, this.type_to_array_glsl(type), " = ", this.to_expression(var_.initializer), ";");
+                entry_func.fixup_hooks_in.push(function () {
+                    if (is_patch) {
+                        _this.statement("if (gl_InvocationID === 0)");
+                        _this.begin_scope();
+                    }
+                    _this.statement(_this.to_expression(var_.self), " = ", lut_name_2, ";");
+                    if (is_patch)
+                        _this.end_scope();
+                });
+            }
+        };
         CompilerGLSL.prototype.to_precision_qualifiers_glsl = function (id) {
             var type = this.expression_type(id);
             var use_precision_qualifiers = this.backend.allow_precision_qualifiers;
@@ -9754,7 +12861,7 @@ var SPIRV = (function (exports) {
                 if (result_type.width < 32)
                     return "mediump ";
             }
-            return this.flags_to_qualifiers_glsl(type, this.ir.meta[id].decoration.decoration_flags);
+            return this.flags_to_qualifiers_glsl(type, maplike_get(Meta, this.ir.meta, id).decoration.decoration_flags);
         };
         CompilerGLSL.prototype.to_storage_qualifiers_glsl = function (var_) {
             var execution = this.get_entry_point();
@@ -9847,6 +12954,155 @@ var SPIRV = (function (exports) {
             }
             return qual;
         };
+        CompilerGLSL.prototype.format_to_glsl = function (format) {
+            if (this.options.es && this.is_desktop_only_format(format))
+                throw new Error("Attempting to use image format not supported in ES profile.");
+            switch (format) {
+                case ImageFormat.ImageFormatRgba32f:
+                    return "rgba32f";
+                case ImageFormat.ImageFormatRgba16f:
+                    return "rgba16f";
+                case ImageFormat.ImageFormatR32f:
+                    return "r32f";
+                case ImageFormat.ImageFormatRgba8:
+                    return "rgba8";
+                case ImageFormat.ImageFormatRgba8Snorm:
+                    return "rgba8_snorm";
+                case ImageFormat.ImageFormatRg32f:
+                    return "rg32f";
+                case ImageFormat.ImageFormatRg16f:
+                    return "rg16f";
+                case ImageFormat.ImageFormatRgba32i:
+                    return "rgba32i";
+                case ImageFormat.ImageFormatRgba16i:
+                    return "rgba16i";
+                case ImageFormat.ImageFormatR32i:
+                    return "r32i";
+                case ImageFormat.ImageFormatRgba8i:
+                    return "rgba8i";
+                case ImageFormat.ImageFormatRg32i:
+                    return "rg32i";
+                case ImageFormat.ImageFormatRg16i:
+                    return "rg16i";
+                case ImageFormat.ImageFormatRgba32ui:
+                    return "rgba32ui";
+                case ImageFormat.ImageFormatRgba16ui:
+                    return "rgba16ui";
+                case ImageFormat.ImageFormatR32ui:
+                    return "r32ui";
+                case ImageFormat.ImageFormatRgba8ui:
+                    return "rgba8ui";
+                case ImageFormat.ImageFormatRg32ui:
+                    return "rg32ui";
+                case ImageFormat.ImageFormatRg16ui:
+                    return "rg16ui";
+                case ImageFormat.ImageFormatR11fG11fB10f:
+                    return "r11f_g11f_b10f";
+                case ImageFormat.ImageFormatR16f:
+                    return "r16f";
+                case ImageFormat.ImageFormatRgb10A2:
+                    return "rgb10_a2";
+                case ImageFormat.ImageFormatR8:
+                    return "r8";
+                case ImageFormat.ImageFormatRg8:
+                    return "rg8";
+                case ImageFormat.ImageFormatR16:
+                    return "r16";
+                case ImageFormat.ImageFormatRg16:
+                    return "rg16";
+                case ImageFormat.ImageFormatRgba16:
+                    return "rgba16";
+                case ImageFormat.ImageFormatR16Snorm:
+                    return "r16_snorm";
+                case ImageFormat.ImageFormatRg16Snorm:
+                    return "rg16_snorm";
+                case ImageFormat.ImageFormatRgba16Snorm:
+                    return "rgba16_snorm";
+                case ImageFormat.ImageFormatR8Snorm:
+                    return "r8_snorm";
+                case ImageFormat.ImageFormatRg8Snorm:
+                    return "rg8_snorm";
+                case ImageFormat.ImageFormatR8ui:
+                    return "r8ui";
+                case ImageFormat.ImageFormatRg8ui:
+                    return "rg8ui";
+                case ImageFormat.ImageFormatR16ui:
+                    return "r16ui";
+                case ImageFormat.ImageFormatRgb10a2ui:
+                    return "rgb10_a2ui";
+                case ImageFormat.ImageFormatR8i:
+                    return "r8i";
+                case ImageFormat.ImageFormatRg8i:
+                    return "rg8i";
+                case ImageFormat.ImageFormatR16i:
+                    return "r16i";
+                default:
+                    // case ImageFormat.ImageFormatUnknown:
+                    return null;
+            }
+        };
+        CompilerGLSL.prototype.layout_for_member = function (type, index) {
+            if (this.is_legacy())
+                return "";
+            var is_block = this.has_decoration(type.self, Decoration.DecorationBlock) || this.has_decoration(type.self, Decoration.DecorationBufferBlock);
+            if (!is_block)
+                return "";
+            var _a = this, ir = _a.ir, options = _a.options;
+            var memb = maplike_get(Meta, ir.meta, type.self).members;
+            if (index >= memb.length)
+                return "";
+            var dec = memb[index];
+            var attr = [];
+            if (this.has_member_decoration(type.self, index, Decoration.DecorationPassthroughNV))
+                attr.push("passthrough");
+            // We can only apply layouts on members in block interfaces.
+            // This is a bit problematic because in SPIR-V decorations are applied on the struct types directly.
+            // This is not supported on GLSL, so we have to make the assumption that if a struct within our buffer block struct
+            // has a decoration, it was originally caused by a top-level layout() qualifier in GLSL.
+            //
+            // We would like to go from (SPIR-V style):
+            //
+            // struct Foo { layout(row_major) mat4 matrix; };
+            // buffer UBO { Foo foo; };
+            //
+            // to
+            //
+            // struct Foo { mat4 matrix; }; // GLSL doesn't support any layout shenanigans in raw struct declarations.
+            // buffer UBO { layout(row_major) Foo foo; }; // Apply the layout on top-level.
+            var flags = this.combined_decoration_for_member(type, index);
+            if (flags.get(Decoration.DecorationRowMajor))
+                attr.push("row_major");
+            // We don't emit any global layouts, so column_major is default.
+            //if (flags & (1ull << DecorationColMajor))
+            //    attr.push("column_major");
+            if (dec.decoration_flags.get(Decoration.DecorationLocation) && this.can_use_io_location(type.storage, true))
+                attr.push("location = " + dec.location);
+            // Can only declare component if we can declare location.
+            if (dec.decoration_flags.get(Decoration.DecorationComponent) && this.can_use_io_location(type.storage, true)) {
+                if (!options.es) {
+                    if (options.version < 440 && options.version >= 140)
+                        this.require_extension_internal("GL_ARB_enhanced_layouts");
+                    else if (options.version < 140)
+                        throw new Error("Component decoration is not supported in targets below GLSL 1.40.");
+                    attr.push("component = " + dec.component);
+                }
+                else
+                    throw new Error("Component decoration is not supported in ES targets.");
+            }
+            // SPIRVCrossDecorationPacked is set by layout_for_variable earlier to mark that we need to emit offset qualifiers.
+            // This is only done selectively in GLSL as needed.
+            if (this.has_extended_decoration(type.self, ExtendedDecorations.SPIRVCrossDecorationExplicitOffset) &&
+                dec.decoration_flags.get(Decoration.DecorationOffset))
+                attr.push("offset = " + dec.offset);
+            else if (type.storage === StorageClass.StorageClassOutput && dec.decoration_flags.get(Decoration.DecorationOffset))
+                attr.push("xfb_offset = " + dec.offset);
+            if (attr.length === 0)
+                return "";
+            var res = "layout(";
+            res += attr.join(", ");
+            res += ") ";
+            return res;
+        };
         CompilerGLSL.prototype.to_interpolation_qualifiers = function (flags) {
             var res = "";
             //if (flags & (1ull << DecorationSmooth))
@@ -9878,6 +13134,192 @@ var SPIRV = (function (exports) {
             }
             return res;
         };
+        CompilerGLSL.prototype.layout_for_variable = function (var_) {
+            // FIXME: Come up with a better solution for when to disable layouts.
+            // Having layouts depend on extensions as well as which types
+            // of layouts are used. For now, the simple solution is to just disable
+            // layouts for legacy versions.
+            if (this.is_legacy())
+                return "";
+            if (this.subpass_input_is_framebuffer_fetch(var_.self))
+                return "";
+            var _a = this, options = _a.options, ir = _a.ir;
+            var attr = [];
+            var type = this.get(SPIRType, var_.basetype);
+            var flags = this.get_decoration_bitset(var_.self);
+            var typeflags = this.get_decoration_bitset(type.self);
+            if (flags.get(Decoration.DecorationPassthroughNV))
+                attr.push("passthrough");
+            /*if (options.vulkan_semantics && var_.storage === StorageClass.StorageClassPushConstant)
+                attr.push("push_constant");
+            else if (var_.storage === StorageClass.StorageClassShaderRecordBufferKHR)
+                attr.push(ray_tracing_is_khr ? "shaderRecordEXT" : "shaderRecordNV");*/
+            if (flags.get(Decoration.DecorationRowMajor))
+                attr.push("row_major");
+            if (flags.get(Decoration.DecorationColMajor))
+                attr.push("column_major");
+            /*if (options.vulkan_semantics)
+            {
+                if (flags.get(Decoration.DecorationInputAttachmentIndex))
+                    attr.push("input_attachment_index = " + this.get_decoration(var_.self, DecorationInputAttachmentIndex));
+            }*/
+            var is_block = this.has_decoration(type.self, Decoration.DecorationBlock);
+            if (flags.get(Decoration.DecorationLocation) && this.can_use_io_location(var_.storage, is_block)) {
+                var combined_decoration = new Bitset();
+                var members = maplike_get(Meta, ir.meta, type.self).members;
+                for (var i = 0; i < members.length; i++)
+                    combined_decoration.merge_or(this.combined_decoration_for_member(type, i));
+                // If our members have location decorations, we don't need to
+                // emit location decorations at the top as well (looks weird).
+                if (!combined_decoration.get(Decoration.DecorationLocation))
+                    attr.push("location = " + this.get_decoration(var_.self, Decoration.DecorationLocation));
+            }
+            if (this.get_execution_model() === ExecutionModel.ExecutionModelFragment && var_.storage === StorageClass.StorageClassOutput &&
+                this.location_is_non_coherent_framebuffer_fetch(this.get_decoration(var_.self, Decoration.DecorationLocation))) {
+                attr.push("noncoherent");
+            }
+            // Transform feedback
+            var uses_enhanced_layouts = false;
+            if (is_block && var_.storage === StorageClass.StorageClassOutput) {
+                // For blocks, there is a restriction where xfb_stride/xfb_buffer must only be declared on the block itself,
+                // since all members must match the same xfb_buffer. The only thing we will declare for members of the block
+                // is the xfb_offset.
+                var member_count = type.member_types.length;
+                var have_xfb_buffer_stride = false;
+                var have_any_xfb_offset = false;
+                var have_geom_stream = false;
+                var xfb_stride = 0, xfb_buffer = 0, geom_stream = 0;
+                if (flags.get(Decoration.DecorationXfbBuffer) && flags.get(Decoration.DecorationXfbStride)) {
+                    have_xfb_buffer_stride = true;
+                    xfb_buffer = this.get_decoration(var_.self, Decoration.DecorationXfbBuffer);
+                    xfb_stride = this.get_decoration(var_.self, Decoration.DecorationXfbStride);
+                }
+                if (flags.get(Decoration.DecorationStream)) {
+                    have_geom_stream = true;
+                    geom_stream = this.get_decoration(var_.self, Decoration.DecorationStream);
+                }
+                // Verify that none of the members violate our assumption.
+                for (var i = 0; i < member_count; i++) {
+                    if (this.has_member_decoration(type.self, i, Decoration.DecorationStream)) {
+                        var member_geom_stream = this.get_member_decoration(type.self, i, Decoration.DecorationStream);
+                        if (have_geom_stream && member_geom_stream !== geom_stream)
+                            throw new Error("IO block member Stream mismatch.");
+                        have_geom_stream = true;
+                        geom_stream = member_geom_stream;
+                    }
+                    // Only members with an Offset decoration participate in XFB.
+                    if (!this.has_member_decoration(type.self, i, Decoration.DecorationOffset))
+                        continue;
+                    have_any_xfb_offset = true;
+                    if (this.has_member_decoration(type.self, i, Decoration.DecorationXfbBuffer)) {
+                        var buffer_index = this.get_member_decoration(type.self, i, Decoration.DecorationXfbBuffer);
+                        if (have_xfb_buffer_stride && buffer_index !== xfb_buffer)
+                            throw new Error("IO block member XfbBuffer mismatch.");
+                        have_xfb_buffer_stride = true;
+                        xfb_buffer = buffer_index;
+                    }
+                    if (this.has_member_decoration(type.self, i, Decoration.DecorationXfbStride)) {
+                        var stride = this.get_member_decoration(type.self, i, Decoration.DecorationXfbStride);
+                        if (have_xfb_buffer_stride && stride !== xfb_stride)
+                            throw new Error("IO block member XfbStride mismatch.");
+                        have_xfb_buffer_stride = true;
+                        xfb_stride = stride;
+                    }
+                }
+                if (have_xfb_buffer_stride && have_any_xfb_offset) {
+                    attr.push("xfb_buffer = " + xfb_buffer);
+                    attr.push("xfb_stride = " + xfb_stride);
+                    uses_enhanced_layouts = true;
+                }
+                if (have_geom_stream) {
+                    if (this.get_execution_model() !== ExecutionModel.ExecutionModelGeometry)
+                        throw new Error("Geometry streams can only be used in geometry shaders.");
+                    if (options.es)
+                        throw new Error("Multiple geometry streams not supported in ESSL.");
+                    if (options.version < 400)
+                        this.require_extension_internal("GL_ARB_transform_feedback3");
+                    attr.push("stream = " + this.get_decoration(var_.self, Decoration.DecorationStream));
+                }
+            }
+            else if (var_.storage === StorageClass.StorageClassOutput) {
+                if (flags.get(Decoration.DecorationXfbBuffer) && flags.get(Decoration.DecorationXfbStride) && flags.get(Decoration.DecorationOffset)) {
+                    // XFB for standalone variables, we can emit all decorations.
+                    attr.push("xfb_buffer = " + this.get_decoration(var_.self, Decoration.DecorationXfbBuffer));
+                    attr.push("xfb_stride = " + this.get_decoration(var_.self, Decoration.DecorationXfbStride));
+                    attr.push("xfb_offset = " + this.get_decoration(var_.self, Decoration.DecorationOffset));
+                    uses_enhanced_layouts = true;
+                }
+                if (flags.get(Decoration.DecorationStream)) {
+                    if (this.get_execution_model() !== ExecutionModel.ExecutionModelGeometry)
+                        throw new Error("Geometry streams can only be used in geometry shaders.");
+                    if (options.es)
+                        throw new Error("Multiple geometry streams not supported in ESSL.");
+                    if (options.version < 400)
+                        this.require_extension_internal("GL_ARB_transform_feedback3");
+                    attr.push("stream = " + this.get_decoration(var_.self, Decoration.DecorationStream));
+                }
+            }
+            // Can only declare Component if we can declare location.
+            if (flags.get(Decoration.DecorationComponent) && this.can_use_io_location(var_.storage, is_block)) {
+                uses_enhanced_layouts = true;
+                attr.push("component = " + this.get_decoration(var_.self, Decoration.DecorationComponent));
+            }
+            if (uses_enhanced_layouts) {
+                if (!options.es) {
+                    if (options.version < 440 && options.version >= 140)
+                        this.require_extension_internal("GL_ARB_enhanced_layouts");
+                    else if (options.version < 140)
+                        throw new Error("GL_ARB_enhanced_layouts is not supported in targets below GLSL 1.40.");
+                    if (!options.es && options.version < 440)
+                        this.require_extension_internal("GL_ARB_enhanced_layouts");
+                }
+                else if (options.es)
+                    throw new Error("GL_ARB_enhanced_layouts is not supported in ESSL.");
+            }
+            if (flags.get(Decoration.DecorationIndex))
+                attr.push("index = " + this.get_decoration(var_.self, Decoration.DecorationIndex));
+            var ssbo_block = var_.storage === StorageClass.StorageClassStorageBuffer || var_.storage === StorageClass.StorageClassShaderRecordBufferKHR ||
+                (var_.storage === StorageClass.StorageClassUniform && typeflags.get(Decoration.DecorationBufferBlock));
+            var emulated_ubo = var_.storage === StorageClass.StorageClassPushConstant && options.emit_push_constant_as_uniform_buffer;
+            var ubo_block = var_.storage === StorageClass.StorageClassUniform && typeflags.get(Decoration.DecorationBlock);
+            // GL 3.0/GLSL 1.30 is not considered legacy, but it doesn't have UBOs ...
+            var can_use_buffer_blocks = (options.es && options.version >= 300) || (!options.es && options.version >= 140);
+            // pretend no UBOs when options say so
+            if (ubo_block && options.emit_uniform_buffer_as_plain_uniforms)
+                can_use_buffer_blocks = false;
+            var can_use_binding;
+            if (options.es)
+                can_use_binding = options.version >= 310;
+            else
+                can_use_binding = options.enable_420pack_extension || (options.version >= 420);
+            // Make sure we don't emit binding layout for a classic uniform on GLSL 1.30.
+            if (!can_use_buffer_blocks && var_.storage === StorageClass.StorageClassUniform)
+                can_use_binding = false;
+            if (var_.storage === StorageClass.StorageClassShaderRecordBufferKHR)
+                can_use_binding = false;
+            if (can_use_binding && flags.get(Decoration.DecorationBinding))
+                attr.push("binding = " + this.get_decoration(var_.self, Decoration.DecorationBinding));
+            if (var_.storage !== StorageClass.StorageClassOutput && flags.get(Decoration.DecorationOffset))
+                attr.push("offset = " + this.get_decoration(var_.self, Decoration.DecorationOffset));
+            // Instead of adding explicit offsets for every element here, just assume we're using std140 or std430.
+            // If SPIR-V does not comply with either layout, we cannot really work around it.
+            if (can_use_buffer_blocks && (ubo_block || emulated_ubo)) {
+                attr.push(this.buffer_to_packing_standard(type, false));
+            }
+            else if (can_use_buffer_blocks && (ssbo_block)) {
+                attr.push(this.buffer_to_packing_standard(type, true));
+            }
+            // For images, the type itself adds a layout qualifer.
+            // Only emit the format for storage images.
+            if (type.basetype === SPIRTypeBaseType.Image && type.image.sampled === 2) {
+                var fmt = this.format_to_glsl(type.image.format);
+                if (fmt)
+                    attr.push(fmt);
+            }
+            if (attr.length === 0)
+                return "";
+            return "layout(" + attr.join(", ") + ") ";
+        };
         CompilerGLSL.prototype.to_initializer_expression = function (var_) {
             return this.to_unpacked_expression(var_.initializer);
         };
@@ -9908,6 +13350,346 @@ var SPIRV = (function (exports) {
                     return false;
             }
             return true;
+        };
+        CompilerGLSL.prototype.buffer_is_packing_standard = function (type, packing, failed_validation_index, start_offset, end_offset) {
+            // This is very tricky and error prone, but try to be exhaustive and correct here.
+            // SPIR-V doesn't directly say if we're using std430 or std140.
+            // SPIR-V communicates this using Offset and ArrayStride decorations (which is what really matters),
+            // so we have to try to infer whether or not the original GLSL source was std140 or std430 based on this information.
+            // We do not have to consider shared or packed since these layouts are not allowed in Vulkan SPIR-V (they are useless anyways, and custom offsets would do the same thing).
+            //
+            // It is almost certain that we're using std430, but it gets tricky with arrays in particular.
+            // We will assume std430, but infer std140 if we can prove the struct is not compliant with std430.
+            //
+            // The only two differences between std140 and std430 are related to padding alignment/array stride
+            // in arrays and structs. In std140 they take minimum vec4 alignment.
+            // std430 only removes the vec4 requirement.
+            if (failed_validation_index === void 0) { failed_validation_index = null; }
+            if (start_offset === void 0) { start_offset = 0; }
+            if (end_offset === void 0) { end_offset = ~0; }
+            var offset = 0;
+            var pad_alignment = 1;
+            var is_top_level_block = this.has_decoration(type.self, Decoration.DecorationBlock) || this.has_decoration(type.self, Decoration.DecorationBufferBlock);
+            var ir = this.ir;
+            for (var i = 0; i < type.member_types.length; i++) {
+                var memb_type = this.get(SPIRType, type.member_types[i]);
+                var member_flags = maplike_get(Meta, ir.meta, type.self).members[i].decoration_flags;
+                // Verify alignment rules.
+                var packed_alignment = this.type_to_packed_alignment(memb_type, member_flags, packing);
+                // This is a rather dirty workaround to deal with some cases of OpSpecConstantOp used as array size, e.g:
+                // layout(constant_id = 0) const int s = 10;
+                // const int S = s + 5; // SpecConstantOp
+                // buffer Foo { int data[S]; }; // <-- Very hard for us to deduce a fixed value here,
+                // we would need full implementation of compile-time constant folding. :(
+                // If we are the last member of a struct, there might be cases where the actual size of that member is irrelevant
+                // for our analysis (e.g. unsized arrays).
+                // This lets us simply ignore that there are spec constant op sized arrays in our buffers.
+                // Querying size of this member will fail, so just don't call it unless we have to.
+                //
+                // This is likely "best effort" we can support without going into unacceptably complicated workarounds.
+                var member_can_be_unsized = is_top_level_block && (i + 1) === type.member_types.length && memb_type.array.length > 0;
+                var packed_size = 0;
+                if (!member_can_be_unsized /*|| this.packing_is_hlsl(packing)*/)
+                    packed_size = this.type_to_packed_size(memb_type, member_flags, packing);
+                // We only need to care about this if we have non-array types which can straddle the vec4 boundary.
+                /*if (packing_is_hlsl(packing))
+                {
+                    // If a member straddles across a vec4 boundary, alignment is actually vec4.
+                    uint32_t begin_word = offset / 16;
+                    uint32_t end_word = (offset + packed_size - 1) / 16;
+                    if (begin_word !== end_word)
+                        packed_alignment = max(packed_alignment, 16u);
+                }*/
+                var actual_offset = this.type_struct_member_offset(type, i);
+                // Field is not in the specified range anymore and we can ignore any further fields.
+                if (actual_offset >= end_offset)
+                    break;
+                var alignment = Math.max(packed_alignment, pad_alignment);
+                offset = (offset + alignment - 1) & ~(alignment - 1);
+                // The next member following a struct member is aligned to the base alignment of the struct that came before.
+                // GL 4.5 spec, 7.6.2.2.
+                if (memb_type.basetype === SPIRTypeBaseType.Struct && !memb_type.pointer)
+                    pad_alignment = packed_alignment;
+                else
+                    pad_alignment = 1;
+                // Only care about packing if we are in the given range
+                if (actual_offset >= start_offset) {
+                    // We only care about offsets in std140, std430, etc ...
+                    // For EnhancedLayout variants, we have the flexibility to choose our own offsets.
+                    if (!packing_has_flexible_offset(packing)) {
+                        if (actual_offset !== offset) // This cannot be the packing we're looking for.
+                         {
+                            if (failed_validation_index)
+                                failed_validation_index[0] = i;
+                            return false;
+                        }
+                    }
+                    else if ((actual_offset & (alignment - 1)) !== 0) {
+                        // We still need to verify that alignment rules are observed, even if we have explicit offset.
+                        if (failed_validation_index)
+                            failed_validation_index[0] = i;
+                        return false;
+                    }
+                    // Verify array stride rules.
+                    if (memb_type.array.length === 0 && this.type_to_packed_array_stride(memb_type, member_flags, packing) !=
+                        this.type_struct_member_array_stride(type, i)) {
+                        if (failed_validation_index)
+                            failed_validation_index[0] = i;
+                        return false;
+                    }
+                    // Verify that sub-structs also follow packing rules.
+                    // We cannot use enhanced layouts on substructs, so they better be up to spec.
+                    var substruct_packing = packing_to_substruct_packing(packing);
+                    if (!memb_type.pointer && memb_type.member_types.length > 0 &&
+                        !this.buffer_is_packing_standard(memb_type, substruct_packing)) {
+                        if (failed_validation_index)
+                            failed_validation_index[0] = i;
+                        return false;
+                    }
+                }
+                // Bump size.
+                offset = actual_offset + packed_size;
+            }
+            return true;
+        };
+        CompilerGLSL.prototype.buffer_to_packing_standard = function (type, support_std430_without_scalar_layout) {
+            var options = this.options;
+            if (support_std430_without_scalar_layout && this.buffer_is_packing_standard(type, BufferPackingStandard.BufferPackingStd430))
+                return "std430";
+            else if (this.buffer_is_packing_standard(type, BufferPackingStandard.BufferPackingStd140))
+                return "std140";
+            /*else if (options.vulkan_semantics && buffer_is_packing_standard(type, BufferPackingScalar))
+            {
+                require_extension_internal("GL_EXT_scalar_block_layout");
+                return "scalar";
+            }*/
+            else if (support_std430_without_scalar_layout &&
+                this.buffer_is_packing_standard(type, BufferPackingStandard.BufferPackingStd430EnhancedLayout)) {
+                if (options.es /* && !options.vulkan_semantics*/)
+                    throw new Error("Push constant block cannot be expressed as neither std430 nor std140. ES-targets do not support GL_ARB_enhanced_layouts.");
+                /*if (!options.es && !options.vulkan_semantics && options.version < 440)
+                    this.require_extension_internal("GL_ARB_enhanced_layouts");*/
+                this.set_extended_decoration(type.self, ExtendedDecorations.SPIRVCrossDecorationExplicitOffset);
+                return "std430";
+            }
+            else if (this.buffer_is_packing_standard(type, BufferPackingStandard.BufferPackingStd140EnhancedLayout)) {
+                // Fallback time. We might be able to use the ARB_enhanced_layouts to deal with this difference,
+                // however, we can only use layout(offset) on the block itself, not any substructs, so the substructs better be the appropriate layout.
+                // Enhanced layouts seem to always work in Vulkan GLSL, so no need for extensions there.
+                if (options.es /*&& !options.vulkan_semantics*/)
+                    throw new Error("Push constant block cannot be expressed as neither std430 nor std140. ES-targets do not support GL_ARB_enhanced_layouts.");
+                if (!options.es && /*!options.vulkan_semantics &&*/ options.version < 440)
+                    this.require_extension_internal("GL_ARB_enhanced_layouts");
+                this.set_extended_decoration(type.self, ExtendedDecorations.SPIRVCrossDecorationExplicitOffset);
+                return "std140";
+            }
+            /*else if (options.vulkan_semantics && buffer_is_packing_standard(type, BufferPackingStandard.BufferPackingScalarEnhancedLayout))
+            {
+                set_extended_decoration(type.self, SPIRVCrossDecorationExplicitOffset);
+                require_extension_internal("GL_EXT_scalar_block_layout");
+                return "scalar";
+            }*/
+            /*else if (!support_std430_without_scalar_layout && options.vulkan_semantics &&
+                buffer_is_packing_standard(type, BufferPackingStd430))
+            {
+                // UBOs can support std430 with GL_EXT_scalar_block_layout.
+                require_extension_internal("GL_EXT_scalar_block_layout");
+                return "std430";
+            }*/
+            /*else if (!support_std430_without_scalar_layout && options.vulkan_semantics &&
+                buffer_is_packing_standard(type, BufferPackingStd430EnhancedLayout))
+            {
+                // UBOs can support std430 with GL_EXT_scalar_block_layout.
+                set_extended_decoration(type.self, SPIRVCrossDecorationExplicitOffset);
+                require_extension_internal("GL_EXT_scalar_block_layout");
+                return "std430";
+            }*/
+            else {
+                throw new Error("Buffer block cannot be expressed as any of std430, std140, scalar, even with enhanced layouts. You can try flattening this block to support a more flexible layout.");
+            }
+        };
+        CompilerGLSL.prototype.type_to_packed_base_size = function (type, _) {
+            switch (type.basetype) {
+                case SPIRTypeBaseType.Double:
+                case SPIRTypeBaseType.Int64:
+                case SPIRTypeBaseType.UInt64:
+                    return 8;
+                case SPIRTypeBaseType.Float:
+                case SPIRTypeBaseType.Int:
+                case SPIRTypeBaseType.UInt:
+                    return 4;
+                case SPIRTypeBaseType.Half:
+                case SPIRTypeBaseType.Short:
+                case SPIRTypeBaseType.UShort:
+                    return 2;
+                case SPIRTypeBaseType.SByte:
+                case SPIRTypeBaseType.UByte:
+                    return 1;
+                default:
+                    throw new Error("Unrecognized type in type_to_packed_base_size.");
+            }
+        };
+        CompilerGLSL.prototype.type_to_packed_alignment = function (type, flags, packing) {
+            var ir = this.ir;
+            // If using PhysicalStorageBufferEXT storage class, this is a pointer,
+            // and is 64-bit.
+            if (type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT) {
+                if (!type.pointer)
+                    throw new Error("Types in PhysicalStorageBufferEXT must be pointers.");
+                if (ir.addressing_model === AddressingModel.AddressingModelPhysicalStorageBuffer64EXT) {
+                    if (packing_is_vec4_padded(packing) && this.type_is_array_of_pointers(type))
+                        return 16;
+                    else
+                        return 8;
+                }
+                else
+                    throw new Error("AddressingModelPhysicalStorageBuffer64EXT must be used for PhysicalStorageBufferEXT.");
+            }
+            if (type.array.length) {
+                var minimum_alignment = 1;
+                if (packing_is_vec4_padded(packing))
+                    minimum_alignment = 16;
+                var tmp = this.get(SPIRType, type.parent_type);
+                while (!tmp.array.length)
+                    tmp = this.get(SPIRType, tmp.parent_type);
+                // Get the alignment of the base type, then maybe round up.
+                return Math.max(minimum_alignment, this.type_to_packed_alignment(tmp, flags, packing));
+            }
+            if (type.basetype === SPIRTypeBaseType.Struct) {
+                // Rule 9. Structs alignments are maximum alignment of its members.
+                var alignment = 1;
+                for (var i = 0; i < type.member_types.length; i++) {
+                    var member_flags = maplike_get(Meta, ir.meta, type.self).members[i].decoration_flags;
+                    alignment =
+                        Math.max(alignment, this.type_to_packed_alignment(this.get(SPIRType, type.member_types[i]), member_flags, packing));
+                }
+                // In std140, struct alignment is rounded up to 16.
+                if (packing_is_vec4_padded(packing))
+                    alignment = Math.max(alignment, 16);
+                return alignment;
+            }
+            else {
+                var base_alignment = this.type_to_packed_base_size(type, packing);
+                // Alignment requirement for scalar block layout is always the alignment for the most basic component.
+                if (packing_is_scalar(packing))
+                    return base_alignment;
+                // Vectors are *not* aligned in HLSL, but there's an extra rule where vectors cannot straddle
+                // a vec4, this is handled outside since that part knows our current offset.
+                /*if (type.columns === 1 && packing_is_hlsl(packing))
+                    return base_alignment;*/
+                // From 7.6.2.2 in GL 4.5 core spec.
+                // Rule 1
+                if (type.vecsize === 1 && type.columns === 1)
+                    return base_alignment;
+                // Rule 2
+                if ((type.vecsize === 2 || type.vecsize === 4) && type.columns === 1)
+                    return type.vecsize * base_alignment;
+                // Rule 3
+                if (type.vecsize === 3 && type.columns === 1)
+                    return 4 * base_alignment;
+                // Rule 4 implied. Alignment does not change in std430.
+                // Rule 5. Column-major matrices are stored as arrays of
+                // vectors.
+                if (flags.get(Decoration.DecorationColMajor) && type.columns > 1) {
+                    if (packing_is_vec4_padded(packing))
+                        return 4 * base_alignment;
+                    else if (type.vecsize === 3)
+                        return 4 * base_alignment;
+                    else
+                        return type.vecsize * base_alignment;
+                }
+                // Rule 6 implied.
+                // Rule 7.
+                if (flags.get(Decoration.DecorationRowMajor) && type.vecsize > 1) {
+                    if (packing_is_vec4_padded(packing))
+                        return 4 * base_alignment;
+                    else if (type.columns === 3)
+                        return 4 * base_alignment;
+                    else
+                        return type.columns * base_alignment;
+                }
+                // Rule 8 implied.
+            }
+            throw new Error("Did not find suitable rule for type. Bogus decorations?");
+        };
+        CompilerGLSL.prototype.type_to_packed_array_stride = function (type, flags, packing) {
+            // Array stride is equal to aligned size of the underlying type.
+            var parent = type.parent_type;
+            console.assert(parent);
+            var tmp = this.get(SPIRType, parent);
+            var size = this.type_to_packed_size(tmp, flags, packing);
+            var alignment = this.type_to_packed_alignment(type, flags, packing);
+            return (size + alignment - 1) & ~(alignment - 1);
+        };
+        CompilerGLSL.prototype.type_to_packed_size = function (type, flags, packing) {
+            if (type.array.length) {
+                var packed_size = this.to_array_size_literal(type) * this.type_to_packed_array_stride(type, flags, packing);
+                // For arrays of vectors and matrices in HLSL, the last element has a size which depends on its vector size,
+                // so that it is possible to pack other vectors into the last element.
+                /*if (packing_is_hlsl(packing) && type.basetype !== SPIRTypeBaseType.Struct)
+                    packed_size -= (4 - type.vecsize) * (type.width / 8);*/
+                return packed_size;
+            }
+            var ir = this.ir;
+            // If using PhysicalStorageBufferEXT storage class, this is a pointer,
+            // and is 64-bit.
+            if (type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT) {
+                if (!type.pointer)
+                    throw new Error("Types in PhysicalStorageBufferEXT must be pointers.");
+                if (ir.addressing_model === AddressingModel.AddressingModelPhysicalStorageBuffer64EXT)
+                    return 8;
+                else
+                    throw new Error("AddressingModelPhysicalStorageBuffer64EXT must be used for PhysicalStorageBufferEXT.");
+            }
+            var size = 0;
+            if (type.basetype === SPIRTypeBaseType.Struct) {
+                var pad_alignment = 1;
+                for (var i = 0; i < type.member_types.length; i++) {
+                    var member_flags = maplike_get(Meta, ir.meta, type.self).members[i].decoration_flags;
+                    var member_type = this.get(SPIRType, type.member_types[i]);
+                    var packed_alignment = this.type_to_packed_alignment(member_type, member_flags, packing);
+                    var alignment = Math.max(packed_alignment, pad_alignment);
+                    // The next member following a struct member is aligned to the base alignment of the struct that came before.
+                    // GL 4.5 spec, 7.6.2.2.
+                    if (member_type.basetype === SPIRTypeBaseType.Struct)
+                        pad_alignment = packed_alignment;
+                    else
+                        pad_alignment = 1;
+                    size = (size + alignment - 1) & ~(alignment - 1);
+                    size += this.type_to_packed_size(member_type, member_flags, packing);
+                }
+            }
+            else {
+                var base_alignment = this.type_to_packed_base_size(type, packing);
+                if (packing_is_scalar(packing)) {
+                    size = type.vecsize * type.columns * base_alignment;
+                }
+                else {
+                    if (type.columns === 1)
+                        size = type.vecsize * base_alignment;
+                    if (flags.get(Decoration.DecorationColMajor) && type.columns > 1) {
+                        if (packing_is_vec4_padded(packing))
+                            size = type.columns * 4 * base_alignment;
+                        else if (type.vecsize === 3)
+                            size = type.columns * 4 * base_alignment;
+                        else
+                            size = type.columns * type.vecsize * base_alignment;
+                    }
+                    if (flags.get(Decoration.DecorationRowMajor) && type.vecsize > 1) {
+                        if (packing_is_vec4_padded(packing))
+                            size = type.vecsize * 4 * base_alignment;
+                        else if (type.columns === 3)
+                            size = type.vecsize * 4 * base_alignment;
+                        else
+                            size = type.vecsize * type.columns * base_alignment;
+                    }
+                    // For matrices in HLSL, the last element has a size which depends on its vector size,
+                    // so that it is possible to pack other vectors into the last element.
+                    /*if (this.packing_is_hlsl(packing) && type.columns > 1)
+                        size -= (4 - type.vecsize) * (type.width / 8);*/
+                }
+            }
+            return size;
         };
         CompilerGLSL.prototype.bitcast_glsl_op = function (out_type, in_type) {
             // OpBitcast can deal with pointers.
@@ -10006,6 +13788,13 @@ var SPIRV = (function (exports) {
                 return "unpackUint4x16";
             return "";
         };
+        CompilerGLSL.prototype.bitcast_glsl = function (result_type, argument) {
+            var op = this.bitcast_glsl_op(result_type, this.expression_type(argument));
+            if (op === "")
+                return this.to_enclosed_unpacked_expression(argument);
+            else
+                return op + "(" + this.to_unpacked_expression(argument) + ")";
+        };
         CompilerGLSL.prototype.bitcast_expression = function (target_type, arg, expr) {
             if (expr === undefined) {
                 // first overload
@@ -10073,6 +13862,79 @@ var SPIRV = (function (exports) {
                     op += "()";
             }
             return op;
+        };
+        CompilerGLSL.prototype.replace_illegal_names = function (keywords_) {
+            var _this = this;
+            if (keywords_ === void 0) { keywords_ = keywords; }
+            var ir = this.ir;
+            ir.for_each_typed_id(SPIRVariable, function (_, var_) {
+                if (_this.is_hidden_variable(var_))
+                    return;
+                var meta = ir.find_meta(var_.self);
+                if (!meta)
+                    return;
+                var m = meta.decoration;
+                if (keywords_.has(m.alias))
+                    m.alias = "_" + m.alias;
+            });
+            ir.for_each_typed_id(SPIRFunction, function (_, func) {
+                var meta = ir.find_meta(func.self);
+                if (!meta)
+                    return;
+                var m = meta.decoration;
+                if (keywords_.has(m.alias))
+                    m.alias = "_" + m.alias;
+            });
+            ir.for_each_typed_id(SPIRType, function (_, type) {
+                var meta = ir.find_meta(type.self);
+                if (!meta)
+                    return;
+                var m = meta.decoration;
+                if (keywords_.has(m.alias))
+                    m.alias = "_" + m.alias;
+                for (var _i = 0, _a = meta.members; _i < _a.length; _i++) {
+                    var memb = _a[_i];
+                    if (keywords_.has(memb.alias))
+                        memb.alias = "_" + memb.alias;
+                }
+            });
+        };
+        CompilerGLSL.prototype.replace_fragment_output = function (var_) {
+            var ir = this.ir;
+            var m = maplike_get(Meta, ir.meta, var_.self).decoration;
+            var location = 0;
+            if (m.decoration_flags.get(Decoration.DecorationLocation))
+                location = m.location;
+            // If our variable is arrayed, we must not emit the array part of this as the SPIR-V will
+            // do the access chain part of this for us.
+            var type = this.get(SPIRType, var_.basetype);
+            if (type.array.length === 0) {
+                // Redirect the write to a specific render target in legacy GLSL.
+                m.alias = "gl_FragData[".concat(location, "]");
+                if (this.is_legacy_es() && location !== 0)
+                    this.require_extension_internal("GL_EXT_draw_buffers");
+            }
+            else if (type.array.length === 1) {
+                // If location is non-zero, we probably have to add an offset.
+                // This gets really tricky since we'd have to inject an offset in the access chain.
+                // FIXME: This seems like an extremely odd-ball case, so it's probably fine to leave it like this for now.
+                m.alias = "gl_FragData";
+                if (location !== 0)
+                    throw new Error("Arrayed output variable used, but location is not 0. This is unimplemented in SPIRV-Cross.");
+                if (this.is_legacy_es())
+                    this.require_extension_internal("GL_EXT_draw_buffers");
+            }
+            else
+                throw new Error("Array-of-array output variable used. This cannot be implemented in legacy GLSL.");
+            var_.compat_builtin = true; // We don't want to declare this variable, but use the name as-is.
+        };
+        CompilerGLSL.prototype.replace_fragment_outputs = function () {
+            var _this = this;
+            this.ir.for_each_typed_id(SPIRVariable, function (_, var_) {
+                var type = _this.get(SPIRType, var_.basetype);
+                if (!_this.is_builtin_variable(var_) && !var_.remapped_variable && type.pointer && var_.storage === StorageClass.StorageClassOutput)
+                    _this.replace_fragment_output(var_);
+            });
         };
         CompilerGLSL.prototype.load_flattened_struct = function (basename, type) {
             var expr = this.type_to_glsl_constructor(type);
@@ -10146,6 +14008,51 @@ var SPIRV = (function (exports) {
             var options = this.options;
             return !options.es && options.version < 130;
         };
+        CompilerGLSL.prototype.pls_decl = function (var_) {
+            var variable = this.get(SPIRVariable, var_.id);
+            var type = new SPIRType();
+            type.vecsize = pls_format_to_components(var_.format);
+            type.basetype = pls_format_to_basetype(var_.format);
+            return to_pls_layout(var_.format) + this.to_pls_qualifiers_glsl(variable) + this.type_to_glsl(type) + " " +
+                this.to_name(variable.self);
+        };
+        CompilerGLSL.prototype.to_pls_qualifiers_glsl = function (variable) {
+            var flags = maplike_get(Meta, this.ir.meta, variable.self).decoration.decoration_flags;
+            if (flags.get(Decoration.DecorationRelaxedPrecision))
+                return "mediump ";
+            else
+                return "highp ";
+        };
+        CompilerGLSL.prototype.emit_pls = function () {
+            var execution = this.get_entry_point();
+            var options = this.options;
+            if (execution.model !== ExecutionModel.ExecutionModelFragment)
+                throw new Error("Pixel local storage only supported in fragment shaders.");
+            if (!options.es)
+                throw new Error("Pixel local storage only supported in OpenGL ES.");
+            if (options.version < 300)
+                throw new Error("Pixel local storage only supported in ESSL 3.0 and above.");
+            if (this.pls_inputs.length > 0) {
+                this.statement("__pixel_local_inEXT _PLSIn");
+                this.begin_scope();
+                for (var _i = 0, _a = this.pls_inputs; _i < _a.length; _i++) {
+                    var input = _a[_i];
+                    this.statement(this.pls_decl(input), ";");
+                }
+                this.end_scope_decl();
+                this.statement("");
+            }
+            if (this.pls_outputs.length > 0) {
+                this.statement("__pixel_local_outEXT _PLSOut");
+                this.begin_scope();
+                for (var _b = 0, _c = this.pls_outputs; _b < _c.length; _b++) {
+                    var output = _c[_b];
+                    this.statement(this.pls_decl(output), ";");
+                }
+                this.end_scope_decl();
+                this.statement("");
+            }
+        };
         CompilerGLSL.prototype.remap_pls_variables = function () {
             for (var _i = 0, _a = this.pls_inputs; _i < _a.length; _i++) {
                 var input = _a[_i];
@@ -10186,17 +14093,17 @@ var SPIRV = (function (exports) {
         };
         CompilerGLSL.prototype.emit_inout_fragment_outputs_copy_to_subpass_inputs = function () {
             var _this = this;
-            var _loop_1 = function (remap) {
-                var subpass_var = this_1.find_subpass_input_by_attachment_index(remap.first);
-                var output_var = this_1.find_color_output_by_location(remap.second);
+            var _loop_3 = function (remap) {
+                var subpass_var = this_2.find_subpass_input_by_attachment_index(remap.first);
+                var output_var = this_2.find_color_output_by_location(remap.second);
                 if (!subpass_var)
                     return "continue";
                 if (!output_var)
                     throw new Error("Need to declare the corresponding fragment output variable to be able to read from" +
                         " it.");
-                if (this_1.is_array(this_1.get(SPIRType, output_var.basetype)))
+                if (this_2.is_array(this_2.get(SPIRType, output_var.basetype)))
                     throw new Error("Cannot use GL_EXT_shader_framebuffer_fetch with arrays of color outputs.");
-                var func = this_1.get(SPIRFunction, this_1.get_entry_point().self);
+                var func = this_2.get(SPIRFunction, this_2.get_entry_point().self);
                 func.fixup_hooks_in.push(function () {
                     if (_this.is_legacy()) {
                         _this.statement(_this.to_expression(subpass_var.self), " = ", "gl_LastFragData[", _this.get_decoration(output_var.self, Decoration.DecorationLocation), "];");
@@ -10207,10 +14114,10 @@ var SPIRV = (function (exports) {
                     }
                 });
             };
-            var this_1 = this;
+            var this_2 = this;
             for (var _i = 0, _a = this.subpass_to_framebuffer_fetch_attachment; _i < _a.length; _i++) {
                 var remap = _a[_i];
-                _loop_1(remap);
+                _loop_3(remap);
             }
         };
         CompilerGLSL.prototype.find_subpass_input_by_attachment_index = function (index) {
@@ -10232,6 +14139,20 @@ var SPIRV = (function (exports) {
                     ret = var_;
             });
             return ret;
+        };
+        // A variant which takes two sets of name. The secondary is only used to verify there are no collisions,
+        // but the set is not updated when we have found a new name.
+        // Used primarily when adding block interface names.
+        CompilerGLSL.prototype.add_variable = function (variables_primary, variables_secondary, name) {
+            if (name === "")
+                return;
+            name = ParsedIR.sanitize_underscores(name);
+            if (ParsedIR.is_globally_reserved_identifier(name, true)) {
+                name = "";
+                return;
+            }
+            name = this.update_name_cache(variables_primary, variables_secondary, name);
+            return name;
         };
         CompilerGLSL.prototype.handle_invalid_expression = function (id) {
             // We tried to read an invalidated expression.
@@ -10277,31 +14198,23 @@ var SPIRV = (function (exports) {
             this.analyze_interlocked_resource_usage();
             if (this.inout_color_attachments.length > 0)
                 this.emit_inout_fragment_outputs_copy_to_subpass_inputs();
-            /*
             // Shaders might cast unrelated data to pointers of non-block types.
             // Find all such instances and make sure we can cast the pointers to a synthesized block type.
-            if (ir.addressing_model === AddressingModelPhysicalStorageBuffer64EXT)
-                analyze_non_block_pointer_types();
-
-            uint32_t;
-            pass_count = 0;
+            if (ir.addressing_model === AddressingModel.AddressingModelPhysicalStorageBuffer64EXT)
+                this.analyze_non_block_pointer_types();
+            var pass_count = 0;
             do {
                 if (pass_count >= 3)
                     throw new Error("Over 3 compilation loops detected. Must be a bug!");
-
-                reset();
-
-                buffer.reset();
-
-                emit_header();
-                emit_resources();
-                emit_extension_workarounds(get_execution_model());
-
-                emit_function(get<SPIRFunction>(ir.default_entry_point), Bitset());
-
+                this.reset();
+                this.buffer.reset();
+                this.emit_header();
+                this.emit_resources();
+                // this.emit_extension_workarounds(this.get_execution_model());
+                // this.emit_function(this.get<SPIRFunction>(SPIRFunction, ir.default_entry_point), new Bitset());
                 pass_count++;
-            } while (is_forcing_recompilation());
-
+            } while (this.is_forcing_recompilation());
+            /*
             // Implement the interlocked wrapper function at the end.
             // The body was implemented in lieu of main().
             if (interlocked_is_complex) {
@@ -10489,13 +14402,61 @@ var SPIRV = (function (exports) {
                     // Very old glslangValidator and HLSL compilers do not emit required qualifiers here.
                     // Solve this by making the image access as restricted as possible and loosen up if we need to.
                     // If any no-read/no-write flags are actually set, assume that the compiler knows what it's doing.
-                    var flags = _this.ir.meta[var_].decoration.decoration_flags;
+                    var flags = maplike_get(Meta, _this.ir.meta, var_).decoration.decoration_flags;
                     if (!flags.get(Decoration.DecorationNonWritable) && !flags.get(Decoration.DecorationNonReadable)) {
                         flags.set(Decoration.DecorationNonWritable);
                         flags.set(Decoration.DecorationNonReadable);
                     }
                 }
             });
+        };
+        CompilerGLSL.prototype.type_is_empty = function (type) {
+            return type.basetype === SPIRTypeBaseType.Struct && type.member_types.length === 0;
+        };
+        CompilerGLSL.prototype.declare_undefined_values = function () {
+            var _this = this;
+            var emitted = false;
+            this.ir.for_each_typed_id(SPIRUndef, function (_, undef) {
+                var type = _this.get(SPIRType, undef.basetype);
+                // OpUndef can be void for some reason ...
+                if (type.basetype === SPIRTypeBaseType.Void)
+                    return;
+                var initializer = "";
+                if (_this.options.force_zero_initialized_variables && _this.type_can_zero_initialize(type))
+                    initializer = " = " + _this.to_zero_initialized_expression(undef.basetype);
+                _this.statement(_this.variable_decl(type, _this.to_name(undef.self), undef.self), initializer, ";");
+                emitted = true;
+            });
+            if (emitted)
+                this.statement("");
+        };
+        CompilerGLSL.prototype.can_use_io_location = function (storage, block) {
+            var options = this.options;
+            // Location specifiers are must have in SPIR-V, but they aren't really supported in earlier versions of GLSL.
+            // Be very explicit here about how to solve the issue.
+            if ((this.get_execution_model() !== ExecutionModel.ExecutionModelVertex && storage === StorageClass.StorageClassInput) ||
+                (this.get_execution_model() !== ExecutionModel.ExecutionModelFragment && storage === StorageClass.StorageClassOutput)) {
+                var minimum_desktop_version = block ? 440 : 410;
+                // ARB_enhanced_layouts vs ARB_separate_shader_objects ...
+                if (!options.es && options.version < minimum_desktop_version && !options.separate_shader_objects)
+                    return false;
+                else if (options.es && options.version < 310)
+                    return false;
+            }
+            if ((this.get_execution_model() === ExecutionModel.ExecutionModelVertex && storage === StorageClass.StorageClassInput) ||
+                (this.get_execution_model() === ExecutionModel.ExecutionModelFragment && storage === StorageClass.StorageClassOutput)) {
+                if (options.es && options.version < 300)
+                    return false;
+                else if (!options.es && options.version < 330)
+                    return false;
+            }
+            if (storage === StorageClass.StorageClassUniform || storage === StorageClass.StorageClassUniformConstant || storage === StorageClass.StorageClassPushConstant) {
+                if (options.es && options.version < 310)
+                    return false;
+                else if (!options.es && options.version < 430)
+                    return false;
+            }
+            return true;
         };
         CompilerGLSL.prototype.convert_half_to_string = function (c, col, row) {
             var res;
@@ -10640,6 +14601,15 @@ var SPIRV = (function (exports) {
             }
             return res;
         };
+        CompilerGLSL.prototype.variable_is_lut = function (var_) {
+            var statically_assigned = var_.statically_assigned && var_.static_expression !== (0) && var_.remapped_variable;
+            if (statically_assigned) {
+                var constant = this.maybe_get(SPIRConstant, var_.static_expression);
+                if (constant && constant.is_used_as_lut)
+                    return true;
+            }
+            return false;
+        };
         CompilerGLSL.prototype.fixup_type_alias = function () {
             var _this = this;
             var ir = this.ir;
@@ -10707,6 +14677,145 @@ var SPIRV = (function (exports) {
         var t = a[a];
         arr[a] = arr[b];
         arr[b] = t;
+    }
+    function is_block_builtin(builtin) {
+        return builtin === BuiltIn.BuiltInPosition || builtin === BuiltIn.BuiltInPointSize || builtin === BuiltIn.BuiltInClipDistance ||
+            builtin === BuiltIn.BuiltInCullDistance;
+    }
+    function is_unsigned_opcode(op) {
+        // Don't have to be exhaustive, only relevant for legacy target checking ...
+        switch (op) {
+            case Op.OpShiftRightLogical:
+            case Op.OpUGreaterThan:
+            case Op.OpUGreaterThanEqual:
+            case Op.OpULessThan:
+            case Op.OpULessThanEqual:
+            case Op.OpUConvert:
+            case Op.OpUDiv:
+            case Op.OpUMod:
+            case Op.OpUMulExtended:
+            case Op.OpConvertUToF:
+            case Op.OpConvertFToU:
+                return true;
+            default:
+                return false;
+        }
+    }
+    function packing_has_flexible_offset(packing) {
+        switch (packing) {
+            case BufferPackingStandard.BufferPackingStd140:
+            case BufferPackingStandard.BufferPackingStd430:
+            case BufferPackingStandard.BufferPackingScalar:
+                // case BufferPackingHLSLCbuffer:
+                return false;
+            default:
+                return true;
+        }
+    }
+    function packing_to_substruct_packing(packing) {
+        switch (packing) {
+            case BufferPackingStandard.BufferPackingStd140EnhancedLayout:
+                return BufferPackingStandard.BufferPackingStd140;
+            case BufferPackingStandard.BufferPackingStd430EnhancedLayout:
+                return BufferPackingStandard.BufferPackingStd430;
+            // case BufferPackingStandard.BufferPackingHLSLCbufferPackOffset:
+            // return BufferPackingStandard.BufferPackingHLSLCbuffer;
+            case BufferPackingStandard.BufferPackingScalarEnhancedLayout:
+                return BufferPackingStandard.BufferPackingScalar;
+            default:
+                return packing;
+        }
+    }
+    function packing_is_vec4_padded(packing) {
+        switch (packing) {
+            // case BufferPackingStandard.BufferPackingHLSLCbuffer:
+            // case BufferPackingStandard.BufferPackingHLSLCbufferPackOffset:
+            case BufferPackingStandard.BufferPackingStd140:
+            case BufferPackingStandard.BufferPackingStd140EnhancedLayout:
+                return true;
+            default:
+                return false;
+        }
+    }
+    function packing_is_scalar(packing) {
+        switch (packing) {
+            case BufferPackingStandard.BufferPackingScalar:
+            case BufferPackingStandard.BufferPackingScalarEnhancedLayout:
+                return true;
+            default:
+                return false;
+        }
+    }
+    function pls_format_to_basetype(format) {
+        switch (format) {
+            case PlsFormat.PlsRGBA8I:
+            case PlsFormat.PlsRG16I:
+                return SPIRTypeBaseType.Int;
+            case PlsFormat.PlsRGB10A2UI:
+            case PlsFormat.PlsRGBA8UI:
+            case PlsFormat.PlsRG16UI:
+            case PlsFormat.PlsR32UI:
+                return SPIRTypeBaseType.UInt;
+            default:
+                /*case PlsR11FG11FB10F:
+                case PlsR32F:
+                case PlsRG16F:
+                case PlsRGB10A2:
+                case PlsRGBA8:
+                case PlsRG16:*/
+                return SPIRTypeBaseType.Float;
+        }
+    }
+    function pls_format_to_components(format) {
+        switch (format) {
+            default:
+            case PlsFormat.PlsR32F:
+            case PlsFormat.PlsR32UI:
+                return 1;
+            case PlsFormat.PlsRG16F:
+            case PlsFormat.PlsRG16:
+            case PlsFormat.PlsRG16UI:
+            case PlsFormat.PlsRG16I:
+                return 2;
+            case PlsFormat.PlsR11FG11FB10F:
+                return 3;
+            case PlsFormat.PlsRGB10A2:
+            case PlsFormat.PlsRGBA8:
+            case PlsFormat.PlsRGBA8I:
+            case PlsFormat.PlsRGB10A2UI:
+            case PlsFormat.PlsRGBA8UI:
+                return 4;
+        }
+    }
+    function to_pls_layout(format) {
+        switch (format) {
+            case PlsFormat.PlsR11FG11FB10F:
+                return "layout(r11f_g11f_b10f) ";
+            case PlsFormat.PlsR32F:
+                return "layout(r32f) ";
+            case PlsFormat.PlsRG16F:
+                return "layout(rg16f) ";
+            case PlsFormat.PlsRGB10A2:
+                return "layout(rgb10_a2) ";
+            case PlsFormat.PlsRGBA8:
+                return "layout(rgba8) ";
+            case PlsFormat.PlsRG16:
+                return "layout(rg16) ";
+            case PlsFormat.PlsRGBA8I:
+                return "layout(rgba8i)";
+            case PlsFormat.PlsRG16I:
+                return "layout(rg16i) ";
+            case PlsFormat.PlsRGB10A2UI:
+                return "layout(rgb10_a2ui) ";
+            case PlsFormat.PlsRGBA8UI:
+                return "layout(rgba8ui) ";
+            case PlsFormat.PlsRG16UI:
+                return "layout(rg16ui) ";
+            case PlsFormat.PlsR32UI:
+                return "layout(r32ui) ";
+            default:
+                return "";
+        }
     }
 
     function rename_interface_variable(compiler, resources, location, name) {

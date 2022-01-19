@@ -135,7 +135,7 @@ export class SPIRConstant extends IVariant
 
     // For composites which are constant arrays, etc.
     // should be ConstantID[]
-    subconstants: Uint32Array;
+    subconstants: Uint32Array = new Uint32Array();
 
     // Non-Vulkan GLSL, HLSL and sometimes MSL emits defines for each specialization constant,
     // and uses them to initialize the constant. This allows the user
@@ -312,7 +312,6 @@ export class SPIRConstant extends IVariant
             this._constructArray(args[0], args[1], args[2], args[3]);
         else
             this._constructVecMat(args[0], args[1], args[2], args[3]);
-
     }
 
     _construct(constant_type: TypeID)

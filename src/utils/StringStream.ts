@@ -11,4 +11,9 @@ export class StringStream
     {
         this._str = this._str.concat(...args);
     }
+
+    reset()
+    {
+        this._str = "";
+    }
 }

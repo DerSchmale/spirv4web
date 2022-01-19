@@ -4,7 +4,7 @@ import { Variant, variant_get, variant_set } from "../common/Variant";
 import { ObjectPoolGroup } from "../common/ObjectPoolGroup";
 import { Meta, MetaDecoration } from "../common/Meta";
 import { Types } from "../common/Types";
-import { AddressingModel, Capability, Decoration, FPRoundingMode, MemoryModel, Op } from "../spirv";
+import { AddressingModel, Capability, Decoration, FPRoundingMode, ImageFormat, MemoryModel, Op } from "../spirv";
 import { SPIREntryPoint } from "../common/SPIREntryPoint";
 import { Bitset } from "../common/Bitset";
 import { MemberPointer, Pointer } from "../utils/Pointer";
@@ -689,21 +689,6 @@ export class ParsedIR
         }
     }
 
-    increase_bound_by(incr_amount: number): number
-    {
-        const curr_bound = this.ids.length;
-        const new_bound = curr_bound + incr_amount;
-
-        this.ids.length += incr_amount;
-        for (let i = 0; i < incr_amount; i++)
-            // original is: ids.emplace_back(pool_group.get());
-            // which calls the constructor for Variant with the pointer to pool_group
-            this.ids[i] = new Variant(this.pool_group);
-
-        this.block_meta.length = new_bound;
-        return curr_bound;
-    }
-
     get_buffer_block_flags(var_: SPIRVariable): Bitset
     {
         const type = this.get(SPIRType, var_.basetype);
@@ -908,11 +893,21 @@ export class ParsedIR
     {
         for (let it = this.meta_needing_name_fixup.values(), id = null; (id = it.next().value); ) {
             const m = this.get_meta(id);
-            m.decoration.alias = sanitize_identifier(m.decoration.alias, false, false);
+            m.decoration.alias = ParsedIR.sanitize_identifier(m.decoration.alias, false, false);
             for (let memb of m.members)
-                memb.alias = sanitize_identifier(memb.alias, true, false);
+                memb.alias = ParsedIR.sanitize_identifier(memb.alias, true, false);
         }
         this.meta_needing_name_fixup.clear();
+    }
+
+    static sanitize_identifier(name: string, member: boolean, allow_reserved_prefixes: boolean): string
+    {
+        if (!is_valid_identifier(name))
+            name = ensure_valid_identifier(name);
+        if (is_reserved_identifier(name, member, allow_reserved_prefixes))
+            name = make_unreserved_identifier(name);
+
+        return name;
     }
 
     static sanitize_underscores(str: string): string
@@ -942,6 +937,26 @@ export class ParsedIR
         return str.substring(0, dst);*/
     }
 
+    static is_globally_reserved_identifier(str: string, allow_reserved_prefixes: boolean): boolean
+    {
+        return is_reserved_identifier(str, false, allow_reserved_prefixes);
+    }
+
+    increase_bound_by(incr_amount: number): number
+    {
+        const curr_bound = this.ids.length;
+        const new_bound = curr_bound + incr_amount;
+
+        this.ids.length += incr_amount;
+        for (let i = 0; i < incr_amount; i++)
+            // original is: ids.emplace_back(pool_group.get());
+            // which calls the constructor for Variant with the pointer to pool_group
+            this.ids[i] = new Variant(this.pool_group);
+
+        this.block_meta.length = new_bound;
+        return curr_bound;
+    }
+
     get_spirv_version(): number
     {
         return this.spirv[1];
@@ -951,16 +966,6 @@ export class ParsedIR
     {
         return variant_get(classRef, this.ids[id]);
     }
-}
-
-function sanitize_identifier(name: string, member: boolean, allow_reserved_prefixes: boolean): string
-{
-    if (!is_valid_identifier(name))
-        name = ensure_valid_identifier(name);
-    if (is_reserved_identifier(name, member, allow_reserved_prefixes))
-        name = make_unreserved_identifier(name);
-
-    return name;
 }
 
 function is_globally_reserved_identifier(str: string, allow_reserved_prefixes: boolean): boolean

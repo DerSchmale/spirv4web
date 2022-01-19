@@ -23,7 +23,7 @@ import { EmbeddedInstruction, Instruction } from "../common/Instruction";
 import { defaultCopy } from "../utils/defaultCopy";
 import { InterfaceVariableAccessHandler } from "./InterfaceVariableAccessHandler";
 import { BuiltInResource, Resource, ShaderResources } from "./ShaderResources";
-import { ExtendedDecorations } from "../common/Meta";
+import { ExtendedDecorations, Meta, MetaDecoration } from "../common/Meta";
 import { Bitset } from "../common/Bitset";
 import { CombinedImageSampler } from "./CombinedImageSampler";
 import { CombinedImageSamplerHandler } from "./CombinedImageSamplerHandler";
@@ -39,6 +39,9 @@ import { CombinedImageSamplerDrefHandler } from "./CombinedImageSamplerDrefHandl
 import { CombinedImageSamplerUsageHandler } from "./CombinedImageSamplerUsageHandler";
 import { InterlockedResourceAccessPrepassHandler } from "./InterlockedResourceAccessPrepassHandler";
 import { InterlockedResourceAccessHandler } from "./InterlockedResourceAccessHandler";
+import { PhysicalBlockMeta } from "./PhysicalBlockMeta";
+import { PhysicalStorageBufferPointerHandler } from "./PhysicalStorageBufferPointerHandler";
+import { convert_to_string } from "../utils/string";
 
 type VariableTypeRemapCallback = (type: SPIRType, name: string, type_name: string) => string;
 
@@ -90,6 +93,9 @@ export abstract class Compiler
 
     protected function_cfgs: CFG[]; // std::unordered_map<uint32_t, std::unique_ptr<CFG>>
 
+    protected physical_storage_non_block_pointer_types: number[] = [];
+    protected physical_storage_type_to_alignment: PhysicalBlockMeta[] = []; // map<uint32_t, PhysicalBlockMeta>
+
     // The set of all resources written while inside the critical section, if present.
     interlocked_resources: Set<number> = new Set();
     protected interlocked_is_complex: boolean = false;
@@ -132,10 +138,71 @@ export abstract class Compiler
     }
 
     // Gets a bitmask for the decorations which are applied to ID.
-    // I.e. (1ull << spv::DecorationFoo) | (1ull << spv::DecorationBar)
+    // I.e. (1ull << Op.DecorationFoo) | (1ull << Op.DecorationBar)
     get_decoration_bitset(id: ID): Bitset
     {
         return this.ir.get_decoration_bitset(id);
+    }
+
+    // Returns the effective size of a buffer block struct member.
+    get_declared_struct_member_size(struct_type: SPIRType, index: number): number
+    {
+        if (struct_type.member_types.length === 0)
+            throw new Error("Declared struct in block cannot be empty.");
+
+        const flags = this.get_member_decoration_bitset(struct_type.self, index);
+        const type = this.get<SPIRType>(SPIRType, struct_type.member_types[index]);
+
+        switch (type.basetype) {
+            case SPIRTypeBaseType.Unknown:
+            case SPIRTypeBaseType.Void:
+            case SPIRTypeBaseType.Boolean: // Bools are purely logical, and cannot be used for externally visible types.
+            case SPIRTypeBaseType.AtomicCounter:
+            case SPIRTypeBaseType.Image:
+            case SPIRTypeBaseType.SampledImage:
+            case SPIRTypeBaseType.Sampler:
+                throw new Error("Querying size for object with opaque size.");
+
+            default:
+                break;
+        }
+
+        if (type.pointer && type.storage === StorageClass.StorageClassPhysicalStorageBuffer) {
+            // Check if this is a top-level pointer type, and not an array of pointers.
+            if (type.pointer_depth > this.get<SPIRType>(SPIRType, type.parent_type).pointer_depth)
+                return 8;
+        }
+
+        if (type.array.length > 0) {
+            // For arrays, we can use ArrayStride to get an easy check.
+            const array_size_literal = type.array_size_literal[type.array_size_literal.length - 1];
+            const array_size = array_size_literal ? type.array[type.array.length - 1] : this.evaluate_constant_u32(type.array[type.array.length - 1]);
+            return this.type_struct_member_array_stride(struct_type, index) * array_size;
+        }
+        else if (type.basetype === SPIRTypeBaseType.Struct) {
+            return this.get_declared_struct_size(type);
+        }
+        else {
+            const vecsize = type.vecsize;
+            const columns = type.columns;
+
+            // Vectors.
+            if (columns === 1) {
+                const component_size = type.width / 8;
+                return vecsize * component_size;
+            }
+            else {
+                const matrix_stride = this.type_struct_member_matrix_stride(struct_type, index);
+
+                // Per SPIR-V spec, matrices must be tightly packed and aligned up for vec3 accesses.
+                if (flags.get(Decoration.DecorationRowMajor))
+                    return matrix_stride * vecsize;
+                else if (flags.get(Decoration.DecorationColMajor))
+                    return matrix_stride * columns;
+                else
+                    throw new Error("Either row-major or column-major must be declared for matrices.");
+            }
+        }
     }
 
     // Returns a set of all global variables which are statically accessed
@@ -346,6 +413,29 @@ export abstract class Compiler
         return res;
     }
 
+    get_common_basic_type(type: SPIRType): SPIRTypeBaseType
+    {
+        let base_type: SPIRTypeBaseType;
+        if (type.basetype === SPIRTypeBaseType.Struct) {
+            base_type = SPIRTypeBaseType.Unknown;
+            for (let member_type of type.member_types) {
+                const member_base: SPIRTypeBaseType = this.get_common_basic_type(this.get<SPIRType>(SPIRType, member_type));
+                if (member_base === undefined)
+                    return undefined;
+
+                if (base_type === SPIRTypeBaseType.Unknown)
+                    base_type = member_base;
+                else if (base_type !== member_base)
+                    return undefined;
+            }
+            return base_type;
+        }
+        else {
+            base_type = type.basetype;
+            return base_type;
+        }
+    }
+
     // Remapped variables are considered built-in variables and a backend will
     // not emit a declaration for this variable.
     // This is mostly useful for making use of builtins which are dependent on extensions.
@@ -447,14 +537,14 @@ export abstract class Compiler
 
         ir.for_each_typed_id<SPIRVariable>(SPIRVariable, (_, var_: SPIRVariable) =>
         {
-            if (var_.storage != StorageClass.StorageClassOutput)
+            if (var_.storage !== StorageClass.StorageClassOutput)
                 return;
 
             if (!this.interface_variable_exists_in_entry_point(var_.self))
                 return;
 
             // Also, make sure we preserve output variables which are only initialized, but never accessed by any code.
-            if (var_.initializer != <ID>(0))
+            if (var_.initializer !== <ID>(0))
                 handler.add_if_builtin_or_block(var_.self);
         });
     }
@@ -612,7 +702,7 @@ export abstract class Compiler
             if (start.self === to.self)
                 return true;
 
-            if (start.terminator === SPIRBlockTerminator.Direct && start.merge == SPIRBlockMerge.MergeNone)
+            if (start.terminator === SPIRBlockTerminator.Direct && start.merge === SPIRBlockMerge.MergeNone)
                 start = this.get<SPIRBlock>(SPIRBlock, start.next_block);
             else
                 return false;
@@ -621,7 +711,73 @@ export abstract class Compiler
 
     execution_is_direct_branch(from: SPIRBlock, to: SPIRBlock): boolean
     {
-        return from.terminator === SPIRBlockTerminator.Direct && from.merge === SPIRBlockMerge.MergeNone && from.next_block == to.self;
+        return from.terminator === SPIRBlockTerminator.Direct && from.merge === SPIRBlockMerge.MergeNone && from.next_block === to.self;
+    }
+
+    update_name_cache(cache_primary: Set<string>, name: string): string;
+    update_name_cache(cache_primary: Set<string>, cache_secondary: Set<string>, name: string): string;
+
+    // A variant which takes two sets of names. The secondary is only used to verify there are no collisions,
+    // but the set is not updated when we have found a new name.
+    // Used primarily when adding block interface names.
+    update_name_cache(cache_primary: Set<string>, cache_secondary: Set<string> | string, name?: string): string
+    {
+        if (!name) {
+            // first overload
+            name = <string>cache_secondary;
+            cache_secondary = cache_primary;
+        }
+
+        if (name === null)
+            return;
+
+        const find_name = (n: string): boolean =>
+        {
+            if (cache_primary.has(n))
+                return true;
+
+            if (cache_primary !== cache_secondary)
+                if ((<Set<string>>cache_secondary).has(n))
+                    return true;
+
+            return false;
+        };
+
+        const insert_name = (n: string) =>
+        {
+            cache_primary.add(n);
+        };
+
+        if (!find_name(name)) {
+            insert_name(name);
+            return name;
+        }
+
+        let counter = 0;
+        let tmpname = name;
+
+        let use_linked_underscore = true;
+
+        if (tmpname === "_") {
+            // We cannot just append numbers, as we will end up creating internally reserved names.
+            // Make it like _0_<counter> instead.
+            tmpname += "0";
+        }
+        else if (tmpname.charAt(tmpname.length - 1) === "_") {
+            // The last_character is an underscore, so we don't need to link in underscore.
+            // This would violate double underscore rules.
+            use_linked_underscore = false;
+        }
+
+        // If there is a collision (very rare),
+        // keep tacking on extra identifier until it's unique.
+        do {
+            counter++;
+            name = tmpname + (use_linked_underscore ? "_" : "") + convert_to_string(counter);
+        } while (find_name(name));
+        insert_name(name);
+
+        return name;
     }
 
     protected force_recompile()
@@ -759,7 +915,7 @@ export abstract class Compiler
     }
 
     // Gets the value for decorations which take arguments.
-    // If the decoration is a boolean (i.e. spv::DecorationNonWritable),
+    // If the decoration is a boolean (i.e. Op.DecorationNonWritable),
     // 1 will be returned.
     // If decoration doesn't exist or decoration is not recognized,
     // 0 will be returned.
@@ -768,13 +924,13 @@ export abstract class Compiler
         return this.ir.get_decoration(id, decoration);
     }
 
-    get_decoration_string(id: ID, decoration: Decoration): string
+    protected get_decoration_string(id: ID, decoration: Decoration): string
     {
         return this.ir.get_decoration_string(id, decoration);
     }
 
     // Removes the decoration for an ID.
-    unset_decoration(id: ID, decoration: Decoration)
+    protected unset_decoration(id: ID, decoration: Decoration)
     {
         this.ir.unset_decoration(id, decoration);
     }
@@ -786,10 +942,16 @@ export abstract class Compiler
         return this.get<SPIRType>(SPIRType, id);
     }
 
+    // If get_name() is an empty string, get the fallback name which will be used
+    // instead in the disassembled source.
+    protected get_fallback_name(id: ID): string
+    {
+        return "_" + id;
+    }
 
-// If get_name() of a Block struct is an empty string, get the fallback name.
+    // If get_name() of a Block struct is an empty string, get the fallback name.
     // This needs to be per-variable as multiple variables can use the same block type.
-    get_block_fallback_name(id: VariableID): string
+    protected get_block_fallback_name(id: VariableID): string
     {
         const var_ = this.get<SPIRVariable>(SPIRVariable, id);
         if (this.get_name(id) === "")
@@ -800,7 +962,7 @@ export abstract class Compiler
 
     // Given an OpTypeStruct in ID, obtain the identifier for member number "index".
     // This may be an empty string.
-    get_member_name(id: TypeID, index: number): string
+    protected get_member_name(id: TypeID, index: number): string
     {
         return this.ir.get_member_name(id, index);
     }
@@ -811,7 +973,7 @@ export abstract class Compiler
         return this.ir.get_member_decoration(id, index, decoration);
     }
 
-    get_member_decoration_string(id: TypeID, index: number, decoration: Decoration): string
+    protected get_member_decoration_string(id: TypeID, index: number, decoration: Decoration): string
     {
         return this.ir.get_member_decoration_string(id, index, decoration);
     }
@@ -824,7 +986,7 @@ export abstract class Compiler
 
     // Returns the qualified member identifier for OpTypeStruct ID, member number "index",
     // or an empty string if no qualified alias exists
-    get_member_qualified_name(type_id: TypeID, index: number): string
+    protected get_member_qualified_name(type_id: TypeID, index: number): string
     {
         const m = this.ir.find_meta(type_id);
         if (m && index < m.members.length)
@@ -846,26 +1008,48 @@ export abstract class Compiler
     }
 
     // Similar to set_decoration, but for struct members.
-    set_member_decoration(id: TypeID, index: number, decoration: Decoration, argument: number = 0)
+    protected set_member_decoration(id: TypeID, index: number, decoration: Decoration, argument: number = 0)
     {
         this.ir.set_member_decoration(id, index, decoration, argument);
     }
 
-    set_member_decoration_string(id: TypeID, index: number, decoration: Decoration, argument: string)
+    protected set_member_decoration_string(id: TypeID, index: number, decoration: Decoration, argument: string)
     {
         this.ir.set_member_decoration_string(id, index, decoration, argument);
     }
 
     // Unsets a member decoration, similar to unset_decoration.
-    unset_member_decoration(id: TypeID, index: number, decoration: Decoration)
+    protected unset_member_decoration(id: TypeID, index: number, decoration: Decoration)
     {
         this.ir.unset_member_decoration(id, index, decoration);
     }
 
     // Gets the fallback name for a member, similar to get_fallback_name.
-    get_fallback_member_name(index: number): string
+    protected get_fallback_member_name(index: number): string
     {
         return "_" + index;
+    }
+
+    // Returns the effective size of a buffer block.
+    protected get_declared_struct_size(type: SPIRType): number
+    {
+        if (type.member_types.length === 0)
+            throw new Error("Declared struct in block cannot be empty.");
+
+        // Offsets can be declared out of order, so we need to deduce the actual size
+        // based on last member instead.
+        let member_index = 0;
+        let highest_offset = 0;
+        for (let i = 0; i < type.member_types.length; i++) {
+            const offset = this.type_struct_member_offset(type, i);
+            if (offset > highest_offset) {
+                highest_offset = offset;
+                member_index = i;
+            }
+        }
+
+        const size = this.get_declared_struct_member_size(type, member_index);
+        return highest_offset + size;
     }
 
     maybe_get<T extends IVariant>(classRef: IVariantType<T>, id: number)
@@ -896,7 +1080,7 @@ export abstract class Compiler
     get_pointee_type<T>(type: SPIRType | number): SPIRType
     {
         if (typeof type === "number") {
-            return this.get_pointee_type(this.get<SPIRType>(SPIRType, type))
+            return this.get_pointee_type(this.get<SPIRType>(SPIRType, type));
         }
 
         let p_type = type;
@@ -1009,6 +1193,52 @@ export abstract class Compiler
         return false;
     }
 
+    protected is_hidden_variable(var_: SPIRVariable, include_builtins: boolean = false): boolean
+    {
+        if ((this.is_builtin_variable(var_) && !include_builtins) || var_.remapped_variable)
+            return true;
+
+        // Combined image samplers are always considered active as they are "magic" variables.
+        const rs = this.combined_image_samplers.find(samp => samp.combined_id === var_.self);
+        if (rs) {
+            return false;
+        }
+
+        const { ir } = this;
+        // In SPIR-V 1.4 and up we must also use the active variable interface to disable global variables
+        // which are not part of the entry point.
+        if (ir.get_spirv_version() >= 0x10400 && var_.storage !== StorageClass.StorageClassGeneric &&
+            var_.storage !== StorageClass.StorageClassFunction && !this.interface_variable_exists_in_entry_point(var_.self)) {
+            return true;
+        }
+
+        return this.check_active_interface_variables && storage_class_is_interface(var_.storage) && this.active_interface_variables.has(var_.self);
+    }
+
+    protected is_member_builtin(type: SPIRType, index: number): BuiltIn
+    {
+        const type_meta = this.ir.find_meta(type.self);
+
+        if (type_meta) {
+            const memb = type_meta.members;
+            if (index < memb.length && memb[index].builtin) {
+                return memb[index].builtin_type;
+            }
+        }
+
+        return undefined;
+    }
+
+    protected is_scalar(type: SPIRType)
+    {
+        return type.basetype !== SPIRTypeBaseType.Struct && type.vecsize === 1 && type.columns === 1;
+    }
+
+    protected is_vector(type: SPIRType)
+    {
+        return type.vecsize > 1 && type.columns == 1;
+    }
+
     protected is_matrix(type: SPIRType): boolean
     {
         return type.vecsize > 1 && type.columns > 1;
@@ -1094,7 +1324,7 @@ export abstract class Compiler
     protected is_single_block_loop(next: number): boolean
     {
         const block = this.get<SPIRBlock>(SPIRBlock, next);
-        return block.merge == SPIRBlockMerge.MergeLoop && block.continue_block === <ID>(next);
+        return block.merge === SPIRBlockMerge.MergeLoop && block.continue_block === <ID>(next);
     }
 
     protected traverse_all_reachable_opcodes(block: SPIRBlock, handler: OpcodeHandler): boolean;
@@ -1278,6 +1508,29 @@ export abstract class Compiler
         }
     }
 
+    protected analyze_non_block_pointer_types()
+    {
+        const ir = this.ir;
+        const handler = new PhysicalStorageBufferPointerHandler(this);
+        this.traverse_all_reachable_opcodes(this.get<SPIRFunction>(SPIRFunction, ir.default_entry_point), handler);
+
+        // Analyze any block declaration we have to make. It might contain
+        // physical pointers to POD types which we never used, and thus never added to the list.
+        // We'll need to add those pointer types to the set of types we declare.
+        ir.for_each_typed_id<SPIRType>(SPIRType, (_, type) =>
+        {
+            if (this.has_decoration(type.self, Decoration.DecorationBlock) || this.has_decoration(type.self, Decoration.DecorationBufferBlock))
+                handler.analyze_non_block_types_from_block(type);
+        });
+
+        handler.non_block_types.forEach(type =>
+            this.physical_storage_non_block_pointer_types.push(type)
+        );
+
+        this.physical_storage_non_block_pointer_types.sort();
+        this.physical_storage_type_to_alignment = handler.physical_block_type_meta;
+    }
+
     protected analyze_variable_scope(entry: SPIRFunction, handler: AnalyzeVariableScopeAccessHandler)
     {
 // First, we map out all variable access within a function.
@@ -1305,7 +1558,7 @@ export abstract class Compiler
             }
             else {
                 const loop_dominator = cfg.find_loop_dominator(block_id);
-                if (loop_dominator != block_id)
+                if (loop_dominator !== block_id)
                     block.loop_dominator = loop_dominator;
                 else
                     block.loop_dominator = SPIRBlock.NoDominator;
@@ -1338,7 +1591,7 @@ export abstract class Compiler
                     builder.add_block(ir.continue_block_to_loop_header[block]);
 
                     // Arrays or structs cannot be loop variables.
-                    if (type.vecsize == 1 && type.columns == 1 && type.basetype !== SPIRTypeBaseType.Struct && type.array.length === 0) {
+                    if (type.vecsize === 1 && type.columns === 1 && type.basetype !== SPIRTypeBaseType.Struct && type.array.length === 0) {
                         // The variable is used in multiple continue blocks, this is not a loop
                         // candidate, signal that by setting block to -1u.
                         const potential = maplike_get<number>(0, potential_loop_variables, varFirst);
@@ -1370,10 +1623,10 @@ export abstract class Compiler
                     const preserve = this.may_read_undefined_variable_in_block(block, varFirst);
                     if (preserve) {
                         // Find the outermost loop scope.
-                        while (block.loop_dominator != <BlockID>(SPIRBlock.NoDominator))
+                        while (block.loop_dominator !== <BlockID>(SPIRBlock.NoDominator))
                             block = this.get<SPIRBlock>(SPIRBlock, block.loop_dominator);
 
-                        if (block.self != dominating_block) {
+                        if (block.self !== dominating_block) {
                             builder.add_block(block.self);
                             dominating_block = builder.get_dominator();
                         }
@@ -1420,7 +1673,7 @@ export abstract class Compiler
                     // Any temporary we access in the continue block must be declared before the loop.
                     // This is moot for complex loops however.
                     const loop_header_block = this.get<SPIRBlock>(SPIRBlock, ir.continue_block_to_loop_header[block]);
-                    console.assert(loop_header_block.merge == SPIRBlockMerge.MergeLoop);
+                    console.assert(loop_header_block.merge === SPIRBlockMerge.MergeLoop);
                     builder.add_block(loop_header_block.self);
                     used_in_header_hoisted_continue_block = true;
                 }
@@ -1506,7 +1759,7 @@ export abstract class Compiler
                 if (ir.continue_block_to_loop_header.hasOwnProperty(block)) {
                     header = ir.continue_block_to_loop_header[block];
                 }
-                else if (this.get<SPIRBlock>(SPIRBlock, block).continue_block == block) {
+                else if (this.get<SPIRBlock>(SPIRBlock, block).continue_block === block) {
                     // Also check for self-referential continue block.
                     header = block;
                 }
@@ -1526,7 +1779,7 @@ export abstract class Compiler
             // Walk from the dominator, if there is one straight edge connecting
             // dominator and loop header, we statically know the loop initializer.
             let static_loop_init = true;
-            while (dominator != header) {
+            while (dominator !== header) {
                 if (blocks.has(dominator))
                     has_accessed_variable = true;
 
@@ -1627,7 +1880,7 @@ export abstract class Compiler
 
                 // We write to the variable in more than one block.
                 const write_blocks = itr_second;
-                if (write_blocks.size != 1)
+                if (write_blocks.size !== 1)
                     return;
 
                 // The write needs to happen in the dominating block.
@@ -1644,11 +1897,11 @@ export abstract class Compiler
                 this.traverse_all_reachable_opcodes(this.get<SPIRBlock>(SPIRBlock, dominator), static_expression_handler);
 
                 // We want one, and exactly one write
-                if (static_expression_handler.write_count != 1 || static_expression_handler.static_expression == 0)
+                if (static_expression_handler.write_count !== 1 || static_expression_handler.static_expression === 0)
                     return;
 
                 // Is it a constant expression?
-                if (ir.ids[static_expression_handler.static_expression].get_type() != Types.TypeConstant)
+                if (ir.ids[static_expression_handler.static_expression].get_type() !== Types.TypeConstant)
                     return;
 
                 // We found a LUT!
@@ -1752,7 +2005,7 @@ export abstract class Compiler
 
             // For GLSL. If we hit any of these cases, we have to fall back to conservative approach.
             this.interlocked_is_complex =
-                !handler.use_critical_section || handler.interlock_function_id != ir.default_entry_point;
+                !handler.use_critical_section || handler.interlock_function_id !== ir.default_entry_point;
         }
     }
 
@@ -1795,6 +2048,75 @@ export abstract class Compiler
         }
     }
 
+    combined_decoration_for_member(type: SPIRType, index: number): Bitset
+    {
+        const flags = new Bitset();
+        const type_meta = this.ir.find_meta(type.self);
+
+        if (type_meta)
+        {
+            const members = type_meta.members;
+            if (index >= members.length)
+                return flags;
+            const dec = members[index];
+
+            flags.merge_or(dec.decoration_flags);
+
+            const member_type = this.get<SPIRType>(SPIRType, type.member_types[index]);
+
+            // If our member type is a struct, traverse all the child members as well recursively.
+            const member_childs = member_type.member_types;
+            for (let i = 0; i < member_childs.length; i++)
+            {
+                const child_member_type = this.get<SPIRType>(SPIRType, member_childs[i]);
+                if (!child_member_type.pointer)
+                    flags.merge_or(this.combined_decoration_for_member(member_type, i));
+            }
+        }
+
+        return flags;
+    }
+
+    is_desktop_only_format(format: ImageFormat): boolean
+    {
+        switch (format)
+        {
+            // Desktop-only formats
+            case ImageFormat.ImageFormatR11fG11fB10f:
+            case ImageFormat.ImageFormatR16f:
+            case ImageFormat.ImageFormatRgb10A2:
+            case ImageFormat.ImageFormatR8:
+            case ImageFormat.ImageFormatRg8:
+            case ImageFormat.ImageFormatR16:
+            case ImageFormat.ImageFormatRg16:
+            case ImageFormat.ImageFormatRgba16:
+            case ImageFormat.ImageFormatR16Snorm:
+            case ImageFormat.ImageFormatRg16Snorm:
+            case ImageFormat.ImageFormatRgba16Snorm:
+            case ImageFormat.ImageFormatR8Snorm:
+            case ImageFormat.ImageFormatRg8Snorm:
+            case ImageFormat.ImageFormatR8ui:
+            case ImageFormat.ImageFormatRg8ui:
+            case ImageFormat.ImageFormatR16ui:
+            case ImageFormat.ImageFormatRgb10a2ui:
+            case ImageFormat.ImageFormatR8i:
+            case ImageFormat.ImageFormatRg8i:
+            case ImageFormat.ImageFormatR16i:
+                return true;
+            default:
+                break;
+        }
+
+        return false;
+    }
+
+    protected set_extended_decoration(id: number, decoration: ExtendedDecorations, value: number = 0)
+    {
+        const dec = maplike_get(Meta, this.ir.meta, id).decoration;
+        dec.extended.flags.set(decoration);
+        dec.extended.values[decoration] = value;
+    }
+
     protected get_extended_decoration(id: number, decoration: ExtendedDecorations): number
     {
         const m = this.ir.find_meta(id);
@@ -1817,6 +2139,66 @@ export abstract class Compiler
 
         const dec = m.decoration;
         return dec.extended.flags.get(decoration);
+    }
+
+    protected set_extended_member_decoration(type: number, index: number, decoration: ExtendedDecorations, value: number = 0)
+    {
+        const members = maplike_get(Meta, this.ir.meta, type).members;
+        if (index === members.length) {
+            members.push(new MetaDecoration());
+        }
+
+        const dec = members[index];
+        dec.extended.flags.set(decoration);
+        dec.extended.values[decoration] = value;
+    }
+
+    protected get_extended_member_decoration(type: number, index: number, decoration: ExtendedDecorations): number
+    {
+        const m = this.ir.find_meta(type);
+        if (!m)
+            return 0;
+
+        if (index >= m.members.length)
+            return 0;
+
+        const dec = m.members[index];
+        if (!dec.extended.flags.get(decoration))
+            return get_default_extended_decoration(decoration);
+        return dec.extended.values[decoration];
+    }
+
+    protected has_extended_member_decoration(type: number, index: number, decoration: ExtendedDecorations): boolean
+    {
+        const m = this.ir.find_meta(type);
+        if (!m)
+            return false;
+
+        if (index >= m.members.length)
+            return false;
+
+        const dec = m.members[index];
+        return dec.extended.flags.get(decoration);
+    }
+
+    protected unset_extended_member_decoration(type: number, index: number, decoration: ExtendedDecorations)
+    {
+        const members = maplike_get(Meta, this.ir.meta, type).members;
+        if (index === members.length) {
+            members.push(new MetaDecoration());
+        }
+        const dec = members[index];
+        dec.extended.flags.clear(decoration);
+        dec.extended.values[decoration] = 0;
+    }
+
+    type_is_array_of_pointers(type: SPIRType): boolean
+    {
+        if (!type.pointer)
+            return false;
+
+        // If parent type has same pointer depth, we must have an array of pointers.
+        return type.pointer_depth === this.get<SPIRType>(SPIRType, type.parent_type).pointer_depth;
     }
 
     protected type_is_opaque_value(type: SPIRType): boolean
@@ -1865,6 +2247,59 @@ export abstract class Compiler
         return aliased_ssbo_types;
     }
 
+    // API for querying buffer objects.
+    // The type passed in here should be the base type of a resource, i.e.
+    // get_type(resource.base_type_id)
+    // as decorations are set in the basic Block type.
+    // The type passed in here must have these decorations set, or an exception is raised.
+    // Only UBOs and SSBOs or sub-structs which are part of these buffer types will have these decorations set.
+    protected type_struct_member_offset(type: SPIRType, index: number): number
+    {
+        const type_meta = this.ir.find_meta(type.self);
+        if (type_meta) {
+            // Decoration must be set in valid SPIR-V, otherwise throw.
+            const dec = type_meta.members[index];
+            if (dec.decoration_flags.get(Decoration.DecorationOffset))
+                return dec.offset;
+            else
+                throw new Error("Struct member does not have Offset set.");
+        }
+        else
+            throw new Error("Struct member does not have Offset set.");
+    }
+
+    protected type_struct_member_array_stride(type: SPIRType, index: number): number
+    {
+        const type_meta = this.ir.find_meta(type.self);
+        if (type_meta) {
+            // Decoration must be set in valid SPIR-V, otherwise throw.
+            // ArrayStride is part of the array type not OpMemberDecorate.
+            const dec = type_meta.decoration;
+            if (dec.decoration_flags.get(Decoration.DecorationArrayStride))
+                return dec.array_stride;
+            else
+                throw new Error("Struct member does not have ArrayStride set.");
+        }
+        else
+            throw new Error("Struct member does not have ArrayStride set.");
+    }
+
+    protected type_struct_member_matrix_stride(type: SPIRType, index: number): number
+    {
+        const type_meta = this.ir.find_meta(type.self);
+        if (type_meta) {
+            // Decoration must be set in valid SPIR-V, otherwise throw.
+            // MatrixStride is part of OpMemberDecorate.
+            const dec = type_meta.members[index];
+            if (dec.decoration_flags.get(Decoration.DecorationMatrixStride))
+                return dec.matrix_stride;
+            else
+                throw new Error("Struct member does not have MatrixStride set.");
+        }
+        else
+            throw new Error("Struct member does not have MatrixStride set.");
+    }
+
     protected get_remapped_declared_block_name(id: number, fallback_prefer_instance_name: boolean): string
     {
         const itr = this.declared_block_names[id];
@@ -1888,7 +2323,7 @@ export abstract class Compiler
 
     protected type_is_block_like(type: SPIRType): boolean
     {
-        if (type.basetype != SPIRTypeBaseType.Struct)
+        if (type.basetype !== SPIRTypeBaseType.Struct)
             return false;
 
         if (this.has_decoration(type.self, Decoration.DecorationBlock) || this.has_decoration(type.self, Decoration.DecorationBufferBlock)) {
@@ -1901,6 +2336,147 @@ export abstract class Compiler
                 return true;
 
         return false;
+    }
+
+    protected evaluate_spec_constant_u32(spec: SPIRConstantOp): number
+    {
+        const result_type = this.get<SPIRType>(SPIRType, spec.basetype);
+        if (result_type.basetype !== SPIRTypeBaseType.UInt && result_type.basetype !== SPIRTypeBaseType.Int &&
+            result_type.basetype !== SPIRTypeBaseType.Boolean) {
+            throw new Error("Only 32-bit integers and booleans are currently supported when evaluating specialization constants.");
+        }
+
+        if (!this.is_scalar(result_type))
+            throw new Error("Spec constant evaluation must be a scalar.\n");
+
+        let value = 0;
+
+        const eval_u32 = (id: number): number =>
+        {
+            const type = this.expression_type(id);
+            if (type.basetype !== SPIRTypeBaseType.UInt && type.basetype !== SPIRTypeBaseType.Int && type.basetype !== SPIRTypeBaseType.Boolean) {
+                throw new Error("Only 32-bit integers and booleans are currently supported when evaluating specialization constants.");
+            }
+
+            if (!this.is_scalar(type))
+                throw new Error("Spec constant evaluation must be a scalar.");
+
+            const c = this.maybe_get<SPIRConstant>(SPIRConstant, id);
+            if (c)
+                return c.scalar();
+            else
+                return this.evaluate_spec_constant_u32(this.get<SPIRConstantOp>(SPIRConstantOp, id));
+        };
+
+        // Support the basic opcodes which are typically used when computing array sizes.
+        switch (spec.opcode) {
+            case Op.OpIAdd:
+                value = eval_u32(spec.arguments[0]) + eval_u32(spec.arguments[1]);
+                break;
+            case Op.OpISub:
+                value = eval_u32(spec.arguments[0]) - eval_u32(spec.arguments[1]);
+                break;
+            case Op.OpIMul:
+                value = eval_u32(spec.arguments[0]) * eval_u32(spec.arguments[1]);
+                break;
+            case Op.OpBitwiseAnd:
+                value = eval_u32(spec.arguments[0]) & eval_u32(spec.arguments[1]);
+                break;
+            case Op.OpBitwiseOr:
+                value = eval_u32(spec.arguments[0]) | eval_u32(spec.arguments[1]);
+                break;
+            case Op.OpBitwiseXor:
+                value = eval_u32(spec.arguments[0]) ^ eval_u32(spec.arguments[1]);
+                break;
+            case Op.OpLogicalAnd:
+                value = eval_u32(spec.arguments[0]) & eval_u32(spec.arguments[1]);
+                break;
+            case Op.OpLogicalOr:
+                value = eval_u32(spec.arguments[0]) | eval_u32(spec.arguments[1]);
+                break;
+            case Op.OpShiftLeftLogical:
+                value = eval_u32(spec.arguments[0]) << eval_u32(spec.arguments[1]);
+                break;
+            case Op.OpShiftRightLogical:
+            case Op.OpShiftRightArithmetic:
+                value = eval_u32(spec.arguments[0]) >> eval_u32(spec.arguments[1]);
+                break;
+            case Op.OpLogicalEqual:
+            case Op.OpIEqual:
+                value = eval_u32(spec.arguments[0]) == eval_u32(spec.arguments[1]) ? 1 : 0;
+                break;
+            case Op.OpLogicalNotEqual:
+            case Op.OpINotEqual:
+                value = eval_u32(spec.arguments[0]) != eval_u32(spec.arguments[1]) ? 1 : 0;
+                break;
+            case Op.OpULessThan:
+            case Op.OpSLessThan:
+                value = eval_u32(spec.arguments[0]) < eval_u32(spec.arguments[1]) ? 1 : 0;
+                break;
+            case Op.OpULessThanEqual:
+            case Op.OpSLessThanEqual:
+                value = eval_u32(spec.arguments[0]) <= eval_u32(spec.arguments[1]) ? 1 : 0;
+                break;
+            case Op.OpUGreaterThan:
+            case Op.OpSGreaterThan:
+                value = eval_u32(spec.arguments[0]) > eval_u32(spec.arguments[1]) ? 1 : 0;
+                break;
+            case Op.OpUGreaterThanEqual:
+            case Op.OpSGreaterThanEqual:
+                value = eval_u32(spec.arguments[0]) >= eval_u32(spec.arguments[1]) ? 1 : 0;
+                break;
+
+            case Op.OpLogicalNot:
+                value = eval_u32(spec.arguments[0]) ? 0 : 1;
+                break;
+
+            case Op.OpNot:
+                value = ~eval_u32(spec.arguments[0]);
+                break;
+
+            case Op.OpSNegate:
+                value = -eval_u32(spec.arguments[0]);
+                break;
+
+            case Op.OpSelect:
+                value = eval_u32(spec.arguments[0]) ? eval_u32(spec.arguments[1]) : eval_u32(spec.arguments[2]);
+                break;
+
+            case Op.OpUMod:
+            case Op.OpSMod:
+            case Op.OpSRem: {
+                const a = eval_u32(spec.arguments[0]);
+                const b = eval_u32(spec.arguments[1]);
+                if (b === 0)
+                    throw new Error("Undefined behavior in Mod, b === 0.\n");
+                value = a % b;
+                break;
+            }
+
+            case Op.OpUDiv:
+            case Op.OpSDiv: {
+                const a = eval_u32(spec.arguments[0]);
+                const b = eval_u32(spec.arguments[1]);
+                if (b === 0)
+                    throw new Error("Undefined behavior in Div, b === 0.\n");
+                value = a / b;
+                break;
+            }
+
+            default:
+                throw new Error("Unsupported spec constant opcode for evaluation.\n");
+        }
+
+        return value;
+    }
+
+    protected evaluate_constant_u32(id: number): number
+    {
+        const c = this.maybe_get<SPIRConstant>(SPIRConstant, id);
+        if (c)
+            return c.scalar();
+        else
+            return this.evaluate_spec_constant_u32(this.get<SPIRConstantOp>(SPIRConstantOp, id));
     }
 
     get_case_list(block: SPIRBlock): SPIRBlockCase[]
@@ -1960,8 +2536,7 @@ function exists_unaccessed_path_to_return(cfg: CFG, block: number, blocks: Set<n
 
 function get_default_extended_decoration(decoration: ExtendedDecorations): number
 {
-    switch (decoration)
-    {
+    switch (decoration) {
         case ExtendedDecorations.SPIRVCrossDecorationResourceIndexPrimary:
         case ExtendedDecorations.SPIRVCrossDecorationResourceIndexSecondary:
         case ExtendedDecorations.SPIRVCrossDecorationResourceIndexTertiary:
@@ -1971,5 +2546,76 @@ function get_default_extended_decoration(decoration: ExtendedDecorations): numbe
 
         default:
             return 0;
+    }
+}
+
+function storage_class_is_interface(storage: StorageClass): boolean
+{
+    switch (storage) {
+        case StorageClass.StorageClassInput:
+        case StorageClass.StorageClassOutput:
+        case StorageClass.StorageClassUniform:
+        case StorageClass.StorageClassUniformConstant:
+        case StorageClass.StorageClassAtomicCounter:
+        case StorageClass.StorageClassPushConstant:
+        case StorageClass.StorageClassStorageBuffer:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
+export function opcode_is_sign_invariant(opcode: Op): boolean
+{
+    switch (opcode)
+    {
+        case Op.OpIEqual:
+        case Op.OpINotEqual:
+        case Op.OpISub:
+        case Op.OpIAdd:
+        case Op.OpIMul:
+        case Op.OpShiftLeftLogical:
+        case Op.OpBitwiseOr:
+        case Op.OpBitwiseXor:
+        case Op.OpBitwiseAnd:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
+export function to_signed_basetype(width: number): SPIRTypeBaseType
+{
+    switch (width)
+    {
+        case 8:
+            return SPIRTypeBaseType.SByte;
+        case 16:
+            return SPIRTypeBaseType.Short;
+        case 32:
+            return SPIRTypeBaseType.Int;
+        case 64:
+            return SPIRTypeBaseType.Int64;
+        default:
+            throw new Error("Invalid bit width.");
+    }
+}
+
+export function to_unsigned_basetype(width: number): SPIRTypeBaseType
+{
+    switch (width)
+    {
+        case 8:
+            return SPIRTypeBaseType.UByte;
+        case 16:
+            return SPIRTypeBaseType.UShort;
+        case 32:
+            return SPIRTypeBaseType.UInt;
+        case 64:
+            return SPIRTypeBaseType.UInt64;
+        default:
+            throw new Error("Invalid bit width.");
     }
 }

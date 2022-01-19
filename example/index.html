@@ -9,18 +9,24 @@
 </head>
 <body>
 
-<select id="version">
-    <option value="webgl1">WebGL 1</option>
-    <option value="webgl2">WebGL 2</option>
-</select>
-<select id="stage">
-    <option value="vertex">Vertex Shader</option>
-    <option value="fragment">Fragment Shader</option>
-</select>
-<button id="generateButton">Generate</button>
+<div id="mainContainer">
+    <div id="controlsField">
+        <select id="version">
+            <option value="webgl1">WebGL 1</option>
+            <option value="webgl2">WebGL 2</option>
+        </select>
+        <select id="stage">
+            <option value="vertex">Vertex Shader</option>
+            <option value="fragment">Fragment Shader</option>
+        </select>
+
+        <button id="generateButton">Generate</button>
+    </div>
+
 
 <pre id="compiledShader">
 </pre>
+</div>
 
 <script src="script.js" type="module"></script>
 </body>

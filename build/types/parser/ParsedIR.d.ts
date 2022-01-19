@@ -71,7 +71,6 @@ export declare class ParsedIR {
     get_member_decoration_bitset(id: TypeID, index: number, clone?: boolean): Bitset;
     unset_member_decoration(id: TypeID, index: number, decoration: Decoration): void;
     mark_used_as_array_length(id: ID): void;
-    increase_bound_by(incr_amount: number): number;
     get_buffer_block_flags(var_: SPIRVariable): Bitset;
     get_buffer_block_type_flags(type: SPIRType): Bitset;
     add_typed_id(type: Types, id: ID): void;
@@ -85,6 +84,10 @@ export declare class ParsedIR {
     get_empty_string(): string;
     make_constant_null(id: number, type: number, add_to_typed_id_set: boolean): void;
     fixup_reserved_names(): void;
+    static sanitize_identifier(name: string, member: boolean, allow_reserved_prefixes: boolean): string;
+    static sanitize_underscores(str: string): string;
+    static is_globally_reserved_identifier(str: string, allow_reserved_prefixes: boolean): boolean;
+    increase_bound_by(incr_amount: number): number;
     get_spirv_version(): number;
     private get;
 }

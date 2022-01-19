@@ -4,6 +4,9 @@ declare class SPIREntryPointWorkgroupSize {
     x: number;
     y: number;
     z: number;
+    id_x: number;
+    id_y: number;
+    id_z: number;
     constant: number;
     clone(): SPIREntryPointWorkgroupSize;
 }

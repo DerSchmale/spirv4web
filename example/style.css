@@ -14,18 +14,6 @@ a {
     color: #dddddd;
 }
 
-#controlsField {
-    position: fixed;
-    top: 0;
-    left: 0;
-    padding: 20px;
-    margin: 20px;
-    background: rgba(50, 50, 50, .5);
-    text-align: left;
-    line-height: 200%;
-    max-width: 20vw;
-}
-
 .vAlignContainer {
     position: absolute;
     left: 0;
@@ -47,4 +35,17 @@ a {
 
 .hidden {
     display: none;
+}
+
+#mainContainer {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    height:100vh;
+    width:100vw;
+}
+
+#compiledShader {
+    max-height: 100%;
+    overflow: scroll;
 }
