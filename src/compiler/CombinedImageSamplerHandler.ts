@@ -4,7 +4,7 @@ import { Decoration, Dim, Op, StorageClass } from "../spirv";
 import {
     SPIRFunction,
     SPIRFunctionCombinedImageSamplerParameter,
-    SPIRVFunctionParameter
+    SPIRFunctionParameter
 } from "../common/SPIRFunction";
 import { SPIRType, SPIRTypeBaseType } from "../common/SPIRType";
 import { SPIRExpression } from "../common/SPIRExpression";
@@ -381,7 +381,7 @@ export class CombinedImageSamplerHandler extends OpcodeHandler
             compiler.set_name(combined_id, "SPIRV_Cross_Combined" + compiler.to_name(image_id) + compiler.to_name(sampler_id));
 
             caller.combined_parameters.push(param);
-            caller.shadow_arguments.push(new SPIRVFunctionParameter(ptr_type_id, combined_id, 0, 0, true));
+            caller.shadow_arguments.push(new SPIRFunctionParameter(ptr_type_id, combined_id, 0, 0, true));
         }
     }
 }

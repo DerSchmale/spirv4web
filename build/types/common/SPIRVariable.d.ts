@@ -1,7 +1,7 @@
 import { IVariant } from "./IVariant";
 import { Types } from "./Types";
 import { StorageClass } from "../spirv";
-import { SPIRVFunctionParameter } from "./SPIRFunction";
+import { SPIRFunctionParameter } from "./SPIRFunction";
 export declare class SPIRVariable extends IVariant {
     static type: Types;
     basetype: TypeID;
@@ -23,7 +23,7 @@ export declare class SPIRVariable extends IVariant {
     dominator: BlockID;
     loop_variable: boolean;
     loop_variable_enable: boolean;
-    parameter: SPIRVFunctionParameter;
+    parameter: SPIRFunctionParameter;
     constructor(other: SPIRVariable);
     constructor(basetype: TypeID);
 }

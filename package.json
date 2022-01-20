@@ -34,7 +34,7 @@
     "typescript": "^4.5.4"
   },
   "dependencies": {
-    "@derschmale/array-utils": "^1.0.19",
+    "@derschmale/array-utils": "^1.1.0",
     "rollup-plugin-terser": "^7.0.2",
     "tslib": "^2.3.1"
   }

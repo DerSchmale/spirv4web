@@ -2,7 +2,7 @@ import { IVariant } from "./IVariant";
 import { Types } from "./Types";
 import { defaultClone, defaultCopy } from "../utils/defaultCopy";
 
-export class SPIRVFunctionParameter
+export class SPIRFunctionParameter
 {
     type: TypeID;
     id: ID;
@@ -28,7 +28,7 @@ export class SPIRVFunctionParameter
 
     clone()
     {
-        return defaultClone(SPIRVFunctionParameter, this);
+        return defaultClone(SPIRFunctionParameter, this);
     }
 }
 
@@ -94,12 +94,12 @@ export class SPIRFunction extends IVariant
 
     return_type: TypeID;
     function_type: TypeID;
-    arguments: SPIRVFunctionParameter[] = [];
+    arguments: SPIRFunctionParameter[] = [];
 
     // Can be used by backends to add magic arguments.
     // Currently used by combined image/sampler implementation.
 
-    shadow_arguments: SPIRVFunctionParameter[] = [];
+    shadow_arguments: SPIRFunctionParameter[] = [];
     local_variables: VariableID[] = [];
     entry_block: BlockID = 0;
     blocks: BlockID[] = [];
@@ -149,6 +149,6 @@ export class SPIRFunction extends IVariant
     add_parameter(parameter_type: TypeID, id: ID, alias_global_variable: boolean = false)
     {
         // Arguments are read-only until proven otherwise.
-        this.arguments.push(new SPIRVFunctionParameter(parameter_type, id, 0, 0, alias_global_variable));
+        this.arguments.push(new SPIRFunctionParameter(parameter_type, id, 0, 0, alias_global_variable));
     }
 }

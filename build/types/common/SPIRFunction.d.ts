@@ -1,13 +1,13 @@
 import { IVariant } from "./IVariant";
 import { Types } from "./Types";
-export declare class SPIRVFunctionParameter {
+export declare class SPIRFunctionParameter {
     type: TypeID;
     id: ID;
     read_count: number;
     write_count: number;
     alias_global_variable: boolean;
     constructor(type?: TypeID, id?: ID, read_count?: number, write_count?: number, alias_global_variable?: boolean);
-    clone(): SPIRVFunctionParameter;
+    clone(): SPIRFunctionParameter;
 }
 export declare class SPIRFunctionCombinedImageSamplerParameter {
     id: VariableID;
@@ -29,8 +29,8 @@ export declare class SPIRFunction extends IVariant {
     static type: Types;
     return_type: TypeID;
     function_type: TypeID;
-    arguments: SPIRVFunctionParameter[];
-    shadow_arguments: SPIRVFunctionParameter[];
+    arguments: SPIRFunctionParameter[];
+    shadow_arguments: SPIRFunctionParameter[];
     local_variables: VariableID[];
     entry_block: BlockID;
     blocks: BlockID[];

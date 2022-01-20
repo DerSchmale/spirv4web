@@ -1,4 +1,8 @@
+
+// @ts-ignore
+import { compare } from "@derschmale/array-utils"
 import { defaultClone } from "../utils/defaultCopy";
+import { set_compare } from "../utils/set_compare";
 
 export class Bitset
 {
@@ -71,15 +75,7 @@ export class Bitset
         if (this.lower !== other.lower)
             return false;
 
-        if (this.higher.size !== other.higher.size)
-            return false;
-
-        for (let it = this.higher.values(), val = null; (val = it.next().value); ) {
-            if (!other.higher.has(val))
-                return false;
-        }
-
-        return true;
+        return set_compare(this.higher, other.higher);
     }
 
     for_each_bit(op: (i: number) => void)

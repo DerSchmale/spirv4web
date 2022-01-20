@@ -1,5 +1,5 @@
 // @ts-ignore
-import { count } from "@derschmale/array-utils";
+import { count, unique } from "@derschmale/array-utils";
 import { BlockMetaFlagBits, ParsedIR } from "../parser/ParsedIR";
 import { SPIRType, SPIRTypeBaseType } from "../common/SPIRType";
 import { BuiltIn, Decoration, Dim, ExecutionMode, ExecutionModel, ImageFormat, Op, StorageClass } from "../spirv";
@@ -13,7 +13,14 @@ import { EntryPoint } from "./EntryPoint";
 import { DummySamplerForCombinedImageHandler } from "./DummySamplerForCombinedImageHandler";
 import { SPIRFunction } from "../common/SPIRFunction";
 import { SPIRExpression } from "../common/SPIRExpression";
-import { SPIRBlock, SPIRBlockCase, SPIRBlockMerge, SPIRBlockTerminator } from "../common/SPIRBlock";
+import {
+    SPIRBlock,
+    SPIRBlockCase,
+    SPIRBlockContinueBlockType,
+    SPIRBlockMerge,
+    SPIRBlockMethod,
+    SPIRBlockTerminator
+} from "../common/SPIRBlock";
 import { SPIRAccessChain } from "../common/SPIRAccessChain";
 import { SPIRConstantOp } from "../common/SPIRConstantOp";
 import { SPIRCombinedImageSampler } from "../common/SPIRCombinedImageSampler";
@@ -714,6 +721,56 @@ export abstract class Compiler
         return from.terminator === SPIRBlockTerminator.Direct && from.merge === SPIRBlockMerge.MergeNone && from.next_block === to.self;
     }
 
+    protected is_break(next: number): boolean
+    {
+        return (this.ir.block_meta[next] & (BlockMetaFlagBits.BLOCK_META_LOOP_MERGE_BIT | BlockMetaFlagBits.BLOCK_META_MULTISELECT_MERGE_BIT)) !== 0;
+    }
+
+    protected is_loop_break(next: number): boolean
+    {
+        return (this.ir.block_meta[next] & BlockMetaFlagBits.BLOCK_META_LOOP_MERGE_BIT) !== 0;
+    }
+
+    protected is_conditional(next: number): boolean
+    {
+        return (this.ir.block_meta[next] & (BlockMetaFlagBits.BLOCK_META_SELECTION_MERGE_BIT | BlockMetaFlagBits.BLOCK_META_MULTISELECT_MERGE_BIT)) !== 0;
+    }
+
+    protected flush_dependees(var_: SPIRVariable)
+    {
+        for (let expr of var_.dependees)
+            this.invalid_expressions.add(expr);
+        var_.dependees = [];
+    }
+
+    protected flush_all_active_variables()
+    {
+        // Invalidate all temporaries we read from variables in this block since they were forwarded.
+        // Invalidate all temporaries we read from globals.
+        for (let v of this.current_function.local_variables)
+            this.flush_dependees(this.get<SPIRVariable>(SPIRVariable, v));
+        for (let arg of this.current_function.arguments)
+            this.flush_dependees(this.get<SPIRVariable>(SPIRVariable, arg.id));
+        for (let global of this.global_variables)
+            this.flush_dependees(this.get<SPIRVariable>(SPIRVariable, global));
+
+        this.flush_all_aliased_variables();
+    }
+
+    protected flush_all_aliased_variables()
+    {
+        for (let aliased of this.aliased_variables)
+            this.flush_dependees(this.get<SPIRVariable>(SPIRVariable, aliased));
+    }
+
+    protected flush_control_dependent_expressions(block_id: number)
+    {
+        const block = this.get<SPIRBlock>(SPIRBlock, block_id);
+        for (let expr of block.invalidate_expressions)
+            this.invalid_expressions.add(expr);
+        block.invalidate_expressions = [];
+    }
+
     update_name_cache(cache_primary: Set<string>, name: string): string;
     update_name_cache(cache_primary: Set<string>, cache_secondary: Set<string>, name: string): string;
 
@@ -780,17 +837,232 @@ export abstract class Compiler
         return name;
     }
 
+    protected execution_is_noop(from: SPIRBlock, to: SPIRBlock): boolean
+    {
+        if (!this.execution_is_branchless(from, to))
+            return false;
+
+        let start = from;
+        for (; ;) {
+            if (start.self === to.self)
+                return true;
+
+            if (start.ops.length > 0)
+                return false;
+
+            const next = this.get<SPIRBlock>(SPIRBlock, start.next_block);
+            // Flushing phi variables does not count as noop.
+            for (let phi of next.phi_variables)
+                if (phi.parent === start.self)
+                    return false;
+
+            start = next;
+        }
+    }
+
+    protected continue_block_type(block: SPIRBlock): SPIRBlockContinueBlockType
+    {
+// The block was deemed too complex during code emit, pick conservative fallback paths.
+        if (block.complex_continue)
+            return SPIRBlockContinueBlockType.ComplexLoop;
+
+        // In older glslang output continue block can be equal to the loop header.
+        // In this case, execution is clearly branchless, so just assume a while loop header here.
+        if (block.merge === SPIRBlockMerge.MergeLoop)
+            return SPIRBlockContinueBlockType.WhileLoop;
+
+        if (block.loop_dominator === SPIRBlock.NoDominator) {
+            // Continue block is never reached from CFG.
+            return SPIRBlockContinueBlockType.ComplexLoop;
+        }
+
+        const dominator = this.get<SPIRBlock>(SPIRBlock, block.loop_dominator);
+
+        if (this.execution_is_noop(block, dominator))
+            return SPIRBlockContinueBlockType.WhileLoop;
+        else if (this.execution_is_branchless(block, dominator))
+            return SPIRBlockContinueBlockType.ForLoop;
+        else {
+            const false_block = this.maybe_get<SPIRBlock>(SPIRBlock, block.false_block);
+            const true_block = this.maybe_get<SPIRBlock>(SPIRBlock, block.true_block);
+            const merge_block = this.maybe_get<SPIRBlock>(SPIRBlock, dominator.merge_block);
+
+            // If we need to flush Phi in this block, we cannot have a DoWhile loop.
+            const flush_phi_to_false = false_block && this.flush_phi_required(block.self, block.false_block);
+            const flush_phi_to_true = true_block && this.flush_phi_required(block.self, block.true_block);
+            if (flush_phi_to_false || flush_phi_to_true)
+                return SPIRBlockContinueBlockType.ComplexLoop;
+
+            const positive_do_while = block.true_block === dominator.self &&
+                (block.false_block === dominator.merge_block ||
+                    (false_block && merge_block && this.execution_is_noop(false_block, merge_block)));
+
+            const negative_do_while = block.false_block === dominator.self &&
+                (block.true_block === dominator.merge_block ||
+                    (true_block && merge_block && this.execution_is_noop(true_block, merge_block)));
+
+            if (block.merge === SPIRBlockMerge.MergeNone && block.terminator === SPIRBlockTerminator.Select &&
+                (positive_do_while || negative_do_while)) {
+                return SPIRBlockContinueBlockType.DoWhileLoop;
+            }
+            else
+                return SPIRBlockContinueBlockType.ComplexLoop;
+        }
+    }
+
     protected force_recompile()
     {
         this.is_force_recompile = true;
     }
 
-    is_forcing_recompilation(): boolean
+    protected is_forcing_recompilation(): boolean
     {
         return this.is_force_recompile;
     }
 
-    clear_force_recompile()
+    protected block_is_loop_candidate(block: SPIRBlock, method: SPIRBlockMethod): boolean
+    {
+// Tried and failed.
+        if (block.disable_block_optimization || block.complex_continue)
+            return false;
+
+        if (method === SPIRBlockMethod.MergeToSelectForLoop || method === SPIRBlockMethod.MergeToSelectContinueForLoop) {
+            // Try to detect common for loop pattern
+            // which the code backend can use to create cleaner code.
+            // for(;;) { if (cond) { some_body; } else { break; } }
+            // is the pattern we're looking for.
+            const false_block = this.maybe_get<SPIRBlock>(SPIRBlock, block.false_block);
+            const true_block = this.maybe_get<SPIRBlock>(SPIRBlock, block.true_block);
+            const merge_block = this.maybe_get<SPIRBlock>(SPIRBlock, block.merge_block);
+
+            const false_block_is_merge = block.false_block === block.merge_block ||
+                (false_block && merge_block && this.execution_is_noop(false_block, merge_block));
+
+            const true_block_is_merge = block.true_block === block.merge_block ||
+                (true_block && merge_block && this.execution_is_noop(true_block, merge_block));
+
+            const positive_candidate =
+                block.true_block !== block.merge_block && block.true_block !== block.self && false_block_is_merge;
+
+            const negative_candidate =
+                block.false_block !== block.merge_block && block.false_block !== block.self && true_block_is_merge;
+
+            let ret = block.terminator === SPIRBlockTerminator.Select && block.merge === SPIRBlockMerge.MergeLoop &&
+                (positive_candidate || negative_candidate);
+
+            if (ret && positive_candidate && method === SPIRBlockMethod.MergeToSelectContinueForLoop)
+                ret = block.true_block === block.continue_block;
+            else if (ret && negative_candidate && method === SPIRBlockMethod.MergeToSelectContinueForLoop)
+                ret = block.false_block === block.continue_block;
+
+            // If we have OpPhi which depends on branches which came from our own block,
+            // we need to flush phi variables in else block instead of a trivial break,
+            // so we cannot assume this is a for loop candidate.
+            if (ret) {
+                for (let phi of block.phi_variables)
+                    if (phi.parent === block.self)
+                        return false;
+
+                const merge = this.maybe_get<SPIRBlock>(SPIRBlock, block.merge_block);
+                if (merge)
+                    for (let phi of merge.phi_variables)
+                        if (phi.parent === block.self)
+                            return false;
+            }
+            return ret;
+        }
+        else if (method === SPIRBlockMethod.MergeToDirectForLoop) {
+            // Empty loop header that just sets up merge target
+            // and branches to loop body.
+            let ret = block.terminator === SPIRBlockTerminator.Direct && block.merge === SPIRBlockMerge.MergeLoop && block.ops.length === 0;
+
+            if (!ret)
+                return false;
+
+            const child = this.get<SPIRBlock>(SPIRBlock, block.next_block);
+
+            const false_block = this.maybe_get<SPIRBlock>(SPIRBlock, child.false_block);
+            const true_block = this.maybe_get<SPIRBlock>(SPIRBlock, child.true_block);
+            const merge_block = this.maybe_get<SPIRBlock>(SPIRBlock, block.merge_block);
+
+            const false_block_is_merge = child.false_block === block.merge_block ||
+                (false_block && merge_block && this.execution_is_noop(false_block, merge_block));
+
+            const true_block_is_merge = child.true_block === block.merge_block ||
+                (true_block && merge_block && this.execution_is_noop(true_block, merge_block));
+
+            const positive_candidate = child.true_block !== block.merge_block && child.true_block !== block.self && false_block_is_merge;
+
+            const negative_candidate = child.false_block !== block.merge_block && child.false_block !== block.self && true_block_is_merge;
+
+            ret = child.terminator === SPIRBlockTerminator.Select && child.merge === SPIRBlockMerge.MergeNone &&
+                (positive_candidate || negative_candidate);
+
+            // If we have OpPhi which depends on branches which came from our own block,
+            // we need to flush phi variables in else block instead of a trivial break,
+            // so we cannot assume this is a for loop candidate.
+            if (ret) {
+                for (let phi of block.phi_variables)
+                    if (phi.parent === block.self || phi.parent === child.self)
+                        return false;
+
+                for (let phi of child.phi_variables)
+                    if (phi.parent === block.self)
+                        return false;
+
+                const merge = this.maybe_get<SPIRBlock>(SPIRBlock, block.merge_block);
+                if (merge)
+                    for (let phi of merge.phi_variables)
+                        if (phi.parent === block.self || phi.parent === child.false_block)
+                            return false;
+            }
+
+            return ret;
+        }
+        else
+            return false;
+    }
+
+    protected inherit_expression_dependencies(dst: number, source_expression: number)
+    {
+        // Don't inherit any expression dependencies if the expression in dst
+        // is not a forwarded temporary.
+        if (!this.forwarded_temporaries.has(dst) ||
+            this.forced_temporaries.has(dst)) {
+            return;
+        }
+
+        const e = this.get<SPIRExpression>(SPIRExpression, dst);
+        const phi = this.maybe_get<SPIRVariable>(SPIRVariable, source_expression);
+        if (phi?.phi_variable) {
+            // We have used a phi variable, which can change at the end of the block,
+            // so make sure we take a dependency on this phi variable.
+            phi.dependees.push(dst);
+        }
+
+        const s = this.maybe_get<SPIRExpression>(SPIRExpression, source_expression);
+        if (!s)
+            return;
+
+        const e_deps = e.expression_dependencies;
+        const s_deps = s.expression_dependencies;
+
+        // If we depend on a expression, we also depend on all sub-dependencies from source.
+        e_deps.push(source_expression);
+        e_deps.push(...s_deps);
+
+        // Eliminate duplicated dependencies.
+        e.expression_dependencies = unique(e_deps);
+    }
+
+    protected add_implied_read_expression(e: SPIRExpression | SPIRAccessChain, source: number)
+    {
+        const itr = e.implied_read_expressions.indexOf(<ID>(source));
+        if (itr < 0)
+            e.implied_read_expressions.push(source);
+    }
+
+    protected clear_force_recompile()
     {
         this.is_force_recompile = false;
     }
@@ -884,6 +1156,11 @@ export abstract class Compiler
             is_restrict = this.has_decoration(v.self, Decoration.DecorationRestrict);
 
         return !is_restrict && (ssbo || image || counter || buffer_reference);
+    }
+
+    protected add_loop_level()
+    {
+        this.current_loop_level++;
     }
 
     protected set_initializers(e: IVariant)
@@ -1236,7 +1513,7 @@ export abstract class Compiler
 
     protected is_vector(type: SPIRType)
     {
-        return type.vecsize > 1 && type.columns == 1;
+        return type.vecsize > 1 && type.columns === 1;
     }
 
     protected is_matrix(type: SPIRType): boolean
@@ -1315,6 +1592,74 @@ export abstract class Compiler
                 var_.parameter.read_count++;
         }
     }
+
+    protected register_write(chain: number)
+    {
+        let var_ = this.maybe_get<SPIRVariable>(SPIRVariable, chain);
+        if (!var_) {
+            // If we're storing through an access chain, invalidate the backing variable instead.
+            const expr = this.maybe_get<SPIRExpression>(SPIRExpression, chain);
+            if (expr && expr.loaded_from)
+                var_ = this.maybe_get<SPIRVariable>(SPIRVariable, expr.loaded_from);
+
+            const access_chain = this.maybe_get<SPIRAccessChain>(SPIRAccessChain, chain);
+            if (access_chain && access_chain.loaded_from)
+                var_ = this.maybe_get<SPIRVariable>(SPIRVariable, access_chain.loaded_from);
+        }
+
+        const chain_type = this.expression_type(chain);
+
+        if (var_) {
+            let check_argument_storage_qualifier = true;
+            const type = this.expression_type(chain);
+
+            // If our variable is in a storage class which can alias with other buffers,
+            // invalidate all variables which depend on aliased variables. And if this is a
+            // variable pointer, then invalidate all variables regardless.
+            if (this.get_variable_data_type(var_).pointer) {
+                this.flush_all_active_variables();
+
+                if (type.pointer_depth === 1) {
+                    // We have a backing variable which is a pointer-to-pointer type.
+                    // We are storing some data through a pointer acquired through that variable,
+                    // but we are not writing to the value of the variable itself,
+                    // i.e., we are not modifying the pointer directly.
+                    // If we are storing a non-pointer type (pointer_depth === 1),
+                    // we know that we are storing some unrelated data.
+                    // A case here would be
+                    // void foo(Foo * const *arg) {
+                    //   Foo *bar = *arg;
+                    //   bar->unrelated = 42;
+                    // }
+                    // arg, the argument is constant.
+                    check_argument_storage_qualifier = false;
+                }
+            }
+
+            if (type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT || this.variable_storage_is_aliased(var_))
+                this.flush_all_aliased_variables();
+            else if (var_)
+                this.flush_dependees(var_);
+
+            // We tried to write to a parameter which is not marked with out qualifier, force a recompile.
+            if (check_argument_storage_qualifier && var_.parameter && var_.parameter.write_count === 0) {
+                var_.parameter.write_count++;
+                this.force_recompile();
+            }
+        }
+        else if (chain_type.pointer) {
+            // If we stored through a variable pointer, then we don't know which
+            // variable we stored to. So *all* expressions after this point need to
+            // be invalidated.
+            // FIXME: If we can prove that the variable pointer will point to
+            // only certain variables, we can invalidate only those.
+            this.flush_all_active_variables();
+        }
+
+        // If chain_type.pointer is false, we're not writing to memory backed variables, but temporaries instead.
+        // This can happen in copy_logical_type where we unroll complex reads and writes to temporaries.
+    }
+
 
     protected is_continue(next: number): boolean
     {
@@ -2053,8 +2398,7 @@ export abstract class Compiler
         const flags = new Bitset();
         const type_meta = this.ir.find_meta(type.self);
 
-        if (type_meta)
-        {
+        if (type_meta) {
             const members = type_meta.members;
             if (index >= members.length)
                 return flags;
@@ -2066,8 +2410,7 @@ export abstract class Compiler
 
             // If our member type is a struct, traverse all the child members as well recursively.
             const member_childs = member_type.member_types;
-            for (let i = 0; i < member_childs.length; i++)
-            {
+            for (let i = 0; i < member_childs.length; i++) {
                 const child_member_type = this.get<SPIRType>(SPIRType, member_childs[i]);
                 if (!child_member_type.pointer)
                     flags.merge_or(this.combined_decoration_for_member(member_type, i));
@@ -2079,8 +2422,7 @@ export abstract class Compiler
 
     is_desktop_only_format(format: ImageFormat): boolean
     {
-        switch (format)
-        {
+        switch (format) {
             // Desktop-only formats
             case ImageFormat.ImageFormatR11fG11fB10f:
             case ImageFormat.ImageFormatR16f:
@@ -2139,6 +2481,13 @@ export abstract class Compiler
 
         const dec = m.decoration;
         return dec.extended.flags.get(decoration);
+    }
+
+    protected unset_extended_decoration(id: number, decoration: ExtendedDecorations)
+    {
+        const dec = maplike_get(Meta, this.ir.meta, id).decoration;
+        dec.extended.flags.clear(decoration);
+        dec.extended.values[decoration] = 0;
     }
 
     protected set_extended_member_decoration(type: number, index: number, decoration: ExtendedDecorations, value: number = 0)
@@ -2338,6 +2687,15 @@ export abstract class Compiler
         return false;
     }
 
+    protected flush_phi_required(from: BlockID, to: BlockID): boolean
+    {
+        const child = this.get<SPIRBlock>(SPIRBlock, to);
+        for (let phi of child.phi_variables)
+            if (phi.parent === from)
+                return true;
+        return false;
+    }
+
     protected evaluate_spec_constant_u32(spec: SPIRConstantOp): number
     {
         const result_type = this.get<SPIRType>(SPIRType, spec.basetype);
@@ -2403,11 +2761,11 @@ export abstract class Compiler
                 break;
             case Op.OpLogicalEqual:
             case Op.OpIEqual:
-                value = eval_u32(spec.arguments[0]) == eval_u32(spec.arguments[1]) ? 1 : 0;
+                value = eval_u32(spec.arguments[0]) === eval_u32(spec.arguments[1]) ? 1 : 0;
                 break;
             case Op.OpLogicalNotEqual:
             case Op.OpINotEqual:
-                value = eval_u32(spec.arguments[0]) != eval_u32(spec.arguments[1]) ? 1 : 0;
+                value = eval_u32(spec.arguments[0]) !== eval_u32(spec.arguments[1]) ? 1 : 0;
                 break;
             case Op.OpULessThan:
             case Op.OpSLessThan:
@@ -2477,6 +2835,13 @@ export abstract class Compiler
             return c.scalar();
         else
             return this.evaluate_spec_constant_u32(this.get<SPIRConstantOp>(SPIRConstantOp, id));
+    }
+
+    is_vertex_like_shader(): boolean
+    {
+        const model = this.get_execution_model();
+        return model === ExecutionModel.ExecutionModelVertex || model === ExecutionModel.ExecutionModelGeometry ||
+            model === ExecutionModel.ExecutionModelTessellationControl || model === ExecutionModel.ExecutionModelTessellationEvaluation;
     }
 
     get_case_list(block: SPIRBlock): SPIRBlockCase[]
@@ -2568,8 +2933,7 @@ function storage_class_is_interface(storage: StorageClass): boolean
 
 export function opcode_is_sign_invariant(opcode: Op): boolean
 {
-    switch (opcode)
-    {
+    switch (opcode) {
         case Op.OpIEqual:
         case Op.OpINotEqual:
         case Op.OpISub:
@@ -2588,8 +2952,7 @@ export function opcode_is_sign_invariant(opcode: Op): boolean
 
 export function to_signed_basetype(width: number): SPIRTypeBaseType
 {
-    switch (width)
-    {
+    switch (width) {
         case 8:
             return SPIRTypeBaseType.SByte;
         case 16:
@@ -2605,8 +2968,7 @@ export function to_signed_basetype(width: number): SPIRTypeBaseType
 
 export function to_unsigned_basetype(width: number): SPIRTypeBaseType
 {
-    switch (width)
-    {
+    switch (width) {
         case 8:
             return SPIRTypeBaseType.UByte;
         case 16:

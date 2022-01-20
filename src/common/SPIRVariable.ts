@@ -1,7 +1,7 @@
 import { IVariant } from "./IVariant";
 import { Types } from "./Types";
 import { StorageClass } from "../spirv";
-import { SPIRFunction, SPIRVFunctionParameter } from "./SPIRFunction";
+import { SPIRFunction, SPIRFunctionParameter } from "./SPIRFunction";
 import { defaultCopy } from "../utils/defaultCopy";
 
 export class SPIRVariable extends IVariant
@@ -46,7 +46,7 @@ export class SPIRVariable extends IVariant
     // Set to true while we're inside the for loop.
     loop_variable_enable: boolean = false;
 
-    parameter: SPIRVFunctionParameter = null;
+    parameter: SPIRFunctionParameter = null;
 
     constructor(other: SPIRVariable);
     constructor(basetype: TypeID);
