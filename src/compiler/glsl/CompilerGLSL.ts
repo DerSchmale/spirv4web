@@ -10,6 +10,7 @@ import {
     ExecutionMode,
     ExecutionModel,
     ImageFormat,
+    ImageOperandsMask,
     Op,
     StorageClass
 } from "../../spirv";
@@ -50,6 +51,12 @@ import { SPIRString } from "../../common/SPIRString";
 import { ValueSaver } from "../../common/ValueSaver";
 import { defaultClone, defaultCopy } from "../../utils/defaultCopy";
 import { Instruction } from "../../common/Instruction";
+import {
+    TextureFunctionArguments,
+    TextureFunctionBaseArguments,
+    TextureFunctionNameArguments
+} from "./TextureFunctionArguments";
+import { SPIRCombinedImageSampler } from "../../common/SPIRCombinedImageSampler";
 
 const swizzle: string[][] = [
     [ ".x", ".y", ".z", ".w" ],
@@ -203,6 +210,11 @@ export class CompilerGLSL extends Compiler
 
     protected forced_extensions: string[] = [];
     protected header_lines: string[] = [];
+
+    // Used when expressions emit extra opcodes with their own unique IDs,
+    // and we need to reuse the IDs across recompilation loops.
+    // Currently used by NMin/Max/Clamp implementations.
+    protected extra_sub_expressions: number[] = []; //std::unordered_map<uint32_t, uint32_t>
 
     protected workaround_ubo_load_overload_types: TypeID[] = [];
 
@@ -565,7 +577,7 @@ export class CompilerGLSL extends Compiler
     {
         const ops = this.stream(instruction);
         const opcode = <Op>(instruction.op);
-        const length = instruction.length;
+        let length = instruction.length;
 
         /*#define GLSL_BOP(op) emit_binary_op(ops[0], ops[1], ops[2], ops[3], #op)
         #define GLSL_BOP_CAST(op, type) \
@@ -655,7 +667,7 @@ export class CompilerGLSL extends Compiler
 
                 if (!this.type_is_opaque_value(type) && this.has_decoration(ptr, Decoration.DecorationNonUniform)) {
                     // If we're loading something non-opaque, we need to handle non-uniform descriptor access.
-                    this.convert_non_uniform_expression(expr, ptr);
+                    expr = this.convert_non_uniform_expression(expr, ptr);
                 }
 
                 if (forward && ptr_expression)
@@ -756,121 +768,108 @@ export class CompilerGLSL extends Compiler
                 break;
             }
 
-            /*case OpStore:
-            {
-                auto *var = maybe_get<SPIRVariable>(ops[0]);
+            case Op.OpStore: {
+                const var_ = this.maybe_get<SPIRVariable>(SPIRVariable, ops[0]);
 
-                if (var && var_.statically_assigned)
-                var_.static_expression = ops[1];
-            else if (var && var_.loop_variable && !var_.loop_variable_enable)
-                var_.static_expression = ops[1];
-            else if (var && var_.remapped_variable && var_.static_expression)
-                {
+                if (var_ && var_.statically_assigned)
+                    var_.static_expression = ops[1];
+                else if (var_ && var_.loop_variable && !var_.loop_variable_enable)
+                    var_.static_expression = ops[1];
+                else if (var_ && var_.remapped_variable && var_.static_expression) {
                     // Skip the write.
                 }
-            else if (flattened_structs.count(ops[0]))
-            {
-                store_flattened_struct(ops[0], ops[1]);
-                register_write(ops[0]);
-            }
-            else
-            {
-                emit_store_statement(ops[0], ops[1]);
-            }
+                else if (this.flattened_structs.hasOwnProperty(ops[0])) {
+                    this.store_flattened_struct(ops[0], ops[1]);
+                    this.register_write(ops[0]);
+                }
+                else {
+                    this.emit_store_statement(ops[0], ops[1]);
+                }
 
                 // Storing a pointer results in a variable pointer, so we must conservatively assume
                 // we can write through it.
-                if (expression_type(ops[1]).pointer)
-                    register_write(ops[1]);
+                if (this.expression_type(ops[1]).pointer)
+                    this.register_write(ops[1]);
                 break;
             }
 
-            case OpArrayLength:
-            {
-                uint32_t result_type = ops[0];
-                uint32_t id = ops[1];
-                auto e = access_chain_internal(ops[2], &ops[3], length - 3, ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, nullptr);
-                if (has_decoration(ops[2], DecorationNonUniform))
-                    convert_non_uniform_expression(e, ops[2]);
-                set<SPIRExpression>(id, join(type_to_glsl(get<SPIRType>(result_type)), "(", e, ".length())"), result_type,
-                    true);
+            case Op.OpArrayLength: {
+                const result_type = ops[0];
+                const id = ops[1];
+                const e = this.access_chain_internal(ops[2], ops.slice(3), length - 3, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, null);
+                if (this.has_decoration(ops[2], Decoration.DecorationNonUniform))
+                    this.convert_non_uniform_expression(e, ops[2]);
+                this.set<SPIRExpression>(SPIRExpression, id, this.type_to_glsl(this.get<SPIRType>(SPIRType, result_type)),
+                    "(" + e + ".length())", result_type, true);
                 break;
             }
 
-                // Function calls
-            case OpFunctionCall:
-            {
-                uint32_t result_type = ops[0];
-                uint32_t id = ops[1];
-                uint32_t func = ops[2];
-                const auto *arg = &ops[3];
+            // Function calls
+            case Op.OpFunctionCall: {
+                const result_type = ops[0];
+                const id = ops[1];
+                const func = ops[2];
+                const arg = ops.slice(3);
                 length -= 3;
 
-                auto &callee = get<SPIRFunction>(func);
-                auto &return_type = get<SPIRType>(callee.return_type);
-                bool pure = function_is_pure(callee);
+                const callee = this.get<SPIRFunction>(SPIRFunction, func);
+                const return_type = this.get<SPIRType>(SPIRType, callee.return_type);
+                const pure = this.function_is_pure(callee);
 
-                bool callee_has_out_variables = false;
-                bool emit_return_value_as_argument = false;
+                let callee_has_out_variables = false;
+                let emit_return_value_as_argument = false;
 
                 // Invalidate out variables passed to functions since they can be OpStore'd to.
-                for (uint32_t i = 0; i < length; i++)
-                {
-                    if (callee.arguments[i].write_count)
-                    {
-                        register_call_out_argument(arg[i]);
+                for (let i = 0; i < length; i++) {
+                    if (callee.arguments[i].write_count) {
+                        this.register_call_out_argument(arg[i]);
                         callee_has_out_variables = true;
                     }
 
-                    flush_variable_declaration(arg[i]);
+                    this.flush_variable_declaration(arg[i]);
                 }
 
-                if (!return_type.array.empty() && !backend.can_return_array)
-                {
+                if (return_type.array.length > 0 && !backend.can_return_array) {
                     callee_has_out_variables = true;
                     emit_return_value_as_argument = true;
                 }
 
                 if (!pure)
-                    register_impure_function_call();
+                    this.register_impure_function_call();
 
-                string funexpr;
-                SmallVector<string> arglist;
-                funexpr += to_name(func) + "(";
+                let funexpr = "";
+                const arglist: string[] = [];
+                funexpr += this.to_name(func) + "(";
 
-                if (emit_return_value_as_argument)
-                {
-                    statement(type_to_glsl(return_type), " ", to_name(id), type_to_array_glsl(return_type), ";");
-                    arglist.push_back(to_name(id));
+                if (emit_return_value_as_argument) {
+                    this.statement(this.type_to_glsl(return_type), " ", this.to_name(id), this.type_to_array_glsl(return_type), ";");
+                    arglist.push(this.to_name(id));
                 }
 
-                for (uint32_t i = 0; i < length; i++)
-                {
+                for (let i = 0; i < length; i++) {
                     // Do not pass in separate images or samplers if we're remapping
                     // to combined image samplers.
-                    if (skip_argument(arg[i]))
+                    if (this.skip_argument(arg[i]))
                         continue;
 
-                    arglist.push_back(to_func_call_arg(callee.arguments[i], arg[i]));
+                    arglist.push(this.to_func_call_arg(callee.arguments[i], arg[i]));
                 }
 
-                for (auto &combined : callee.combined_parameters)
-                {
-                    auto image_id = combined.global_image ? combined.image_id : VariableID(arg[combined.image_id]);
-                    auto sampler_id = combined.global_sampler ? combined.sampler_id : VariableID(arg[combined.sampler_id]);
-                    arglist.push_back(to_combined_image_sampler(image_id, sampler_id));
+                for (let combined of callee.combined_parameters) {
+                    const image_id = combined.global_image ? combined.image_id : <VariableID>(arg[combined.image_id]);
+                    const sampler_id = combined.global_sampler ? combined.sampler_id : <VariableID>(arg[combined.sampler_id]);
+                    arglist.push(this.to_combined_image_sampler(image_id, sampler_id));
                 }
 
-                append_global_func_args(callee, length, arglist);
+                this.append_global_func_args(callee, length, arglist);
 
-                funexpr += merge(arglist);
+                funexpr += arglist.join(", ");
                 funexpr += ")";
 
                 // Check for function call constraints.
-                check_function_call_constraints(arg, length);
+                this.check_function_call_constraints(arg, length);
 
-                if (return_type.basetype !== SPIRTypeBaseType.Void)
-                {
+                if (return_type.basetype !== SPIRTypeBaseType.Void) {
                     // If the function actually writes to an out variable,
                     // take the conservative route and do not forward.
                     // The problem is that we might not read the function
@@ -878,35 +877,34 @@ export class CompilerGLSL extends Compiler
                     // is read (common case when return value is ignored!
                     // In order to avoid start tracking invalid variables,
                     // just avoid the forwarding problem altogether.
-                    bool forward = args_will_forward(id, arg, length, pure) && !callee_has_out_variables && pure &&
-                    (forced_temporaries.find(id) === end(forced_temporaries));
+                    const forward = this.args_will_forward(id, arg, length, pure) && !callee_has_out_variables && pure &&
+                        (!this.forced_temporaries.has(id));
 
-                    if (emit_return_value_as_argument)
-                    {
-                        statement(funexpr, ";");
-                        set<SPIRExpression>(id, to_name(id), result_type, true);
+                    if (emit_return_value_as_argument) {
+                        this.statement(funexpr, ";");
+                        this.set<SPIRExpression>(SPIRExpression, id, this.to_name(id), result_type, true);
                     }
                     else
-                        emit_op(result_type, id, funexpr, forward);
+                        this.emit_op(result_type, id, funexpr, forward);
 
                     // Function calls are implicit loads from all variables in question.
                     // Set dependencies for them.
-                    for (uint32_t i = 0; i < length; i++)
-                    register_read(id, arg[i], forward);
+                    for (let i = 0; i < length; i++)
+                        this.register_read(id, arg[i], forward);
 
                     // If we're going to forward the temporary result,
                     // put dependencies on every variable that must not change.
                     if (forward)
-                        register_global_read_dependencies(callee, id);
+                        this.register_global_read_dependencies(callee, id);
                 }
                 else
-                    statement(funexpr, ";");
+                    this.statement(funexpr, ";");
 
                 break;
             }
 
-                // Composite munging
-            case OpCompositeConstruct:
+            // Composite munging
+            /*case OpCompositeConstruct:
             {
                 uint32_t result_type = ops[0];
                 uint32_t id = ops[1];
@@ -2185,25 +2183,25 @@ export class CompilerGLSL extends Compiler
                     stream_expr = join("int(", stream_expr, ")");
                 statement("EndStreamPrimitive(", stream_expr, ");");
                 break;
-            }
+            }*/
 
-                // Textures
-            case OpImageSampleExplicitLod:
-                case OpImageSampleProjExplicitLod:
-                case OpImageSampleDrefExplicitLod:
-                case OpImageSampleProjDrefExplicitLod:
-                case OpImageSampleImplicitLod:
-                case OpImageSampleProjImplicitLod:
-                case OpImageSampleDrefImplicitLod:
-                case OpImageSampleProjDrefImplicitLod:
-                case OpImageFetch:
-                case OpImageGather:
-                case OpImageDrefGather:
+            // Textures
+            case Op.OpImageSampleExplicitLod:
+            case Op.OpImageSampleProjExplicitLod:
+            case Op.OpImageSampleDrefExplicitLod:
+            case Op.OpImageSampleProjDrefExplicitLod:
+            case Op.OpImageSampleImplicitLod:
+            case Op.OpImageSampleProjImplicitLod:
+            case Op.OpImageSampleDrefImplicitLod:
+            case Op.OpImageSampleProjDrefImplicitLod:
+            case Op.OpImageFetch:
+            case Op.OpImageGather:
+            case Op.OpImageDrefGather:
                 // Gets a bit hairy, so move this to a separate instruction.
-                emit_texture_op(instruction, false);
+                this.emit_texture_op(instruction, false);
                 break;
 
-            case OpImageSparseSampleExplicitLod:
+            /*case OpImageSparseSampleExplicitLod:
                 case OpImageSparseSampleProjExplicitLod:
                 case OpImageSparseSampleDrefExplicitLod:
                 case OpImageSparseSampleProjDrefExplicitLod:
@@ -3287,6 +3285,7 @@ export class CompilerGLSL extends Compiler
                 break;*/
 
             default:
+                console.log("unimplemented op ", instruction.op);
                 this.statement("// unimplemented op ", instruction.op);
                 break;
         }
@@ -3639,6 +3638,299 @@ export class CompilerGLSL extends Compiler
         this.statement("");
     }
 
+    protected emit_texture_op(i: Instruction, sparse: boolean)
+    {
+        const ops = this.stream(i);
+        const op = <Op>(i.op);
+
+        let inherited_expressions: number[] = [];
+
+        const result_type_id = ops[0];
+        const id = ops[1];
+        const return_type = this.get<SPIRType>(SPIRType, result_type_id);
+
+        const ids = {
+            sparse_code_id: 0,
+            sparse_texel_id: 0
+        };
+        if (sparse)
+            this.emit_sparse_feedback_temporaries(result_type_id, id, ids);
+
+        const forward = { value: false };
+        let expr = this.to_texture_op(i, sparse, forward, inherited_expressions);
+
+        if (sparse) {
+            this.statement(this.to_expression(ids.sparse_code_id), " = ", expr, ";");
+            expr = this.type_to_glsl(return_type) + "(" + this.to_expression(ids.sparse_code_id) + ", " + this.to_expression(ids.sparse_texel_id) + ")";
+            forward.value = true;
+            inherited_expressions = [];
+        }
+
+        this.emit_op(result_type_id, id, expr, forward.value);
+        for (let inherit of inherited_expressions)
+            this.inherit_expression_dependencies(id, inherit);
+
+        // Do not register sparse ops as control dependent as they are always lowered to a temporary.
+        switch (op) {
+            case Op.OpImageSampleDrefImplicitLod:
+            case Op.OpImageSampleImplicitLod:
+            case Op.OpImageSampleProjImplicitLod:
+            case Op.OpImageSampleProjDrefImplicitLod:
+                this.register_control_dependent_expression(id);
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    protected to_texture_op(i: Instruction, sparse: boolean, forward: { value: boolean }, inherited_expressions: number[])
+    {
+        const ops = this.stream(i);
+        const op = <Op>(i.op);
+        let length = i.length;
+
+        const result_type_id = ops[0];
+        const img = <VariableID>ops[2];
+        let coord = ops[3];
+        let dref = 0;
+        let comp = 0;
+        let gather = false;
+        let proj = false;
+        let fetch = false;
+        let nonuniform_expression = false;
+        let optOffset: number;
+
+        const result_type = this.get<SPIRType>(SPIRType, result_type_id);
+        const { options, backend } = this;
+
+        inherited_expressions.push(coord);
+        if (this.has_decoration(img, Decoration.DecorationNonUniform) && !this.maybe_get_backing_variable(img))
+            nonuniform_expression = true;
+
+        switch (op) {
+            case Op.OpImageSampleDrefImplicitLod:
+            case Op.OpImageSampleDrefExplicitLod:
+            case Op.OpImageSparseSampleDrefImplicitLod:
+            case Op.OpImageSparseSampleDrefExplicitLod:
+                dref = ops[4];
+                optOffset = 5;
+                length -= 5;
+                break;
+
+            case Op.OpImageSampleProjDrefImplicitLod:
+            case Op.OpImageSampleProjDrefExplicitLod:
+            case Op.OpImageSparseSampleProjDrefImplicitLod:
+            case Op.OpImageSparseSampleProjDrefExplicitLod:
+                dref = ops[4];
+                optOffset = 5;
+                length -= 5;
+                proj = true;
+                break;
+
+            case Op.OpImageDrefGather:
+            case Op.OpImageSparseDrefGather:
+                dref = ops[4];
+                optOffset = 5;
+                length -= 5;
+                gather = true;
+                if (options.es && options.version < 310)
+                    throw new Error("textureGather requires ESSL 310.");
+                else if (!options.es && options.version < 400)
+                    throw new Error("textureGather with depth compare requires GLSL 400.");
+                break;
+
+            case Op.OpImageGather:
+            case Op.OpImageSparseGather:
+                comp = ops[4];
+                optOffset = 5;
+                length -= 5;
+                gather = true;
+                if (options.es && options.version < 310)
+                    throw new Error("textureGather requires ESSL 310.");
+                else if (!options.es && options.version < 400) {
+                    if (!this.expression_is_constant_null(comp))
+                        throw new Error("textureGather with component requires GLSL 400.");
+                    this.require_extension_internal("GL_ARB_texture_gather");
+                }
+                break;
+
+            case Op.OpImageFetch:
+            case Op.OpImageSparseFetch:
+            case Op.OpImageRead: // Reads === fetches in Metal (other langs will not get here)
+                optOffset = 4;
+                length -= 4;
+                fetch = true;
+                break;
+
+            case Op.OpImageSampleProjImplicitLod:
+            case Op.OpImageSampleProjExplicitLod:
+            case Op.OpImageSparseSampleProjImplicitLod:
+            case Op.OpImageSparseSampleProjExplicitLod:
+                optOffset = 4;
+                length -= 4;
+                proj = true;
+                break;
+
+            default:
+                optOffset = 4;
+                length -= 4;
+                break;
+        }
+
+        // Bypass pointers because we need the real image struct
+        const type = this.expression_type(img);
+        const imgtype = this.get<SPIRType>(SPIRType, type.self);
+
+        let coord_components = 0;
+        switch (imgtype.image.dim) {
+            case Dim.Dim1D:
+                coord_components = 1;
+                break;
+            case Dim.Dim2D:
+                coord_components = 2;
+                break;
+            case Dim.Dim3D:
+                coord_components = 3;
+                break;
+            case Dim.DimCube:
+                coord_components = 3;
+                break;
+            case Dim.DimBuffer:
+                coord_components = 1;
+                break;
+            default:
+                coord_components = 2;
+                break;
+        }
+
+        if (dref)
+            inherited_expressions.push(dref);
+
+        if (proj)
+            coord_components++;
+        if (imgtype.image.arrayed)
+            coord_components++;
+
+        let bias = 0;
+        let lod = 0;
+        let grad_x = 0;
+        let grad_y = 0;
+        let coffset = 0;
+        let offset = 0;
+        let coffsets = 0;
+        let sample = 0;
+        let minlod = 0;
+        let flags = 0;
+
+        if (length) {
+            flags = ops[optOffset++];
+            length--;
+        }
+
+        const test = (v: number, flag: number) =>
+        {
+            if (length && (flags & flag)) {
+                v = ops[optOffset++];
+                inherited_expressions.push(v);
+                length--;
+            }
+        };
+
+        test(bias, ImageOperandsMask.ImageOperandsBiasMask);
+        test(lod, ImageOperandsMask.ImageOperandsLodMask);
+        test(grad_x, ImageOperandsMask.ImageOperandsGradMask);
+        test(grad_y, ImageOperandsMask.ImageOperandsGradMask);
+        test(coffset, ImageOperandsMask.ImageOperandsConstOffsetMask);
+        test(offset, ImageOperandsMask.ImageOperandsOffsetMask);
+        test(coffsets, ImageOperandsMask.ImageOperandsConstOffsetsMask);
+        test(sample, ImageOperandsMask.ImageOperandsSampleMask);
+        test(minlod, ImageOperandsMask.ImageOperandsMinLodMask);
+
+        const base_args = new TextureFunctionBaseArguments();
+        base_args.img = img;
+        base_args.imgtype = imgtype;
+        base_args.is_fetch = fetch;
+        base_args.is_gather = gather;
+        base_args.is_proj = proj;
+
+        let expr = "";
+        const name_args = new TextureFunctionNameArguments();
+
+        name_args.base = base_args;
+        name_args.has_array_offsets = coffsets !== 0;
+        name_args.has_offset = coffset !== 0 || offset !== 0;
+        name_args.has_grad = grad_x !== 0 || grad_y !== 0;
+        name_args.has_dref = dref !== 0;
+        name_args.is_sparse_feedback = sparse;
+        name_args.has_min_lod = minlod !== 0;
+        name_args.lod = lod;
+        expr += this.to_function_name(name_args);
+        expr += "(";
+
+        let sparse_texel_id = 0;
+        if (sparse)
+            sparse_texel_id = this.get_sparse_feedback_texel_id(ops[1]);
+
+        const args = new TextureFunctionArguments();
+        args.base = base_args;
+        args.coord = coord;
+        args.coord_components = coord_components;
+        args.dref = dref;
+        args.grad_x = grad_x;
+        args.grad_y = grad_y;
+        args.lod = lod;
+        args.coffset = coffset;
+        args.offset = offset;
+        args.bias = bias;
+        args.component = comp;
+        args.sample = sample;
+        args.sparse_texel = sparse_texel_id;
+        args.min_lod = minlod;
+        args.nonuniform_expression = nonuniform_expression;
+        expr += this.to_function_args(args, forward);
+        expr += ")";
+
+// texture(samplerXShadow) returns float. shadowX() returns vec4. Swizzle here.
+        if (this.is_legacy() && this.is_depth_image(imgtype, img))
+            expr += ".r";
+
+// Sampling from a texture which was deduced to be a depth image, might actually return 1 component here.
+// Remap back to 4 components as sampling opcodes expect.
+        if (backend.comparison_image_samples_scalar && image_opcode_is_sample_no_dref(op)) {
+            let image_is_depth = false;
+            const combined = this.maybe_get<SPIRCombinedImageSampler>(SPIRCombinedImageSampler, img);
+            const image_id = combined ? combined.image : img;
+
+            if (combined && this.is_depth_image(imgtype, combined.image))
+                image_is_depth = true;
+            else if (this.is_depth_image(imgtype, img))
+                image_is_depth = true;
+
+            // We must also check the backing variable for the image.
+            // We might have loaded an OpImage, and used that handle for two different purposes.
+            // Once with comparison, once without.
+            const image_variable = this.maybe_get_backing_variable(image_id);
+            if (image_variable && this.is_depth_image(this.get<SPIRType>(SPIRType, image_variable.basetype), image_variable.self))
+                image_is_depth = true;
+
+            if (image_is_depth)
+                expr = this.remap_swizzle(result_type, 1, expr);
+        }
+
+        if (!sparse && !backend.support_small_type_sampling_result && result_type.width < 32) {
+            // Just value cast (narrowing) to expected type since we cannot rely on narrowing to work automatically.
+            // Hopefully compiler picks this up and converts the texturing instruction to the appropriate precision.
+            expr = this.type_to_glsl_constructor(result_type) + "(" + expr + ")";
+        }
+
+// Deals with reads from MSL. We might need to downconvert to fewer components.
+        if (op === Op.OpImageRead)
+            expr = this.remap_swizzle(result_type, 4, expr);
+
+        return expr;
+    }
+
     protected emit_line_directive(file_id: number, line_literal: number)
     {
         // If we are redirecting statements, ignore the line directive.
@@ -3677,6 +3969,323 @@ export class CompilerGLSL extends Compiler
 
     protected emit_struct_padding_target(_: SPIRType)
     {
+        // empty
+    }
+
+    protected to_function_name(args: TextureFunctionNameArguments): string
+    {
+        const { options } = this;
+        if (args.has_min_lod)
+        {
+            if (options.es)
+                throw new Error("Sparse residency is not supported in ESSL.");
+            this.require_extension_internal("GL_ARB_sparse_texture_clamp");
+        }
+
+        let fname = "";
+        const imgtype = args.base.imgtype;
+        const tex = args.base.img;
+
+        // textureLod on sampler2DArrayShadow and samplerCubeShadow does not exist in GLSL for some reason.
+        // To emulate this, we will have to use textureGrad with a constant gradient of 0.
+        // The workaround will assert that the LOD is in fact constant 0, or we cannot emit correct code.
+        // This happens for HLSL SampleCmpLevelZero on Texture2DArray and TextureCube.
+        let workaround_lod_array_shadow_as_grad = false;
+        if (((imgtype.image.arrayed && imgtype.image.dim === Dim.Dim2D) || imgtype.image.dim === Dim.DimCube) &&
+            this.is_depth_image(imgtype, tex) && args.lod)
+        {
+            if (!this.expression_is_constant_null(args.lod))
+            {
+                throw new Error("textureLod on sampler2DArrayShadow is not constant 0.0. This cannot be expressed in" +
+                    " GLSL.");
+            }
+            workaround_lod_array_shadow_as_grad = true;
+        }
+
+        if (args.is_sparse_feedback)
+            fname += "sparse";
+
+        if (args.base.is_fetch)
+            fname += args.is_sparse_feedback ? "TexelFetch" : "texelFetch";
+        else
+        {
+            fname += args.is_sparse_feedback ? "Texture" : "texture";
+
+            if (args.base.is_gather)
+                fname += "Gather";
+            if (args.has_array_offsets)
+                fname += "Offsets";
+            if (args.base.is_proj)
+                fname += "Proj";
+            if (args.has_grad || workaround_lod_array_shadow_as_grad)
+                fname += "Grad";
+            if (args.lod !== 0 && !workaround_lod_array_shadow_as_grad)
+                fname += "Lod";
+        }
+
+        if (args.has_offset)
+            fname += "Offset";
+
+        if (args.has_min_lod)
+            fname += "Clamp";
+
+        if (args.is_sparse_feedback || args.has_min_lod)
+            fname += "ARB";
+
+        return (this.is_legacy() && !args.base.is_gather) ? this.legacy_tex_op(fname, imgtype, tex) : fname;
+    }
+
+    protected to_function_args(args: TextureFunctionArguments, p_forward: { value: boolean  }): string
+    {
+        const img = args.base.img;
+        const imgtype = args.base.imgtype;
+
+        const { backend } = this;
+
+        let farg_str;
+        if (args.base.is_fetch)
+            farg_str = this.convert_separate_image_to_expression(img);
+        else
+            farg_str = this.to_non_uniform_aware_expression(img);
+
+        if (args.nonuniform_expression && farg_str.indexOf('[') >= 0)
+        {
+            // Only emit nonuniformEXT() wrapper if the underlying expression is arrayed in some way.
+            farg_str = backend.nonuniform_qualifier + "(" + farg_str + ")";
+        }
+
+        const swizz_func = backend.swizzle_is_function;
+        const swizzle = (comps, in_comps): string => {
+            if (comps === in_comps)
+                return "";
+
+            switch (comps)
+            {
+                case 1:
+                    return ".x";
+                case 2:
+                    return swizz_func ? ".xy()" : ".xy";
+                case 3:
+                    return swizz_func ? ".xyz()" : ".xyz";
+                default:
+                    return "";
+            }
+        };
+
+        let forward = this.should_forward(args.coord);
+
+        // The IR can give us more components than we need, so chop them off as needed.
+        const swizzle_expr = swizzle(args.coord_components, this.expression_type(args.coord).vecsize);
+        // Only enclose the UV expression if needed.
+        let coord_expr = (swizzle_expr === "") ? this.to_expression(args.coord) : (this.to_enclosed_expression(args.coord) + swizzle_expr);
+
+        // texelFetch only takes int, not uint.
+        const coord_type = this.expression_type(args.coord);
+        if (coord_type.basetype === SPIRTypeBaseType.UInt)
+        {
+            const expected_type = coord_type;
+            expected_type.vecsize = args.coord_components;
+            expected_type.basetype = SPIRTypeBaseType.Int;
+            coord_expr = this.bitcast_expression(expected_type, coord_type.basetype, coord_expr);
+        }
+
+        // textureLod on sampler2DArrayShadow and samplerCubeShadow does not exist in GLSL for some reason.
+        // To emulate this, we will have to use textureGrad with a constant gradient of 0.
+        // The workaround will assert that the LOD is in fact constant 0, or we cannot emit correct code.
+        // This happens for HLSL SampleCmpLevelZero on Texture2DArray and TextureCube.
+        const workaround_lod_array_shadow_as_grad =
+        ((imgtype.image.arrayed && imgtype.image.dim === Dim.Dim2D) || imgtype.image.dim === Dim.DimCube) &&
+        this.is_depth_image(imgtype, img) && args.lod !== 0;
+
+        if (args.dref)
+        {
+            forward = forward && this.should_forward(args.dref);
+
+            // SPIR-V splits dref and coordinate.
+            if (args.base.is_gather ||
+                args.coord_components === 4) // GLSL also splits the arguments in two. Same for textureGather.
+            {
+                farg_str += ", ";
+                farg_str += this.to_expression(args.coord);
+                farg_str += ", ";
+                farg_str += this.to_expression(args.dref);
+            }
+            else if (args.base.is_proj)
+            {
+                // Have to reshuffle so we get vec4(coord, dref, proj), special case.
+                // Other shading languages splits up the arguments for coord and compare value like SPIR-V.
+                // The coordinate type for textureProj shadow is always vec4 even for sampler1DShadow.
+                farg_str += ", vec4(";
+
+                if (imgtype.image.dim === Dim.Dim1D)
+                {
+                    // Could reuse coord_expr, but we will mess up the temporary usage checking.
+                    farg_str += this.to_enclosed_expression(args.coord) + ".x";
+                    farg_str += ", ";
+                    farg_str += "0.0, ";
+                    farg_str += this.to_expression(args.dref);
+                    farg_str += ", ";
+                    farg_str += this.to_enclosed_expression(args.coord) + ".y)";
+                }
+                else if (imgtype.image.dim === Dim.Dim2D)
+                {
+                    // Could reuse coord_expr, but we will mess up the temporary usage checking.
+                    farg_str += this.to_enclosed_expression(args.coord) + (swizz_func ? ".xy()" : ".xy");
+                    farg_str += ", ";
+                    farg_str += this.to_expression(args.dref);
+                    farg_str += ", ";
+                    farg_str += this.to_enclosed_expression(args.coord) + ".z)";
+                }
+                else
+                    throw new Error("Invalid type for textureProj with shadow.");
+            }
+            else
+            {
+                // Create a composite which merges coord/dref into a single vector.
+                const type = this.expression_type(args.coord);
+                type.vecsize = args.coord_components + 1;
+                farg_str += ", ";
+                farg_str += this.type_to_glsl_constructor(type);
+                farg_str += "(";
+                farg_str += coord_expr;
+                farg_str += ", ";
+                farg_str += this.to_expression(args.dref);
+                farg_str += ")";
+            }
+        }
+        else
+        {
+            farg_str += ", ";
+            farg_str += coord_expr;
+        }
+
+        if (args.grad_x || args.grad_y)
+        {
+            forward = forward && this.should_forward(args.grad_x);
+            forward = forward && this.should_forward(args.grad_y);
+            farg_str += ", ";
+            farg_str += this.to_expression(args.grad_x);
+            farg_str += ", ";
+            farg_str += this.to_expression(args.grad_y);
+        }
+
+        if (args.lod)
+        {
+            if (workaround_lod_array_shadow_as_grad)
+            {
+                // Implement textureGrad() instead. LOD === 0.0 is implemented as gradient of 0.0.
+                // Implementing this as plain texture() is not safe on some implementations.
+                if (imgtype.image.dim === Dim.Dim2D)
+                    farg_str += ", vec2(0.0), vec2(0.0)";
+                else if (imgtype.image.dim === Dim.DimCube)
+                    farg_str += ", vec3(0.0), vec3(0.0)";
+            }
+            else
+            {
+                forward = forward && this.should_forward(args.lod);
+                farg_str += ", ";
+
+                const lod_expr_type = this.expression_type(args.lod);
+
+                // Lod expression for TexelFetch in GLSL must be int, and only int.
+                if (args.base.is_fetch && imgtype.image.dim !== Dim.DimBuffer && !imgtype.image.ms &&
+                    lod_expr_type.basetype !== SPIRTypeBaseType.Int)
+                {
+                    farg_str += "int(" + this.to_expression(args.lod) + ")";
+                }
+                else
+                {
+                    farg_str += this.to_expression(args.lod);
+                }
+            }
+        }
+        else if (args.base.is_fetch && imgtype.image.dim !== Dim.DimBuffer && !imgtype.image.ms)
+        {
+            // Lod argument is optional in OpImageFetch, but we require a LOD value, pick 0 as the default.
+            farg_str += ", 0";
+        }
+
+        if (args.coffset)
+        {
+            forward = forward && this.should_forward(args.coffset);
+            farg_str += ", ";
+            farg_str += this.to_expression(args.coffset);
+        }
+        else if (args.offset)
+        {
+            forward = forward && this.should_forward(args.offset);
+            farg_str += ", ";
+            farg_str += this.to_expression(args.offset);
+        }
+
+        if (args.sample)
+        {
+            farg_str += ", ";
+            farg_str += this.to_expression(args.sample);
+        }
+
+        if (args.min_lod)
+        {
+            farg_str += ", ";
+            farg_str += this.to_expression(args.min_lod);
+        }
+
+        if (args.sparse_texel)
+        {
+            // Sparse texel output parameter comes after everything else, except it's before the optional, component/bias arguments.
+            farg_str += ", ";
+            farg_str += this.to_expression(args.sparse_texel);
+        }
+
+        if (args.bias)
+        {
+            forward = forward && this.should_forward(args.bias);
+            farg_str += ", ";
+            farg_str += this.to_expression(args.bias);
+        }
+
+        if (args.component && !this.expression_is_constant_null(args.component))
+        {
+            forward = forward && this.should_forward(args.component);
+            farg_str += ", ";
+            const component_type = this.expression_type(args.component);
+            if (component_type.basetype === SPIRTypeBaseType.Int)
+                farg_str += this.to_expression(args.component);
+            else
+                farg_str += "int(" + this.to_expression(args.component) + ")";
+        }
+
+        p_forward.value = forward;
+
+        return farg_str;
+    }
+
+    protected emit_sparse_feedback_temporaries(result_type_id: number, id: number, ids: { sparse_code_id: number, sparse_texel_id: number })
+    {
+// Need to allocate two temporaries.
+        if (this.options.es)
+            throw new Error("Sparse texture feedback is not supported on ESSL.");
+        this.require_extension_internal("GL_ARB_sparse_texture2");
+
+        let temps = maplike_get(0, this.extra_sub_expressions, id);
+        if (temps === 0) {
+            temps = this.ir.increase_bound_by(2);
+            this.extra_sub_expressions[id] = temps;
+        }
+
+        ids.sparse_code_id = temps + 0;
+        ids.sparse_texel_id = temps + 1;
+
+        const return_type = this.get<SPIRType>(SPIRType, result_type_id);
+        if (return_type.basetype !== SPIRTypeBaseType.Struct || return_type.member_types.length !== 2)
+            throw new Error("Invalid return type for sparse feedback.");
+        this.emit_uninitialized_temporary(return_type.member_types[0], ids.sparse_code_id);
+        this.emit_uninitialized_temporary(return_type.member_types[1], ids.sparse_texel_id);
+    }
+
+    protected get_sparse_feedback_texel_id(id: number): number
+    {
+        return this.extra_sub_expressions[id] || 0;
     }
 
     protected emit_buffer_block(var_: SPIRVariable)
@@ -5991,6 +6600,16 @@ export class CompilerGLSL extends Compiler
     protected variable_decl_is_remapped_storage(var_: SPIRVariable, storage: StorageClass): boolean
     {
         return var_.storage === storage;
+    }
+
+    protected to_func_call_arg(arg: SPIRFunctionParameter, id: number): string
+    {
+        // Make sure that we use the name of the original variable, and not the parameter alias.
+        let name_id = id;
+        const var_ = this.maybe_get<SPIRVariable>(SPIRVariable, id);
+        if (var_ && var_.basevariable)
+            name_id = var_.basevariable;
+        return this.to_expression(name_id);
     }
 
     protected is_non_native_row_major_matrix(id: number): boolean
@@ -9126,6 +9745,24 @@ export class CompilerGLSL extends Compiler
         return this.set<SPIRExpression>(SPIRExpression, id, this.to_name(id), type, true);
     }
 
+    protected append_global_func_args(func: SPIRFunction, index: number, arglist: string[])
+    {
+        const args = func.arguments;
+        const arg_cnt = args.length;
+        for (let arg_idx = index; arg_idx < arg_cnt; arg_idx++) {
+            const arg = args[arg_idx];
+            console.assert(arg.alias_global_variable);
+
+            // If the underlying variable needs to be declared
+            // (ie. a local variable with deferred declaration), do so now.
+            const var_id = this.get<SPIRVariable>(SPIRVariable, arg.id).basevariable;
+            if (var_id)
+                this.flush_variable_declaration(var_id);
+
+            arglist.push(this.to_func_call_arg(arg, arg.id));
+        }
+    }
+
     protected to_non_uniform_aware_expression(id: number): string
     {
         const expr = this.to_expression(id);
@@ -9303,6 +9940,7 @@ export class CompilerGLSL extends Compiler
     protected to_pointer_expression(id: number, register_expression_read: boolean = true): string
     {
         const type = this.expression_type(id);
+
         if (type.pointer && this.expression_is_lvalue(id) && !this.should_dereference(id))
             return this.address_of_expression(this.to_enclosed_expression(id, register_expression_read));
         else
@@ -9445,6 +10083,18 @@ export class CompilerGLSL extends Compiler
     to_member_reference(_: number, type: SPIRType, index: number, __: boolean): string
     {
         return "." + this.to_member_name(type, index);
+    }
+
+    protected to_multi_member_reference(type: SPIRType, indices: number[] | Uint32Array): string
+    {
+        let ret = "";
+        let member_type = type;
+        for (let i = 0; i < indices.length; ++i) {
+            const index = indices[i];
+            ret += "." + this.to_member_name(member_type, index);
+            member_type = this.get<SPIRType>(SPIRType, member_type.member_types[index]);
+        }
+        return ret;
     }
 
     protected type_to_glsl_constructor(type: SPIRType): string
@@ -10221,7 +10871,6 @@ export class CompilerGLSL extends Compiler
             attr.push("binding = " + this.get_decoration(var_.self, Decoration.DecorationBinding));
 
         if (var_.storage !== StorageClass.StorageClassOutput && flags.get(Decoration.DecorationOffset)) {
-            console.log(var_);
             attr.push("offset = " + this.get_decoration(var_.self, Decoration.DecorationOffset));
         }
 
@@ -11088,6 +11737,116 @@ export class CompilerGLSL extends Compiler
         });
     }
 
+    protected legacy_tex_op(op: string, imgtype: SPIRType, tex: number): string
+    {
+        let type: string;
+        const { options } = this;
+
+        switch (imgtype.image.dim)
+        {
+            case Dim.Dim1D:
+                type = (imgtype.image.arrayed && !options.es) ? "1DArray" : "1D";
+                break;
+            case Dim.Dim2D:
+                type = (imgtype.image.arrayed && !options.es) ? "2DArray" : "2D";
+                break;
+            case Dim.Dim3D:
+                type = "3D";
+                break;
+            case Dim.DimCube:
+                type = "Cube";
+                break;
+            case Dim.DimRect:
+                type = "2DRect";
+                break;
+            case Dim.DimBuffer:
+                type = "Buffer";
+                break;
+            case Dim.DimSubpassData:
+                type = "2D";
+                break;
+            default:
+                type = "";
+                break;
+        }
+
+        // In legacy GLSL, an extension is required for textureLod in the fragment
+        // shader or textureGrad anywhere.
+        let legacy_lod_ext = false;
+        const execution = this.get_entry_point();
+        if (op === "textureGrad" || op === "textureProjGrad" ||
+            ((op === "textureLod" || op === "textureProjLod") && execution.model !== ExecutionModel.ExecutionModelVertex))
+        {
+            if (this.is_legacy_es())
+            {
+                legacy_lod_ext = true;
+                this.require_extension_internal("GL_EXT_shader_texture_lod");
+            }
+            else if (this.is_legacy_desktop())
+                this.require_extension_internal("GL_ARB_shader_texture_lod");
+        }
+
+        if (op === "textureLodOffset" || op === "textureProjLodOffset")
+        {
+            if (this.is_legacy_es())
+                throw new Error(op + " not allowed in legacy ES");
+
+            this.require_extension_internal("GL_EXT_gpu_shader4");
+        }
+
+        // GLES has very limited support for shadow samplers.
+        // Basically shadow2D and shadow2DProj work through EXT_shadow_samplers,
+        // everything else can just throw
+        const is_comparison = this.is_depth_image(imgtype, tex);
+        if (is_comparison && this.is_legacy_es())
+        {
+            if (op === "texture" || op === "textureProj")
+                this.require_extension_internal("GL_EXT_shadow_samplers");
+            else
+                throw new Error(op + " not allowed on depth samplers in legacy ES");
+        }
+
+        if (op === "textureSize")
+        {
+            if (this.is_legacy_es())
+                throw new Error("textureSize not supported in legacy ES");
+            if (is_comparison)
+                throw new Error("textureSize not supported on shadow sampler in legacy GLSL");
+            this.require_extension_internal("GL_EXT_gpu_shader4");
+        }
+
+        if (op === "texelFetch" && this.is_legacy_es())
+            throw new Error("texelFetch not supported in legacy ES");
+
+        const is_es_and_depth = this.is_legacy_es() && is_comparison;
+        const type_prefix = is_comparison ? "shadow" : "texture";
+
+        if (op === "texture")
+            return is_es_and_depth ? type_prefix + type + "EXT" : type_prefix + type;
+        else if (op === "textureLod")
+            return type_prefix + type + legacy_lod_ext ? "LodEXT" : "Lod";
+        else if (op === "textureProj")
+            return type_prefix + type + is_es_and_depth ? "ProjEXT" : "Proj";
+        else if (op === "textureGrad")
+            return type_prefix + type + this.is_legacy_es() ? "GradEXT" : this.is_legacy_desktop() ? "GradARB" : "Grad";
+        else if (op === "textureProjLod")
+            return type_prefix + type + legacy_lod_ext ? "ProjLodEXT" : "ProjLod";
+        else if (op === "textureLodOffset")
+            return type_prefix + type + "LodOffset";
+        else if (op === "textureProjGrad")
+            return type_prefix + type + this.is_legacy_es() ? "ProjGradEXT" : this.is_legacy_desktop() ? "ProjGradARB" : "ProjGrad";
+        else if (op === "textureProjLodOffset")
+            return type_prefix + type + "ProjLodOffset";
+        else if (op === "textureSize")
+            return "textureSize" + type;
+        else if (op === "texelFetch")
+            return "texelFetch" + type;
+        else
+        {
+            throw new Error("Unsupported legacy texture op: " + op);
+        }
+    }
+
     protected load_flattened_struct(basename: string, type: SPIRType): string
     {
         let expr = this.type_to_glsl_constructor(type);
@@ -11114,15 +11873,51 @@ export class CompilerGLSL extends Compiler
         return ret;
     }
 
+    protected store_flattened_struct(lhs_id: number, value: number);
+    protected store_flattened_struct(basename: string, rhs: number, type: SPIRType, indices: Array<number> | Uint32Array);
+    protected store_flattened_struct(basename: string | number, rhs_id: number, type?: SPIRType, indices?: Array<number> | Uint32Array)
+    {
+        if (typeof basename === "number") {
+            const lhs_id = basename;
+            const value = rhs_id;
+            const type = this.expression_type(lhs_id);
+            const basename_ = this.to_flattened_access_chain_expression(lhs_id);
+            this.store_flattened_struct(basename_, value, type, []);
+            return;
+        }
+
+        const sub_indices = Array.from(indices);
+        sub_indices.push(0);
+
+        let member_type = type;
+        for (let i = 0; i < indices.length; ++i) {
+            const index = indices[i];
+            member_type = this.get<SPIRType>(SPIRType, member_type.member_types[index]);
+        }
+
+        for (let i = 0; i < member_type.member_types.length; i++) {
+            sub_indices[sub_indices.length - 1] = i;
+            const lhs = ParsedIR.sanitize_underscores(basename + "_" + this.to_member_name(member_type, i));
+
+            if (this.get<SPIRType>(SPIRType, member_type.member_types[i]).basetype === SPIRTypeBaseType.Struct) {
+                this.store_flattened_struct(lhs, rhs_id, type, sub_indices);
+            }
+            else {
+                const rhs = this.to_expression(rhs_id) + this.to_multi_member_reference(type, sub_indices);
+                this.statement(lhs, " = ", rhs, ";");
+            }
+        }
+    }
+
     protected to_flattened_access_chain_expression(id: number): string
     {
         // Do not use to_expression as that will unflatten access chains.
         let basename;
-        const var_ = this.maybe_get<SPIRVariable>(SPIRVariable, id)
+        const var_ = this.maybe_get<SPIRVariable>(SPIRVariable, id);
         if (var_)
             basename = this.to_name(var_.self);
         else {
-            const expr = this.maybe_get<SPIRExpression>(SPIRExpression, id)
+            const expr = this.maybe_get<SPIRExpression>(SPIRExpression, id);
             if (expr)
                 basename = expr.expression;
             else
@@ -11195,13 +11990,13 @@ export class CompilerGLSL extends Compiler
         // ensure row_major decoration is actually respected.
         const var_ = this.maybe_get_backing_variable(ptr);
         if (!var_)
-            return;
+            return expr;
 
         const backing_type = this.get<SPIRType>(SPIRType, var_.basetype);
         const is_ubo = backing_type.basetype === SPIRTypeBaseType.Struct && backing_type.storage === StorageClass.StorageClassUniform &&
             this.has_decoration(backing_type.self, Decoration.DecorationBlock);
         if (!is_ubo)
-            return;
+            return expr;
 
         let type = this.get<SPIRType>(SPIRType, loaded_type);
         let rewrite = false;
@@ -11229,6 +12024,8 @@ export class CompilerGLSL extends Compiler
             this.request_workaround_wrapper_overload(loaded_type);
             expr = "spvWorkaroundRowMajor(" + expr + ")";
         }
+
+        return expr;
     }
 
     protected is_legacy(): boolean
@@ -11247,6 +12044,55 @@ export class CompilerGLSL extends Compiler
     {
         const options = this.options;
         return !options.es && options.version < 130;
+    }
+
+    protected register_impure_function_call()
+    {
+        // Impure functions can modify globals and aliased variables, so invalidate them as well.
+        for (const global of this.global_variables)
+            this.flush_dependees(this.get<SPIRVariable>(SPIRVariable, global));
+        for (const aliased of this.aliased_variables)
+            this.flush_dependees(this.get<SPIRVariable>(SPIRVariable, aliased));
+    }
+
+    protected register_control_dependent_expression(expr: number)
+    {
+        if (!this.forwarded_temporaries.has(expr))
+            return;
+
+        console.assert(this.current_emitting_block);
+        this.current_emitting_block.invalidate_expressions.push(expr);
+    }
+
+    protected args_will_forward(id: number, args: Uint32Array | number[], num_args: number, pure: boolean): boolean
+    {
+        if (this.forced_temporaries.has(id))
+            return false;
+
+        for (let i = 0; i < num_args; i++)
+            if (!this.should_forward(args[i]))
+                return false;
+
+        // We need to forward globals as well.
+        if (!pure) {
+            for (let global of this.global_variables)
+                if (!this.should_forward(global))
+                    return false;
+            for (let aliased of this.aliased_variables)
+                if (!this.should_forward(aliased))
+                    return false;
+        }
+
+        return true;
+    }
+
+    protected register_call_out_argument(id: number)
+    {
+        this.register_write(id);
+
+        const var_ = this.maybe_get<SPIRVariable>(SPIRVariable, id);
+        if (var_)
+            this.flush_variable_declaration(var_.self);
     }
 
     protected pls_decl(var_: PlsRemap): string
@@ -11423,7 +12269,28 @@ export class CompilerGLSL extends Compiler
         return name;
     }
 
-    handle_invalid_expression(id: number)
+    protected check_function_call_constraints(args: Array<number> | Uint32Array, length: number)
+    {
+        // If our variable is remapped, and we rely on type-remapping information as
+        // well, then we cannot pass the variable as a function parameter.
+        // Fixing this is non-trivial without stamping out variants of the same function,
+        // so for now warn about this and suggest workarounds instead.
+        for (let i = 0; i < length; i++) {
+            const var_ = this.maybe_get<SPIRVariable>(SPIRVariable, args[i]);
+            if (!var_ || !var_.remapped_variable)
+                continue;
+
+            const type = this.get<SPIRType>(SPIRType, var_.basetype);
+            if (type.basetype === SPIRTypeBaseType.Image && type.image.dim === Dim.DimSubpassData) {
+                throw new Error("Tried passing a remapped subpassInput variable to a function. This will not work" +
+                    " correctly because type-remapping information is lost. To workaround, please consider not passing" +
+                    " the subpass input as a function parameter, or use in/out variables instead which do not need type" +
+                    " remapping information.");
+            }
+        }
+    }
+
+    protected handle_invalid_expression(id: number)
     {
         // We tried to read an invalidated expression.
         // This means we need another pass at compilation, but next time, force temporary variables so that they cannot be invalidated.
@@ -11479,6 +12346,8 @@ export class CompilerGLSL extends Compiler
         if (this.inout_color_attachments.length > 0)
             this.emit_inout_fragment_outputs_copy_to_subpass_inputs();
 
+
+        // this.traverse_all_reachable_opcodes(this.get<SPIRFunction>(SPIRFunction, ir.default_entry_point), new DebugHandler(this));
 
         // Shaders might cast unrelated data to pointers of non-block types.
         // Find all such instances and make sure we can cast the pointers to a synthesized block type.
@@ -12225,7 +13094,7 @@ export class CompilerGLSL extends Compiler
     {
         // We will handle array cases elsewhere.
         if (expr_type.array.length > 0)
-            return;
+            return expr;
 
         const var_ = this.maybe_get_backing_variable(source_id);
         if (var_)
@@ -12233,7 +13102,7 @@ export class CompilerGLSL extends Compiler
 
         // Only interested in standalone builtin variables.
         if (!this.has_decoration(source_id, Decoration.DecorationBuiltIn))
-            return;
+            return expr;
 
         const builtin = <BuiltIn>(this.get_decoration(source_id, Decoration.DecorationBuiltIn));
         let expected_type = expr_type.basetype;
@@ -12284,19 +13153,19 @@ export class CompilerGLSL extends Compiler
     protected unroll_array_from_complex_load(target_id: number, source_id: number, expr: string)
     {
         if (!this.backend.force_gl_in_out_block)
-            return;
+            return expr;
         // This path is only relevant for GL backends.
 
         const var_ = this.maybe_get<SPIRVariable>(SPIRVariable, source_id);
         if (!var_)
-            return;
+            return expr;
 
         if (var_.storage !== StorageClass.StorageClassInput && var_.storage !== StorageClass.StorageClassOutput)
-            return;
+            return expr;
 
         const type = this.get_variable_data_type(var_);
         if (type.array.length === 0)
-            return;
+            return expr;
 
         const builtin = <BuiltIn>(this.get_decoration(var_.self, Decoration.DecorationBuiltIn));
         const is_builtin = this.is_builtin_variable(var_) &&
@@ -12385,20 +13254,20 @@ export class CompilerGLSL extends Compiler
     protected convert_non_uniform_expression(expr: string, ptr_id: number): string
     {
         if (this.backend.nonuniform_qualifier === "\0")
-            return;
+            return expr;
 
         const var_ = this.maybe_get_backing_variable(ptr_id);
         if (!var_)
-            return;
+            return expr;
 
         if (var_.storage !== StorageClass.StorageClassUniformConstant &&
             var_.storage !== StorageClass.StorageClassStorageBuffer &&
             var_.storage !== StorageClass.StorageClassUniform)
-            return;
+            return expr;
 
         const backing_type = this.get<SPIRType>(SPIRType, var_.basetype);
         if (backing_type.array.length === 0)
-            return;
+            return expr;
 
         // If we get here, we know we're accessing an arrayed resource which
         // might require nonuniform qualifier.
@@ -12406,7 +13275,7 @@ export class CompilerGLSL extends Compiler
         let start_array_index = expr.indexOf("[");
 
         if (start_array_index < 0)
-            return;
+            return expr;
 
         // We've opened a bracket, track expressions until we can close the bracket.
         // This must be our resource index.
@@ -12428,7 +13297,7 @@ export class CompilerGLSL extends Compiler
         // Doesn't really make sense to declare a non-arrayed image with nonuniformEXT, but there's
         // nothing we can do here to express that.
         if (start_array_index >= 0 || end_array_index >= 0 || end_array_index < start_array_index)
-            return;
+            return expr;
 
         start_array_index++;
 
@@ -12833,5 +13702,28 @@ function to_pls_layout(format: PlsFormat): string
             return "layout(r32ui) ";
         default:
             return "";
+    }
+}
+
+function image_opcode_is_sample_no_dref(op: Op): boolean
+{
+    switch (op)
+    {
+        case Op.OpImageSampleExplicitLod:
+        case Op.OpImageSampleImplicitLod:
+        case Op.OpImageSampleProjExplicitLod:
+        case Op.OpImageSampleProjImplicitLod:
+        case Op.OpImageFetch:
+        case Op.OpImageRead:
+        case Op.OpImageSparseSampleExplicitLod:
+        case Op.OpImageSparseSampleImplicitLod:
+        case Op.OpImageSparseSampleProjExplicitLod:
+        case Op.OpImageSparseSampleProjImplicitLod:
+        case Op.OpImageSparseFetch:
+        case Op.OpImageSparseRead:
+            return true;
+
+        default:
+            return false;
     }
 }

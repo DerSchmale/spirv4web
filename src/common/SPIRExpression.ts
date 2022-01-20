@@ -11,7 +11,7 @@ export class SPIRExpression extends IVariant
     // where in certain cases that would quickly force a temporary when not needed.
     base_expression: ID = 0;
 
-    expression: string;
+    expression: string = "";
     expression_type: TypeID = 0;
 
     // If this expression is a forwarded load,
@@ -44,7 +44,7 @@ export class SPIRExpression extends IVariant
     // Only created by the backend target to avoid creating tons of temporaries.
     constructor(other: SPIRExpression);
     constructor(expr: string, expression_type: TypeID, immutable: boolean);
-    constructor(param0: string | SPIRExpression, expression_type?: TypeID, immutable?: boolean)
+    constructor(param0: string | SPIRExpression = "", expression_type?: TypeID, immutable?: boolean)
     {
         super();
         if (param0 instanceof SPIRExpression) {

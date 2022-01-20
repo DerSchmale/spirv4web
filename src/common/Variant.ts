@@ -9,10 +9,12 @@ export class Variant
     private holder: IVariant = null;
     private type: Types = Types.TypeNone;
     private allow_type_rewrite: boolean = false;
+    private createdIn: string;
 
     constructor(group: ObjectPoolGroup)
     {
         this.group = group;
+        this.createdIn = new Error().stack;
     }
 
     set(val: IVariant, new_type: Types)

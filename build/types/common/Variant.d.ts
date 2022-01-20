@@ -6,6 +6,7 @@ export declare class Variant {
     private holder;
     private type;
     private allow_type_rewrite;
+    private createdIn;
     constructor(group: ObjectPoolGroup);
     set(val: IVariant, new_type: Types): void;
     allocate_and_set<T extends IVariant>(new_type: Types, ...args: any[]): T;

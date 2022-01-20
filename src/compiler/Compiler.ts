@@ -49,6 +49,8 @@ import { InterlockedResourceAccessHandler } from "./InterlockedResourceAccessHan
 import { PhysicalBlockMeta } from "./PhysicalBlockMeta";
 import { PhysicalStorageBufferPointerHandler } from "./PhysicalStorageBufferPointerHandler";
 import { convert_to_string } from "../utils/string";
+import { SPIRExtension, SPIRExtensionExtension } from "../common/SPIRExtension";
+import { GLSLstd450 } from "./glsl/glsl";
 
 type VariableTypeRemapCallback = (type: SPIRType, name: string, type_name: string) => string;
 
@@ -131,7 +133,7 @@ export abstract class Compiler
         this.ir.set_decoration(id, decoration, argument);
     }
 
-    set_decoration_string(id: ID, decoration: Decoration, argument: string)
+    protected set_decoration_string(id: ID, decoration: Decoration, argument: string)
     {
         this.ir.set_decoration_string(id, decoration, argument);
     }
@@ -146,13 +148,13 @@ export abstract class Compiler
 
     // Gets a bitmask for the decorations which are applied to ID.
     // I.e. (1ull << Op.DecorationFoo) | (1ull << Op.DecorationBar)
-    get_decoration_bitset(id: ID): Bitset
+    protected get_decoration_bitset(id: ID): Bitset
     {
         return this.ir.get_decoration_bitset(id);
     }
 
     // Returns the effective size of a buffer block struct member.
-    get_declared_struct_member_size(struct_type: SPIRType, index: number): number
+    protected get_declared_struct_member_size(struct_type: SPIRType, index: number): number
     {
         if (struct_type.member_types.length === 0)
             throw new Error("Declared struct in block cannot be empty.");
@@ -771,6 +773,51 @@ export abstract class Compiler
         block.invalidate_expressions = [];
     }
 
+    protected register_global_read_dependencies(func: SPIRBlock | SPIRFunction, id: number)
+    {
+        if (func instanceof SPIRFunction) {
+            for (let block of func.blocks)
+                this.register_global_read_dependencies(this.get<SPIRBlock>(SPIRBlock, block), id);
+            return;
+        }
+
+        const block = func;
+        for (let i of block.ops)
+        {
+            const ops = this.stream(i);
+            const op = <Op>(i.op);
+
+            switch (op)
+            {
+                case Op.OpFunctionCall:
+                {
+                    const func = ops[2];
+                    this.register_global_read_dependencies(this.get<SPIRFunction>(SPIRFunction, func), id);
+                    break;
+                }
+
+                case Op.OpLoad:
+                case Op.OpImageRead:
+                {
+                    // If we're in a storage class which does not get invalidated, adding dependencies here is no big deal.
+                    const var_ = this.maybe_get_backing_variable(ops[2]);
+                    if (var_ && var_.storage !== StorageClass.StorageClassFunction)
+                    {
+                        const type = this.get<SPIRType>(SPIRType, var_.basetype);
+
+                        // InputTargets are immutable.
+                        if (type.basetype != SPIRTypeBaseType.Image && type.image.dim !== Dim.DimSubpassData)
+                            var_.dependees.push(id);
+                    }
+                    break;
+                }
+
+                default:
+                    break;
+            }
+        }
+    }
+
     update_name_cache(cache_primary: Set<string>, name: string): string;
     update_name_cache(cache_primary: Set<string>, cache_secondary: Set<string>, name: string): string;
 
@@ -835,6 +882,141 @@ export abstract class Compiler
         insert_name(name);
 
         return name;
+    }
+
+    protected function_is_pure(func: SPIRFunction): boolean
+    {
+        for (const block of func.blocks)
+        {
+            if (!this.block_is_pure(this.get<SPIRBlock>(SPIRBlock, block)))
+            {
+                //fprintf(stderr, "Function %s is impure!\n", to_name(func.self).c_str());
+                return false;
+            }
+        }
+
+        //fprintf(stderr, "Function %s is pure!\n", to_name(func.self).c_str());
+        return true;
+    }
+
+    protected block_is_pure(block: SPIRBlock)
+    {
+        // This is a global side effect of the function.
+        if (block.terminator === SPIRBlockTerminator.Kill ||
+            block.terminator === SPIRBlockTerminator.TerminateRay ||
+            block.terminator === SPIRBlockTerminator.IgnoreIntersection)
+            return false;
+
+        for (let i of block.ops)
+        {
+            const ops = this.stream(i);
+            const op = <Op>(i.op);
+
+            switch (op)
+            {
+                case Op.OpFunctionCall:
+                {
+                    const func = ops[2];
+                    if (!this.function_is_pure(this.get<SPIRFunction>(SPIRFunction, func)))
+                        return false;
+                    break;
+                }
+
+                case Op.OpCopyMemory:
+                case Op.OpStore:
+                {
+                    const type = this.expression_type(ops[0]);
+                    if (type.storage !== StorageClass.StorageClassFunction)
+                        return false;
+                    break;
+                }
+
+                case Op.OpImageWrite:
+                    return false;
+
+                // Atomics are impure.
+                /*case OpAtomicLoad:
+                case OpAtomicStore:
+                case OpAtomicExchange:
+                case OpAtomicCompareExchange:
+                case OpAtomicCompareExchangeWeak:
+                case OpAtomicIIncrement:
+                case OpAtomicIDecrement:
+                case OpAtomicIAdd:
+                case OpAtomicISub:
+                case OpAtomicSMin:
+                case OpAtomicUMin:
+                case OpAtomicSMax:
+                case OpAtomicUMax:
+                case OpAtomicAnd:
+                case OpAtomicOr:
+                case OpAtomicXor:
+                    return false;*/
+
+                // Geometry shader builtins modify global state.
+                /*case OpEndPrimitive:
+                case OpEmitStreamVertex:
+                case OpEndStreamPrimitive:
+                case OpEmitVertex:
+                    return false;*/
+
+                // Barriers disallow any reordering, so we should treat blocks with barrier as writing.
+                case Op.OpControlBarrier:
+                case Op.OpMemoryBarrier:
+                    return false;
+
+                // Ray tracing builtins are impure.
+                /*case OpReportIntersectionKHR:
+                case OpIgnoreIntersectionNV:
+                case OpTerminateRayNV:
+                case OpTraceNV:
+                case OpTraceRayKHR:
+                case OpExecuteCallableNV:
+                case OpExecuteCallableKHR:
+                case OpRayQueryInitializeKHR:
+                case OpRayQueryTerminateKHR:
+                case OpRayQueryGenerateIntersectionKHR:
+                case OpRayQueryConfirmIntersectionKHR:
+                case OpRayQueryProceedKHR:
+                    // There are various getters in ray query, but they are considered pure.
+                    return false;*/
+
+                // OpExtInst is potentially impure depending on extension, but GLSL builtins are at least pure.
+
+                case Op.OpDemoteToHelperInvocationEXT:
+                    // This is a global side effect of the function.
+                    return false;
+
+                case Op.OpExtInst:
+                {
+                    const extension_set = ops[2];
+                    if (this.get<SPIRExtension>(SPIRExtension, extension_set).ext === SPIRExtensionExtension.GLSL)
+                    {
+                        const op_450 = <GLSLstd450>(ops[3]);
+                        switch (op_450)
+                        {
+                            case GLSLstd450.GLSLstd450Modf:
+                            case GLSLstd450.GLSLstd450Frexp:
+                            {
+                                const type = this.expression_type(ops[5]);
+                                if (type.storage !== StorageClass.StorageClassFunction)
+                                    return false;
+                                break;
+                            }
+
+                            default:
+                                break;
+                        }
+                    }
+                    break;
+                }
+
+                default:
+                    break;
+            }
+        }
+
+        return true;
     }
 
     protected execution_is_noop(from: SPIRBlock, to: SPIRBlock): boolean

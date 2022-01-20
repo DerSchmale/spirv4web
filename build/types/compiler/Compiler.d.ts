@@ -56,10 +56,10 @@ export declare abstract class Compiler {
     abstract compile(): string;
     get_name(id: ID): string;
     set_decoration(id: ID, decoration: Decoration, argument?: number): void;
-    set_decoration_string(id: ID, decoration: Decoration, argument: string): void;
+    protected set_decoration_string(id: ID, decoration: Decoration, argument: string): void;
     set_name(id: ID, name: string): void;
-    get_decoration_bitset(id: ID): Bitset;
-    get_declared_struct_member_size(struct_type: SPIRType, index: number): number;
+    protected get_decoration_bitset(id: ID): Bitset;
+    protected get_declared_struct_member_size(struct_type: SPIRType, index: number): number;
     get_active_interface_variables(): Set<VariableID>;
     set_enabled_interface_variables(active_variables: Set<VariableID>): void;
     get_shader_resources(): ShaderResources;
@@ -92,8 +92,11 @@ export declare abstract class Compiler {
     protected flush_all_active_variables(): void;
     protected flush_all_aliased_variables(): void;
     protected flush_control_dependent_expressions(block_id: number): void;
+    protected register_global_read_dependencies(func: SPIRBlock | SPIRFunction, id: number): void;
     update_name_cache(cache_primary: Set<string>, name: string): string;
     update_name_cache(cache_primary: Set<string>, cache_secondary: Set<string>, name: string): string;
+    protected function_is_pure(func: SPIRFunction): boolean;
+    protected block_is_pure(block: SPIRBlock): boolean;
     protected execution_is_noop(from: SPIRBlock, to: SPIRBlock): boolean;
     protected continue_block_type(block: SPIRBlock): SPIRBlockContinueBlockType;
     protected force_recompile(): void;

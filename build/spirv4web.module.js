@@ -181,6 +181,7 @@ var Variant = /** @class */ (function () {
         this.type = Types.TypeNone;
         this.allow_type_rewrite = false;
         this.group = group;
+        this.createdIn = new Error().stack;
     }
     Variant.prototype.set = function (val, new_type) {
         if (this.holder)
@@ -2831,11 +2832,13 @@ var SPIRExtension = /** @class */ (function (_super) {
 var SPIRExpression = /** @class */ (function (_super) {
     __extends(SPIRExpression, _super);
     function SPIRExpression(param0, expression_type, immutable) {
+        if (param0 === void 0) { param0 = ""; }
         var _this = _super.call(this) || this;
         // If non-zero, prepend expression with to_expression(base_expression).
         // Used in amortizing multiple calls to to_expression()
         // where in certain cases that would quickly force a temporary when not needed.
         _this.base_expression = 0;
+        _this.expression = "";
         _this.expression_type = 0;
         // If this expression is a forwarded load,
         // allow us to reference the original variable.
@@ -7364,6 +7367,42 @@ var Compiler = /** @class */ (function () {
         }
         block.invalidate_expressions = [];
     };
+    Compiler.prototype.register_global_read_dependencies = function (func, id) {
+        if (func instanceof SPIRFunction) {
+            for (var _i = 0, _a = func.blocks; _i < _a.length; _i++) {
+                var block_1 = _a[_i];
+                this.register_global_read_dependencies(this.get(SPIRBlock, block_1), id);
+            }
+            return;
+        }
+        var block = func;
+        for (var _b = 0, _c = block.ops; _b < _c.length; _b++) {
+            var i = _c[_b];
+            var ops = this.stream(i);
+            var op = (i.op);
+            switch (op) {
+                case Op.OpFunctionCall:
+                    {
+                        var func_1 = ops[2];
+                        this.register_global_read_dependencies(this.get(SPIRFunction, func_1), id);
+                        break;
+                    }
+                case Op.OpLoad:
+                case Op.OpImageRead:
+                    {
+                        // If we're in a storage class which does not get invalidated, adding dependencies here is no big deal.
+                        var var_ = this.maybe_get_backing_variable(ops[2]);
+                        if (var_ && var_.storage !== StorageClass.StorageClassFunction) {
+                            var type = this.get(SPIRType, var_.basetype);
+                            // InputTargets are immutable.
+                            if (type.basetype != SPIRTypeBaseType.Image && type.image.dim !== Dim.DimSubpassData)
+                                var_.dependees.push(id);
+                        }
+                        break;
+                    }
+            }
+        }
+    };
     // A variant which takes two sets of names. The secondary is only used to verify there are no collisions,
     // but the set is not updated when we have found a new name.
     // Used primarily when adding block interface names.
@@ -7411,6 +7450,114 @@ var Compiler = /** @class */ (function () {
         } while (find_name(name));
         insert_name(name);
         return name;
+    };
+    Compiler.prototype.function_is_pure = function (func) {
+        for (var _i = 0, _a = func.blocks; _i < _a.length; _i++) {
+            var block = _a[_i];
+            if (!this.block_is_pure(this.get(SPIRBlock, block))) {
+                //fprintf(stderr, "Function %s is impure!\n", to_name(func.self).c_str());
+                return false;
+            }
+        }
+        //fprintf(stderr, "Function %s is pure!\n", to_name(func.self).c_str());
+        return true;
+    };
+    Compiler.prototype.block_is_pure = function (block) {
+        // This is a global side effect of the function.
+        if (block.terminator === SPIRBlockTerminator.Kill ||
+            block.terminator === SPIRBlockTerminator.TerminateRay ||
+            block.terminator === SPIRBlockTerminator.IgnoreIntersection)
+            return false;
+        for (var _i = 0, _a = block.ops; _i < _a.length; _i++) {
+            var i = _a[_i];
+            var ops = this.stream(i);
+            var op = (i.op);
+            switch (op) {
+                case Op.OpFunctionCall:
+                    {
+                        var func = ops[2];
+                        if (!this.function_is_pure(this.get(SPIRFunction, func)))
+                            return false;
+                        break;
+                    }
+                case Op.OpCopyMemory:
+                case Op.OpStore:
+                    {
+                        var type = this.expression_type(ops[0]);
+                        if (type.storage !== StorageClass.StorageClassFunction)
+                            return false;
+                        break;
+                    }
+                case Op.OpImageWrite:
+                    return false;
+                // Atomics are impure.
+                /*case OpAtomicLoad:
+                case OpAtomicStore:
+                case OpAtomicExchange:
+                case OpAtomicCompareExchange:
+                case OpAtomicCompareExchangeWeak:
+                case OpAtomicIIncrement:
+                case OpAtomicIDecrement:
+                case OpAtomicIAdd:
+                case OpAtomicISub:
+                case OpAtomicSMin:
+                case OpAtomicUMin:
+                case OpAtomicSMax:
+                case OpAtomicUMax:
+                case OpAtomicAnd:
+                case OpAtomicOr:
+                case OpAtomicXor:
+                    return false;*/
+                // Geometry shader builtins modify global state.
+                /*case OpEndPrimitive:
+                case OpEmitStreamVertex:
+                case OpEndStreamPrimitive:
+                case OpEmitVertex:
+                    return false;*/
+                // Barriers disallow any reordering, so we should treat blocks with barrier as writing.
+                case Op.OpControlBarrier:
+                case Op.OpMemoryBarrier:
+                    return false;
+                // Ray tracing builtins are impure.
+                /*case OpReportIntersectionKHR:
+                case OpIgnoreIntersectionNV:
+                case OpTerminateRayNV:
+                case OpTraceNV:
+                case OpTraceRayKHR:
+                case OpExecuteCallableNV:
+                case OpExecuteCallableKHR:
+                case OpRayQueryInitializeKHR:
+                case OpRayQueryTerminateKHR:
+                case OpRayQueryGenerateIntersectionKHR:
+                case OpRayQueryConfirmIntersectionKHR:
+                case OpRayQueryProceedKHR:
+                    // There are various getters in ray query, but they are considered pure.
+                    return false;*/
+                // OpExtInst is potentially impure depending on extension, but GLSL builtins are at least pure.
+                case Op.OpDemoteToHelperInvocationEXT:
+                    // This is a global side effect of the function.
+                    return false;
+                case Op.OpExtInst:
+                    {
+                        var extension_set = ops[2];
+                        if (this.get(SPIRExtension, extension_set).ext === SPIRExtensionExtension.GLSL) {
+                            var op_450 = (ops[3]);
+                            switch (op_450) {
+                                case GLSLstd450.GLSLstd450Modf:
+                                case GLSLstd450.GLSLstd450Frexp:
+                                    {
+                                        var type = this.expression_type(ops[5]);
+                                        if (type.storage !== StorageClass.StorageClassFunction)
+                                            return false;
+                                        break;
+                                    }
+                            }
+                        }
+                        break;
+                    }
+            }
+        }
+        return true;
     };
     Compiler.prototype.execution_is_noop = function (from, to) {
         if (!this.execution_is_branchless(from, to))
@@ -8066,8 +8213,8 @@ var Compiler = /** @class */ (function () {
     Compiler.prototype.traverse_all_reachable_opcodes = function (param0, handler) {
         if (param0 instanceof SPIRFunction) {
             for (var _i = 0, _a = param0.blocks; _i < _a.length; _i++) {
-                var block_1 = _a[_i];
-                if (!this.traverse_all_reachable_opcodes(this.get(SPIRBlock, block_1), handler))
+                var block_2 = _a[_i];
+                if (!this.traverse_all_reachable_opcodes(this.get(SPIRBlock, block_2), handler))
                     return false;
             }
             return true;
@@ -9342,6 +9489,50 @@ var ValueSaver = /** @class */ (function () {
     return ValueSaver;
 }());
 
+var TextureFunctionBaseArguments = /** @class */ (function () {
+    function TextureFunctionBaseArguments() {
+        this.img = 0;
+        this.is_fetch = false;
+        this.is_gather = false;
+        this.is_proj = false;
+    }
+    return TextureFunctionBaseArguments;
+}());
+var TextureFunctionNameArguments = /** @class */ (function () {
+    function TextureFunctionNameArguments() {
+        // GCC 4.8 workarounds, it doesn't understand '{}' constructor here, use explicit default constructor.
+        this.base = new TextureFunctionBaseArguments();
+        this.has_array_offsets = false;
+        this.has_offset = false;
+        this.has_grad = false;
+        this.has_dref = false;
+        this.is_sparse_feedback = false;
+        this.has_min_lod = false;
+        this.lod = 0;
+    }
+    return TextureFunctionNameArguments;
+}());
+var TextureFunctionArguments = /** @class */ (function () {
+    function TextureFunctionArguments() {
+        this.base = new TextureFunctionBaseArguments();
+        this.coord = 0;
+        this.coord_components = 0;
+        this.dref = 0;
+        this.grad_x = 0;
+        this.grad_y = 0;
+        this.lod = 0;
+        this.coffset = 0;
+        this.offset = 0;
+        this.bias = 0;
+        this.component = 0;
+        this.sample = 0;
+        this.sparse_texel = 0;
+        this.min_lod = 0;
+        this.nonuniform_expression = false;
+    }
+    return TextureFunctionArguments;
+}());
+
 var swizzle = [
     [".x", ".y", ".z", ".w"],
     [".xy", ".yz", ".zw"],
@@ -9469,6 +9660,10 @@ var CompilerGLSL = /** @class */ (function (_super) {
         _this.expression_usage_counts = []; // std::unordered_map<uint32_t, uint32_t>
         _this.forced_extensions = [];
         _this.header_lines = [];
+        // Used when expressions emit extra opcodes with their own unique IDs,
+        // and we need to reuse the IDs across recompilation loops.
+        // Currently used by NMin/Max/Clamp implementations.
+        _this.extra_sub_expressions = []; //std::unordered_map<uint32_t, uint32_t>
         _this.workaround_ubo_load_overload_types = [];
         _this.statement_count = 0;
         _this.requires_transpose_2x2 = false;
@@ -9835,7 +10030,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 expr = this.unroll_array_from_complex_load(id, ptr, expr);
                 if (!this.type_is_opaque_value(type) && this.has_decoration(ptr, Decoration.DecorationNonUniform)) {
                     // If we're loading something non-opaque, we need to handle non-uniform descriptor access.
-                    this.convert_non_uniform_expression(expr, ptr);
+                    expr = this.convert_non_uniform_expression(expr, ptr);
                 }
                 if (forward && ptr_expression)
                     ptr_expression.need_transpose = old_need_transpose;
@@ -9917,121 +10112,87 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.forwarded_temporaries.delete(ops[1]);
                 break;
             }
-            /*case OpStore:
-            {
-                auto *var = maybe_get<SPIRVariable>(ops[0]);
-
-                if (var && var_.statically_assigned)
-                var_.static_expression = ops[1];
-            else if (var && var_.loop_variable && !var_.loop_variable_enable)
-                var_.static_expression = ops[1];
-            else if (var && var_.remapped_variable && var_.static_expression)
-                {
-                    // Skip the write.
+            case Op.OpStore: {
+                var var_ = this.maybe_get(SPIRVariable, ops[0]);
+                if (var_ && var_.statically_assigned)
+                    var_.static_expression = ops[1];
+                else if (var_ && var_.loop_variable && !var_.loop_variable_enable)
+                    var_.static_expression = ops[1];
+                else if (var_ && var_.remapped_variable && var_.static_expression) ;
+                else if (this.flattened_structs.hasOwnProperty(ops[0])) {
+                    this.store_flattened_struct(ops[0], ops[1]);
+                    this.register_write(ops[0]);
                 }
-            else if (flattened_structs.count(ops[0]))
-            {
-                store_flattened_struct(ops[0], ops[1]);
-                register_write(ops[0]);
-            }
-            else
-            {
-                emit_store_statement(ops[0], ops[1]);
-            }
-
+                else {
+                    this.emit_store_statement(ops[0], ops[1]);
+                }
                 // Storing a pointer results in a variable pointer, so we must conservatively assume
                 // we can write through it.
-                if (expression_type(ops[1]).pointer)
-                    register_write(ops[1]);
+                if (this.expression_type(ops[1]).pointer)
+                    this.register_write(ops[1]);
                 break;
             }
-
-            case OpArrayLength:
-            {
-                uint32_t result_type = ops[0];
-                uint32_t id = ops[1];
-                auto e = access_chain_internal(ops[2], &ops[3], length - 3, ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, nullptr);
-                if (has_decoration(ops[2], DecorationNonUniform))
-                    convert_non_uniform_expression(e, ops[2]);
-                set<SPIRExpression>(id, join(type_to_glsl(get<SPIRType>(result_type)), "(", e, ".length())"), result_type,
-                    true);
+            case Op.OpArrayLength: {
+                var result_type = ops[0];
+                var id = ops[1];
+                var e = this.access_chain_internal(ops[2], ops.slice(3), length - 3, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, null);
+                if (this.has_decoration(ops[2], Decoration.DecorationNonUniform))
+                    this.convert_non_uniform_expression(e, ops[2]);
+                this.set(SPIRExpression, id, this.type_to_glsl(this.get(SPIRType, result_type)), "(" + e + ".length())", result_type, true);
                 break;
             }
-
-                // Function calls
-            case OpFunctionCall:
-            {
-                uint32_t result_type = ops[0];
-                uint32_t id = ops[1];
-                uint32_t func = ops[2];
-                const auto *arg = &ops[3];
+            // Function calls
+            case Op.OpFunctionCall: {
+                var result_type = ops[0];
+                var id = ops[1];
+                var func = ops[2];
+                var arg = ops.slice(3);
                 length -= 3;
-
-                auto &callee = get<SPIRFunction>(func);
-                auto &return_type = get<SPIRType>(callee.return_type);
-                bool pure = function_is_pure(callee);
-
-                bool callee_has_out_variables = false;
-                bool emit_return_value_as_argument = false;
-
+                var callee = this.get(SPIRFunction, func);
+                var return_type = this.get(SPIRType, callee.return_type);
+                var pure = this.function_is_pure(callee);
+                var callee_has_out_variables = false;
+                var emit_return_value_as_argument = false;
                 // Invalidate out variables passed to functions since they can be OpStore'd to.
-                for (uint32_t i = 0; i < length; i++)
-                {
-                    if (callee.arguments[i].write_count)
-                    {
-                        register_call_out_argument(arg[i]);
+                for (var i = 0; i < length; i++) {
+                    if (callee.arguments[i].write_count) {
+                        this.register_call_out_argument(arg[i]);
                         callee_has_out_variables = true;
                     }
-
-                    flush_variable_declaration(arg[i]);
+                    this.flush_variable_declaration(arg[i]);
                 }
-
-                if (!return_type.array.empty() && !backend.can_return_array)
-                {
+                if (return_type.array.length > 0 && !backend.can_return_array) {
                     callee_has_out_variables = true;
                     emit_return_value_as_argument = true;
                 }
-
                 if (!pure)
-                    register_impure_function_call();
-
-                string funexpr;
-                SmallVector<string> arglist;
-                funexpr += to_name(func) + "(";
-
-                if (emit_return_value_as_argument)
-                {
-                    statement(type_to_glsl(return_type), " ", to_name(id), type_to_array_glsl(return_type), ";");
-                    arglist.push_back(to_name(id));
+                    this.register_impure_function_call();
+                var funexpr = "";
+                var arglist = [];
+                funexpr += this.to_name(func) + "(";
+                if (emit_return_value_as_argument) {
+                    this.statement(this.type_to_glsl(return_type), " ", this.to_name(id), this.type_to_array_glsl(return_type), ";");
+                    arglist.push(this.to_name(id));
                 }
-
-                for (uint32_t i = 0; i < length; i++)
-                {
+                for (var i = 0; i < length; i++) {
                     // Do not pass in separate images or samplers if we're remapping
                     // to combined image samplers.
-                    if (skip_argument(arg[i]))
+                    if (this.skip_argument(arg[i]))
                         continue;
-
-                    arglist.push_back(to_func_call_arg(callee.arguments[i], arg[i]));
+                    arglist.push(this.to_func_call_arg(callee.arguments[i], arg[i]));
                 }
-
-                for (auto &combined : callee.combined_parameters)
-                {
-                    auto image_id = combined.global_image ? combined.image_id : VariableID(arg[combined.image_id]);
-                    auto sampler_id = combined.global_sampler ? combined.sampler_id : VariableID(arg[combined.sampler_id]);
-                    arglist.push_back(to_combined_image_sampler(image_id, sampler_id));
+                for (var _i = 0, _a = callee.combined_parameters; _i < _a.length; _i++) {
+                    var combined = _a[_i];
+                    var image_id = combined.global_image ? combined.image_id : (arg[combined.image_id]);
+                    var sampler_id = combined.global_sampler ? combined.sampler_id : (arg[combined.sampler_id]);
+                    arglist.push(this.to_combined_image_sampler(image_id, sampler_id));
                 }
-
-                append_global_func_args(callee, length, arglist);
-
-                funexpr += merge(arglist);
+                this.append_global_func_args(callee, length, arglist);
+                funexpr += arglist.join(", ");
                 funexpr += ")";
-
                 // Check for function call constraints.
-                check_function_call_constraints(arg, length);
-
-                if (return_type.basetype !== SPIRTypeBaseType.Void)
-                {
+                this.check_function_call_constraints(arg, length);
+                if (return_type.basetype !== SPIRTypeBaseType.Void) {
                     // If the function actually writes to an out variable,
                     // take the conservative route and do not forward.
                     // The problem is that we might not read the function
@@ -10039,35 +10200,29 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     // is read (common case when return value is ignored!
                     // In order to avoid start tracking invalid variables,
                     // just avoid the forwarding problem altogether.
-                    bool forward = args_will_forward(id, arg, length, pure) && !callee_has_out_variables && pure &&
-                    (forced_temporaries.find(id) === end(forced_temporaries));
-
-                    if (emit_return_value_as_argument)
-                    {
-                        statement(funexpr, ";");
-                        set<SPIRExpression>(id, to_name(id), result_type, true);
+                    var forward = this.args_will_forward(id, arg, length, pure) && !callee_has_out_variables && pure &&
+                        (!this.forced_temporaries.has(id));
+                    if (emit_return_value_as_argument) {
+                        this.statement(funexpr, ";");
+                        this.set(SPIRExpression, id, this.to_name(id), result_type, true);
                     }
                     else
-                        emit_op(result_type, id, funexpr, forward);
-
+                        this.emit_op(result_type, id, funexpr, forward);
                     // Function calls are implicit loads from all variables in question.
                     // Set dependencies for them.
-                    for (uint32_t i = 0; i < length; i++)
-                    register_read(id, arg[i], forward);
-
+                    for (var i = 0; i < length; i++)
+                        this.register_read(id, arg[i], forward);
                     // If we're going to forward the temporary result,
                     // put dependencies on every variable that must not change.
                     if (forward)
-                        register_global_read_dependencies(callee, id);
+                        this.register_global_read_dependencies(callee, id);
                 }
                 else
-                    statement(funexpr, ";");
-
+                    this.statement(funexpr, ";");
                 break;
             }
-
-                // Composite munging
-            case OpCompositeConstruct:
+            // Composite munging
+            /*case OpCompositeConstruct:
             {
                 uint32_t result_type = ops[0];
                 uint32_t id = ops[1];
@@ -11346,25 +11501,23 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     stream_expr = join("int(", stream_expr, ")");
                 statement("EndStreamPrimitive(", stream_expr, ");");
                 break;
-            }
-
-                // Textures
-            case OpImageSampleExplicitLod:
-                case OpImageSampleProjExplicitLod:
-                case OpImageSampleDrefExplicitLod:
-                case OpImageSampleProjDrefExplicitLod:
-                case OpImageSampleImplicitLod:
-                case OpImageSampleProjImplicitLod:
-                case OpImageSampleDrefImplicitLod:
-                case OpImageSampleProjDrefImplicitLod:
-                case OpImageFetch:
-                case OpImageGather:
-                case OpImageDrefGather:
+            }*/
+            // Textures
+            case Op.OpImageSampleExplicitLod:
+            case Op.OpImageSampleProjExplicitLod:
+            case Op.OpImageSampleDrefExplicitLod:
+            case Op.OpImageSampleProjDrefExplicitLod:
+            case Op.OpImageSampleImplicitLod:
+            case Op.OpImageSampleProjImplicitLod:
+            case Op.OpImageSampleDrefImplicitLod:
+            case Op.OpImageSampleProjDrefImplicitLod:
+            case Op.OpImageFetch:
+            case Op.OpImageGather:
+            case Op.OpImageDrefGather:
                 // Gets a bit hairy, so move this to a separate instruction.
-                emit_texture_op(instruction, false);
+                this.emit_texture_op(instruction, false);
                 break;
-
-            case OpImageSparseSampleExplicitLod:
+            /*case OpImageSparseSampleExplicitLod:
                 case OpImageSparseSampleProjExplicitLod:
                 case OpImageSparseSampleDrefExplicitLod:
                 case OpImageSparseSampleProjDrefExplicitLod:
@@ -12447,6 +12600,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 }
                 break;*/
             default:
+                console.log("unimplemented op ", instruction.op);
                 this.statement("// unimplemented op ", instruction.op);
                 break;
         }
@@ -12765,6 +12919,255 @@ var CompilerGLSL = /** @class */ (function (_super) {
             this.statement("layout(", outputs.join(", "), ") out;");
         this.statement("");
     };
+    CompilerGLSL.prototype.emit_texture_op = function (i, sparse) {
+        var ops = this.stream(i);
+        var op = (i.op);
+        var inherited_expressions = [];
+        var result_type_id = ops[0];
+        var id = ops[1];
+        var return_type = this.get(SPIRType, result_type_id);
+        var ids = {
+            sparse_code_id: 0,
+            sparse_texel_id: 0
+        };
+        if (sparse)
+            this.emit_sparse_feedback_temporaries(result_type_id, id, ids);
+        var forward = { value: false };
+        var expr = this.to_texture_op(i, sparse, forward, inherited_expressions);
+        if (sparse) {
+            this.statement(this.to_expression(ids.sparse_code_id), " = ", expr, ";");
+            expr = this.type_to_glsl(return_type) + "(" + this.to_expression(ids.sparse_code_id) + ", " + this.to_expression(ids.sparse_texel_id) + ")";
+            forward.value = true;
+            inherited_expressions = [];
+        }
+        this.emit_op(result_type_id, id, expr, forward.value);
+        for (var _i = 0, inherited_expressions_1 = inherited_expressions; _i < inherited_expressions_1.length; _i++) {
+            var inherit = inherited_expressions_1[_i];
+            this.inherit_expression_dependencies(id, inherit);
+        }
+        // Do not register sparse ops as control dependent as they are always lowered to a temporary.
+        switch (op) {
+            case Op.OpImageSampleDrefImplicitLod:
+            case Op.OpImageSampleImplicitLod:
+            case Op.OpImageSampleProjImplicitLod:
+            case Op.OpImageSampleProjDrefImplicitLod:
+                this.register_control_dependent_expression(id);
+                break;
+        }
+    };
+    CompilerGLSL.prototype.to_texture_op = function (i, sparse, forward, inherited_expressions) {
+        var ops = this.stream(i);
+        var op = (i.op);
+        var length = i.length;
+        var result_type_id = ops[0];
+        var img = ops[2];
+        var coord = ops[3];
+        var dref = 0;
+        var comp = 0;
+        var gather = false;
+        var proj = false;
+        var fetch = false;
+        var nonuniform_expression = false;
+        var optOffset;
+        var result_type = this.get(SPIRType, result_type_id);
+        var _a = this, options = _a.options, backend = _a.backend;
+        inherited_expressions.push(coord);
+        if (this.has_decoration(img, Decoration.DecorationNonUniform) && !this.maybe_get_backing_variable(img))
+            nonuniform_expression = true;
+        switch (op) {
+            case Op.OpImageSampleDrefImplicitLod:
+            case Op.OpImageSampleDrefExplicitLod:
+            case Op.OpImageSparseSampleDrefImplicitLod:
+            case Op.OpImageSparseSampleDrefExplicitLod:
+                dref = ops[4];
+                optOffset = 5;
+                length -= 5;
+                break;
+            case Op.OpImageSampleProjDrefImplicitLod:
+            case Op.OpImageSampleProjDrefExplicitLod:
+            case Op.OpImageSparseSampleProjDrefImplicitLod:
+            case Op.OpImageSparseSampleProjDrefExplicitLod:
+                dref = ops[4];
+                optOffset = 5;
+                length -= 5;
+                proj = true;
+                break;
+            case Op.OpImageDrefGather:
+            case Op.OpImageSparseDrefGather:
+                dref = ops[4];
+                optOffset = 5;
+                length -= 5;
+                gather = true;
+                if (options.es && options.version < 310)
+                    throw new Error("textureGather requires ESSL 310.");
+                else if (!options.es && options.version < 400)
+                    throw new Error("textureGather with depth compare requires GLSL 400.");
+                break;
+            case Op.OpImageGather:
+            case Op.OpImageSparseGather:
+                comp = ops[4];
+                optOffset = 5;
+                length -= 5;
+                gather = true;
+                if (options.es && options.version < 310)
+                    throw new Error("textureGather requires ESSL 310.");
+                else if (!options.es && options.version < 400) {
+                    if (!this.expression_is_constant_null(comp))
+                        throw new Error("textureGather with component requires GLSL 400.");
+                    this.require_extension_internal("GL_ARB_texture_gather");
+                }
+                break;
+            case Op.OpImageFetch:
+            case Op.OpImageSparseFetch:
+            case Op.OpImageRead: // Reads === fetches in Metal (other langs will not get here)
+                optOffset = 4;
+                length -= 4;
+                fetch = true;
+                break;
+            case Op.OpImageSampleProjImplicitLod:
+            case Op.OpImageSampleProjExplicitLod:
+            case Op.OpImageSparseSampleProjImplicitLod:
+            case Op.OpImageSparseSampleProjExplicitLod:
+                optOffset = 4;
+                length -= 4;
+                proj = true;
+                break;
+            default:
+                optOffset = 4;
+                length -= 4;
+                break;
+        }
+        // Bypass pointers because we need the real image struct
+        var type = this.expression_type(img);
+        var imgtype = this.get(SPIRType, type.self);
+        var coord_components = 0;
+        switch (imgtype.image.dim) {
+            case Dim.Dim1D:
+                coord_components = 1;
+                break;
+            case Dim.Dim2D:
+                coord_components = 2;
+                break;
+            case Dim.Dim3D:
+                coord_components = 3;
+                break;
+            case Dim.DimCube:
+                coord_components = 3;
+                break;
+            case Dim.DimBuffer:
+                coord_components = 1;
+                break;
+            default:
+                coord_components = 2;
+                break;
+        }
+        if (dref)
+            inherited_expressions.push(dref);
+        if (proj)
+            coord_components++;
+        if (imgtype.image.arrayed)
+            coord_components++;
+        var bias = 0;
+        var lod = 0;
+        var grad_x = 0;
+        var grad_y = 0;
+        var coffset = 0;
+        var offset = 0;
+        var coffsets = 0;
+        var sample = 0;
+        var minlod = 0;
+        var flags = 0;
+        if (length) {
+            flags = ops[optOffset++];
+            length--;
+        }
+        var test = function (v, flag) {
+            if (length && (flags & flag)) {
+                v = ops[optOffset++];
+                inherited_expressions.push(v);
+                length--;
+            }
+        };
+        test(bias, ImageOperandsMask.ImageOperandsBiasMask);
+        test(lod, ImageOperandsMask.ImageOperandsLodMask);
+        test(grad_x, ImageOperandsMask.ImageOperandsGradMask);
+        test(grad_y, ImageOperandsMask.ImageOperandsGradMask);
+        test(coffset, ImageOperandsMask.ImageOperandsConstOffsetMask);
+        test(offset, ImageOperandsMask.ImageOperandsOffsetMask);
+        test(coffsets, ImageOperandsMask.ImageOperandsConstOffsetsMask);
+        test(sample, ImageOperandsMask.ImageOperandsSampleMask);
+        test(minlod, ImageOperandsMask.ImageOperandsMinLodMask);
+        var base_args = new TextureFunctionBaseArguments();
+        base_args.img = img;
+        base_args.imgtype = imgtype;
+        base_args.is_fetch = fetch;
+        base_args.is_gather = gather;
+        base_args.is_proj = proj;
+        var expr = "";
+        var name_args = new TextureFunctionNameArguments();
+        name_args.base = base_args;
+        name_args.has_array_offsets = coffsets !== 0;
+        name_args.has_offset = offset !== 0;
+        name_args.has_grad = grad_y !== 0;
+        name_args.has_dref = dref !== 0;
+        name_args.is_sparse_feedback = sparse;
+        name_args.has_min_lod = minlod !== 0;
+        name_args.lod = lod;
+        expr += this.to_function_name(name_args);
+        expr += "(";
+        var sparse_texel_id = 0;
+        if (sparse)
+            sparse_texel_id = this.get_sparse_feedback_texel_id(ops[1]);
+        var args = new TextureFunctionArguments();
+        args.base = base_args;
+        args.coord = coord;
+        args.coord_components = coord_components;
+        args.dref = dref;
+        args.grad_x = grad_x;
+        args.grad_y = grad_y;
+        args.lod = lod;
+        args.coffset = coffset;
+        args.offset = offset;
+        args.bias = bias;
+        args.component = comp;
+        args.sample = sample;
+        args.sparse_texel = sparse_texel_id;
+        args.min_lod = minlod;
+        args.nonuniform_expression = nonuniform_expression;
+        expr += this.to_function_args(args, forward);
+        expr += ")";
+        // texture(samplerXShadow) returns float. shadowX() returns vec4. Swizzle here.
+        if (this.is_legacy() && this.is_depth_image(imgtype, img))
+            expr += ".r";
+        // Sampling from a texture which was deduced to be a depth image, might actually return 1 component here.
+        // Remap back to 4 components as sampling opcodes expect.
+        if (backend.comparison_image_samples_scalar && image_opcode_is_sample_no_dref(op)) {
+            var image_is_depth = false;
+            var combined = this.maybe_get(SPIRCombinedImageSampler, img);
+            var image_id = combined ? combined.image : img;
+            if (combined && this.is_depth_image(imgtype, combined.image))
+                image_is_depth = true;
+            else if (this.is_depth_image(imgtype, img))
+                image_is_depth = true;
+            // We must also check the backing variable for the image.
+            // We might have loaded an OpImage, and used that handle for two different purposes.
+            // Once with comparison, once without.
+            var image_variable = this.maybe_get_backing_variable(image_id);
+            if (image_variable && this.is_depth_image(this.get(SPIRType, image_variable.basetype), image_variable.self))
+                image_is_depth = true;
+            if (image_is_depth)
+                expr = this.remap_swizzle(result_type, 1, expr);
+        }
+        if (!sparse && !backend.support_small_type_sampling_result && result_type.width < 32) {
+            // Just value cast (narrowing) to expected type since we cannot rely on narrowing to work automatically.
+            // Hopefully compiler picks this up and converts the texturing instruction to the appropriate precision.
+            expr = this.type_to_glsl_constructor(result_type) + "(" + expr + ")";
+        }
+        // Deals with reads from MSL. We might need to downconvert to fewer components.
+        if (op === Op.OpImageRead)
+            expr = this.remap_swizzle(result_type, 4, expr);
+        return expr;
+    };
     CompilerGLSL.prototype.emit_line_directive = function (file_id, line_literal) {
         // If we are redirecting statements, ignore the line directive.
         // Common case here is continue blocks.
@@ -12793,6 +13196,251 @@ var CompilerGLSL = /** @class */ (function (_super) {
         this.statement(this.layout_for_member(type, index), qualifiers, qualifier, this.flags_to_qualifiers_glsl(membertype, memberflags), this.variable_decl(membertype, this.to_member_name(type, index)), ";");
     };
     CompilerGLSL.prototype.emit_struct_padding_target = function (_) {
+        // empty
+    };
+    CompilerGLSL.prototype.to_function_name = function (args) {
+        var options = this.options;
+        if (args.has_min_lod) {
+            if (options.es)
+                throw new Error("Sparse residency is not supported in ESSL.");
+            this.require_extension_internal("GL_ARB_sparse_texture_clamp");
+        }
+        var fname = "";
+        var imgtype = args.base.imgtype;
+        var tex = args.base.img;
+        // textureLod on sampler2DArrayShadow and samplerCubeShadow does not exist in GLSL for some reason.
+        // To emulate this, we will have to use textureGrad with a constant gradient of 0.
+        // The workaround will assert that the LOD is in fact constant 0, or we cannot emit correct code.
+        // This happens for HLSL SampleCmpLevelZero on Texture2DArray and TextureCube.
+        var workaround_lod_array_shadow_as_grad = false;
+        if (((imgtype.image.arrayed && imgtype.image.dim === Dim.Dim2D) || imgtype.image.dim === Dim.DimCube) &&
+            this.is_depth_image(imgtype, tex) && args.lod) {
+            if (!this.expression_is_constant_null(args.lod)) {
+                throw new Error("textureLod on sampler2DArrayShadow is not constant 0.0. This cannot be expressed in" +
+                    " GLSL.");
+            }
+            workaround_lod_array_shadow_as_grad = true;
+        }
+        if (args.is_sparse_feedback)
+            fname += "sparse";
+        if (args.base.is_fetch)
+            fname += args.is_sparse_feedback ? "TexelFetch" : "texelFetch";
+        else {
+            fname += args.is_sparse_feedback ? "Texture" : "texture";
+            if (args.base.is_gather)
+                fname += "Gather";
+            if (args.has_array_offsets)
+                fname += "Offsets";
+            if (args.base.is_proj)
+                fname += "Proj";
+            if (args.has_grad || workaround_lod_array_shadow_as_grad)
+                fname += "Grad";
+            if (args.lod !== 0 && !workaround_lod_array_shadow_as_grad)
+                fname += "Lod";
+        }
+        if (args.has_offset)
+            fname += "Offset";
+        if (args.has_min_lod)
+            fname += "Clamp";
+        if (args.is_sparse_feedback || args.has_min_lod)
+            fname += "ARB";
+        return (this.is_legacy() && !args.base.is_gather) ? this.legacy_tex_op(fname, imgtype, tex) : fname;
+    };
+    CompilerGLSL.prototype.to_function_args = function (args, p_forward) {
+        var img = args.base.img;
+        var imgtype = args.base.imgtype;
+        var backend = this.backend;
+        var farg_str;
+        if (args.base.is_fetch)
+            farg_str = this.convert_separate_image_to_expression(img);
+        else
+            farg_str = this.to_non_uniform_aware_expression(img);
+        if (args.nonuniform_expression && farg_str.indexOf('[') >= 0) {
+            // Only emit nonuniformEXT() wrapper if the underlying expression is arrayed in some way.
+            farg_str = backend.nonuniform_qualifier + "(" + farg_str + ")";
+        }
+        var swizz_func = backend.swizzle_is_function;
+        var swizzle = function (comps, in_comps) {
+            if (comps === in_comps)
+                return "";
+            switch (comps) {
+                case 1:
+                    return ".x";
+                case 2:
+                    return swizz_func ? ".xy()" : ".xy";
+                case 3:
+                    return swizz_func ? ".xyz()" : ".xyz";
+                default:
+                    return "";
+            }
+        };
+        var forward = this.should_forward(args.coord);
+        // The IR can give us more components than we need, so chop them off as needed.
+        var swizzle_expr = swizzle(args.coord_components, this.expression_type(args.coord).vecsize);
+        // Only enclose the UV expression if needed.
+        var coord_expr = (swizzle_expr === "") ? this.to_expression(args.coord) : (this.to_enclosed_expression(args.coord) + swizzle_expr);
+        // texelFetch only takes int, not uint.
+        var coord_type = this.expression_type(args.coord);
+        if (coord_type.basetype === SPIRTypeBaseType.UInt) {
+            var expected_type = coord_type;
+            expected_type.vecsize = args.coord_components;
+            expected_type.basetype = SPIRTypeBaseType.Int;
+            coord_expr = this.bitcast_expression(expected_type, coord_type.basetype, coord_expr);
+        }
+        // textureLod on sampler2DArrayShadow and samplerCubeShadow does not exist in GLSL for some reason.
+        // To emulate this, we will have to use textureGrad with a constant gradient of 0.
+        // The workaround will assert that the LOD is in fact constant 0, or we cannot emit correct code.
+        // This happens for HLSL SampleCmpLevelZero on Texture2DArray and TextureCube.
+        var workaround_lod_array_shadow_as_grad = ((imgtype.image.arrayed && imgtype.image.dim === Dim.Dim2D) || imgtype.image.dim === Dim.DimCube) &&
+            this.is_depth_image(imgtype, img) && args.lod !== 0;
+        if (args.dref) {
+            forward = forward && this.should_forward(args.dref);
+            // SPIR-V splits dref and coordinate.
+            if (args.base.is_gather ||
+                args.coord_components === 4) // GLSL also splits the arguments in two. Same for textureGather.
+             {
+                farg_str += ", ";
+                farg_str += this.to_expression(args.coord);
+                farg_str += ", ";
+                farg_str += this.to_expression(args.dref);
+            }
+            else if (args.base.is_proj) {
+                // Have to reshuffle so we get vec4(coord, dref, proj), special case.
+                // Other shading languages splits up the arguments for coord and compare value like SPIR-V.
+                // The coordinate type for textureProj shadow is always vec4 even for sampler1DShadow.
+                farg_str += ", vec4(";
+                if (imgtype.image.dim === Dim.Dim1D) {
+                    // Could reuse coord_expr, but we will mess up the temporary usage checking.
+                    farg_str += this.to_enclosed_expression(args.coord) + ".x";
+                    farg_str += ", ";
+                    farg_str += "0.0, ";
+                    farg_str += this.to_expression(args.dref);
+                    farg_str += ", ";
+                    farg_str += this.to_enclosed_expression(args.coord) + ".y)";
+                }
+                else if (imgtype.image.dim === Dim.Dim2D) {
+                    // Could reuse coord_expr, but we will mess up the temporary usage checking.
+                    farg_str += this.to_enclosed_expression(args.coord) + (swizz_func ? ".xy()" : ".xy");
+                    farg_str += ", ";
+                    farg_str += this.to_expression(args.dref);
+                    farg_str += ", ";
+                    farg_str += this.to_enclosed_expression(args.coord) + ".z)";
+                }
+                else
+                    throw new Error("Invalid type for textureProj with shadow.");
+            }
+            else {
+                // Create a composite which merges coord/dref into a single vector.
+                var type = this.expression_type(args.coord);
+                type.vecsize = args.coord_components + 1;
+                farg_str += ", ";
+                farg_str += this.type_to_glsl_constructor(type);
+                farg_str += "(";
+                farg_str += coord_expr;
+                farg_str += ", ";
+                farg_str += this.to_expression(args.dref);
+                farg_str += ")";
+            }
+        }
+        else {
+            farg_str += ", ";
+            farg_str += coord_expr;
+        }
+        if (args.grad_x || args.grad_y) {
+            forward = forward && this.should_forward(args.grad_x);
+            forward = forward && this.should_forward(args.grad_y);
+            farg_str += ", ";
+            farg_str += this.to_expression(args.grad_x);
+            farg_str += ", ";
+            farg_str += this.to_expression(args.grad_y);
+        }
+        if (args.lod) {
+            if (workaround_lod_array_shadow_as_grad) {
+                // Implement textureGrad() instead. LOD === 0.0 is implemented as gradient of 0.0.
+                // Implementing this as plain texture() is not safe on some implementations.
+                if (imgtype.image.dim === Dim.Dim2D)
+                    farg_str += ", vec2(0.0), vec2(0.0)";
+                else if (imgtype.image.dim === Dim.DimCube)
+                    farg_str += ", vec3(0.0), vec3(0.0)";
+            }
+            else {
+                forward = forward && this.should_forward(args.lod);
+                farg_str += ", ";
+                var lod_expr_type = this.expression_type(args.lod);
+                // Lod expression for TexelFetch in GLSL must be int, and only int.
+                if (args.base.is_fetch && imgtype.image.dim !== Dim.DimBuffer && !imgtype.image.ms &&
+                    lod_expr_type.basetype !== SPIRTypeBaseType.Int) {
+                    farg_str += "int(" + this.to_expression(args.lod) + ")";
+                }
+                else {
+                    farg_str += this.to_expression(args.lod);
+                }
+            }
+        }
+        else if (args.base.is_fetch && imgtype.image.dim !== Dim.DimBuffer && !imgtype.image.ms) {
+            // Lod argument is optional in OpImageFetch, but we require a LOD value, pick 0 as the default.
+            farg_str += ", 0";
+        }
+        if (args.coffset) {
+            forward = forward && this.should_forward(args.coffset);
+            farg_str += ", ";
+            farg_str += this.to_expression(args.coffset);
+        }
+        else if (args.offset) {
+            forward = forward && this.should_forward(args.offset);
+            farg_str += ", ";
+            farg_str += this.to_expression(args.offset);
+        }
+        if (args.sample) {
+            farg_str += ", ";
+            farg_str += this.to_expression(args.sample);
+        }
+        if (args.min_lod) {
+            farg_str += ", ";
+            farg_str += this.to_expression(args.min_lod);
+        }
+        if (args.sparse_texel) {
+            // Sparse texel output parameter comes after everything else, except it's before the optional, component/bias arguments.
+            farg_str += ", ";
+            farg_str += this.to_expression(args.sparse_texel);
+        }
+        if (args.bias) {
+            forward = forward && this.should_forward(args.bias);
+            farg_str += ", ";
+            farg_str += this.to_expression(args.bias);
+        }
+        if (args.component && !this.expression_is_constant_null(args.component)) {
+            forward = forward && this.should_forward(args.component);
+            farg_str += ", ";
+            var component_type = this.expression_type(args.component);
+            if (component_type.basetype === SPIRTypeBaseType.Int)
+                farg_str += this.to_expression(args.component);
+            else
+                farg_str += "int(" + this.to_expression(args.component) + ")";
+        }
+        p_forward.value = forward;
+        return farg_str;
+    };
+    CompilerGLSL.prototype.emit_sparse_feedback_temporaries = function (result_type_id, id, ids) {
+        // Need to allocate two temporaries.
+        if (this.options.es)
+            throw new Error("Sparse texture feedback is not supported on ESSL.");
+        this.require_extension_internal("GL_ARB_sparse_texture2");
+        var temps = maplike_get(0, this.extra_sub_expressions, id);
+        if (temps === 0) {
+            temps = this.ir.increase_bound_by(2);
+            this.extra_sub_expressions[id] = temps;
+        }
+        ids.sparse_code_id = temps + 0;
+        ids.sparse_texel_id = temps + 1;
+        var return_type = this.get(SPIRType, result_type_id);
+        if (return_type.basetype !== SPIRTypeBaseType.Struct || return_type.member_types.length !== 2)
+            throw new Error("Invalid return type for sparse feedback.");
+        this.emit_uninitialized_temporary(return_type.member_types[0], ids.sparse_code_id);
+        this.emit_uninitialized_temporary(return_type.member_types[1], ids.sparse_texel_id);
+    };
+    CompilerGLSL.prototype.get_sparse_feedback_texel_id = function (id) {
+        return this.extra_sub_expressions[id] || 0;
     };
     CompilerGLSL.prototype.emit_buffer_block = function (var_) {
         var type = this.get(SPIRType, var_.basetype);
@@ -14816,6 +15464,14 @@ var CompilerGLSL = /** @class */ (function (_super) {
     };
     CompilerGLSL.prototype.variable_decl_is_remapped_storage = function (var_, storage) {
         return var_.storage === storage;
+    };
+    CompilerGLSL.prototype.to_func_call_arg = function (arg, id) {
+        // Make sure that we use the name of the original variable, and not the parameter alias.
+        var name_id = id;
+        var var_ = this.maybe_get(SPIRVariable, id);
+        if (var_ && var_.basevariable)
+            name_id = var_.basevariable;
+        return this.to_expression(name_id);
     };
     CompilerGLSL.prototype.is_non_native_row_major_matrix = function (id) {
         // Natively supported row-major matrices do not need to be converted.
@@ -17458,6 +18114,20 @@ var CompilerGLSL = /** @class */ (function (_super) {
         this.emit_uninitialized_temporary(type, id);
         return this.set(SPIRExpression, id, this.to_name(id), type, true);
     };
+    CompilerGLSL.prototype.append_global_func_args = function (func, index, arglist) {
+        var args = func.arguments;
+        var arg_cnt = args.length;
+        for (var arg_idx = index; arg_idx < arg_cnt; arg_idx++) {
+            var arg = args[arg_idx];
+            console.assert(arg.alias_global_variable);
+            // If the underlying variable needs to be declared
+            // (ie. a local variable with deferred declaration), do so now.
+            var var_id = this.get(SPIRVariable, arg.id).basevariable;
+            if (var_id)
+                this.flush_variable_declaration(var_id);
+            arglist.push(this.to_func_call_arg(arg, arg.id));
+        }
+    };
     CompilerGLSL.prototype.to_non_uniform_aware_expression = function (id) {
         var expr = this.to_expression(id);
         if (this.has_decoration(id, Decoration.DecorationNonUniform))
@@ -17734,6 +18404,16 @@ var CompilerGLSL = /** @class */ (function (_super) {
     };
     CompilerGLSL.prototype.to_member_reference = function (_, type, index, __) {
         return "." + this.to_member_name(type, index);
+    };
+    CompilerGLSL.prototype.to_multi_member_reference = function (type, indices) {
+        var ret = "";
+        var member_type = type;
+        for (var i = 0; i < indices.length; ++i) {
+            var index = indices[i];
+            ret += "." + this.to_member_name(member_type, index);
+            member_type = this.get(SPIRType, member_type.member_types[index]);
+        }
+        return ret;
     };
     CompilerGLSL.prototype.type_to_glsl_constructor = function (type) {
         var options = this.options;
@@ -18393,7 +19073,6 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (can_use_binding && flags.get(Decoration.DecorationBinding))
             attr.push("binding = " + this.get_decoration(var_.self, Decoration.DecorationBinding));
         if (var_.storage !== StorageClass.StorageClassOutput && flags.get(Decoration.DecorationOffset)) {
-            console.log(var_);
             attr.push("offset = " + this.get_decoration(var_.self, Decoration.DecorationOffset));
         }
         // Instead of adding explicit offsets for every element here, just assume we're using std140 or std430.
@@ -19112,6 +19791,98 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 _this.replace_fragment_output(var_);
         });
     };
+    CompilerGLSL.prototype.legacy_tex_op = function (op, imgtype, tex) {
+        var type;
+        var options = this.options;
+        switch (imgtype.image.dim) {
+            case Dim.Dim1D:
+                type = (imgtype.image.arrayed && !options.es) ? "1DArray" : "1D";
+                break;
+            case Dim.Dim2D:
+                type = (imgtype.image.arrayed && !options.es) ? "2DArray" : "2D";
+                break;
+            case Dim.Dim3D:
+                type = "3D";
+                break;
+            case Dim.DimCube:
+                type = "Cube";
+                break;
+            case Dim.DimRect:
+                type = "2DRect";
+                break;
+            case Dim.DimBuffer:
+                type = "Buffer";
+                break;
+            case Dim.DimSubpassData:
+                type = "2D";
+                break;
+            default:
+                type = "";
+                break;
+        }
+        // In legacy GLSL, an extension is required for textureLod in the fragment
+        // shader or textureGrad anywhere.
+        var legacy_lod_ext = false;
+        var execution = this.get_entry_point();
+        if (op === "textureGrad" || op === "textureProjGrad" ||
+            ((op === "textureLod" || op === "textureProjLod") && execution.model !== ExecutionModel.ExecutionModelVertex)) {
+            if (this.is_legacy_es()) {
+                legacy_lod_ext = true;
+                this.require_extension_internal("GL_EXT_shader_texture_lod");
+            }
+            else if (this.is_legacy_desktop())
+                this.require_extension_internal("GL_ARB_shader_texture_lod");
+        }
+        if (op === "textureLodOffset" || op === "textureProjLodOffset") {
+            if (this.is_legacy_es())
+                throw new Error(op + " not allowed in legacy ES");
+            this.require_extension_internal("GL_EXT_gpu_shader4");
+        }
+        // GLES has very limited support for shadow samplers.
+        // Basically shadow2D and shadow2DProj work through EXT_shadow_samplers,
+        // everything else can just throw
+        var is_comparison = this.is_depth_image(imgtype, tex);
+        if (is_comparison && this.is_legacy_es()) {
+            if (op === "texture" || op === "textureProj")
+                this.require_extension_internal("GL_EXT_shadow_samplers");
+            else
+                throw new Error(op + " not allowed on depth samplers in legacy ES");
+        }
+        if (op === "textureSize") {
+            if (this.is_legacy_es())
+                throw new Error("textureSize not supported in legacy ES");
+            if (is_comparison)
+                throw new Error("textureSize not supported on shadow sampler in legacy GLSL");
+            this.require_extension_internal("GL_EXT_gpu_shader4");
+        }
+        if (op === "texelFetch" && this.is_legacy_es())
+            throw new Error("texelFetch not supported in legacy ES");
+        var is_es_and_depth = this.is_legacy_es() && is_comparison;
+        var type_prefix = is_comparison ? "shadow" : "texture";
+        if (op === "texture")
+            return is_es_and_depth ? type_prefix + type + "EXT" : type_prefix + type;
+        else if (op === "textureLod")
+            return type_prefix + type + legacy_lod_ext ? "LodEXT" : "Lod";
+        else if (op === "textureProj")
+            return type_prefix + type + is_es_and_depth ? "ProjEXT" : "Proj";
+        else if (op === "textureGrad")
+            return type_prefix + type + this.is_legacy_es() ? "GradEXT" : this.is_legacy_desktop() ? "GradARB" : "Grad";
+        else if (op === "textureProjLod")
+            return type_prefix + type + legacy_lod_ext ? "ProjLodEXT" : "ProjLod";
+        else if (op === "textureLodOffset")
+            return type_prefix + type + "LodOffset";
+        else if (op === "textureProjGrad")
+            return type_prefix + type + this.is_legacy_es() ? "ProjGradEXT" : this.is_legacy_desktop() ? "ProjGradARB" : "ProjGrad";
+        else if (op === "textureProjLodOffset")
+            return type_prefix + type + "ProjLodOffset";
+        else if (op === "textureSize")
+            return "textureSize" + type;
+        else if (op === "texelFetch")
+            return "texelFetch" + type;
+        else {
+            throw new Error("Unsupported legacy texture op: " + op);
+        }
+    };
     CompilerGLSL.prototype.load_flattened_struct = function (basename, type) {
         var expr = this.type_to_glsl_constructor(type);
         expr += "(";
@@ -19131,6 +19902,34 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var ret = basename + "_" + this.to_member_name(type, index);
         ParsedIR.sanitize_underscores(ret);
         return ret;
+    };
+    CompilerGLSL.prototype.store_flattened_struct = function (basename, rhs_id, type, indices) {
+        if (typeof basename === "number") {
+            var lhs_id = basename;
+            var value = rhs_id;
+            var type_3 = this.expression_type(lhs_id);
+            var basename_ = this.to_flattened_access_chain_expression(lhs_id);
+            this.store_flattened_struct(basename_, value, type_3, []);
+            return;
+        }
+        var sub_indices = Array.from(indices);
+        sub_indices.push(0);
+        var member_type = type;
+        for (var i = 0; i < indices.length; ++i) {
+            var index = indices[i];
+            member_type = this.get(SPIRType, member_type.member_types[index]);
+        }
+        for (var i = 0; i < member_type.member_types.length; i++) {
+            sub_indices[sub_indices.length - 1] = i;
+            var lhs = ParsedIR.sanitize_underscores(basename + "_" + this.to_member_name(member_type, i));
+            if (this.get(SPIRType, member_type.member_types[i]).basetype === SPIRTypeBaseType.Struct) {
+                this.store_flattened_struct(lhs, rhs_id, type, sub_indices);
+            }
+            else {
+                var rhs = this.to_expression(rhs_id) + this.to_multi_member_reference(type, sub_indices);
+                this.statement(lhs, " = ", rhs, ";");
+            }
+        }
     };
     CompilerGLSL.prototype.to_flattened_access_chain_expression = function (id) {
         // Do not use to_expression as that will unflatten access chains.
@@ -19200,12 +19999,12 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // ensure row_major decoration is actually respected.
         var var_ = this.maybe_get_backing_variable(ptr);
         if (!var_)
-            return;
+            return expr;
         var backing_type = this.get(SPIRType, var_.basetype);
         var is_ubo = backing_type.basetype === SPIRTypeBaseType.Struct && backing_type.storage === StorageClass.StorageClassUniform &&
             this.has_decoration(backing_type.self, Decoration.DecorationBlock);
         if (!is_ubo)
-            return;
+            return expr;
         var type = this.get(SPIRType, loaded_type);
         var rewrite = false;
         if (this.is_matrix(type)) {
@@ -19227,7 +20026,9 @@ var CompilerGLSL = /** @class */ (function (_super) {
         }
         if (rewrite) {
             this.request_workaround_wrapper_overload(loaded_type);
+            expr = "spvWorkaroundRowMajor(" + expr + ")";
         }
+        return expr;
     };
     CompilerGLSL.prototype.is_legacy = function () {
         var options = this.options;
@@ -19240,6 +20041,50 @@ var CompilerGLSL = /** @class */ (function (_super) {
     CompilerGLSL.prototype.is_legacy_desktop = function () {
         var options = this.options;
         return !options.es && options.version < 130;
+    };
+    CompilerGLSL.prototype.register_impure_function_call = function () {
+        // Impure functions can modify globals and aliased variables, so invalidate them as well.
+        for (var _i = 0, _a = this.global_variables; _i < _a.length; _i++) {
+            var global_2 = _a[_i];
+            this.flush_dependees(this.get(SPIRVariable, global_2));
+        }
+        for (var _b = 0, _c = this.aliased_variables; _b < _c.length; _b++) {
+            var aliased = _c[_b];
+            this.flush_dependees(this.get(SPIRVariable, aliased));
+        }
+    };
+    CompilerGLSL.prototype.register_control_dependent_expression = function (expr) {
+        if (!this.forwarded_temporaries.has(expr))
+            return;
+        console.assert(this.current_emitting_block);
+        this.current_emitting_block.invalidate_expressions.push(expr);
+    };
+    CompilerGLSL.prototype.args_will_forward = function (id, args, num_args, pure) {
+        if (this.forced_temporaries.has(id))
+            return false;
+        for (var i = 0; i < num_args; i++)
+            if (!this.should_forward(args[i]))
+                return false;
+        // We need to forward globals as well.
+        if (!pure) {
+            for (var _i = 0, _a = this.global_variables; _i < _a.length; _i++) {
+                var global_3 = _a[_i];
+                if (!this.should_forward(global_3))
+                    return false;
+            }
+            for (var _b = 0, _c = this.aliased_variables; _b < _c.length; _b++) {
+                var aliased = _c[_b];
+                if (!this.should_forward(aliased))
+                    return false;
+            }
+        }
+        return true;
+    };
+    CompilerGLSL.prototype.register_call_out_argument = function (id) {
+        this.register_write(id);
+        var var_ = this.maybe_get(SPIRVariable, id);
+        if (var_)
+            this.flush_variable_declaration(var_.self);
     };
     CompilerGLSL.prototype.pls_decl = function (var_) {
         var variable = this.get(SPIRVariable, var_.id);
@@ -19387,6 +20232,24 @@ var CompilerGLSL = /** @class */ (function (_super) {
         name = this.update_name_cache(variables_primary, variables_secondary, name);
         return name;
     };
+    CompilerGLSL.prototype.check_function_call_constraints = function (args, length) {
+        // If our variable is remapped, and we rely on type-remapping information as
+        // well, then we cannot pass the variable as a function parameter.
+        // Fixing this is non-trivial without stamping out variants of the same function,
+        // so for now warn about this and suggest workarounds instead.
+        for (var i = 0; i < length; i++) {
+            var var_ = this.maybe_get(SPIRVariable, args[i]);
+            if (!var_ || !var_.remapped_variable)
+                continue;
+            var type = this.get(SPIRType, var_.basetype);
+            if (type.basetype === SPIRTypeBaseType.Image && type.image.dim === Dim.DimSubpassData) {
+                throw new Error("Tried passing a remapped subpassInput variable to a function. This will not work" +
+                    " correctly because type-remapping information is lost. To workaround, please consider not passing" +
+                    " the subpass input as a function parameter, or use in/out variables instead which do not need type" +
+                    " remapping information.");
+            }
+        }
+    };
     CompilerGLSL.prototype.handle_invalid_expression = function (id) {
         // We tried to read an invalidated expression.
         // This means we need another pass at compilation, but next time, force temporary variables so that they cannot be invalidated.
@@ -19431,6 +20294,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         this.analyze_interlocked_resource_usage();
         if (this.inout_color_attachments.length > 0)
             this.emit_inout_fragment_outputs_copy_to_subpass_inputs();
+        // this.traverse_all_reachable_opcodes(this.get<SPIRFunction>(SPIRFunction, ir.default_entry_point), new DebugHandler(this));
         // Shaders might cast unrelated data to pointers of non-block types.
         // Find all such instances and make sure we can cast the pointers to a synthesized block type.
         if (ir.addressing_model === AddressingModel.AddressingModelPhysicalStorageBuffer64EXT)
@@ -20026,13 +20890,13 @@ var CompilerGLSL = /** @class */ (function (_super) {
     CompilerGLSL.prototype.cast_from_variable_load = function (source_id, expr, expr_type) {
         // We will handle array cases elsewhere.
         if (expr_type.array.length > 0)
-            return;
+            return expr;
         var var_ = this.maybe_get_backing_variable(source_id);
         if (var_)
             source_id = var_.self;
         // Only interested in standalone builtin variables.
         if (!this.has_decoration(source_id, Decoration.DecorationBuiltIn))
-            return;
+            return expr;
         var builtin = (this.get_decoration(source_id, Decoration.DecorationBuiltIn));
         var expected_type = expr_type.basetype;
         // TODO: Fill in for more builtins.
@@ -20073,16 +20937,16 @@ var CompilerGLSL = /** @class */ (function (_super) {
     };
     CompilerGLSL.prototype.unroll_array_from_complex_load = function (target_id, source_id, expr) {
         if (!this.backend.force_gl_in_out_block)
-            return;
+            return expr;
         // This path is only relevant for GL backends.
         var var_ = this.maybe_get(SPIRVariable, source_id);
         if (!var_)
-            return;
+            return expr;
         if (var_.storage !== StorageClass.StorageClassInput && var_.storage !== StorageClass.StorageClassOutput)
-            return;
+            return expr;
         var type = this.get_variable_data_type(var_);
         if (type.array.length === 0)
-            return;
+            return expr;
         var builtin = (this.get_decoration(var_.self, Decoration.DecorationBuiltIn));
         var is_builtin = this.is_builtin_variable(var_) &&
             (builtin === BuiltIn.BuiltInPointSize ||
@@ -20154,22 +21018,22 @@ var CompilerGLSL = /** @class */ (function (_super) {
     };
     CompilerGLSL.prototype.convert_non_uniform_expression = function (expr, ptr_id) {
         if (this.backend.nonuniform_qualifier === "\0")
-            return;
+            return expr;
         var var_ = this.maybe_get_backing_variable(ptr_id);
         if (!var_)
-            return;
+            return expr;
         if (var_.storage !== StorageClass.StorageClassUniformConstant &&
             var_.storage !== StorageClass.StorageClassStorageBuffer &&
             var_.storage !== StorageClass.StorageClassUniform)
-            return;
+            return expr;
         var backing_type = this.get(SPIRType, var_.basetype);
         if (backing_type.array.length === 0)
-            return;
+            return expr;
         // If we get here, we know we're accessing an arrayed resource which
         // might require nonuniform qualifier.
         var start_array_index = expr.indexOf("[");
         if (start_array_index < 0)
-            return;
+            return expr;
         // We've opened a bracket, track expressions until we can close the bracket.
         // This must be our resource index.
         var end_array_index = -1;
@@ -20188,7 +21052,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // Doesn't really make sense to declare a non-arrayed image with nonuniformEXT, but there's
         // nothing we can do here to express that.
         if (start_array_index >= 0 || end_array_index >= 0 || end_array_index < start_array_index)
-            return;
+            return expr;
         start_array_index++;
         return expr.substring(0, start_array_index) + this.backend.nonuniform_qualifier + "(" +
             expr.substring(start_array_index, end_array_index) + ")" +
@@ -20520,6 +21384,25 @@ function to_pls_layout(format) {
             return "layout(r32ui) ";
         default:
             return "";
+    }
+}
+function image_opcode_is_sample_no_dref(op) {
+    switch (op) {
+        case Op.OpImageSampleExplicitLod:
+        case Op.OpImageSampleImplicitLod:
+        case Op.OpImageSampleProjExplicitLod:
+        case Op.OpImageSampleProjImplicitLod:
+        case Op.OpImageFetch:
+        case Op.OpImageRead:
+        case Op.OpImageSparseSampleExplicitLod:
+        case Op.OpImageSparseSampleImplicitLod:
+        case Op.OpImageSparseSampleProjExplicitLod:
+        case Op.OpImageSparseSampleProjImplicitLod:
+        case Op.OpImageSparseFetch:
+        case Op.OpImageSparseRead:
+            return true;
+        default:
+            return false;
     }
 }
 

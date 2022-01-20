@@ -19,6 +19,7 @@ import { AccessChainMeta } from "../../common/AccessChainMeta";
 import { BufferPackingStandard } from "../BufferPackingStandard";
 import { SPIRBlock, SPIRBlockMethod } from "../../common/SPIRBlock";
 import { Instruction } from "../../common/Instruction";
+import { TextureFunctionArguments, TextureFunctionNameArguments } from "./TextureFunctionArguments";
 declare type AccessChainFlags = number;
 export declare class CompilerGLSL extends Compiler {
     protected current_emitting_block: SPIRBlock;
@@ -46,6 +47,7 @@ export declare class CompilerGLSL extends Compiler {
     protected expression_usage_counts: number[];
     protected forced_extensions: string[];
     protected header_lines: string[];
+    protected extra_sub_expressions: number[];
     protected workaround_ubo_load_overload_types: TypeID[];
     protected statement_count: number;
     protected requires_transpose_2x2: boolean;
@@ -73,9 +75,22 @@ export declare class CompilerGLSL extends Compiler {
     protected emit_block_instructions(block: SPIRBlock): void;
     emit_instruction(instruction: Instruction): void;
     protected emit_header(): void;
+    protected emit_texture_op(i: Instruction, sparse: boolean): void;
+    protected to_texture_op(i: Instruction, sparse: boolean, forward: {
+        value: boolean;
+    }, inherited_expressions: number[]): string;
     protected emit_line_directive(file_id: number, line_literal: number): void;
     protected emit_struct_member(type: SPIRType, member_type_id: number, index: number, qualifier?: string, base_offset?: number): void;
     protected emit_struct_padding_target(_: SPIRType): void;
+    protected to_function_name(args: TextureFunctionNameArguments): string;
+    protected to_function_args(args: TextureFunctionArguments, p_forward: {
+        value: boolean;
+    }): string;
+    protected emit_sparse_feedback_temporaries(result_type_id: number, id: number, ids: {
+        sparse_code_id: number;
+        sparse_texel_id: number;
+    }): void;
+    protected get_sparse_feedback_texel_id(id: number): number;
     protected emit_buffer_block(var_: SPIRVariable): void;
     protected emit_push_constant_block(var_: SPIRVariable): void;
     protected emit_buffer_block_legacy(var_: SPIRVariable): void;
@@ -112,6 +127,7 @@ export declare class CompilerGLSL extends Compiler {
     protected variable_decl(variable: SPIRVariable): string;
     protected variable_decl_function_local(var_: SPIRVariable): string;
     protected variable_decl_is_remapped_storage(var_: SPIRVariable, storage: StorageClass): boolean;
+    protected to_func_call_arg(arg: SPIRFunctionParameter, id: number): string;
     protected is_non_native_row_major_matrix(id: number): boolean;
     protected member_is_non_native_row_major_matrix(type: SPIRType, index: number): boolean;
     protected member_is_remapped_physical_type(type: SPIRType, index: number): boolean;
@@ -178,6 +194,7 @@ export declare class CompilerGLSL extends Compiler {
     protected declare_temporary(result_type: number, result_id: number): string;
     protected emit_uninitialized_temporary(result_type: number, result_id: number): void;
     protected emit_uninitialized_temporary_expression(type: number, id: number): SPIRExpression;
+    protected append_global_func_args(func: SPIRFunction, index: number, arglist: string[]): void;
     protected to_non_uniform_aware_expression(id: number): string;
     protected to_expression(id: number, register_expression_read?: boolean): string;
     protected to_enclosed_expression(id: number, register_expression_read?: boolean): string;
@@ -193,6 +210,7 @@ export declare class CompilerGLSL extends Compiler {
     protected strip_enclosed_expression(expr: string): string;
     protected to_member_name(type: SPIRType, index: number): string;
     to_member_reference(_: number, type: SPIRType, index: number, __: boolean): string;
+    protected to_multi_member_reference(type: SPIRType, indices: number[] | Uint32Array): string;
     protected type_to_glsl_constructor(type: SPIRType): string;
     protected argument_decl(arg: SPIRFunctionParameter): string;
     protected to_qualifiers_glsl(id: number): string;
@@ -227,8 +245,11 @@ export declare class CompilerGLSL extends Compiler {
     protected emit_entry_point_declarations(): void;
     protected replace_fragment_output(var_: SPIRVariable): void;
     protected replace_fragment_outputs(): void;
+    protected legacy_tex_op(op: string, imgtype: SPIRType, tex: number): string;
     protected load_flattened_struct(basename: string, type: SPIRType): string;
     protected to_flattened_struct_member(basename: string, type: SPIRType, index: number): string;
+    protected store_flattened_struct(lhs_id: number, value: number): any;
+    protected store_flattened_struct(basename: string, rhs: number, type: SPIRType, indices: Array<number> | Uint32Array): any;
     protected to_flattened_access_chain_expression(id: number): string;
     protected track_expression_read(id: number): void;
     protected request_workaround_wrapper_overload(id: TypeID): void;
@@ -236,6 +257,10 @@ export declare class CompilerGLSL extends Compiler {
     protected is_legacy(): boolean;
     protected is_legacy_es(): boolean;
     protected is_legacy_desktop(): boolean;
+    protected register_impure_function_call(): void;
+    protected register_control_dependent_expression(expr: number): void;
+    protected args_will_forward(id: number, args: Uint32Array | number[], num_args: number, pure: boolean): boolean;
+    protected register_call_out_argument(id: number): void;
     protected pls_decl(var_: PlsRemap): string;
     protected to_pls_qualifiers_glsl(variable: SPIRVariable): string;
     protected emit_pls(): void;
@@ -247,7 +272,8 @@ export declare class CompilerGLSL extends Compiler {
     find_subpass_input_by_attachment_index(index: number): SPIRVariable;
     find_color_output_by_location(location: number): SPIRVariable;
     protected add_variable(variables_primary: Set<string>, variables_secondary: Set<string>, name: string): string;
-    handle_invalid_expression(id: number): void;
+    protected check_function_call_constraints(args: Array<number> | Uint32Array, length: number): void;
+    protected handle_invalid_expression(id: number): void;
     private init;
     compile(): string;
     protected find_static_extensions(): void;
