@@ -159,10 +159,20 @@ export declare class CompilerGLSL extends Compiler {
     protected expression_read_implies_multiple_reads(id: number): boolean;
     protected emit_op(result_type: number, result_id: number, rhs: string, forwarding: boolean, suppress_usage_tracking?: boolean): SPIRExpression;
     protected access_chain_internal_append_index(expr: string, base: number, type: SPIRType, flags: AccessChainFlags, access_chain_is_arrayed: boolean, index: number): string;
-    protected access_chain_internal(base: number, indices: number[], count: number, flags: AccessChainFlags, meta: AccessChainMeta): string;
+    protected access_chain_internal(base: number, indices: number[] | Uint32Array, count: number, flags: AccessChainFlags, meta: AccessChainMeta): string;
     protected get_expression_effective_storage_class(ptr: number): StorageClass;
     protected access_chain_needs_stage_io_builtin_translation(_: number): boolean;
     protected prepare_access_chain_for_scalar_access(expr: string, type: SPIRType, storage: StorageClass, is_packed: boolean): string;
+    protected access_chain(base: number, indices: Uint32Array, count: number, target_type: SPIRType, meta?: AccessChainMeta, ptr_chain?: boolean): string;
+    protected flattened_access_chain(base: number, indices: Uint32Array | Array<number>, count: number, target_type: SPIRType, offset: number, matrix_stride: number, _array_stride: number, need_transpose: boolean): string;
+    protected flattened_access_chain_struct(base: number, indices: Uint32Array | Array<number>, count: number, target_type: SPIRType, offset: number): string;
+    protected flattened_access_chain_matrix(base: number, indices: Uint32Array | Array<number>, count: number, target_type: SPIRType, offset: number, matrix_stride: number, need_transpose: boolean): string;
+    protected flattened_access_chain_vector(base: number, indices: Uint32Array | Array<number>, count: number, target_type: SPIRType, offset: number, matrix_stride: number, need_transpose: boolean): string;
+    protected flattened_access_chain_offset(basetype: SPIRType, indices: Uint32Array | Array<number>, count: number, offset: number, word_stride: number, out?: {
+        need_transpose: boolean;
+        matrix_stride: number;
+        array_stride: number;
+    }, ptr_chain?: boolean): Pair<string, number>;
     protected index_to_swizzle(index: number): string;
     protected remap_swizzle(out_type: SPIRType, input_components: number, expr: string): string;
     protected declare_temporary(result_type: number, result_id: number): string;
@@ -219,6 +229,7 @@ export declare class CompilerGLSL extends Compiler {
     protected replace_fragment_outputs(): void;
     protected load_flattened_struct(basename: string, type: SPIRType): string;
     protected to_flattened_struct_member(basename: string, type: SPIRType, index: number): string;
+    protected to_flattened_access_chain_expression(id: number): string;
     protected track_expression_read(id: number): void;
     protected request_workaround_wrapper_overload(id: TypeID): void;
     protected rewrite_load_for_wrapped_row_major(expr: string, loaded_type: TypeID, ptr: ID): string;
