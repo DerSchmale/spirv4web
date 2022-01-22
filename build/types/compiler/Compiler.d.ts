@@ -169,10 +169,10 @@ export declare abstract class Compiler {
     find_function_local_luts(entry: SPIRFunction, handler: AnalyzeVariableScopeAccessHandler, single_function: boolean): void;
     protected may_read_undefined_variable_in_block(block: SPIRBlock, var_: number): boolean;
     protected analyze_interlocked_resource_usage(): void;
-    instruction_to_result_type(result: {
+    instruction_to_result_type(op: Op, args: Uint32Array, length: number): {
         result_type: number;
         result_id: number;
-    }, op: Op, args: Uint32Array, length: number): boolean;
+    };
     combined_decoration_for_member(type: SPIRType, index: number): Bitset;
     is_desktop_only_format(format: ImageFormat): boolean;
     protected set_extended_decoration(id: number, decoration: ExtendedDecorations, value?: number): void;

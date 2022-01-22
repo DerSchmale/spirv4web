@@ -4,6 +4,7 @@ import { IVariant } from "./IVariant";
 import { Types } from "./Types";
 import { defaultClone, defaultCopy } from "../utils/defaultCopy";
 import { SPIRType } from "./SPIRType";
+import { uint32 } from "../utils/ensure_types";
 
 const u = new DataView(new ArrayBuffer(4));
 
@@ -162,7 +163,7 @@ export class SPIRConstant extends IVariant
                 }
 
                 e++;
-                m &= ~0x400;
+                m = uint32(m & uint32(~0x400));
             }
         }
         else if (e === 31) {

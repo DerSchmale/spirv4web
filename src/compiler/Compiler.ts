@@ -2802,7 +2802,7 @@ export abstract class Compiler
 
     protected type_struct_member_array_stride(type: SPIRType, index: number): number
     {
-        const type_meta = this.ir.find_meta(type.self);
+        const type_meta = this.ir.find_meta(type.member_types[index]);
         if (type_meta) {
             // Decoration must be set in valid SPIR-V, otherwise throw.
             // ArrayStride is part of the array type not OpMemberDecorate.

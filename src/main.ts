@@ -1,7 +1,8 @@
 import { Args } from "./Args";
 import { compile_iteration } from "./compileIteration";
 
-export enum Version {
+export enum Version
+{
     WebGL1 = 100,
     WebGL2 = 300
 }

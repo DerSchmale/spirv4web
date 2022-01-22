@@ -2209,6 +2209,13 @@ var SPIRV = (function (exports) {
         return SPIRType;
     }(IVariant));
 
+    var _uint32 = new Uint32Array(1);
+    // bit operators assume signed values, so ~0 = -1, but if uint, it would be 0xffffffff
+    function uint32(value) {
+        _uint32[0] = value;
+        return _uint32[0];
+    }
+
     var u = new DataView(new ArrayBuffer(4));
     // like a union
     var SPIRConstantConstant = /** @class */ (function () {
@@ -2362,7 +2369,7 @@ var SPIRV = (function (exports) {
                         e--;
                     }
                     e++;
-                    m &= ~0x400;
+                    m = uint32(m & uint32(~0x400));
                 }
             }
             else if (e === 31) {
@@ -9172,7 +9179,7 @@ var SPIRV = (function (exports) {
                 throw new Error("Struct member does not have Offset set.");
         };
         Compiler.prototype.type_struct_member_array_stride = function (type, index) {
-            var type_meta = this.ir.find_meta(type.self);
+            var type_meta = this.ir.find_meta(type.member_types[index]);
             if (type_meta) {
                 // Decoration must be set in valid SPIR-V, otherwise throw.
                 // ArrayStride is part of the array type not OpMemberDecorate.
@@ -13729,6 +13736,7 @@ var SPIRV = (function (exports) {
                 var var_ = this.get(SPIRVariable, var_id);
                 rearm_dominated_variables[i] = var_.deferred_declaration;
             }
+            console.log(this.block_is_loop_candidate(block, SPIRBlockMethod.MergeToSelectForLoop));
             // This is the method often used by spirv-opt to implement loops.
             // The loop header goes straight into the continue block.
             // However, don't attempt this on ESSL 1.0, because if a loop variable is used in a continue block,
@@ -19532,7 +19540,7 @@ var SPIRV = (function (exports) {
                         return false;
                     }
                     // Verify array stride rules.
-                    if (memb_type.array.length === 0 && this.type_to_packed_array_stride(memb_type, member_flags, packing) !=
+                    if (memb_type.array.length > 0 && this.type_to_packed_array_stride(memb_type, member_flags, packing) !=
                         this.type_struct_member_array_stride(type, i)) {
                         if (failed_validation_index)
                             failed_validation_index[0] = i;
@@ -19651,7 +19659,7 @@ var SPIRV = (function (exports) {
                 if (packing_is_vec4_padded(packing))
                     minimum_alignment = 16;
                 var tmp = this.get(SPIRType, type.parent_type);
-                while (!tmp.array.length)
+                while (tmp.array.length)
                     tmp = this.get(SPIRType, tmp.parent_type);
                 // Get the alignment of the base type, then maybe round up.
                 return Math.max(minimum_alignment, this.type_to_packed_alignment(tmp, flags, packing));
@@ -20643,22 +20651,22 @@ var SPIRV = (function (exports) {
             if (ir.addressing_model === AddressingModel.AddressingModelPhysicalStorageBuffer64EXT)
                 this.analyze_non_block_pointer_types();
             var pass_count = 0;
-            try {
-                do {
-                    if (pass_count >= 3)
-                        throw new Error("Over 3 compilation loops detected. Must be a bug!");
-                    this.reset();
-                    this.buffer.reset();
-                    this.emit_header();
-                    this.emit_resources();
-                    this.emit_extension_workarounds(this.get_execution_model());
-                    this.emit_function(this.get(SPIRFunction, ir.default_entry_point), new Bitset());
-                    pass_count++;
-                } while (this.is_forcing_recompilation());
-            }
-            catch (err) {
-                console.error(err);
-            }
+            // try {
+            do {
+                if (pass_count >= 3)
+                    throw new Error("Over 3 compilation loops detected. Must be a bug!");
+                this.reset();
+                this.buffer.reset();
+                this.emit_header();
+                this.emit_resources();
+                this.emit_extension_workarounds(this.get_execution_model());
+                this.emit_function(this.get(SPIRFunction, ir.default_entry_point), new Bitset());
+                pass_count++;
+            } while (this.is_forcing_recompilation());
+            // }
+            // catch(err) {
+            //     console.error(err);
+            // }
             /*
             // Implement the interlocked wrapper function at the end.
             // The body was implemented in lieu of main().

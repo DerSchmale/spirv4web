@@ -63,6 +63,7 @@ import {
     TextureFunctionNameArguments
 } from "./TextureFunctionArguments";
 import { SPIRCombinedImageSampler } from "../../common/SPIRCombinedImageSampler";
+import { uint32 } from "../../utils/ensure_types";
 
 const swizzle: string[][] = [
     [ ".x", ".y", ".z", ".w" ],
@@ -4504,6 +4505,8 @@ export class CompilerGLSL extends Compiler
             const var_ = this.get<SPIRVariable>(SPIRVariable, var_id);
             rearm_dominated_variables[i] = var_.deferred_declaration;
         }
+
+        console.log(this.block_is_loop_candidate(block, SPIRBlockMethod.MergeToSelectForLoop));
 
         // This is the method often used by spirv-opt to implement loops.
         // The loop header goes straight into the continue block.
@@ -11308,7 +11311,7 @@ export class CompilerGLSL extends Compiler
                 }
 
                 // Verify array stride rules.
-                if (memb_type.array.length === 0 && this.type_to_packed_array_stride(memb_type, member_flags, packing) !=
+                if (memb_type.array.length > 0 && this.type_to_packed_array_stride(memb_type, member_flags, packing) !=
                     this.type_struct_member_array_stride(type, i)) {
                     if (failed_validation_index)
                         failed_validation_index[0] = i;
@@ -11443,7 +11446,7 @@ export class CompilerGLSL extends Compiler
                 minimum_alignment = 16;
 
             let tmp = this.get<SPIRType>(SPIRType, type.parent_type);
-            while (!tmp.array.length)
+            while (tmp.array.length)
                 tmp = this.get<SPIRType>(SPIRType, tmp.parent_type);
 
             // Get the alignment of the base type, then maybe round up.
@@ -12668,7 +12671,7 @@ export class CompilerGLSL extends Compiler
             this.analyze_non_block_pointer_types();
 
         let pass_count = 0;
-        try {
+        // try {
         do {
             if (pass_count >= 3)
                 throw new Error("Over 3 compilation loops detected. Must be a bug!");
@@ -12685,10 +12688,10 @@ export class CompilerGLSL extends Compiler
 
             pass_count++;
         } while (this.is_forcing_recompilation());
-        }
-        catch(err) {
-            console.error(err);
-        }
+        // }
+        // catch(err) {
+        //     console.error(err);
+        // }
 
         /*
         // Implement the interlocked wrapper function at the end.

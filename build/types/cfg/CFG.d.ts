@@ -9,7 +9,8 @@ export declare class CFG {
     private visit_order;
     private post_order;
     private empty_vector;
-    constructor(compiler: Compiler, func: SPIRFunction);
+    private visit_count;
+    constructor(compiler?: Compiler, func?: SPIRFunction);
     get_compiler(): Compiler;
     get_function(): SPIRFunction;
     get_immediate_dominator(block: number): number;
@@ -20,4 +21,10 @@ export declare class CFG {
     walk_from(seen_blocks: Set<number>, block: number, op: (block: number) => boolean): void;
     find_loop_dominator(block_id: number): number;
     node_terminates_control_flow_in_sub_graph(from: BlockID, to: BlockID): boolean;
+    private add_branch;
+    private build_post_order_visit_order;
+    private build_immediate_dominators;
+    private post_order_visit;
+    private is_back_edge;
+    private has_visited_forward_edge;
 }
