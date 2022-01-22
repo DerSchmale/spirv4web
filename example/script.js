@@ -27,7 +27,7 @@ function generate()
     const time = performance.now();
     const version = document.getElementById("version").value;
     const stage = document.getElementById("stage").value;
-    const file = stage === "vertex"? "tmp_copy.vert.spv" : "tmp_copy.frag.spv";
+    const file = stage === "vertex"? "tmp_default_unlit.vert.spv" : "tmp_default_unlit.frag.spv";
     load(file).then((data) => {
         const code = compile(data, versions[version]);
         document.getElementById("compiledShader").innerHTML = code;

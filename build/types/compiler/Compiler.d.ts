@@ -198,7 +198,4 @@ export declare abstract class Compiler {
     is_vertex_like_shader(): boolean;
     get_case_list(block: SPIRBlock): SPIRBlockCase[];
 }
-export declare function opcode_is_sign_invariant(opcode: Op): boolean;
-export declare function to_signed_basetype(width: number): SPIRTypeBaseType;
-export declare function to_unsigned_basetype(width: number): SPIRTypeBaseType;
 export {};

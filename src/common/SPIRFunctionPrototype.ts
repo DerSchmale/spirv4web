@@ -15,7 +15,7 @@ export class SPIRFunctionPrototype extends IVariant
     {
         super();
         if (param0 instanceof SPIRFunctionPrototype)
-            defaultCopy(this, param0);
+            defaultCopy(param0, this);
         else
             this.return_type = param0;
     }

@@ -104,6 +104,6 @@ export class SPIRType extends IVariant
     {
         super();
         if (other)
-            defaultCopy(this, other);
+            defaultCopy(other, this);
     }
 }

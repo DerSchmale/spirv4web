@@ -14,7 +14,7 @@ export class SPIRUndef extends IVariant
     {
         super();
         if (param0 instanceof SPIRUndef)
-            defaultCopy(this, param0);
+            defaultCopy(param0, this);
         else
             this.basetype = param0;
     }

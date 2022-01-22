@@ -25,7 +25,7 @@ export class SPIRExtension extends IVariant
         super();
 
         if (param0 instanceof SPIRExtension)
-            defaultCopy(this, param0);
+            defaultCopy(param0, this);
         else
             this.ext = param0;
     }

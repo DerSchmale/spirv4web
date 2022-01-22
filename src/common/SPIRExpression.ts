@@ -48,7 +48,7 @@ export class SPIRExpression extends IVariant
     {
         super();
         if (param0 instanceof SPIRExpression) {
-            defaultCopy(this, param0);
+            defaultCopy(param0, this);
         }
         else {
             this.expression = param0;

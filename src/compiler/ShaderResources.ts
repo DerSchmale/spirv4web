@@ -81,4 +81,4 @@ export class ShaderResources
 
     builtin_inputs: BuiltInResource[] = [];
     builtin_outputs: BuiltInResource[] = [];
-};
+}

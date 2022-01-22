@@ -14,7 +14,7 @@ export class SPIRString extends IVariant
     {
         super();
         if (param0 instanceof SPIRString)
-            defaultCopy(this, param0);
+            defaultCopy(param0, this);
         else
             this.str = param0;
     }

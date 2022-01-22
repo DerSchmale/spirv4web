@@ -17,7 +17,7 @@ export class SPIRConstantOp extends IVariant
     {
         super();
         if (param0 instanceof SPIRConstantOp) {
-            defaultCopy(this, param0);
+            defaultCopy(param0, this);
         }
         else {
             this.basetype = param0;

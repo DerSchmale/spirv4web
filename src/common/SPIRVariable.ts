@@ -1,7 +1,7 @@
 import { IVariant } from "./IVariant";
 import { Types } from "./Types";
 import { StorageClass } from "../spirv";
-import { SPIRFunction, SPIRFunctionParameter } from "./SPIRFunction";
+import { SPIRFunctionParameter } from "./SPIRFunction";
 import { defaultCopy } from "../utils/defaultCopy";
 
 export class SPIRVariable extends IVariant
@@ -50,12 +50,16 @@ export class SPIRVariable extends IVariant
 
     constructor(other: SPIRVariable);
     constructor(basetype: TypeID);
-    constructor(param0: TypeID | SPIRVariable)
+    constructor(param0: TypeID | SPIRVariable, storage: StorageClass = 0, initializer: ID = 0, basevariable: VariableID = 0)
     {
         super();
         if (param0 instanceof SPIRVariable)
-            defaultCopy(this, param0);
-        else
+            defaultCopy(param0, this);
+        else {
             this.basetype = param0;
+            this.storage = storage;
+            this.initializer = initializer;
+            this.basevariable = basevariable;
+        }
     }
 }

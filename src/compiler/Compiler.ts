@@ -424,11 +424,10 @@ export abstract class Compiler
 
     get_common_basic_type(type: SPIRType): SPIRTypeBaseType
     {
-        let base_type: SPIRTypeBaseType;
         if (type.basetype === SPIRTypeBaseType.Struct) {
-            base_type = SPIRTypeBaseType.Unknown;
+            let base_type = SPIRTypeBaseType.Unknown;
             for (let member_type of type.member_types) {
-                const member_base: SPIRTypeBaseType = this.get_common_basic_type(this.get<SPIRType>(SPIRType, member_type));
+                const member_base = this.get_common_basic_type(this.get<SPIRType>(SPIRType, member_type));
                 if (member_base === undefined)
                     return undefined;
 
@@ -440,8 +439,7 @@ export abstract class Compiler
             return base_type;
         }
         else {
-            base_type = type.basetype;
-            return base_type;
+            return type.basetype;
         }
     }
 
@@ -606,7 +604,7 @@ export abstract class Compiler
             const ptr_type_id = offset + 1;
             const var_id = offset + 2;
 
-            let sampler_type: SPIRType;
+            // let sampler_type: SPIRType;
             const sampler = this.set<SPIRType>(SPIRType, type_id);
             sampler.basetype = SPIRTypeBaseType.Sampler;
 
@@ -725,16 +723,19 @@ export abstract class Compiler
 
     protected is_break(next: number): boolean
     {
+        this.ir.block_meta[next] = this.ir.block_meta[next] || 0;
         return (this.ir.block_meta[next] & (BlockMetaFlagBits.BLOCK_META_LOOP_MERGE_BIT | BlockMetaFlagBits.BLOCK_META_MULTISELECT_MERGE_BIT)) !== 0;
     }
 
     protected is_loop_break(next: number): boolean
     {
+        this.ir.block_meta[next] = this.ir.block_meta[next] || 0;
         return (this.ir.block_meta[next] & BlockMetaFlagBits.BLOCK_META_LOOP_MERGE_BIT) !== 0;
     }
 
     protected is_conditional(next: number): boolean
     {
+        this.ir.block_meta[next] = this.ir.block_meta[next] || 0;
         return (this.ir.block_meta[next] & (BlockMetaFlagBits.BLOCK_META_SELECTION_MERGE_BIT | BlockMetaFlagBits.BLOCK_META_MULTISELECT_MERGE_BIT)) !== 0;
     }
 
@@ -830,10 +831,11 @@ export abstract class Compiler
             // first overload
             name = <string>cache_secondary;
             cache_secondary = cache_primary;
+            return this.update_name_cache(cache_primary, cache_secondary, name);
         }
 
-        if (name === null)
-            return;
+        if (name === "")
+            return name;
 
         const find_name = (n: string): boolean =>
         {
@@ -1845,6 +1847,7 @@ export abstract class Compiler
 
     protected is_continue(next: number): boolean
     {
+        this.ir.block_meta[next] = this.ir.block_meta[next] || 0;
         return (this.ir.block_meta[next] & BlockMetaFlagBits.BLOCK_META_CONTINUE_BIT) !== 0;
     }
 
@@ -3110,56 +3113,5 @@ function storage_class_is_interface(storage: StorageClass): boolean
 
         default:
             return false;
-    }
-}
-
-export function opcode_is_sign_invariant(opcode: Op): boolean
-{
-    switch (opcode) {
-        case Op.OpIEqual:
-        case Op.OpINotEqual:
-        case Op.OpISub:
-        case Op.OpIAdd:
-        case Op.OpIMul:
-        case Op.OpShiftLeftLogical:
-        case Op.OpBitwiseOr:
-        case Op.OpBitwiseXor:
-        case Op.OpBitwiseAnd:
-            return true;
-
-        default:
-            return false;
-    }
-}
-
-export function to_signed_basetype(width: number): SPIRTypeBaseType
-{
-    switch (width) {
-        case 8:
-            return SPIRTypeBaseType.SByte;
-        case 16:
-            return SPIRTypeBaseType.Short;
-        case 32:
-            return SPIRTypeBaseType.Int;
-        case 64:
-            return SPIRTypeBaseType.Int64;
-        default:
-            throw new Error("Invalid bit width.");
-    }
-}
-
-export function to_unsigned_basetype(width: number): SPIRTypeBaseType
-{
-    switch (width) {
-        case 8:
-            return SPIRTypeBaseType.UByte;
-        case 16:
-            return SPIRTypeBaseType.UShort;
-        case 32:
-            return SPIRTypeBaseType.UInt;
-        case 64:
-            return SPIRTypeBaseType.UInt64;
-        default:
-            throw new Error("Invalid bit width.");
     }
 }

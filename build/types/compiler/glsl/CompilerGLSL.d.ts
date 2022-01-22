@@ -162,12 +162,18 @@ export declare class CompilerGLSL extends Compiler {
     protected should_dereference(id: number): boolean;
     protected should_forward(id: number): boolean;
     protected to_trivial_mix_op(type: SPIRType, left: number, right: number, lerp: number): string;
+    protected emit_binary_func_op(result_type: number, result_id: number, op0: number, op1: number, op: string): void;
+    protected emit_unary_func_op(result_type: number, result_id: number, op0: number, op: string): void;
     protected emit_binary_op(result_type: number, result_id: number, op0: number, op1: number, op: string): void;
+    protected emit_unary_func_op_cast(result_type: number, result_id: number, op0: number, op: string, input_type: SPIRTypeBaseType, expected_result_type: SPIRTypeBaseType): void;
+    protected emit_binary_func_op_cast(result_type: number, result_id: number, op0: number, op1: number, op: string, input_type: SPIRTypeBaseType, skip_cast_if_equal_type: boolean): void;
+    protected emit_binary_op_cast(result_type: number, result_id: number, op0: number, op1: number, op: string, input_type: SPIRTypeBaseType, skip_cast_if_equal_type: boolean): void;
     protected binary_op_bitcast_helper(props: {
         cast_op0: string;
         cast_op1: string;
         input_type: SPIRTypeBaseType;
     }, op0: number, op1: number, skip_cast_if_equal_type: boolean): SPIRType;
+    protected emit_complex_bitcast(result_type: number, id: number, op0: number): boolean;
     protected to_ternary_expression(restype: SPIRType, select: number, true_value: number, false_value: number): string;
     protected emit_unary_op(result_type: number, result_id: number, op0: number, op: string): void;
     protected expression_is_forwarded(id: number): boolean;
@@ -197,6 +203,8 @@ export declare class CompilerGLSL extends Compiler {
     protected append_global_func_args(func: SPIRFunction, index: number, arglist: string[]): void;
     protected to_non_uniform_aware_expression(id: number): string;
     protected to_expression(id: number, register_expression_read?: boolean): string;
+    protected to_composite_constructor_expression(id: number, uses_buffer_offset: boolean): string;
+    protected to_rerolled_array_expression(base_expr: string, type: SPIRType): string;
     protected to_enclosed_expression(id: number, register_expression_read?: boolean): string;
     protected to_unpacked_expression(id: number, register_expression_read?: boolean): string;
     protected to_enclosed_unpacked_expression(id: number, register_expression_read?: boolean): string;
@@ -240,7 +248,9 @@ export declare class CompilerGLSL extends Compiler {
     protected bitcast_glsl(result_type: SPIRType, argument: number): string;
     protected bitcast_expression(target_type: SPIRTypeBaseType, args: number): string;
     protected bitcast_expression(target_type: SPIRType, expr_type: SPIRTypeBaseType, expr: string): string;
+    protected build_composite_combiner(return_type: number, elems: Array<number> | Uint32Array, length: number): string;
     protected remove_duplicate_swizzle(op: string): string;
+    protected remove_unity_swizzle(base: number, op: string): string;
     protected replace_illegal_names(keywords_?: Set<string>): void;
     protected emit_entry_point_declarations(): void;
     protected replace_fragment_output(var_: SPIRVariable): void;

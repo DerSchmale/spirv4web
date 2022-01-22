@@ -134,7 +134,7 @@ export class SPIRFunction extends IVariant
     {
         super();
         if (param0 instanceof SPIRFunction)
-            defaultCopy(this, param0);
+            defaultCopy(param0, this);
         else {
             this.return_type = param0;
             this.function_type = function_type;

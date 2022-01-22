@@ -16,7 +16,7 @@ export class SPIRCombinedImageSampler extends IVariant
     {
         super();
         if (param0 instanceof SPIRCombinedImageSampler) {
-            defaultCopy(this, param0);
+            defaultCopy(param0, this);
         }
         else {
             this.combined_type = param0;

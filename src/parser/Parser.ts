@@ -34,7 +34,7 @@ import { SPIRString } from "../common/SPIRString";
 import { SPIRUndef } from "../common/SPIRUndef";
 import { SPIRExtension, SPIRExtensionExtension } from "../common/SPIRExtension";
 import { SPIREntryPoint } from "../common/SPIREntryPoint";
-import { defaultCopy } from "../utils/defaultCopy";
+import { defaultClone, defaultCopy } from "../utils/defaultCopy";
 import { SPIRConstant } from "../common/SPIRConstant";
 import { SPIRFunctionPrototype } from "../common/SPIRFunctionPrototype";
 import { SPIRVariable } from "../common/SPIRVariable";
@@ -901,11 +901,13 @@ export class Parser
                         current_block.condition = c.self;
                         current_block.default_block = current_block.true_block;
                         current_block.terminator = SPIRBlockTerminator.MultiSelect;
+                        ir.block_meta[current_block.next_block] = ir.block_meta[current_block.next_block] || 0;
                         ir.block_meta[current_block.next_block] &= ~BlockMetaFlagBits.BLOCK_META_SELECTION_MERGE_BIT;
                         ir.block_meta[current_block.next_block] |= BlockMetaFlagBits.BLOCK_META_MULTISELECT_MERGE_BIT;
                     }
                 else
                     {
+                        ir.block_meta[current_block.next_block] = ir.block_meta[current_block.next_block] || 0;
                         ir.block_meta[current_block.next_block] &= ~BlockMetaFlagBits.BLOCK_META_SELECTION_MERGE_BIT;
                         current_block.next_block = current_block.true_block;
                         current_block.condition = 0;
@@ -949,6 +951,7 @@ export class Parser
                 }
 
                 // If we jump to next block, make it break instead since we're inside a switch case block at that point.
+                ir.block_meta[current_block.next_block] = ir.block_meta[current_block.next_block] || 0;
                 ir.block_meta[current_block.next_block] |= BlockMetaFlagBits.BLOCK_META_MULTISELECT_MERGE_BIT;
 
                 this.current_block = null;
@@ -1020,6 +1023,7 @@ export class Parser
 
                 current_block.next_block = ops[0];
                 current_block.merge = SPIRBlockMerge.MergeSelection;
+                ir.block_meta[current_block.next_block] = ir.block_meta[current_block.next_block] || 0;
                 ir.block_meta[current_block.next_block] |= BlockMetaFlagBits.BLOCK_META_SELECTION_MERGE_BIT;
 
                 if (length >= 2)
@@ -1042,7 +1046,9 @@ export class Parser
                 current_block.continue_block = ops[1];
                 current_block.merge = SPIRBlockMerge.MergeLoop;
 
+                ir.block_meta[current_block.self] = ir.block_meta[current_block.self] || 0;
                 ir.block_meta[current_block.self] |= BlockMetaFlagBits.BLOCK_META_LOOP_HEADER_BIT;
+                ir.block_meta[current_block.merge_block] = ir.block_meta[current_block.merge_block] || 0;
                 ir.block_meta[current_block.merge_block] |= BlockMetaFlagBits.BLOCK_META_LOOP_MERGE_BIT;
 
                 ir.continue_block_to_loop_header[current_block.continue_block] = <BlockID>current_block.self;
@@ -1050,8 +1056,10 @@ export class Parser
                 // Don't add loop headers to continue blocks,
                 // which would make it impossible branch into the loop header since
                 // they are treated as continues.
-                if (current_block.continue_block !== <BlockID>current_block.self)
+                if (current_block.continue_block !== <BlockID>current_block.self) {
+                    ir.block_meta[current_block.continue_block] = ir.block_meta[current_block.continue_block] || 0;
                     ir.block_meta[current_block.continue_block] |= BlockMetaFlagBits.BLOCK_META_CONTINUE_BIT;
+                }
 
                 if (length >= 3)
                 {
