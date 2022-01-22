@@ -5991,7 +5991,7 @@ export class CompilerGLSL extends Compiler
         const type = defaultClone(SPIRType, this.get<SPIRType>(SPIRType, c.constant_type));
         type.columns = 1;
 
-        const scalar_type = type;
+        const scalar_type = defaultClone(SPIRType, type);
         scalar_type.vecsize = 1;
 
         const backend = this.backend;
@@ -9911,6 +9911,7 @@ export class CompilerGLSL extends Compiler
             this.handle_invalid_expression(id);
 
         const ir = this.ir;
+
         if (ir.ids[id].get_type() === Types.TypeExpression) {
             // We might have a more complex chain of dependencies.
             // A possible scenario is that we
@@ -10088,7 +10089,7 @@ export class CompilerGLSL extends Compiler
     {
         // If we need to transpose, it will also take care of unpacking rules.
         const e = this.maybe_get<SPIRExpression>(SPIRExpression, id);
-        const need_transpose = e && e.need_transpose;
+        const need_transpose = !!e && e.need_transpose;
         const is_remapped = this.has_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID);
         const is_packed = this.has_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked);
 
@@ -13186,7 +13187,9 @@ export class CompilerGLSL extends Compiler
             type.basetype = SPIRTypeBaseType.Half;
             type.vecsize = 1;
             type.columns = 1;
-            res = this.type_to_glsl(type) + "(" + convert_to_string(float_value) + ")";
+            let res = convert_to_string(float_value);
+            if (res.indexOf(".") < 0) res += ".0";
+            res = this.type_to_glsl(type) + "(" + res + ")";
         }
 
         return res;
@@ -13245,6 +13248,8 @@ export class CompilerGLSL extends Compiler
         }
         else {
             res = convert_to_string(float_value);
+            if (res.indexOf(".") < 0)
+                res += ".0";
             if (backend.float_literal_suffix)
                 res += "f";
         }
@@ -13316,6 +13321,8 @@ export class CompilerGLSL extends Compiler
         }
         else {
             res = convert_to_string(double_value);
+            if (res.indexOf(".") < 0)
+                res += ".0";
             if (backend.double_literal_suffix)
                 res += "lf";
         }
@@ -13682,6 +13689,7 @@ export class CompilerGLSL extends Compiler
 
     protected emit_store_statement(lhs_expression: number, rhs_expression: number)
     {
+        console.log(this.to_name(lhs_expression));
         let rhs = this.to_pointer_expression(rhs_expression);
 
         // Statements to OpStore may be empty if it is a struct with zero members. Just forward the store to /dev/null.

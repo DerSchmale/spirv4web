@@ -21,6 +21,15 @@ function _clone(src: any): any
     if (Array.isArray(src)) {
         return src.map(elm => _clone(elm));
     }
+    else if (src instanceof Set) {
+        const set = new Set();
+
+        src.forEach(elm => {
+            set.add(_clone(elm));
+        });
+
+        return set;
+    }
     else {
         const type = typeof src;
         if (type === "object") {

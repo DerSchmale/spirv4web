@@ -21,6 +21,6 @@ export declare class SPIREntryPoint {
     output_vertices: number;
     model: ExecutionModel;
     geometry_passthrough: boolean;
-    constructor(self: FunctionID, execution_model: ExecutionModel, entry_name: string);
+    constructor(param0: FunctionID | SPIREntryPoint, execution_model: ExecutionModel, entry_name: string);
 }
 export {};

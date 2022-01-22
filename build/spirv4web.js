@@ -269,6 +269,13 @@ var SPIRV = (function (exports) {
         if (Array.isArray(src)) {
             return src.map(function (elm) { return _clone(elm); });
         }
+        else if (src instanceof Set) {
+            var set_1 = new Set();
+            src.forEach(function (elm) {
+                set_1.add(_clone(elm));
+            });
+            return set_1;
+        }
         else {
             var type = typeof src;
             if (type === "object") {
@@ -14878,7 +14885,7 @@ var SPIRV = (function (exports) {
         CompilerGLSL.prototype.constant_expression_vector = function (c, vector) {
             var type = defaultClone(SPIRType, this.get(SPIRType, c.constant_type));
             type.columns = 1;
-            var scalar_type = type;
+            var scalar_type = defaultClone(SPIRType, type);
             scalar_type.vecsize = 1;
             var backend = this.backend;
             var res = "";
@@ -18341,7 +18348,7 @@ var SPIRV = (function (exports) {
             if (register_expression_read === void 0) { register_expression_read = true; }
             // If we need to transpose, it will also take care of unpacking rules.
             var e = this.maybe_get(SPIRExpression, id);
-            var need_transpose = e && e.need_transpose;
+            var need_transpose = !!e && e.need_transpose;
             var is_remapped = this.has_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID);
             var is_packed = this.has_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked);
             if (!need_transpose && (is_remapped || is_packed)) {
@@ -20886,7 +20893,10 @@ var SPIRV = (function (exports) {
                 type.basetype = SPIRTypeBaseType.Half;
                 type.vecsize = 1;
                 type.columns = 1;
-                res = this.type_to_glsl(type) + "(" + convert_to_string(float_value) + ")";
+                var res_1 = convert_to_string(float_value);
+                if (res_1.indexOf(".") < 0)
+                    res_1 += ".0";
+                res_1 = this.type_to_glsl(type) + "(" + res_1 + ")";
             }
             return res;
         };
@@ -20938,6 +20948,8 @@ var SPIRV = (function (exports) {
             }
             else {
                 res = convert_to_string(float_value);
+                if (res.indexOf(".") < 0)
+                    res += ".0";
                 if (backend.float_literal_suffix)
                     res += "f";
             }
@@ -21000,6 +21012,8 @@ var SPIRV = (function (exports) {
             }
             else {
                 res = convert_to_string(double_value);
+                if (res.indexOf(".") < 0)
+                    res += ".0";
                 if (backend.double_literal_suffix)
                     res += "lf";
             }
@@ -21290,6 +21304,7 @@ var SPIRV = (function (exports) {
                 this.has_member_decoration(backed_type.self, 0, Decoration.DecorationOffset);
         };
         CompilerGLSL.prototype.emit_store_statement = function (lhs_expression, rhs_expression) {
+            console.log(this.to_name(lhs_expression));
             var rhs = this.to_pointer_expression(rhs_expression);
             // Statements to OpStore may be empty if it is a struct with zero members. Just forward the store to /dev/null.
             if (rhs !== "") {
