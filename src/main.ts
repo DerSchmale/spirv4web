@@ -7,10 +7,6 @@ export enum Version
     WebGL2 = 300
 }
 
-// TODO:
-//  - for loops don't contain ++i
-//  - implement more ops
-
 export function compile(data: ArrayBuffer, version: Version): string
 {
     const args: Args = new Args();

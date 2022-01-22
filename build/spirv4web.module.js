@@ -13733,7 +13733,6 @@ var CompilerGLSL = /** @class */ (function (_super) {
             var var_ = this.get(SPIRVariable, var_id);
             rearm_dominated_variables[i] = var_.deferred_declaration;
         }
-        console.log(this.block_is_loop_candidate(block, SPIRBlockMethod.MergeToSelectForLoop));
         // This is the method often used by spirv-opt to implement loops.
         // The loop header goes straight into the continue block.
         // However, don't attempt this on ESSL 1.0, because if a loop variable is used in a continue block,
@@ -13764,11 +13763,13 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // This is the newer loop behavior in glslang which branches from Loop header directly to
         // a new block, which in turn has a OpBranchSelection without a selection merge.
         else if (this.block_is_loop_candidate(block, SPIRBlockMethod.MergeToDirectForLoop)) {
+            console.log("BEGIN FOR");
             this.flush_undeclared_variables(block);
             if (this.attempt_emit_loop_header(block, SPIRBlockMethod.MergeToDirectForLoop)) {
                 skip_direct_branch = true;
                 emitted_loop_header_variables = true;
             }
+            console.log("END FOR");
         }
         else if (continue_type === SPIRBlockContinueBlockType.DoWhileLoop) {
             this.flush_undeclared_variables(block);
@@ -15346,7 +15347,6 @@ var CompilerGLSL = /** @class */ (function (_super) {
         return res;
     };
     CompilerGLSL.prototype.statement = function () {
-        var _a;
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
@@ -15358,7 +15358,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             return;
         }
         if (this.redirect_statement) {
-            this.redirect_statement = (_a = this.redirect_statement).concat.apply(_a, args);
+            this.redirect_statement.push(args.join(""));
             this.statement_count++;
         }
         else {
@@ -17101,6 +17101,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             // We can then take the condition expression and create a for (; cond ; ) { body; } structure instead.
             this.emit_block_instructions(child);
             var condition_is_temporary = !this.forced_temporaries.has(child.condition);
+            // console.log(this.buffer.str());
             if (current_count === this.statement_count && condition_is_temporary) {
                 var target_block = child.true_block;
                 switch (continue_type) {
@@ -17114,7 +17115,9 @@ var CompilerGLSL = /** @class */ (function (_super) {
                             condition = "!" + this.enclose_expression(condition);
                             target_block = child.false_block;
                         }
+                        console.log("BEGIN CONTINUE BLOCK");
                         var continue_block = this.emit_continue_block(block.continue_block, false, false);
+                        console.log("END CONTINUE BLOCK");
                         this.emit_block_hints(block);
                         this.statement("for (", initializer, "; ", condition, "; ", continue_block, ")");
                         break;
@@ -17577,7 +17580,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             props.cast_op1 = this.to_enclosed_unpacked_expression(op1);
             props.input_type = type0.basetype;
         }
-        return expected_type;
+        return defaultClone(SPIRType, expected_type);
     };
     CompilerGLSL.prototype.emit_complex_bitcast = function (result_type, id, op0) {
         // Some bitcasts may require complex casting sequences, and are implemented here.
@@ -20648,22 +20651,22 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (ir.addressing_model === AddressingModel.AddressingModelPhysicalStorageBuffer64EXT)
             this.analyze_non_block_pointer_types();
         var pass_count = 0;
-        // try {
-        do {
-            if (pass_count >= 3)
-                throw new Error("Over 3 compilation loops detected. Must be a bug!");
-            this.reset();
-            this.buffer.reset();
-            this.emit_header();
-            this.emit_resources();
-            this.emit_extension_workarounds(this.get_execution_model());
-            this.emit_function(this.get(SPIRFunction, ir.default_entry_point), new Bitset());
-            pass_count++;
-        } while (this.is_forcing_recompilation());
-        // }
-        // catch(err) {
-        //     console.error(err);
-        // }
+        try {
+            do {
+                if (pass_count >= 3)
+                    throw new Error("Over 3 compilation loops detected. Must be a bug!");
+                this.reset();
+                this.buffer.reset();
+                this.emit_header();
+                this.emit_resources();
+                this.emit_extension_workarounds(this.get_execution_model());
+                this.emit_function(this.get(SPIRFunction, ir.default_entry_point), new Bitset());
+                pass_count++;
+            } while (this.is_forcing_recompilation());
+        }
+        catch (err) {
+            console.error(err);
+        }
         /*
         // Implement the interlocked wrapper function at the end.
         // The body was implemented in lieu of main().
@@ -22042,7 +22045,6 @@ var Version;
     Version[Version["WebGL2"] = 300] = "WebGL2";
 })(Version || (Version = {}));
 // TODO:
-//  - for loops don't contain ++i
 //  - implement more ops
 function compile(data, version) {
     var args = new Args();
