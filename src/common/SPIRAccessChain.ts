@@ -38,6 +38,7 @@ export class SPIRAccessChain extends IVariant
         }
         else {
             this.basetype = param0;
+            this.storage = storage;
             this.base = base;
             this.dynamic_index = dynamic_index;
             this.static_index = static_index;

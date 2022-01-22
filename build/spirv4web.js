@@ -2468,7 +2468,7 @@ var SPIRV = (function (exports) {
         SPIRConstant.prototype._constructArray = function (constant_type, elements, num_elements, specialized) {
             this.constant_type = constant_type;
             this.specialization = specialized;
-            this.subconstants = elements;
+            this.subconstants = elements.slice();
         };
         // Construct scalar (32-bit).
         SPIRConstant.prototype._constructScalar32 = function (constant_type, v0, specialized) {
@@ -2920,6 +2920,7 @@ var SPIRV = (function (exports) {
             }
             else {
                 _this.basetype = param0;
+                _this.storage = storage;
                 _this.base = base;
                 _this.dynamic_index = dynamic_index;
                 _this.static_index = static_index;
@@ -3840,7 +3841,7 @@ var SPIRV = (function (exports) {
     // SPIREntryPoint is not a variant since its IDs are used to decorate OpFunction,
     // so in order to avoid conflicts, we can't stick them in the ids array.
     var SPIREntryPoint = /** @class */ (function () {
-        function SPIREntryPoint(self, execution_model, entry_name) {
+        function SPIREntryPoint(param0, execution_model, entry_name) {
             this.self = 0;
             this.interface_variables = [];
             this.flags = new Bitset();
@@ -3849,10 +3850,15 @@ var SPIRV = (function (exports) {
             this.output_vertices = 0;
             this.model = ExecutionModel.ExecutionModelMax;
             this.geometry_passthrough = false;
-            this.self = self;
-            this.name = entry_name;
-            this.orig_name = entry_name;
-            this.model = execution_model;
+            if (param0 instanceof SPIREntryPoint) {
+                defaultCopy(param0, this);
+            }
+            else {
+                this.self = param0;
+                this.name = entry_name;
+                this.orig_name = entry_name;
+                this.model = execution_model;
+            }
         }
         return SPIREntryPoint;
     }());

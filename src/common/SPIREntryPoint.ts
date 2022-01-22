@@ -1,6 +1,6 @@
 import { ExecutionModel } from "../spirv";
 import { Bitset } from "./Bitset";
-import { defaultClone } from "../utils/defaultCopy";
+import { defaultClone, defaultCopy } from "../utils/defaultCopy";
 
 class SPIREntryPointWorkgroupSize
 {
@@ -31,11 +31,16 @@ export class SPIREntryPoint
     model: ExecutionModel = ExecutionModel.ExecutionModelMax;
     geometry_passthrough: boolean = false;
 
-    constructor(self: FunctionID, execution_model: ExecutionModel, entry_name: string)
+    constructor(param0: FunctionID | SPIREntryPoint, execution_model: ExecutionModel, entry_name: string)
     {
-        this.self = self;
-        this.name = entry_name;
-        this.orig_name = entry_name;
-        this.model = execution_model;
+        if (param0 instanceof SPIREntryPoint) {
+            defaultCopy(param0, this);
+        }
+        else {
+            this.self = param0;
+            this.name = entry_name;
+            this.orig_name = entry_name;
+            this.model = execution_model;
+        }
     }
 }

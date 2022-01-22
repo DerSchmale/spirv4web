@@ -323,7 +323,7 @@ export class SPIRConstant extends IVariant
     {
         this.constant_type = constant_type;
         this.specialization = specialized;
-        this.subconstants = elements;
+        this.subconstants = elements.slice();
     }
 
     // Construct scalar (32-bit).
