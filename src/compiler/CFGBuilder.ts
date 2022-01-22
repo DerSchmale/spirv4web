@@ -24,7 +24,7 @@ export class CFGBuilder extends OpcodeHandler
 
     follow_function_call(func: SPIRFunction): boolean
     {
-        if (!this.function_cfgs[func.self])
+        if (!this.function_cfgs.hasOwnProperty(func.self))
         {
             this.function_cfgs[func.self] = new CFG(this.compiler, func);
             return true;

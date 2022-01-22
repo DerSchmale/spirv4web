@@ -6,4 +6,9 @@ export class VisitOrder
     {
         return this.v;
     }
+
+    set(value: number)
+    {
+        this.v = value;
+    }
 }

@@ -1934,12 +1934,12 @@ export abstract class Compiler
         const handler = new CFGBuilder(this);
         handler.function_cfgs[ir.default_entry_point] = new CFG(this, this.get<SPIRFunction>(SPIRFunction, ir.default_entry_point));
         this.traverse_all_reachable_opcodes(this.get<SPIRFunction>(SPIRFunction, ir.default_entry_point), handler);
-        const function_cfgs = this.function_cfgs = handler.function_cfgs;
-        const single_function = count(function_cfgs) <= 1;
+        this.function_cfgs = handler.function_cfgs;
+        const single_function = count(this.function_cfgs) <= 1;
 
-        function_cfgs.forEach((f, i) =>
+        this.function_cfgs.forEach((f_second, f_first) =>
         {
-            const func = this.get<SPIRFunction>(SPIRFunction, i);
+            const func = this.get<SPIRFunction>(SPIRFunction, f_first);
             const scope_handler = new AnalyzeVariableScopeAccessHandler(this, func);
             this.analyze_variable_scope(func, scope_handler);
             this.find_function_local_luts(func, scope_handler, single_function);
@@ -1995,7 +1995,7 @@ export abstract class Compiler
                 continue;
 
             // Opaque argument types are always in
-            let potential_preserve;
+            let potential_preserve: boolean;
             switch (type.basetype) {
                 case SPIRTypeBaseType.Sampler:
                 case SPIRTypeBaseType.Image:
@@ -2068,7 +2068,7 @@ export abstract class Compiler
         this.traverse_all_reachable_opcodes(entry, handler);
 
         const ir = this.ir;
-        const cfg = this.function_cfgs[entry.self];
+        const cfg = maplike_get(CFG, this.function_cfgs, entry.self);
 
         // Analyze if there are parameters which need to be implicitly preserved with an "in" qualifier.
         this.analyze_parameter_preservation(entry, cfg, handler.accessed_variables_to_block, handler.complete_write_variables_to_block);
@@ -2081,7 +2081,7 @@ export abstract class Compiler
             const block = this.get<SPIRBlock>(SPIRBlock, block_id);
 
             const itrSecond = ir.continue_block_to_loop_header[block_id];
-            if (itrSecond !== undefined && itrSecond !== block_id) {
+            if (!!itrSecond && itrSecond !== block_id) {
                 // Continue block might be unreachable in the CFG, but we still like to know the loop dominator.
                 // Edge case is when continue block is also the loop header, don't set the dominator in this case.
                 block.loop_dominator = itrSecond;
@@ -2096,15 +2096,15 @@ export abstract class Compiler
         }
 
         // For each variable which is statically accessed.
-        handler.accessed_variables_to_block.forEach((varSecond, varFirst) =>
+        handler.accessed_variables_to_block.forEach((var_second, var_first) =>
         {
             // Only deal with variables which are considered local variables in this function.
-            if (entry.local_variables.indexOf(<VariableID>(varFirst)) < 0)
+            if (entry.local_variables.indexOf(var_first) < 0)
                 return;
 
             const builder = new DominatorBuilder(cfg);
-            const blocks = varSecond;
-            const type = this.expression_type(varFirst);
+            const blocks = var_second;
+            const type = this.expression_type(var_first);
 
             // Figure out which block is dominating all accesses of those variables.
             blocks.forEach(block =>
@@ -2118,18 +2118,18 @@ export abstract class Compiler
                     // The continue block is dominated by the inner part of the loop, which does not make sense in high-level
                     // language output because it will be declared before the body,
                     // so we will have to lift the dominator up to the relevant loop header instead.
-                    builder.add_block(ir.continue_block_to_loop_header[block]);
+                    builder.add_block(maplike_get(0, ir.continue_block_to_loop_header, block));
 
                     // Arrays or structs cannot be loop variables.
                     if (type.vecsize === 1 && type.columns === 1 && type.basetype !== SPIRTypeBaseType.Struct && type.array.length === 0) {
                         // The variable is used in multiple continue blocks, this is not a loop
                         // candidate, signal that by setting block to -1u.
-                        const potential = maplike_get<number>(0, potential_loop_variables, varFirst);
+                        const potential: number = maplike_get(0, potential_loop_variables, var_first);
 
                         if (potential === 0)
-                            potential_loop_variables[varFirst] = block;
+                            potential_loop_variables[var_first] = block;
                         else
-                            potential_loop_variables[varFirst] = ~0;
+                            potential_loop_variables[var_first] = -1;
                     }
                 }
                 builder.add_block(block);
@@ -2147,10 +2147,10 @@ export abstract class Compiler
             // Should that fail, we look for the outermost loop header and tack on an access there.
             // Phi nodes cannot have this problem.
             if (dominating_block) {
-                const variable = this.get<SPIRVariable>(SPIRVariable, varFirst);
+                const variable = this.get<SPIRVariable>(SPIRVariable, var_first);
                 if (!variable.phi_variable) {
                     let block = this.get<SPIRBlock>(SPIRBlock, dominating_block);
-                    const preserve = this.may_read_undefined_variable_in_block(block, varFirst);
+                    const preserve = this.may_read_undefined_variable_in_block(block, var_first);
                     if (preserve) {
                         // Find the outermost loop scope.
                         while (block.loop_dominator !== <BlockID>(SPIRBlock.NoDominator))
@@ -2168,20 +2168,20 @@ export abstract class Compiler
             // will be completely eliminated.
             if (dominating_block) {
                 const block = this.get<SPIRBlock>(SPIRBlock, dominating_block);
-                block.dominated_variables.push(varFirst);
-                this.get<SPIRVariable>(SPIRVariable, varFirst).dominator = dominating_block;
+                block.dominated_variables.push(var_first);
+                this.get<SPIRVariable>(SPIRVariable, var_first).dominator = dominating_block;
             }
         });
 
-        handler.accessed_temporaries_to_block.forEach((varSecond, varFirst) =>
+        handler.accessed_temporaries_to_block.forEach((var_second, var_first) =>
         {
-            if (!handler.result_id_to_type.hasOwnProperty(varFirst)) {
+            if (!handler.result_id_to_type.hasOwnProperty(var_first)) {
                 // We found a false positive ID being used, ignore.
                 // This should probably be an assert.
                 return;
             }
 
-            const itrSecond = handler.result_id_to_type[varFirst];
+            const itrSecond = handler.result_id_to_type[var_first];
 
             // There is no point in doing domination analysis for opaque types.
             const type = this.get<SPIRType>(SPIRType, itrSecond);
@@ -2193,7 +2193,7 @@ export abstract class Compiler
             let used_in_header_hoisted_continue_block = false;
 
             // Figure out which block is dominating all accesses of those temporaries.
-            const blocks = varSecond;
+            const blocks = var_second;
             blocks.forEach(block =>
             {
                 builder.add_block(block);
@@ -2202,7 +2202,7 @@ export abstract class Compiler
                     // The risk here is that inner loop can dominate the continue block.
                     // Any temporary we access in the continue block must be declared before the loop.
                     // This is moot for complex loops however.
-                    const loop_header_block = this.get<SPIRBlock>(SPIRBlock, ir.continue_block_to_loop_header[block]);
+                    const loop_header_block = this.get<SPIRBlock>(SPIRBlock, maplike_get(0, ir.continue_block_to_loop_header, block));
                     console.assert(loop_header_block.merge === SPIRBlockMerge.MergeLoop);
                     builder.add_block(loop_header_block.self);
                     used_in_header_hoisted_continue_block = true;
@@ -2223,7 +2223,7 @@ export abstract class Compiler
                 const first_use_is_dominator = blocks.has(dominating_block);
 
                 if (!first_use_is_dominator || force_temporary) {
-                    if (handler.access_chain_expressions.has(varFirst)) {
+                    if (handler.access_chain_expressions.has(var_first)) {
                         // Exceptionally rare case.
                         // We cannot declare temporaries of access chains (except on MSL perhaps with pointers).
                         // Rather than do that, we force the indexing expressions to be declared in the right scope by
@@ -2246,11 +2246,11 @@ export abstract class Compiler
                         // This should be very rare, but if we try to declare a temporary inside a loop,
                         // and that temporary is used outside the loop as well (spirv-opt inliner likes this)
                         // we should actually emit the temporary outside the loop.
-                        this.hoisted_temporaries.add(varFirst);
-                        this.forced_temporaries.add(varFirst);
+                        this.hoisted_temporaries.add(var_first);
+                        this.forced_temporaries.add(var_first);
 
                         const block_temporaries = this.get<SPIRBlock>(SPIRBlock, dominating_block).declare_temporary;
-                        block_temporaries.push(new Pair(handler.result_id_to_type[varFirst], varFirst));
+                        block_temporaries.push(new Pair(maplike_get(0, handler.result_id_to_type, var_first), var_first));
                     }
                 }
                 else if (blocks.size > 1) {
@@ -2260,7 +2260,7 @@ export abstract class Compiler
                     // What we need to do is hoist the temporaries outside the for (;;) {} block in case the header block
                     // declares the temporary.
                     const block_temporaries = this.get<SPIRBlock>(SPIRBlock, dominating_block).potential_declare_temporary;
-                    block_temporaries.push(new Pair(handler.result_id_to_type[varFirst], varFirst));
+                    block_temporaries.push(new Pair(maplike_get(0, handler.result_id_to_type, var_first), var_first));
                 }
             }
         });
@@ -2275,11 +2275,11 @@ export abstract class Compiler
             const block = loop_variable_second;
 
             // The variable was accessed in multiple continue blocks, ignore.
-            if (block === <BlockID>(~0) || block === <BlockID>(0))
+            if (block === -1 || block === 0)
                 return;
 
             // Dead code.
-            if (dominator === <ID>(0))
+            if (dominator === 0)
                 return;
 
             let header: BlockID = 0;
@@ -2357,7 +2357,7 @@ export abstract class Compiler
 
     find_function_local_luts(entry: SPIRFunction, handler: AnalyzeVariableScopeAccessHandler, single_function: boolean)
     {
-        const cfg = this.function_cfgs[entry.self];
+        const cfg = maplike_get(CFG, this.function_cfgs, entry.self);
         const ir = this.ir;
 
         // For each variable which is statically accessed.
@@ -2402,11 +2402,11 @@ export abstract class Compiler
                 if (handler.partial_write_variables_to_block.hasOwnProperty(var_.self))
                     return;
 
-                const itr_second = handler.complete_write_variables_to_block[var_.self];
                 // No writes?
-                if (!itr_second)
+                if (!handler.complete_write_variables_to_block.hasOwnProperty(var_.self))
                     return;
 
+                const itr_second = handler.complete_write_variables_to_block[var_.self];
 
                 // We write to the variable in more than one block.
                 const write_blocks = itr_second;
@@ -2539,7 +2539,7 @@ export abstract class Compiler
         }
     }
 
-    instruction_to_result_type(result: { result_type: number, result_id: number }, op: Op, args: Uint32Array, length: number): boolean
+    instruction_to_result_type(op: Op, args: Uint32Array, length: number): { result_type: number, result_id: number }
     {
         // Most instructions follow the pattern of <result-type> <result-id> <arguments>.
         // There are some exceptions.
@@ -2565,16 +2565,14 @@ export abstract class Compiler
             case Op.OpGroupCommitWritePipe:
             case Op.OpLine:
             case Op.OpNoLine:
-                return false;
+                return null;
 
             default:
                 if (length > 1 && this.maybe_get<SPIRType>(SPIRType, args[0]) !== null) {
-                    result.result_type = args[0];
-                    result.result_id = args[1];
-                    return true;
+                    return { result_type: args[0], result_id: args[1] };
                 }
                 else
-                    return false;
+                    return null;
         }
     }
 
@@ -3074,7 +3072,7 @@ function exists_unaccessed_path_to_return(cfg: CFG, block: number, blocks: Set<n
 
     // If any of our successors have a path to the end, there exists a path from block.
     for (let succ of cfg.get_succeeding_edges(block)) {
-        if (visit_cache.has(succ)) {
+        if (!visit_cache.has(succ)) {
             if (exists_unaccessed_path_to_return(cfg, succ, blocks, visit_cache))
                 return true;
             visit_cache.add(succ);

@@ -68,12 +68,12 @@ export class CombinedImageSamplerUsageHandler extends OpcodeHandler
         // Traverse the variable dependency hierarchy and tag everything in its path with comparison ids.
         this.comparison_ids.add(id);
 
-        maplike_get(Set, this.dependency_hierarchy, id).forEach(dep_id => this.add_hierarchy_to_comparison_ids(dep_id));
+        maplike_get<Set<number>>(Set, this.dependency_hierarchy, id).forEach(dep_id => this.add_hierarchy_to_comparison_ids(dep_id));
     }
 
     add_dependency(dst: number, src: number)
     {
-        maplike_get(Set, this.dependency_hierarchy, dst).add(src);
+        maplike_get<Set<number>>(Set, this.dependency_hierarchy, dst).add(src);
         // Propagate up any comparison state if we're loading from one such variable.
         if (this.comparison_ids.has(src))
             this.comparison_ids.add(dst);

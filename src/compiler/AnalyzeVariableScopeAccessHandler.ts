@@ -46,7 +46,7 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
         // this will be a variable write when we branch,
         // so we need to track access to these variables as well to
         // have a complete picture.
-        const test_phi = to =>
+        const test_phi = (to: number) =>
         {
             const next = compiler.get<SPIRBlock>(SPIRBlock, to);
             for (const phi of next.phi_variables) {
@@ -92,14 +92,16 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
             return;
 
         // Access chains used in multiple blocks mean hoisting all the variables used to construct the access chain as not all backends can use pointers.
-        const itr_second = this.access_chain_children[id];
-        if (itr_second)
+
+        if (this.access_chain_children.hasOwnProperty(id)) {
+            const itr_second = this.access_chain_children[id];
             itr_second.forEach(child_id => this.notify_variable_access(child_id, block));
+        }
 
         if (this.id_is_phi_variable(id))
-            maplike_get<Set<number>>(Set, this.accessed_variables_to_block, id).add(block);
+            maplike_get(Set, this.accessed_variables_to_block, id).add(block);
         else if (this.id_is_potential_temporary(id))
-            maplike_get<Set<number>>(Set, this.accessed_temporaries_to_block, id).add(block);
+            maplike_get(Set, this.accessed_temporaries_to_block, id).add(block);
     }
 
     id_is_phi_variable(id: number): boolean
@@ -107,7 +109,7 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
         if (id >= this.compiler.get_current_id_bound())
             return false;
         const var_ = this.compiler.maybe_get<SPIRVariable>(SPIRVariable, id);
-        return var_ && var_.phi_variable;
+        return !!var_ && var_.phi_variable;
     }
 
     id_is_potential_temporary(id: number): boolean
@@ -123,8 +125,8 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
     {
         const compiler = this.compiler;
         // Keep track of the types of temporaries, so we can hoist them out as necessary.
-        let result = { result_type: 0, result_id: 0 };
-        if (compiler.instruction_to_result_type(result, op, args, length))
+        const result = compiler.instruction_to_result_type(op, args, length);
+        if (result)
             this.result_id_to_type[result.result_id] = result.result_type;
 
         switch (op) {
@@ -138,7 +140,7 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
                 // If we store through an access chain, we have a partial write.
                 if (var_) {
                     maplike_get(Set, this.accessed_variables_to_block, var_.self).add(this.current_block.self);
-                    if (var_.self == ptr)
+                    if (var_.self === ptr)
                         maplike_get(Set, this.complete_write_variables_to_block, var_.self).add(this.current_block.self);
                     else
                         maplike_get(Set, this.partial_write_variables_to_block, var_.self).add(this.current_block.self);

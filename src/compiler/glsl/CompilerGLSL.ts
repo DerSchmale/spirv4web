@@ -4498,7 +4498,7 @@ export class CompilerGLSL extends Compiler
         }
 
         // Remember deferred declaration state. We will restore it before returning.
-        const rearm_dominated_variables: boolean[] = new Array(block.dominated_variables.length);
+        const rearm_dominated_variables: boolean[] = [];
         for (let i = 0; i < block.dominated_variables.length; i++) {
             const var_id = block.dominated_variables[i];
             const var_ = this.get<SPIRVariable>(SPIRVariable, var_id);
@@ -4591,8 +4591,8 @@ export class CompilerGLSL extends Compiler
         }
 
         this.flush_undeclared_variables(block);
-        let emit_next_block = true;
 
+        let emit_next_block = true;
         // Handle end of block.
         switch (block.terminator) {
             case SPIRBlockTerminator.Direct:
@@ -4782,7 +4782,7 @@ export class CompilerGLSL extends Compiler
                             // If none of those literals match, we flush Phi ...
                             const conditions: string[] = [];
                             for (let j = 0; j < num_blocks; j++) {
-                                const negative_literals = maplike_get(Array, case_constructs, block_declaration_order[j]);
+                                const negative_literals = maplike_get<bigint[]>(Array, case_constructs, block_declaration_order[j]);
                                 for (let case_label of negative_literals)
                                     conditions.push(this.to_enclosed_expression(block.condition) + " !== " + to_case_label(case_label, type.width, unsigned_case));
                             }
@@ -5125,10 +5125,15 @@ export class CompilerGLSL extends Compiler
 
     protected statement_inner(...args)
     {
+        let str = ""
         for (let i = 0; i < args.length; ++i) {
+            str += args[i];
             this.buffer.append(args[i]);
             this.statement_count++;
         }
+
+        if (str === "int i = 0;")
+            console.log(new Error().stack);
     }
 
     // The optional id parameter indicates the object whose type we are trying
@@ -8230,7 +8235,7 @@ export class CompilerGLSL extends Compiler
         const { ir } = this;
 
         // Stamp out all blocks one after each other.
-        while ((maplike_get(Meta, ir.block_meta, block.self) & BlockMetaFlagBits.BLOCK_META_LOOP_HEADER_BIT) === 0) {
+        while ((maplike_get(0, ir.block_meta, block.self) & BlockMetaFlagBits.BLOCK_META_LOOP_HEADER_BIT) === 0) {
             // Write out all instructions we have in this block.
             this.emit_block_instructions(block);
 
@@ -8485,7 +8490,7 @@ export class CompilerGLSL extends Compiler
         const { ir } = this;
 
         // This is only a continue if we branch to our loop dominator.
-        if ((maplike_get(Meta, ir.block_meta, to) & BlockMetaFlagBits.BLOCK_META_LOOP_HEADER_BIT) !== 0 && this.get<SPIRBlock>(SPIRBlock, from).loop_dominator === to) {
+        if ((ir.block_meta[to] & BlockMetaFlagBits.BLOCK_META_LOOP_HEADER_BIT) !== 0 && this.get<SPIRBlock>(SPIRBlock, from).loop_dominator === to) {
             // This can happen if we had a complex continue block which was emitted.
             // Once the continue block tries to branch to the loop header, just emit continue;
             // and end the chain here.
@@ -8527,7 +8532,7 @@ export class CompilerGLSL extends Compiler
             // 2.11: - the merge block declared by a header block cannot be a merge block declared by any other header block
             //       - each header block must strictly dominate its merge block, unless the merge block is unreachable in the CFG
             // If we are branching to a merge block, we must be inside a construct which dominates the merge block.
-            const block_meta = maplike_get(Meta, ir.block_meta, to);
+            const block_meta = maplike_get(0, ir.block_meta, to);
             const branching_to_merge =
                 (block_meta & (BlockMetaFlagBits.BLOCK_META_SELECTION_MERGE_BIT | BlockMetaFlagBits.BLOCK_META_MULTISELECT_MERGE_BIT |
                     BlockMetaFlagBits.BLOCK_META_LOOP_MERGE_BIT)) !== 0;
@@ -13689,7 +13694,6 @@ export class CompilerGLSL extends Compiler
 
     protected emit_store_statement(lhs_expression: number, rhs_expression: number)
     {
-        console.log(this.to_name(lhs_expression));
         let rhs = this.to_pointer_expression(rhs_expression);
 
         // Statements to OpStore may be empty if it is a struct with zero members. Just forward the store to /dev/null.
