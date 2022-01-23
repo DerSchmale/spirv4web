@@ -58,6 +58,7 @@ import { Dim } from "../spirv/Dim";
 import { Op } from "../spirv/Op";
 import { ExecutionMode } from "../spirv/ExecutionMode";
 import { ImageFormat } from "../spirv/ImageFormat";
+import { SpecializationConstant } from "./SpecializationConstant";
 
 type VariableTypeRemapCallback = (type: SPIRType, name: string, type_name: string) => string;
 
@@ -583,6 +584,80 @@ export abstract class Compiler
     get_execution_model(): ExecutionModel
     {
         return this.get_entry_point().model;
+    }
+
+    // In SPIR-V, the compute work group size can be represented by a constant vector, in which case
+    // the LocalSize execution mode is ignored.
+    //
+    // This constant vector can be a constant vector, specialization constant vector, or partly specialized constant vector.
+    // To modify and query work group dimensions which are specialization constants, SPIRConstant values must be modified
+    // directly via get_constant() rather than using LocalSize directly. This function will return which constants should be modified.
+    //
+    // To modify dimensions which are *not* specialization constants, set_execution_mode should be used directly.
+    // Arguments to set_execution_mode which are specialization constants are effectively ignored during compilation.
+    // NOTE: This is somewhat different from how SPIR-V works. In SPIR-V, the constant vector will completely replace LocalSize,
+    // while in this interface, LocalSize is only ignored for specialization constants.
+    //
+    // The specialization constant will be written to x, y and z arguments.
+    // If the component is not a specialization constant, a zeroed out struct will be written.
+    // The return value is the constant ID of the builtin WorkGroupSize, but this is not expected to be useful
+    // for most use cases.
+    // If LocalSizeId is used, there is no uvec3 value representing the workgroup size, so the return value is 0,
+    // but x, y and z are written as normal if the components are specialization constants.
+    protected get_work_group_size_specialization_constants(x: SpecializationConstant, y: SpecializationConstant, z: SpecializationConstant)
+    {
+        const execution = this.get_entry_point();
+        x.constant_id = y.constant_id = z.constant_id = 0;
+        x.id = y.id = z.id = 0;
+
+        // WorkgroupSize builtin takes precedence over LocalSize / LocalSizeId.
+        if (execution.workgroup_size.constant !== 0)
+        {
+            const c = this.get<SPIRConstant>(SPIRConstant, execution.workgroup_size.constant);
+
+            if (c.m.c[0].id[0] !== 0)
+            {
+                x.id = c.m.c[0].id[0];
+                x.constant_id = this.get_decoration(c.m.c[0].id[0], Decoration.DecorationSpecId);
+            }
+
+            if (c.m.c[0].id[1] !== 0)
+            {
+                y.id = c.m.c[0].id[1];
+                y.constant_id = this.get_decoration(c.m.c[0].id[1], Decoration.DecorationSpecId);
+            }
+
+            if (c.m.c[0].id[2] !== 0)
+            {
+                z.id = c.m.c[0].id[2];
+                z.constant_id = this.get_decoration(c.m.c[0].id[2], Decoration.DecorationSpecId);
+            }
+        }
+        else if (execution.flags.get(ExecutionMode.ExecutionModeLocalSizeId))
+        {
+            const cx = this.get<SPIRConstant>(SPIRConstant, execution.workgroup_size.id_x);
+            if (cx.specialization)
+            {
+                x.id = execution.workgroup_size.id_x;
+                x.constant_id = this.get_decoration(execution.workgroup_size.id_x, Decoration.DecorationSpecId);
+            }
+
+            const cy = this.get<SPIRConstant>(SPIRConstant, execution.workgroup_size.id_y);
+            if (cy.specialization)
+            {
+                y.id = execution.workgroup_size.id_y;
+                y.constant_id = this.get_decoration(execution.workgroup_size.id_y, Decoration.DecorationSpecId);
+            }
+
+            const cz = this.get<SPIRConstant>(SPIRConstant, execution.workgroup_size.id_z);
+            if (cz.specialization)
+            {
+                z.id = execution.workgroup_size.id_z;
+                z.constant_id = this.get_decoration(execution.workgroup_size.id_z, Decoration.DecorationSpecId);
+            }
+        }
+
+        return execution.workgroup_size.constant;
     }
 
     // Analyzes all OpImageFetch (texelFetch) opcodes and checks if there are instances where

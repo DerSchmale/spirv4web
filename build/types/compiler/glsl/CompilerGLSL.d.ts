@@ -75,8 +75,9 @@ export declare class CompilerGLSL extends Compiler {
     protected emit_function(func: SPIRFunction, return_flags: Bitset): void;
     protected has_extension(ext: string): boolean;
     protected require_extension_internal(ext: string): void;
+    protected emit_instruction(instruction: Instruction): void;
     protected emit_block_instructions(block: SPIRBlock): void;
-    emit_instruction(instruction: Instruction): void;
+    protected emit_glsl_op(result_type: number, id: number, eop: number, args: number[] | Uint32Array, length: number): void;
     protected emit_header(): void;
     protected emit_sampled_image_op(result_type: number, result_id: number, image_id: number, samp_id: number): void;
     protected emit_texture_op(i: Instruction, sparse: boolean): void;
@@ -168,6 +169,7 @@ export declare class CompilerGLSL extends Compiler {
     protected should_forward(id: number): boolean;
     protected should_suppress_usage_tracking(id: number): boolean;
     protected emit_mix_op(result_type: number, id: number, left: number, right: number, lerp: number): void;
+    protected emit_nminmax_op(result_type: number, id: number, op0: number, op1: number, op: GLSLstd450): void;
     protected to_trivial_mix_op(type: SPIRType, left: number, right: number, lerp: number): string;
     protected emit_trinary_func_op(result_type: number, result_id: number, op0: number, op1: number, op2: number, op: string): void;
     protected emit_binary_func_op(result_type: number, result_id: number, op0: number, op1: number, op: string): void;
@@ -324,7 +326,7 @@ export declare class CompilerGLSL extends Compiler {
     protected expression_is_non_value_type_array(ptr: number): boolean;
     protected emit_store_statement(lhs_expression: number, rhs_expression: number): void;
     protected get_integer_width_for_instruction(instr: Instruction): number;
-    protected get_integer_width_for_glsl_instruction(op: GLSLstd450, ops: Uint32Array, length: number): number;
+    protected get_integer_width_for_glsl_instruction(op: GLSLstd450, ops: Uint32Array | number[], length: number): number;
     protected variable_is_lut(var_: SPIRVariable): boolean;
     protected fixup_type_alias(): void;
     protected reorder_type_alias(): void;

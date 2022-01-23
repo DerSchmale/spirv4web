@@ -23,6 +23,7 @@ export declare enum ExtendedDecorations {
 export declare class MetaDecorationExtended {
     flags: Bitset;
     values: Uint32Array;
+    clone(): MetaDecorationExtended;
 }
 export declare class MetaDecoration {
     alias: string;
@@ -46,6 +47,7 @@ export declare class MetaDecoration {
     fp_rounding_mode: FPRoundingMode;
     builtin: boolean;
     extended: MetaDecorationExtended;
+    clone(): MetaDecoration;
 }
 export declare class Meta {
     decoration: MetaDecoration;

@@ -63,6 +63,7 @@ import { ImageFormat } from "../../spirv/ImageFormat";
 import { Capability } from "../../spirv/Capability";
 import { ExtraSubExpressionType } from "./ExtraSubExpressionType";
 import { SPIRExtension, SPIRExtensionExtension } from "../../common/SPIRExtension";
+import { SpecializationConstant } from "../SpecializationConstant";
 
 const swizzle: string[][] = [
     [ ".x", ".y", ".z", ".w" ],
@@ -5459,9 +5460,6 @@ export class CompilerGLSL extends Compiler
             this.buffer.append(args[i]);
             this.statement_count++;
         }
-
-        if (str === "int i = 0;")
-            console.log(new Error().stack);
     }
 
     // The optional id parameter indicates the object whose type we are trying
@@ -7221,19 +7219,19 @@ export class CompilerGLSL extends Compiler
                 else if (id.get_type() === Types.TypeType) {
                     let type = id.get<SPIRType>(SPIRType);
 
-                    let is_natural_struct = type.basetype === SPIRTypeBaseType.Struct && type.array.length === 0 && type.pointer &&
-                        (!this.has_decoration(type.self, Decoration.DecorationBlock) &&
-                            !this.has_decoration(type.self, Decoration.DecorationBufferBlock));
+                    let is_natural_struct = type.basetype === SPIRTypeBaseType.Struct && type.array.length === 0 && !type.pointer &&
+                            !this.has_decoration(type.self, Decoration.DecorationBlock) &&
+                            !this.has_decoration(type.self, Decoration.DecorationBufferBlock);
 
                     // Special case, ray payload and hit attribute blocks are not really blocks, just regular structs.
-                    /*if (type.basetype === SPIRTypeBaseType.Struct && type.pointer &&
+                    if (type.basetype === SPIRTypeBaseType.Struct && type.pointer &&
                         this.has_decoration(type.self, Decoration.DecorationBlock) &&
                         (type.storage === StorageClass.StorageClassRayPayloadKHR || type.storage === StorageClass.StorageClassIncomingRayPayloadKHR ||
                         type.storage === StorageClass.StorageClassHitAttributeKHR))
                     {
                         type = this.get<SPIRType>(SPIRType, type.parent_type);
                         is_natural_struct = true;
-                    }*/
+                    }
 
                     if (is_natural_struct) {
                         if (emitted)
@@ -8487,11 +8485,11 @@ export class CompilerGLSL extends Compiler
         const name = this.to_name(constant.self);
 
         // only relevant to Compute Shaders
-        /*const wg_x = new SpecializationConstant(),
-            wg_y = new SpecializationConstant(),
-            wg_z = new SpecializationConstant();
+        const wg_x = new SpecializationConstant();
+        const wg_y = new SpecializationConstant();
+        const wg_z = new SpecializationConstant();
 
-        /*const workgroup_size_id = this.get_work_group_size_specialization_constants(wg_x, wg_y, wg_z);
+        const workgroup_size_id = this.get_work_group_size_specialization_constants(wg_x, wg_y, wg_z);
 
         // This specialization constant is implicitly declared by emitting layout() in;
         if (constant.self === workgroup_size_id)
@@ -8500,20 +8498,19 @@ export class CompilerGLSL extends Compiler
         // These specialization constants are implicitly declared by emitting layout() in;
         // In legacy GLSL, we will still need to emit macros for these, so a layout() in; declaration
         // later can use macro overrides for work group size.
-        bool is_workgroup_size_constant = ConstantID(constant.self) === wg_x.id || ConstantID(constant.self) === wg_y.id ||
-        ConstantID(constant.self) === wg_z.id;
+        const is_workgroup_size_constant = constant.self === wg_x.id || constant.self === wg_y.id || constant.self === wg_z.id;
 
-        if (options.vulkan_semantics && is_workgroup_size_constant)
+        /*if (options.vulkan_semantics && is_workgroup_size_constant)
         {
             // Vulkan GLSL does not need to declare workgroup spec constants explicitly, it is handled in layout().
             return;
         }
-        else if (!options.vulkan_semantics && is_workgroup_size_constant &&
-            !has_decoration(constant.self, DecorationSpecId))
+        else*/ if (/*!options.vulkan_semantics &&*/ is_workgroup_size_constant &&
+            !this.has_decoration(constant.self, Decoration.DecorationSpecId))
         {
             // Only bother declaring a workgroup size if it is actually a specialization constant, because we need macros.
             return;
-        }*/
+        }
 
         // Only scalars have constant IDs.
         if (this.has_decoration(constant.self, Decoration.DecorationSpecId)) {
@@ -8530,9 +8527,8 @@ export class CompilerGLSL extends Compiler
             this.statement("#endif");
 
             // For workgroup size constants, only emit the macros.
-            // if (!is_workgroup_size_constant)
-            this.statement("const ", this.variable_decl(type, name), " = ", macro_name, ";");
-            // }
+            if (!is_workgroup_size_constant)
+                this.statement("const ", this.variable_decl(type, name), " = ", macro_name, ";");
         }
         else {
             this.statement("const ", this.variable_decl(type, name), " = ", this.constant_expression(constant), ";");

@@ -24,6 +24,7 @@ import { ExecutionModel } from "../spirv/ExecutionModel";
 import { BuiltIn } from "../spirv/BuiltIn";
 import { Op } from "../spirv/Op";
 import { ImageFormat } from "../spirv/ImageFormat";
+import { SpecializationConstant } from "./SpecializationConstant";
 declare type VariableTypeRemapCallback = (type: SPIRType, name: string, type_name: string) => string;
 export declare abstract class Compiler {
     ir: ParsedIR;
@@ -82,6 +83,7 @@ export declare abstract class Compiler {
     update_active_builtins(): void;
     has_active_builtin(builtin: BuiltIn, storage: StorageClass): boolean;
     get_execution_model(): ExecutionModel;
+    protected get_work_group_size_specialization_constants(x: SpecializationConstant, y: SpecializationConstant, z: SpecializationConstant): number;
     build_dummy_sampler_for_combined_images(): VariableID;
     build_combined_image_samplers(): void;
     get_combined_image_samplers(): CombinedImageSampler[];

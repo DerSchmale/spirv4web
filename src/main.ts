@@ -2,6 +2,8 @@ import { Args } from "./Args";
 import { compile_iteration } from "./compileIteration";
 
 // TODO:
+//  - some uniforms ubos are missing
+//  - compare more against baseline compiles
 //  - Everywhere we're using slice(), remove this and pass in an offset param
 
 export enum Version
@@ -19,6 +21,8 @@ export function compile(data: ArrayBuffer, version: Version): string
 
     args.es = true;
     args.set_es = true;
+
+    args.remove_unused = true;
 
     const spirv_file = new Uint32Array(data);
 
