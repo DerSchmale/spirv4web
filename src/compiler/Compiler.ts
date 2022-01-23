@@ -2,7 +2,6 @@
 import { count, unique } from "@derschmale/array-utils";
 import { BlockMetaFlagBits, ParsedIR } from "../parser/ParsedIR";
 import { SPIRType, SPIRTypeBaseType } from "../common/SPIRType";
-import { BuiltIn, Decoration, Dim, ExecutionMode, ExecutionModel, ImageFormat, Op, StorageClass } from "../spirv";
 import { Types } from "../common/Types";
 import { SPIRConstant } from "../common/SPIRConstant";
 import { SPIRVariable } from "../common/SPIRVariable";
@@ -51,6 +50,14 @@ import { PhysicalStorageBufferPointerHandler } from "./PhysicalStorageBufferPoin
 import { convert_to_string } from "../utils/string";
 import { SPIRExtension, SPIRExtensionExtension } from "../common/SPIRExtension";
 import { GLSLstd450 } from "./glsl/glsl";
+import { Decoration } from "../spirv/Decoration";
+import { StorageClass } from "../spirv/StorageClass";
+import { ExecutionModel } from "../spirv/ExecutionModel";
+import { BuiltIn } from "../spirv/BuiltIn";
+import { Dim } from "../spirv/Dim";
+import { Op } from "../spirv/Op";
+import { ExecutionMode } from "../spirv/ExecutionMode";
+import { ImageFormat } from "../spirv/ImageFormat";
 
 type VariableTypeRemapCallback = (type: SPIRType, name: string, type_name: string) => string;
 

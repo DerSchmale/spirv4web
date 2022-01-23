@@ -1,5 +1,5 @@
 import { SPIRType, SPIRTypeBaseType } from "./SPIRType";
-import { Op } from "../spirv";
+import { Op } from "../spirv/Op";
 
 export function type_is_floating_point(type: SPIRType): boolean
 {

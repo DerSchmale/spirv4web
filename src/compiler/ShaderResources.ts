@@ -1,4 +1,4 @@
-import { BuiltIn } from "../spirv";
+import { BuiltIn } from "../spirv/BuiltIn";
 
 export class Resource
 {

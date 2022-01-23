@@ -1,6 +1,6 @@
-import { Op } from "../spirv";
 import { SPIRBlock } from "../common/SPIRBlock";
 import { SPIRFunction } from "../common/SPIRFunction";
+import { Op } from "../spirv/Op";
 
 export abstract class OpcodeHandler
 {

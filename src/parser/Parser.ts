@@ -1,21 +1,6 @@
 // @ts-ignore
 import { createWith, equals, transform } from "@derschmale/array-utils";
 import { BlockMetaFlagBits, ParsedIR } from "./ParsedIR";
-import {
-    AccessQualifier,
-    AddressingModel,
-    Capability,
-    Decoration,
-    Dim,
-    ExecutionMode,
-    ExecutionModel,
-    ImageFormat, LoopControlMask,
-    MagicNumber,
-    MemoryModel,
-    Op, SelectionControlMask,
-    SourceLanguage,
-    StorageClass
-} from "../spirv";
 import { Instruction } from "../common/Instruction";
 import { SPIRFunction } from "../common/SPIRFunction";
 import {
@@ -39,6 +24,21 @@ import { SPIRConstant } from "../common/SPIRConstant";
 import { SPIRFunctionPrototype } from "../common/SPIRFunctionPrototype";
 import { SPIRVariable } from "../common/SPIRVariable";
 import { SPIRConstantOp } from "../common/SPIRConstantOp";
+import { MagicNumber } from "../spirv/spirv";
+import { Op } from "../spirv/Op";
+import { AddressingModel } from "../spirv/AddressingModel";
+import { MemoryModel } from "../spirv/MemoryModel";
+import { SourceLanguage } from "../spirv/SourceLanguage";
+import { Capability } from "../spirv/Capability";
+import { ExecutionModel } from "../spirv/ExecutionModel";
+import { ExecutionMode } from "../spirv/ExecutionMode";
+import { Decoration } from "../spirv/Decoration";
+import { ImageFormat } from "../spirv/ImageFormat";
+import { Dim } from "../spirv/Dim";
+import { AccessQualifier } from "../spirv/AccessQualifier";
+import { StorageClass } from "../spirv/StorageClass";
+import { SelectionControlMask } from "../spirv/SelectionControlMask";
+import { LoopControlMask } from "../spirv/LoopControlMask";
 
 export class Parser
 {

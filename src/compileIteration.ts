@@ -1,11 +1,13 @@
 import { Args, PLSArg, Remap } from "./Args";
 import { Parser } from "./parser/Parser";
 import { CompilerGLSL } from "./compiler/glsl/CompilerGLSL";
-import { Decoration, ExecutionModel, StorageClass } from "./spirv";
 import { Resource, ShaderResources } from "./compiler/ShaderResources";
 import { Compiler } from "./compiler/Compiler";
 import { inherit_combined_sampler_bindings, rename_interface_variable } from "./utils/util";
 import { PlsRemap } from "./compiler/glsl/PlsRemap";
+import { ExecutionModel } from "./spirv/ExecutionModel";
+import { Decoration } from "./spirv/Decoration";
+import { StorageClass } from "./spirv/StorageClass";
 
 function stage_to_execution_model(stage: string): ExecutionModel
 {

@@ -1,9 +1,12 @@
 import { OpcodeHandler } from "./OpcodeHandler";
 import { Compiler } from "./Compiler";
-import { BuiltIn, Decoration, Op, StorageClass } from "../spirv";
 import { Bitset } from "../common/Bitset";
 import { SPIRType } from "../common/SPIRType";
 import { SPIRVariable } from "../common/SPIRVariable";
+import { BuiltIn } from "../spirv/BuiltIn";
+import { Op } from "../spirv/Op";
+import { Decoration } from "../spirv/Decoration";
+import { StorageClass } from "../spirv/StorageClass";
 
 export class ActiveBuiltinHandler extends OpcodeHandler
 {

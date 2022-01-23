@@ -1,6 +1,5 @@
 import { OpcodeHandler } from "./OpcodeHandler";
 import { Compiler } from "./Compiler";
-import { Decoration, Dim, Op, StorageClass } from "../spirv";
 import {
     SPIRFunction,
     SPIRFunctionCombinedImageSamplerParameter,
@@ -11,6 +10,10 @@ import { SPIRExpression } from "../common/SPIRExpression";
 import { defaultCopy } from "../utils/defaultCopy";
 import { SPIRVariable } from "../common/SPIRVariable";
 import { CombinedImageSampler } from "./CombinedImageSampler";
+import { Op } from "../spirv/Op";
+import { Dim } from "../spirv/Dim";
+import { StorageClass } from "../spirv/StorageClass";
+import { Decoration } from "../spirv/Decoration";
 
 export class CombinedImageSamplerHandler extends OpcodeHandler
 {

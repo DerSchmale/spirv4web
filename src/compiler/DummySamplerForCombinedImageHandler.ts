@@ -1,8 +1,9 @@
 import { Compiler } from "./Compiler";
-import { Dim, Op } from "../spirv";
 import { OpcodeHandler } from "./OpcodeHandler";
 import { SPIRType, SPIRTypeBaseType } from "../common/SPIRType";
 import { SPIRExpression } from "../common/SPIRExpression";
+import { Op } from "../spirv/Op";
+import { Dim } from "../spirv/Dim";
 
 export class DummySamplerForCombinedImageHandler extends OpcodeHandler
 {

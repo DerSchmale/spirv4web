@@ -1,7 +1,7 @@
 import { IVariant } from "./IVariant";
 import { Types } from "./Types";
-import { Op } from "../spirv";
 import { defaultCopy } from "../utils/defaultCopy";
+import { Op } from "../spirv/Op";
 
 export class SPIRConstantOp extends IVariant
 {

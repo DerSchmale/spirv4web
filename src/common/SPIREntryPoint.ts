@@ -1,6 +1,6 @@
-import { ExecutionModel } from "../spirv";
 import { Bitset } from "./Bitset";
 import { defaultClone, defaultCopy } from "../utils/defaultCopy";
+import { ExecutionModel } from "../spirv/ExecutionModel";
 
 class SPIREntryPointWorkgroupSize
 {

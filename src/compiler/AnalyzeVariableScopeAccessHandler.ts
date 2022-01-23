@@ -1,7 +1,6 @@
 import { OpcodeHandler } from "./OpcodeHandler";
 import { SPIRFunction } from "../common/SPIRFunction";
 import { Compiler } from "./Compiler";
-import { Op } from "../spirv";
 import { SPIRBlock, SPIRBlockTerminator } from "../common/SPIRBlock";
 import { maplike_get } from "../utils/maplike_get";
 import { SPIRVariable } from "../common/SPIRVariable";
@@ -10,6 +9,7 @@ import { SPIRExpression } from "../common/SPIRExpression";
 import { SPIRTypeBaseType } from "../common/SPIRType";
 import { SPIRExtension, SPIRExtensionExtension } from "../common/SPIRExtension";
 import { GLSLstd450 } from "./glsl/glsl";
+import { Op } from "../spirv/Op";
 
 export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
 {

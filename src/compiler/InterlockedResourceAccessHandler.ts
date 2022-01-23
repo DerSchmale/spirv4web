@@ -1,8 +1,10 @@
 import { OpcodeHandler } from "./OpcodeHandler";
 import { Compiler } from "./Compiler";
-import { Decoration, Op, StorageClass } from "../spirv";
 import { SPIRExpression } from "../common/SPIRExpression";
 import { SPIRType } from "../common/SPIRType";
+import { Op } from "../spirv/Op";
+import { StorageClass } from "../spirv/StorageClass";
+import { Decoration } from "../spirv/Decoration";
 
 export class InterlockedResourceAccessHandler extends OpcodeHandler
 {

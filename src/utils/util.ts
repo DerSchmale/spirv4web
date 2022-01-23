@@ -1,7 +1,7 @@
 import { Compiler } from "../compiler/Compiler";
 import { Resource } from "../compiler/ShaderResources";
-import { Decoration } from "../spirv";
 import { SPIRTypeBaseType } from "../common/SPIRType";
+import { Decoration } from "../spirv/Decoration";
 
 export function rename_interface_variable(compiler: Compiler, resources: Resource[], location: number, name: string)
 {

@@ -4,7 +4,6 @@ import { Variant, variant_get, variant_set } from "../common/Variant";
 import { ObjectPoolGroup } from "../common/ObjectPoolGroup";
 import { Meta, MetaDecoration } from "../common/Meta";
 import { Types } from "../common/Types";
-import { AddressingModel, Capability, Decoration, FPRoundingMode, ImageFormat, MemoryModel, Op } from "../spirv";
 import { SPIREntryPoint } from "../common/SPIREntryPoint";
 import { Bitset } from "../common/Bitset";
 import { MemberPointer, Pointer } from "../utils/Pointer";
@@ -24,6 +23,12 @@ import { SPIRAccessChain } from "../common/SPIRAccessChain";
 import { SPIRUndef } from "../common/SPIRUndef";
 import { SPIRString } from "../common/SPIRString";
 import { replaceCharAt } from "../utils/string";
+import { Capability } from "../spirv/Capability";
+import { AddressingModel } from "../spirv/AddressingModel";
+import { MemoryModel } from "../spirv/MemoryModel";
+import { Decoration } from "../spirv/Decoration";
+import { FPRoundingMode } from "../spirv/FPRoundingMode";
+import { Op } from "../spirv/Op";
 
 // Meta data about blocks. The cross-compiler needs to query if a block is either of these types.
 // It is a bitset as there can be more than one tag per block.

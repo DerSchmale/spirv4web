@@ -1,9 +1,10 @@
 import { OpcodeHandler } from "./OpcodeHandler";
 import { Compiler } from "./Compiler";
-import { Op, StorageClass } from "../spirv";
 import { SPIRVariable } from "../common/SPIRVariable";
 import { SPIRExtension, SPIRExtensionExtension } from "../common/SPIRExtension";
 import { GLSLstd450 } from "./glsl/glsl";
+import { Op } from "../spirv/Op";
+import { StorageClass } from "../spirv/StorageClass";
 
 export class InterfaceVariableAccessHandler extends OpcodeHandler
 {

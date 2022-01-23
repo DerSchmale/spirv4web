@@ -1,8 +1,8 @@
 import { OpcodeHandler } from "./OpcodeHandler";
 import { Compiler } from "./Compiler";
-import { Op } from "../spirv";
 import { maplike_get } from "../utils/maplike_get";
 import { SPIRFunction } from "../common/SPIRFunction";
+import { Op } from "../spirv/Op";
 
 export class CombinedImageSamplerUsageHandler extends OpcodeHandler
 {

@@ -1,9 +1,11 @@
 import { OpcodeHandler } from "./OpcodeHandler";
 import { Compiler } from "./Compiler";
-import { MemoryAccessMask, Op, StorageClass } from "../spirv";
 import { PhysicalBlockMeta } from "./PhysicalBlockMeta";
 import { SPIRType, SPIRTypeBaseType } from "../common/SPIRType";
 import { maplike_get } from "../utils/maplike_get";
+import { Op } from "../spirv/Op";
+import { MemoryAccessMask } from "../spirv/MemoryAccessMask";
+import { StorageClass } from "../spirv/StorageClass";
 
 export class PhysicalStorageBufferPointerHandler extends OpcodeHandler
 {
@@ -103,8 +105,8 @@ export class PhysicalStorageBufferPointerHandler extends OpcodeHandler
     type_is_bda_block_entry(type_id: number): boolean
     {
         const type = this.compiler.get<SPIRType>(SPIRType, type_id);
-        return type.storage == StorageClass.StorageClassPhysicalStorageBufferEXT && type.pointer &&
-            type.pointer_depth == 1 && !this.compiler.type_is_array_of_pointers(type);
+        return type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT && type.pointer &&
+            type.pointer_depth === 1 && !this.compiler.type_is_array_of_pointers(type);
     }
 
     setup_meta_chain(type_id: number, var_id: number)
@@ -118,7 +120,7 @@ export class PhysicalStorageBufferPointerHandler extends OpcodeHandler
             if (type.basetype != SPIRTypeBaseType.Struct)
                 this.non_block_types.add(type_id);
 
-            if (meta.alignment == 0)
+            if (meta.alignment === 0)
                 meta.alignment = this.get_minimum_scalar_alignment(this.compiler.get_pointee_type(type));
         }
     }

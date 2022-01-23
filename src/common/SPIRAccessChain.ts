@@ -1,7 +1,7 @@
 import { IVariant } from "./IVariant";
 import { Types } from "./Types";
-import { StorageClass } from "../spirv";
 import { defaultCopy } from "../utils/defaultCopy";
+import { StorageClass } from "../spirv/StorageClass";
 
 export class SPIRAccessChain extends IVariant
 {

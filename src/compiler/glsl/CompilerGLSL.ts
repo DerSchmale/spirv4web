@@ -8,19 +8,6 @@ import {
 } from "../../common/common";
 import { BlockMetaFlagBits, ParsedIR } from "../../parser/ParsedIR";
 import { LocationComponentPair } from "../../common/LocationComponentPair";
-import {
-    AddressingModel,
-    BuiltIn,
-    Capability,
-    Decoration,
-    Dim,
-    ExecutionMode,
-    ExecutionModel,
-    ImageFormat,
-    ImageOperandsMask,
-    Op,
-    StorageClass
-} from "../../spirv";
 import { Pair } from "../../utils/Pair";
 import { SPIRVariable } from "../../common/SPIRVariable";
 import { SPIRType, SPIRTypeBaseType } from "../../common/SPIRType";
@@ -63,7 +50,17 @@ import {
     TextureFunctionNameArguments
 } from "./TextureFunctionArguments";
 import { SPIRCombinedImageSampler } from "../../common/SPIRCombinedImageSampler";
-import { uint32 } from "../../utils/ensure_types";
+import { Op } from "../../spirv/Op";
+import { BuiltIn } from "../../spirv/BuiltIn";
+import { Decoration } from "../../spirv/Decoration";
+import { StorageClass } from "../../spirv/StorageClass";
+import { ExecutionMode } from "../../spirv/ExecutionMode";
+import { ExecutionModel } from "../../spirv/ExecutionModel";
+import { Dim } from "../../spirv/Dim";
+import { ImageOperandsMask } from "../../spirv/ImageOperandsMask";
+import { AddressingModel } from "../../spirv/AddressingModel";
+import { ImageFormat } from "../../spirv/ImageFormat";
+import { Capability } from "../../spirv/Capability";
 
 const swizzle: string[][] = [
     [ ".x", ".y", ".z", ".w" ],
@@ -590,11 +587,6 @@ export class CompilerGLSL extends Compiler
         const ops = this.stream(instruction);
         const opcode = <Op>(instruction.op);
         let length = instruction.length;
-
-        /*
-        #define GLSL_QFOP(op) emit_quaternary_func_op(ops[0], ops[1], ops[2], ops[3], ops[4], ops[5], #op)
-        #define GLSL_TFOP(op) emit_trinary_func_op(ops[0], ops[1], ops[2], ops[3], ops[4], #op)
-        */
 
         // If we need to do implicit bitcasts, make sure we do it with the correct type.
         const integer_width = this.get_integer_width_for_instruction(instruction);
