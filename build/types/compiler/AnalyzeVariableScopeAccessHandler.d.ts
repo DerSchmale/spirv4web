@@ -1,8 +1,8 @@
 import { OpcodeHandler } from "./OpcodeHandler";
 import { SPIRFunction } from "../common/SPIRFunction";
 import { Compiler } from "./Compiler";
-import { Op } from "../spirv";
 import { SPIRBlock } from "../common/SPIRBlock";
+import { Op } from "../spirv/Op";
 export declare class AnalyzeVariableScopeAccessHandler extends OpcodeHandler {
     compiler: Compiler;
     entry: SPIRFunction;

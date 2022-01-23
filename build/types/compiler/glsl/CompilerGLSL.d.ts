@@ -1,7 +1,6 @@
 import { Compiler } from "../Compiler";
 import { ParsedIR } from "../../parser/ParsedIR";
 import { LocationComponentPair } from "../../common/LocationComponentPair";
-import { BuiltIn, ExecutionModel, ImageFormat, StorageClass } from "../../spirv";
 import { Pair } from "../../utils/Pair";
 import { SPIRVariable } from "../../common/SPIRVariable";
 import { SPIRType, SPIRTypeBaseType } from "../../common/SPIRType";
@@ -20,6 +19,10 @@ import { BufferPackingStandard } from "../BufferPackingStandard";
 import { SPIRBlock, SPIRBlockMethod } from "../../common/SPIRBlock";
 import { Instruction } from "../../common/Instruction";
 import { TextureFunctionArguments, TextureFunctionNameArguments } from "./TextureFunctionArguments";
+import { BuiltIn } from "../../spirv/BuiltIn";
+import { StorageClass } from "../../spirv/StorageClass";
+import { ExecutionModel } from "../../spirv/ExecutionModel";
+import { ImageFormat } from "../../spirv/ImageFormat";
 declare type AccessChainFlags = number;
 export declare class CompilerGLSL extends Compiler {
     protected current_emitting_block: SPIRBlock;
@@ -75,6 +78,7 @@ export declare class CompilerGLSL extends Compiler {
     protected emit_block_instructions(block: SPIRBlock): void;
     emit_instruction(instruction: Instruction): void;
     protected emit_header(): void;
+    protected emit_sampled_image_op(result_type: number, result_id: number, image_id: number, samp_id: number): void;
     protected emit_texture_op(i: Instruction, sparse: boolean): void;
     protected to_texture_op(i: Instruction, sparse: boolean, forward: {
         value: boolean;
@@ -103,6 +107,7 @@ export declare class CompilerGLSL extends Compiler {
     protected emit_uniform(var_: SPIRVariable): void;
     protected unpack_expression_type(expr_str: string, _0: SPIRType, _1: number, _2: boolean, _3: boolean): string;
     protected builtin_translates_to_nonarray(_: BuiltIn): boolean;
+    protected emit_copy_logical_type(lhs_id: number, lhs_type_id: number, rhs_id: number, rhs_type_id: number, chain: number[]): void;
     protected statement_inner(...args: any[]): void;
     protected type_to_glsl(type: SPIRType, id?: number): string;
     builtin_to_glsl(builtin: BuiltIn, storage: StorageClass): string;
@@ -161,12 +166,19 @@ export declare class CompilerGLSL extends Compiler {
     protected emit_variable_temporary_copies(var_: SPIRVariable): void;
     protected should_dereference(id: number): boolean;
     protected should_forward(id: number): boolean;
+    protected should_suppress_usage_tracking(id: number): boolean;
+    protected emit_mix_op(result_type: number, id: number, left: number, right: number, lerp: number): void;
     protected to_trivial_mix_op(type: SPIRType, left: number, right: number, lerp: number): string;
+    protected emit_trinary_func_op(result_type: number, result_id: number, op0: number, op1: number, op2: number, op: string): void;
     protected emit_binary_func_op(result_type: number, result_id: number, op0: number, op1: number, op: string): void;
+    protected emit_trinary_func_op_bitextract(result_type: number, result_id: number, op0: number, op1: number, op2: number, op: string, expected_result_type: SPIRTypeBaseType, input_type0: SPIRTypeBaseType, input_type1: SPIRTypeBaseType, input_type2: SPIRTypeBaseType): void;
+    protected emit_bitfield_insert_op(result_type: number, result_id: number, op0: number, op1: number, op2: number, op3: number, op: string, offset_count_type: SPIRTypeBaseType): void;
     protected emit_unary_func_op(result_type: number, result_id: number, op0: number, op: string): void;
     protected emit_binary_op(result_type: number, result_id: number, op0: number, op1: number, op: string): void;
+    protected emit_unrolled_binary_op(result_type: number, result_id: number, op0: number, op1: number, op: string, negate: boolean, expected_type: SPIRTypeBaseType): void;
     protected emit_unary_func_op_cast(result_type: number, result_id: number, op0: number, op: string, input_type: SPIRTypeBaseType, expected_result_type: SPIRTypeBaseType): void;
     protected emit_binary_func_op_cast(result_type: number, result_id: number, op0: number, op1: number, op: string, input_type: SPIRTypeBaseType, skip_cast_if_equal_type: boolean): void;
+    protected emit_trinary_func_op_cast(result_type: number, result_id: number, op0: number, op1: number, op2: number, op: string, input_type: SPIRTypeBaseType): void;
     protected emit_binary_op_cast(result_type: number, result_id: number, op0: number, op1: number, op: string, input_type: SPIRTypeBaseType, skip_cast_if_equal_type: boolean): void;
     protected binary_op_bitcast_helper(props: {
         cast_op0: string;
@@ -207,11 +219,13 @@ export declare class CompilerGLSL extends Compiler {
     protected to_rerolled_array_expression(base_expr: string, type: SPIRType): string;
     protected to_enclosed_expression(id: number, register_expression_read?: boolean): string;
     protected to_unpacked_expression(id: number, register_expression_read?: boolean): string;
+    protected to_unpacked_row_major_matrix_expression(id: number): string;
     protected to_enclosed_unpacked_expression(id: number, register_expression_read?: boolean): string;
     protected to_dereferenced_expression(id: number, register_expression_read?: boolean): string;
     protected to_pointer_expression(id: number, register_expression_read?: boolean): string;
     protected to_enclosed_pointer_expression(id: number, register_expression_read?: boolean): string;
     protected to_extract_component_expression(id: number, index: number): string;
+    protected to_extract_constant_composite_expression(result_type: number, c: SPIRConstant, chain: Uint32Array | number[], length: number): string;
     protected enclose_expression(expr: string): string;
     protected dereference_expression(expr_type: SPIRType, expr: string): string;
     protected address_of_expression(expr: string): string;

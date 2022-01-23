@@ -45,7 +45,7 @@ export class InterlockedResourceAccessPrepassHandler extends OpcodeHandler
     {
         if (op === Op.OpBeginInvocationInterlockEXT || op === Op.OpEndInvocationInterlockEXT)
         {
-            if (this.interlock_function_id != 0 && this.interlock_function_id !== this.call_stack[this.call_stack.length - 1])
+            if (this.interlock_function_id !== 0 && this.interlock_function_id !== this.call_stack[this.call_stack.length - 1])
             {
                 // Most complex case, we have no sensible way of dealing with this
                 // other than taking the 100% conservative approach, exit early.

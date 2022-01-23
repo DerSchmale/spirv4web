@@ -11,14 +11,14 @@ export function rename_interface_variable(compiler: Compiler, resources: Resourc
             continue;
 
         const loc = compiler.get_decoration(v.id, Decoration.DecorationLocation);
-        if (loc != location)
+        if (loc !== location)
             continue;
 
         const type = compiler.get_type(v.base_type_id);
 
         // This is more of a friendly variant. If we need to rename interface variables, we might have to rename
         // structs as well and make sure all the names match up.
-        if (type.basetype == SPIRTypeBaseType.Struct)
+        if (type.basetype === SPIRTypeBaseType.Struct)
         {
             compiler.set_name(v.base_type_id, "SPIRV_Cross_Interface_Location" + location);
             for (let i = 0; i < type.member_types.length; i++)

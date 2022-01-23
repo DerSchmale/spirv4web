@@ -1,5 +1,5 @@
 import { OpcodeHandler } from "./OpcodeHandler";
-import { Op } from "../spirv";
+import { Op } from "../spirv/Op";
 export declare class DebugHandler extends OpcodeHandler {
     private compiler;
     constructor(compiler: any);

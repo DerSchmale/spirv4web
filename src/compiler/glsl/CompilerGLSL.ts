@@ -43,7 +43,7 @@ import {
 import { SPIRString } from "../../common/SPIRString";
 import { ValueSaver } from "../../common/ValueSaver";
 import { defaultClone, defaultCopy } from "../../utils/defaultCopy";
-import { Instruction } from "../../common/Instruction";
+import { EmbeddedInstruction, Instruction } from "../../common/Instruction";
 import {
     TextureFunctionArguments,
     TextureFunctionBaseArguments,
@@ -61,6 +61,8 @@ import { ImageOperandsMask } from "../../spirv/ImageOperandsMask";
 import { AddressingModel } from "../../spirv/AddressingModel";
 import { ImageFormat } from "../../spirv/ImageFormat";
 import { Capability } from "../../spirv/Capability";
+import { ExtraSubExpressionType } from "./ExtraSubExpressionType";
+import { SPIRExtension, SPIRExtensionExtension } from "../../common/SPIRExtension";
 
 const swizzle: string[][] = [
     [ ".x", ".y", ".z", ".w" ],
@@ -308,7 +310,7 @@ export class CompilerGLSL extends Compiler
     mask_stage_output_by_location(location: number, component: number)
     {
         const s = this.masked_output_locations;
-        for (let it = s.values(), val = null; (val=it.next().value); ) {
+        for (let it = s.values(), val = null; (val = it.next().value);) {
             if (val.location === location && val.component === component)
                 return;
         }
@@ -573,16 +575,9 @@ export class CompilerGLSL extends Compiler
         }
     }
 
-    protected emit_block_instructions(block: SPIRBlock)
-    {
-        this.current_emitting_block = block;
-        for (let op of block.ops)
-            this.emit_instruction(op);
-        this.current_emitting_block = null;
-    }
-
     // holy long function batman!
-    emit_instruction(instruction: Instruction)
+
+    protected emit_instruction(instruction: Instruction)
     {
         const ops = this.stream(instruction);
         const opcode = <Op>(instruction.op);
@@ -593,7 +588,7 @@ export class CompilerGLSL extends Compiler
         const int_type = to_signed_basetype(integer_width);
         const uint_type = to_unsigned_basetype(integer_width);
 
-        const { backend } = this;
+        const { backend, options, ir } = this;
 
         switch (opcode) {
             // Dealing with memory
@@ -901,8 +896,7 @@ export class CompilerGLSL extends Compiler
             }
 
             // Composite munging
-            case Op.OpCompositeConstruct:
-            {
+            case Op.OpCompositeConstruct: {
                 const result_type = ops[0];
                 const id = ops[1];
                 const elems = ops.slice(2);
@@ -922,25 +916,20 @@ export class CompilerGLSL extends Compiler
                 let splat = false;
                 let swizzle_splat = false;
 
-                if (in_type)
-                {
+                if (in_type) {
                     splat = in_type.vecsize === 1 && in_type.columns === 1 && !composite && backend.use_constructor_splatting;
                     swizzle_splat = in_type.vecsize === 1 && in_type.columns === 1 && backend.can_swizzle_scalar;
 
-                    if (this.ir.ids[elems[0]].get_type() === Types.TypeConstant && !type_is_floating_point(in_type))
-                    {
+                    if (ir.ids[elems[0]].get_type() === Types.TypeConstant && !type_is_floating_point(in_type)) {
                         // Cannot swizzle literal integers as a special case.
                         swizzle_splat = false;
                     }
                 }
 
-                if (splat || swizzle_splat)
-                {
+                if (splat || swizzle_splat) {
                     const input = elems[0];
-                    for (let i = 0; i < length; i++)
-                    {
-                        if (input !== elems[i])
-                        {
+                    for (let i = 0; i < length; i++) {
+                        if (input !== elems[i]) {
                             splat = false;
                             swizzle_splat = false;
                         }
@@ -955,15 +944,13 @@ export class CompilerGLSL extends Compiler
                     forward = false;
 
                 let constructor_op = "";
-                if (backend.use_initializer_list && composite)
-                {
+                if (backend.use_initializer_list && composite) {
                     let needs_trailing_tracket = false;
                     // Only use this path if we are building composites.
                     // This path cannot be used for arithmetic.
                     if (backend.use_typed_initializer_list && out_type.basetype === SPIRTypeBaseType.Struct && out_type.array.length === 0)
                         constructor_op += this.type_to_glsl_constructor(this.get<SPIRType>(SPIRType, result_type));
-                    else if (backend.use_typed_initializer_list && backend.array_is_value_type && out_type.array.length > 0)
-                    {
+                    else if (backend.use_typed_initializer_list && backend.array_is_value_type && out_type.array.length > 0) {
                         // MSL path. Array constructor is baked into type here, do not use _constructor variant.
                         constructor_op += this.type_to_glsl_constructor(this.get<SPIRType>(SPIRType, result_type)) + "(";
                         needs_trailing_tracket = true;
@@ -980,12 +967,10 @@ export class CompilerGLSL extends Compiler
                     if (needs_trailing_tracket)
                         constructor_op += ")";
                 }
-                else if (swizzle_splat && !composite)
-                {
+                else if (swizzle_splat && !composite) {
                     constructor_op = this.remap_swizzle(this.get<SPIRType>(SPIRType, result_type), 1, this.to_unpacked_expression(elems[0]));
                 }
-                else
-                {
+                else {
                     constructor_op = this.type_to_glsl_constructor(this.get<SPIRType>(SPIRType, result_type)) + "(";
                     if (this.type_is_empty(out_type) && !backend.supports_empty_struct)
                         constructor_op += "0";
@@ -996,8 +981,7 @@ export class CompilerGLSL extends Compiler
                     constructor_op += ")";
                 }
 
-                if (constructor_op !== "")
-                {
+                if (constructor_op !== "") {
                     this.emit_op(result_type, id, constructor_op, forward);
                     for (let i = 0; i < length; i++)
                         this.inherit_expression_dependencies(id, elems[i]);
@@ -1005,299 +989,277 @@ export class CompilerGLSL extends Compiler
                 break;
             }
 
-            /*case Op.OpVectorInsertDynamic:
-            {
-                uint32_t result_type = ops[0];
-                uint32_t id = ops[1];
-                uint32_t vec = ops[2];
-                uint32_t comp = ops[3];
-                uint32_t index = ops[4];
+            case Op.OpVectorInsertDynamic: {
+                const result_type = ops[0];
+                const id = ops[1];
+                const vec = ops[2];
+                const comp = ops[3];
 
-                flush_variable_declaration(vec);
+                this.flush_variable_declaration(vec);
 
                 // Make a copy, then use access chain to store the variable.
-                statement(declare_temporary(result_type, id), to_expression(vec), ";");
-                set<SPIRExpression>(id, to_name(id), result_type, true);
-                auto chain = access_chain_internal(id, &index, 1, 0, nullptr);
-                statement(chain, " = ", to_unpacked_expression(comp), ";");
+                this.statement(this.declare_temporary(result_type, id), this.to_expression(vec), ";");
+                this.set<SPIRExpression>(SPIRExpression, id, this.to_name(id), result_type, true);
+                const chain = this.access_chain_internal(id, ops.slice(4), 1, 0, null);
+                this.statement(chain, " = ", this.to_unpacked_expression(comp), ";");
                 break;
             }
 
-            case Op.OpVectorExtractDynamic:
-            {
-                uint32_t result_type = ops[0];
-                uint32_t id = ops[1];
+            case Op.OpVectorExtractDynamic: {
+                const result_type = ops[0];
+                const id = ops[1];
 
-                auto expr = access_chain_internal(ops[2], &ops[3], 1, 0, nullptr);
-                emit_op(result_type, id, expr, should_forward(ops[2]));
-                inherit_expression_dependencies(id, ops[2]);
-                inherit_expression_dependencies(id, ops[3]);
+                const expr = this.access_chain_internal(ops[2], ops.slice(3), 1, 0, null);
+                this.emit_op(result_type, id, expr, this.should_forward(ops[2]));
+                this.inherit_expression_dependencies(id, ops[2]);
+                this.inherit_expression_dependencies(id, ops[3]);
                 break;
             }
 
-            case Op.OpCompositeExtract:
-            {
-                uint32_t result_type = ops[0];
-                uint32_t id = ops[1];
+            case Op.OpCompositeExtract: {
+                const result_type = ops[0];
+                const id = ops[1];
                 length -= 3;
 
-                auto &type = get<SPIRType>(result_type);
+                const type = this.get<SPIRType>(SPIRType, result_type);
 
                 // We can only split the expression here if our expression is forwarded as a temporary.
-                bool allow_base_expression = forced_temporaries.find(id) === end(forced_temporaries);
+                let allow_base_expression = !this.forced_temporaries.has(id);
 
                 // Do not allow base expression for struct members. We risk doing "swizzle" optimizations in this case.
-                auto &composite_type = expression_type(ops[2]);
-                bool composite_type_is_complex = composite_type.basetype === SPIRTypeBaseType.Struct || !composite_type.array.empty();
+                const composite_type = this.expression_type(ops[2]);
+                const composite_type_is_complex = composite_type.basetype === SPIRTypeBaseType.Struct || composite_type.array.length > 0;
                 if (composite_type_is_complex)
                     allow_base_expression = false;
 
                 // Packed expressions or physical ID mapped expressions cannot be split up.
-                if (has_extended_decoration(ops[2], SPIRVCrossDecorationPhysicalTypePacked) ||
-                    has_extended_decoration(ops[2], SPIRVCrossDecorationPhysicalTypeID))
+                if (this.has_extended_decoration(ops[2], ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked) ||
+                    this.has_extended_decoration(ops[2], ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID))
                     allow_base_expression = false;
 
                 // Cannot use base expression for row-major matrix row-extraction since we need to interleave access pattern
                 // into the base expression.
-                if (is_non_native_row_major_matrix(ops[2]))
+                if (this.is_non_native_row_major_matrix(ops[2]))
                     allow_base_expression = false;
 
-                AccessChainMeta meta;
-                SPIRExpression *e = nullptr;
-                auto *c = maybe_get<SPIRConstant>(ops[2]);
+                const meta = new AccessChainMeta();
+                let e: SPIRExpression = null;
+                const c = this.maybe_get<SPIRConstant>(SPIRConstant, ops[2]);
 
-                if (c && !c->specialization && !composite_type_is_complex)
-                {
-                    auto expr = to_extract_constant_composite_expression(result_type, *c, ops + 3, length);
-                    e = &emit_op(result_type, id, expr, true, true);
+                if (c && !c.specialization && !composite_type_is_complex) {
+                    const expr = this.to_extract_constant_composite_expression(result_type, c, ops.slice(3), length);
+                    e = this.emit_op(result_type, id, expr, true, true);
                 }
-            else if (allow_base_expression && should_forward(ops[2]) && type.vecsize === 1 && type.columns === 1 && length === 1)
-            {
-                // Only apply this optimization if result is scalar.
+                else if (allow_base_expression && this.should_forward(ops[2]) && type.vecsize === 1 && type.columns === 1 && length === 1) {
+                    // Only apply this optimization if result is scalar.
 
-                // We want to split the access chain from the base.
-                // This is so we can later combine different CompositeExtract results
-                // with CompositeConstruct without emitting code like
-                //
-                // vec3 temp = texture(...).xyz
-                // vec4(temp.x, temp.y, temp.z, 1.0).
-                //
-                // when we actually wanted to emit this
-                // vec4(texture(...).xyz, 1.0).
-                //
-                // Including the base will prevent this and would trigger multiple reads
-                // from expression causing it to be forced to an actual temporary in GLSL.
-                auto expr = access_chain_internal(ops[2], &ops[3], length,
-            ACCESS_CHAIN_INDEX_IS_LITERAL_BIT | ACCESS_CHAIN_CHAIN_ONLY_BIT |
-            ACCESS_CHAIN_FORCE_COMPOSITE_BIT, &meta);
-                e = &emit_op(result_type, id, expr, true, should_suppress_usage_tracking(ops[2]));
-                inherit_expression_dependencies(id, ops[2]);
-                e->base_expression = ops[2];
-            }
-            else
-            {
-                auto expr = access_chain_internal(ops[2], &ops[3], length,
-            ACCESS_CHAIN_INDEX_IS_LITERAL_BIT | ACCESS_CHAIN_FORCE_COMPOSITE_BIT, &meta);
-                e = &emit_op(result_type, id, expr, should_forward(ops[2]), should_suppress_usage_tracking(ops[2]));
-                inherit_expression_dependencies(id, ops[2]);
-            }
+                    // We want to split the access chain from the base.
+                    // This is so we can later combine different CompositeExtract results
+                    // with CompositeConstruct without emitting code like
+                    //
+                    // vec3 temp = texture(...).xyz
+                    // vec4(temp.x, temp.y, temp.z, 1.0).
+                    //
+                    // when we actually wanted to emit this
+                    // vec4(texture(...).xyz, 1.0).
+                    //
+                    // Including the base will prevent this and would trigger multiple reads
+                    // from expression causing it to be forced to an actual temporary in GLSL.
+                    const expr = this.access_chain_internal(ops[2], ops.slice(3), length,
+                        AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT | AccessChainFlagBits.ACCESS_CHAIN_CHAIN_ONLY_BIT |
+                        AccessChainFlagBits.ACCESS_CHAIN_FORCE_COMPOSITE_BIT, meta);
+                    e = this.emit_op(result_type, id, expr, true, this.should_suppress_usage_tracking(ops[2]));
+                    this.inherit_expression_dependencies(id, ops[2]);
+                    e.base_expression = ops[2];
+                }
+                else {
+                    const expr = this.access_chain_internal(ops[2], ops.slice(3), length,
+                        AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT | AccessChainFlagBits.ACCESS_CHAIN_FORCE_COMPOSITE_BIT, meta);
+                    e = this.emit_op(result_type, id, expr, this.should_forward(ops[2]), this.should_suppress_usage_tracking(ops[2]));
+                    this.inherit_expression_dependencies(id, ops[2]);
+                }
 
                 // Pass through some meta information to the loaded expression.
                 // We can still end up loading a buffer type to a variable, then CompositeExtract from it
                 // instead of loading everything through an access chain.
-                e->need_transpose = meta.need_transpose;
+                e.need_transpose = meta.need_transpose;
                 if (meta.storage_is_packed)
-                    set_extended_decoration(id, SPIRVCrossDecorationPhysicalTypePacked);
+                    this.set_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked);
                 if (meta.storage_physical_type !== 0)
-                    set_extended_decoration(id, SPIRVCrossDecorationPhysicalTypeID, meta.storage_physical_type);
+                    this.set_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID, meta.storage_physical_type);
                 if (meta.storage_is_invariant)
-                    set_decoration(id, DecorationInvariant);
+                    this.set_decoration(id, Decoration.DecorationInvariant);
 
                 break;
             }
 
-            case Op.OpCompositeInsert:
-            {
-                uint32_t result_type = ops[0];
-                uint32_t id = ops[1];
-                uint32_t obj = ops[2];
-                uint32_t composite = ops[3];
-                const auto *elems = &ops[4];
+            case Op.OpCompositeInsert: {
+                const result_type = ops[0];
+                const id = ops[1];
+                const obj = ops[2];
+                const composite = ops[3];
+                const elems = ops.slice(4);
                 length -= 4;
 
-                flush_variable_declaration(composite);
+                this.flush_variable_declaration(composite);
 
                 // Make a copy, then use access chain to store the variable.
-                statement(declare_temporary(result_type, id), to_expression(composite), ";");
-                set<SPIRExpression>(id, to_name(id), result_type, true);
-                auto chain = access_chain_internal(id, elems, length, ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, nullptr);
-                statement(chain, " = ", to_unpacked_expression(obj), ";");
+                this.statement(this.declare_temporary(result_type, id), this.to_expression(composite), ";");
+                this.set<SPIRExpression>(SPIRExpression, id, this.to_name(id), result_type, true);
+                const chain = this.access_chain_internal(id, elems, length, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, null);
+                this.statement(chain, " = ", this.to_unpacked_expression(obj), ";");
 
                 break;
             }
 
-            case Op.OpCopyMemory:
-            {
-                uint32_t lhs = ops[0];
-                uint32_t rhs = ops[1];
-                if (lhs !== rhs)
-                {
-                    uint32_t &tmp_id = extra_sub_expressions[instruction.offset | EXTRA_SUB_EXPRESSION_TYPE_STREAM_OFFSET];
+            case Op.OpCopyMemory: {
+                const lhs = ops[0];
+                const rhs = ops[1];
+                if (lhs !== rhs) {
+                    let tmp_id = maplike_get(0, this.extra_sub_expressions, instruction.offset | ExtraSubExpressionType.EXTRA_SUB_EXPRESSION_TYPE_STREAM_OFFSET);
                     if (!tmp_id)
                         tmp_id = ir.increase_bound_by(1);
-                    uint32_t tmp_type_id = expression_type(rhs).parent_type;
+                    const tmp_type_id = this.expression_type(rhs).parent_type;
 
-                    EmbeddedInstruction fake_load, fake_store;
-                    fake_load.op = OpLoad;
+                    const fake_load = new EmbeddedInstruction();
+                    const fake_store = new EmbeddedInstruction();
+                    fake_load.op = Op.OpLoad;
                     fake_load.length = 3;
-                    fake_load.ops.push_back(tmp_type_id);
-                    fake_load.ops.push_back(tmp_id);
-                    fake_load.ops.push_back(rhs);
+                    fake_load.ops.push(tmp_type_id);
+                    fake_load.ops.push(tmp_id);
+                    fake_load.ops.push(rhs);
 
-                    fake_store.op = OpStore;
+                    fake_store.op = Op.OpStore;
                     fake_store.length = 2;
-                    fake_store.ops.push_back(lhs);
-                    fake_store.ops.push_back(tmp_id);
+                    fake_store.ops.push(lhs);
+                    fake_store.ops.push(tmp_id);
 
                     // Load and Store do a *lot* of workarounds, and we'd like to reuse them as much as possible.
                     // Synthesize a fake Load and Store pair for CopyMemory.
-                    emit_instruction(fake_load);
-                    emit_instruction(fake_store);
+                    this.emit_instruction(fake_load);
+                    this.emit_instruction(fake_store);
                 }
                 break;
             }
 
-            case Op.OpCopyLogical:
-            {
+            case Op.OpCopyLogical: {
                 // This is used for copying object of different types, arrays and structs.
                 // We need to unroll the copy, element-by-element.
-                uint32_t result_type = ops[0];
-                uint32_t id = ops[1];
-                uint32_t rhs = ops[2];
+                const result_type = ops[0];
+                const id = ops[1];
+                const rhs = ops[2];
 
-                emit_uninitialized_temporary_expression(result_type, id);
-                emit_copy_logical_type(id, result_type, rhs, expression_type_id(rhs), {});
+                this.emit_uninitialized_temporary_expression(result_type, id);
+                this.emit_copy_logical_type(id, result_type, rhs, this.expression_type_id(rhs), []);
                 break;
             }
 
-            case Op.OpCopyObject:
-            {
-                uint32_t result_type = ops[0];
-                uint32_t id = ops[1];
-                uint32_t rhs = ops[2];
-                bool pointer = get<SPIRType>(result_type).pointer;
+            case Op.OpCopyObject: {
+                const result_type = ops[0];
+                const id = ops[1];
+                const rhs = ops[2];
+                const pointer = this.get<SPIRType>(SPIRType, result_type).pointer;
 
-                auto *chain = maybe_get<SPIRAccessChain>(rhs);
-                auto *imgsamp = maybe_get<SPIRCombinedImageSampler>(rhs);
-                if (chain)
-                {
+                const chain = this.maybe_get<SPIRAccessChain>(SPIRAccessChain, rhs);
+                const imgsamp = this.maybe_get<SPIRCombinedImageSampler>(SPIRCombinedImageSampler, rhs);
+                if (chain) {
                     // Cannot lower to a SPIRExpression, just copy the object.
-                    auto &e = set<SPIRAccessChain>(id, *chain);
+                    const e = this.set<SPIRAccessChain>(SPIRAccessChain, id, chain);
                     e.self = id;
                 }
-                else if (imgsamp)
-                {
+                else if (imgsamp) {
                     // Cannot lower to a SPIRExpression, just copy the object.
                     // GLSL does not currently use this type and will never get here, but MSL does.
                     // Handled here instead of CompilerMSL for better integration and general handling,
                     // and in case GLSL or other subclasses require it in the future.
-                    auto &e = set<SPIRCombinedImageSampler>(id, *imgsamp);
+                    const e = this.set<SPIRCombinedImageSampler>(SPIRCombinedImageSampler, id, imgsamp);
                     e.self = id;
                 }
-                else if (expression_is_lvalue(rhs) && !pointer)
-                {
+                else if (this.expression_is_lvalue(rhs) && !pointer) {
                     // Need a copy.
                     // For pointer types, we copy the pointer itself.
-                    statement(declare_temporary(result_type, id), to_unpacked_expression(rhs), ";");
-                    set<SPIRExpression>(id, to_name(id), result_type, true);
+                    this.statement(this.declare_temporary(result_type, id), this.to_unpacked_expression(rhs), ";");
+                    this.set<SPIRExpression>(SPIRExpression, id, this.to_name(id), result_type, true);
                 }
-                else
-                {
+                else {
                     // RHS expression is immutable, so just forward it.
                     // Copying these things really make no sense, but
                     // seems to be allowed anyways.
-                    auto &e = set<SPIRExpression>(id, to_expression(rhs), result_type, true);
-                    if (pointer)
-                    {
-                        auto *var = maybe_get_backing_variable(rhs);
-                        e.loaded_from = var ? var_.self : ID(0);
+                    const e = this.set<SPIRExpression>(SPIRExpression, id, this.to_expression(rhs), result_type, true);
+                    if (pointer) {
+                        const var_ = this.maybe_get_backing_variable(rhs);
+                        e.loaded_from = var_ ? var_.self : 0;
                     }
 
                     // If we're copying an access chain, need to inherit the read expressions.
-                    auto *rhs_expr = maybe_get<SPIRExpression>(rhs);
-                    if (rhs_expr)
-                    {
-                        e.implied_read_expressions = rhs_expr->implied_read_expressions;
-                        e.expression_dependencies = rhs_expr->expression_dependencies;
+                    const rhs_expr = this.maybe_get<SPIRExpression>(SPIRExpression, rhs);
+                    if (rhs_expr) {
+                        e.implied_read_expressions = rhs_expr.implied_read_expressions;
+                        e.expression_dependencies = rhs_expr.expression_dependencies;
                     }
                 }
                 break;
             }
 
-            case Op.OpVectorShuffle:
-            {
-                uint32_t result_type = ops[0];
-                uint32_t id = ops[1];
-                uint32_t vec0 = ops[2];
-                uint32_t vec1 = ops[3];
-                const auto *elems = &ops[4];
+            case Op.OpVectorShuffle: {
+                const result_type = ops[0];
+                const id = ops[1];
+                const vec0 = ops[2];
+                const vec1 = ops[3];
+                const elems = ops.slice(4);
                 length -= 4;
 
-                auto &type0 = expression_type(vec0);
+                const type0 = this.expression_type(vec0);
 
                 // If we have the undefined swizzle index -1, we need to swizzle in undefined data,
                 // or in our case, T(0).
-                bool shuffle = false;
-                for (uint32_t i = 0; i < length; i++)
-                if (elems[i] >= type0.vecsize || elems[i] === 0xffffffffu)
-                shuffle = true;
+                let shuffle = false;
+                for (let i = 0; i < length; i++)
+                    if (elems[i] >= type0.vecsize || elems[i] === 0xffffffff)
+                        shuffle = true;
 
                 // Cannot use swizzles with packed expressions, force shuffle path.
-                if (!shuffle && has_extended_decoration(vec0, SPIRVCrossDecorationPhysicalTypePacked))
+                if (!shuffle && this.has_extended_decoration(vec0, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked))
                     shuffle = true;
 
-                string expr;
-                bool should_fwd, trivial_forward;
+                let expr = "";
+                let should_fwd = false;
+                let trivial_forward = false;
 
-                if (shuffle)
-                {
-                    should_fwd = should_forward(vec0) && should_forward(vec1);
-                    trivial_forward = should_suppress_usage_tracking(vec0) && should_suppress_usage_tracking(vec1);
+                if (shuffle) {
+                    should_fwd = this.should_forward(vec0) && this.should_forward(vec1);
+                    trivial_forward = this.should_suppress_usage_tracking(vec0) && this.should_suppress_usage_tracking(vec1);
 
                     // Constructor style and shuffling from two different vectors.
-                    SmallVector<string> args;
-                    for (uint32_t i = 0; i < length; i++)
-                    {
-                        if (elems[i] === 0xffffffffu)
-                        {
+                    const args: string[] = [];
+                    for (let i = 0; i < length; i++) {
+                        if (elems[i] === 0xffffffff) {
                             // Use a constant 0 here.
                             // We could use the first component or similar, but then we risk propagating
                             // a value we might not need, and bog down codegen.
-                            SPIRConstant c;
+                            const c = new SPIRConstant();
                             c.constant_type = type0.parent_type;
-                            assert(type0.parent_type !== ID(0));
-                            args.push_back(constant_expression(c));
+                            console.assert(type0.parent_type !== 0);
+                            args.push(this.constant_expression(c));
                         }
-                    else if (elems[i] >= type0.vecsize)
-                        args.push_back(to_extract_component_expression(vec1, elems[i] - type0.vecsize));
-                    else
-                        args.push_back(to_extract_component_expression(vec0, elems[i]));
+                        else if (elems[i] >= type0.vecsize)
+                            args.push(this.to_extract_component_expression(vec1, elems[i] - type0.vecsize));
+                        else
+                            args.push(this.to_extract_component_expression(vec0, elems[i]));
                     }
-                    expr += join(type_to_glsl_constructor(get<SPIRType>(result_type)), "(", merge(args), ")");
+                    expr += this.type_to_glsl_constructor(this.get<SPIRType>(SPIRType, result_type)) + "(" + args.join(", ") + ")";
                 }
-                else
-                {
-                    should_fwd = should_forward(vec0);
-                    trivial_forward = should_suppress_usage_tracking(vec0);
+                else {
+                    should_fwd = this.should_forward(vec0);
+                    trivial_forward = this.should_suppress_usage_tracking(vec0);
 
                     // We only source from first vector, so can use swizzle.
                     // If the vector is packed, unpack it before applying a swizzle (needed for MSL)
-                    expr += to_enclosed_unpacked_expression(vec0);
+                    expr += this.to_enclosed_unpacked_expression(vec0);
                     expr += ".";
-                    for (uint32_t i = 0; i < length; i++)
-                    {
-                        assert(elems[i] !== 0xffffffffu);
-                        expr += index_to_swizzle(elems[i]);
+                    for (let i = 0; i < length; i++) {
+                        console.assert(elems[i] !== 0xffffffff);
+                        expr += this.index_to_swizzle(elems[i]);
                     }
 
                     if (backend.swizzle_is_function && length > 1)
@@ -1307,15 +1269,15 @@ export class CompilerGLSL extends Compiler
                 // A shuffle is trivial in that it doesn't actually *do* anything.
                 // We inherit the forwardedness from our arguments to avoid flushing out to temporaries when it's not really needed.
 
-                emit_op(result_type, id, expr, should_fwd, trivial_forward);
+                this.emit_op(result_type, id, expr, should_fwd, trivial_forward);
 
-                inherit_expression_dependencies(id, vec0);
+                this.inherit_expression_dependencies(id, vec0);
                 if (vec0 !== vec1)
-                    inherit_expression_dependencies(id, vec1);
+                    this.inherit_expression_dependencies(id, vec1);
                 break;
-            }*/
+            }
 
-                // ALU
+            // ALU
             case Op.OpIsNan:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "isnan");
                 break;
@@ -1329,22 +1291,20 @@ export class CompilerGLSL extends Compiler
                 this.emit_unary_op(ops[0], ops[1], ops[2], "-");
                 break;
 
-            case Op.OpIAdd:
-            {
+            case Op.OpIAdd: {
                 // For simple arith ops, prefer the output type if there's a mismatch to avoid extra bitcasts.
                 const type = this.get<SPIRType>(SPIRType, ops[0]).basetype;
-                this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "+", type, opcode_is_sign_invariant(opcode))
+                this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "+", type, opcode_is_sign_invariant(opcode));
                 break;
             }
 
             case Op.OpFAdd:
-                this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "+")
+                this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "+");
                 break;
 
-            case Op.OpISub:
-            {
+            case Op.OpISub: {
                 const type = this.get<SPIRType>(SPIRType, ops[0]).basetype;
-                this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "-", type, opcode_is_sign_invariant(opcode))
+                this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "-", type, opcode_is_sign_invariant(opcode));
                 break;
             }
 
@@ -1352,72 +1312,66 @@ export class CompilerGLSL extends Compiler
                 this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "-");
                 break;
 
-            case Op.OpIMul:
-            {
+            case Op.OpIMul: {
                 const type = this.get<SPIRType>(SPIRType, ops[0]).basetype;
-                this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "*", type, opcode_is_sign_invariant(opcode))
+                this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "*", type, opcode_is_sign_invariant(opcode));
                 break;
             }
 
-            /*case Op.OpVectorTimesMatrix:
-            case Op.OpMatrixTimesVector:
-            {
+            case Op.OpVectorTimesMatrix:
+            case Op.OpMatrixTimesVector: {
                 // If the matrix needs transpose, just flip the multiply order.
-                auto *e = maybe_get<SPIRExpression>(ops[opcode === OpMatrixTimesVector ? 2 : 3]);
-                if (e && e->need_transpose)
-                {
-                    e->need_transpose = false;
-                    string expr;
+                const e = this.maybe_get<SPIRExpression>(SPIRExpression, ops[opcode === Op.OpMatrixTimesVector ? 2 : 3]);
+                if (e && e.need_transpose) {
+                    e.need_transpose = false;
+                    let expr = "";
 
-                    if (opcode === OpMatrixTimesVector)
-                        expr = join(to_enclosed_unpacked_expression(ops[3]), " * ",
-                            enclose_expression(to_unpacked_row_major_matrix_expression(ops[2])));
+                    if (opcode === Op.OpMatrixTimesVector)
+                        expr = this.to_enclosed_unpacked_expression(ops[3]) + " * " + this.enclose_expression(this.to_unpacked_row_major_matrix_expression(ops[2]));
                     else
-                        expr = join(enclose_expression(to_unpacked_row_major_matrix_expression(ops[3])), " * ",
-                            to_enclosed_unpacked_expression(ops[2]));
+                        expr = this.enclose_expression(this.to_unpacked_row_major_matrix_expression(ops[3])) + " * " +
+                            this.to_enclosed_unpacked_expression(ops[2]);
 
-                    bool forward = should_forward(ops[2]) && should_forward(ops[3]);
-                    emit_op(ops[0], ops[1], expr, forward);
-                    e->need_transpose = true;
-                    inherit_expression_dependencies(ops[1], ops[2]);
-                    inherit_expression_dependencies(ops[1], ops[3]);
+                    const forward = this.should_forward(ops[2]) && this.should_forward(ops[3]);
+                    this.emit_op(ops[0], ops[1], expr, forward);
+                    e.need_transpose = true;
+                    this.inherit_expression_dependencies(ops[1], ops[2]);
+                    this.inherit_expression_dependencies(ops[1], ops[3]);
                 }
-            else
-                this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "*")
+                else
+                    this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "*");
                 break;
             }
 
-            case Op.OpMatrixTimesMatrix:
-            {
-                auto *a = maybe_get<SPIRExpression>(ops[2]);
-                auto *b = maybe_get<SPIRExpression>(ops[3]);
+            case Op.OpMatrixTimesMatrix: {
+                const a = this.maybe_get<SPIRExpression>(SPIRExpression, ops[2]);
+                const b = this.maybe_get<SPIRExpression>(SPIRExpression, ops[3]);
 
                 // If both matrices need transpose, we can multiply in flipped order and tag the expression as transposed.
                 // a^T * b^T = (b * a)^T.
-                if (a && b && a->need_transpose && b->need_transpose)
-                {
-                    a->need_transpose = false;
-                    b->need_transpose = false;
-                    auto expr = join(enclose_expression(to_unpacked_row_major_matrix_expression(ops[3])), " * ",
-                    enclose_expression(to_unpacked_row_major_matrix_expression(ops[2])));
-                    bool forward = should_forward(ops[2]) && should_forward(ops[3]);
-                    auto &e = emit_op(ops[0], ops[1], expr, forward);
+                if (a && b && a.need_transpose && b.need_transpose) {
+                    a.need_transpose = false;
+                    b.need_transpose = false;
+                    const expr = this.enclose_expression(this.to_unpacked_row_major_matrix_expression(ops[3])) + " * " +
+                        this.enclose_expression(this.to_unpacked_row_major_matrix_expression(ops[2]));
+                    const forward = this.should_forward(ops[2]) && this.should_forward(ops[3]);
+                    const e = this.emit_op(ops[0], ops[1], expr, forward);
                     e.need_transpose = true;
-                    a->need_transpose = true;
-                    b->need_transpose = true;
-                    inherit_expression_dependencies(ops[1], ops[2]);
-                    inherit_expression_dependencies(ops[1], ops[3]);
+                    a.need_transpose = true;
+                    b.need_transpose = true;
+                    this.inherit_expression_dependencies(ops[1], ops[2]);
+                    this.inherit_expression_dependencies(ops[1], ops[3]);
                 }
-            else
-                this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "*")
+                else
+                    this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "*");
 
                 break;
-            }*/
+            }
 
             case Op.OpFMul:
             case Op.OpMatrixTimesScalar:
             case Op.OpVectorTimesScalar:
-                this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "*")
+                this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "*");
                 break;
 
             case Op.OpOuterProduct:
@@ -1428,105 +1382,105 @@ export class CompilerGLSL extends Compiler
                 this.emit_binary_func_op(ops[0], ops[1], ops[2], ops[3], "dot");
                 break;
 
-            /*case Op.OpTranspose:
+            case Op.OpTranspose:
                 if (options.version < 120) // Matches GLSL 1.10 / ESSL 1.00
                 {
                     // transpose() is not available, so instead, flip need_transpose,
                     // which can later be turned into an emulated transpose op by
                     // convert_row_major_matrix(), if necessary.
-                    uint32_t result_type = ops[0];
-                    uint32_t result_id = ops[1];
-                    uint32_t input = ops[2];
+                    const result_type = ops[0];
+                    const result_id = ops[1];
+                    const input = ops[2];
 
                     // Force need_transpose to false temporarily to prevent
                     // to_expression() from doing the transpose.
-                    bool need_transpose = false;
-                    auto *input_e = maybe_get<SPIRExpression>(input);
-                    if (input_e)
-                        swap(need_transpose, input_e->need_transpose);
+                    let need_transpose = false;
+                    const input_e = this.maybe_get<SPIRExpression>(SPIRExpression, input);
+                    if (input_e) {
+                        const tmp = need_transpose;
+                        need_transpose = input_e.need_transpose;
+                        input_e.need_transpose = tmp;
+                    }
 
-                    bool forward = should_forward(input);
-                    auto &e = emit_op(result_type, result_id, to_expression(input), forward);
+                    const forward = this.should_forward(input);
+                    const e = this.emit_op(result_type, result_id, this.to_expression(input), forward);
                     e.need_transpose = !need_transpose;
 
                     // Restore the old need_transpose flag.
                     if (input_e)
-                        input_e->need_transpose = need_transpose;
+                        input_e.need_transpose = need_transpose;
                 }
                 else
                     this.emit_unary_func_op(ops[0], ops[1], ops[2], "transpose");
                 break;
 
-            case Op.OpSRem:
-            {
-                uint32_t result_type = ops[0];
-                uint32_t result_id = ops[1];
-                uint32_t op0 = ops[2];
-                uint32_t op1 = ops[3];
+            case Op.OpSRem: {
+                const result_type = ops[0];
+                const result_id = ops[1];
+                const op0 = ops[2];
+                const op1 = ops[3];
 
                 // Needs special handling.
-                bool forward = should_forward(op0) && should_forward(op1);
-                auto expr = join(to_enclosed_expression(op0), " - ", to_enclosed_expression(op1), " * ", "(",
-                to_enclosed_expression(op0), " / ", to_enclosed_expression(op1), ")");
+                const forward = this.should_forward(op0) && this.should_forward(op1);
+                const expr = this.to_enclosed_expression(op0) + " - " + this.to_enclosed_expression(op1) + " * (" +
+                    this.to_enclosed_expression(op0) + " / " + this.to_enclosed_expression(op1) + ")";
 
-                emit_op(result_type, result_id, expr, forward);
-                inherit_expression_dependencies(result_id, op0);
-                inherit_expression_dependencies(result_id, op1);
+                this.emit_op(result_type, result_id, expr, forward);
+                this.inherit_expression_dependencies(result_id, op0);
+                this.inherit_expression_dependencies(result_id, op1);
                 break;
             }
 
             case Op.OpSDiv:
-                this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "/", int_type, opcode_is_sign_invariant(opcode))
+                this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "/", int_type, opcode_is_sign_invariant(opcode));
                 break;
 
             case Op.OpUDiv:
-                this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "/", uint_type, opcode_is_sign_invariant(opcode))
+                this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "/", uint_type, opcode_is_sign_invariant(opcode));
                 break;
 
             case Op.OpIAddCarry:
-            case Op.OpISubBorrow:
-            {
+            case Op.OpISubBorrow: {
                 if (options.es && options.version < 310)
                     throw new Error("Extended arithmetic is only available from ESSL 310.");
                 else if (!options.es && options.version < 400)
                     throw new Error("Extended arithmetic is only available from GLSL 400.");
 
-                uint32_t result_type = ops[0];
-                uint32_t result_id = ops[1];
-                uint32_t op0 = ops[2];
-                uint32_t op1 = ops[3];
-                auto &type = get<SPIRType>(result_type);
-                emit_uninitialized_temporary_expression(result_type, result_id);
-                const char *op = opcode === OpIAddCarry ? "uaddCarry" : "usubBorrow";
+                const result_type = ops[0];
+                const result_id = ops[1];
+                const op0 = ops[2];
+                const op1 = ops[3];
+                const type = this.get<SPIRType>(SPIRType, result_type);
+                this.emit_uninitialized_temporary_expression(result_type, result_id);
+                const op = opcode === Op.OpIAddCarry ? "uaddCarry" : "usubBorrow";
 
-                statement(to_expression(result_id), ".", to_member_name(type, 0), " = ", op, "(", to_expression(op0), ", ",
-                    to_expression(op1), ", ", to_expression(result_id), ".", to_member_name(type, 1), ");");
+                this.statement(this.to_expression(result_id), ".", this.to_member_name(type, 0), " = ", op, "(", this.to_expression(op0), ", ",
+                    this.to_expression(op1), ", ", this.to_expression(result_id), ".", this.to_member_name(type, 1), ");");
                 break;
             }
 
             case Op.OpUMulExtended:
-                case Op.OpSMulExtended:
-            {
+            case Op.OpSMulExtended: {
                 if (options.es && options.version < 310)
                     throw new Error("Extended arithmetic is only available from ESSL 310.");
                 else if (!options.es && options.version < 400)
                     throw new Error("Extended arithmetic is only available from GLSL 4000.");
 
-                uint32_t result_type = ops[0];
-                uint32_t result_id = ops[1];
-                uint32_t op0 = ops[2];
-                uint32_t op1 = ops[3];
-                auto &type = get<SPIRType>(result_type);
-                emit_uninitialized_temporary_expression(result_type, result_id);
-                const char *op = opcode === OpUMulExtended ? "umulExtended" : "imulExtended";
+                const result_type = ops[0];
+                const result_id = ops[1];
+                const op0 = ops[2];
+                const op1 = ops[3];
+                const type = this.get<SPIRType>(SPIRType, result_type);
+                this.emit_uninitialized_temporary_expression(result_type, result_id);
+                const op = opcode === Op.OpUMulExtended ? "umulExtended" : "imulExtended";
 
-                statement(op, "(", to_expression(op0), ", ", to_expression(op1), ", ", to_expression(result_id), ".",
-                    to_member_name(type, 1), ", ", to_expression(result_id), ".", to_member_name(type, 0), ");");
+                this.statement(op, "(", this.to_expression(op0), ", ", this.to_expression(op1), ", ", this.to_expression(result_id), ".",
+                    this.to_member_name(type, 1), ", ", this.to_expression(result_id), ".", this.to_member_name(type, 0), ");");
                 break;
-            }*/
+            }
 
             case Op.OpFDiv:
-                this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "/")
+                this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "/");
                 break;
 
             case Op.OpShiftRightLogical:
@@ -1537,29 +1491,25 @@ export class CompilerGLSL extends Compiler
                 this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "+", int_type, opcode_is_sign_invariant(opcode));
                 break;
 
-            case Op.OpShiftLeftLogical:
-            {
+            case Op.OpShiftLeftLogical: {
                 const type = this.get<SPIRType>(SPIRType, ops[0]).basetype;
                 this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "<<", type, opcode_is_sign_invariant(opcode));
                 break;
             }
 
-            case Op.OpBitwiseOr:
-            {
+            case Op.OpBitwiseOr: {
                 const type = this.get<SPIRType>(SPIRType, ops[0]).basetype;
                 this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "|", type, opcode_is_sign_invariant(opcode));
                 break;
             }
 
-            case Op.OpBitwiseXor:
-            {
+            case Op.OpBitwiseXor: {
                 const type = this.get<SPIRType>(SPIRType, ops[0]).basetype;
                 this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "^", type, opcode_is_sign_invariant(opcode));
                 break;
             }
 
-            case Op.OpBitwiseAnd:
-            {
+            case Op.OpBitwiseAnd: {
                 const type = this.get<SPIRType>(SPIRType, ops[0]).basetype;
                 this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "&", type, opcode_is_sign_invariant(opcode));
                 break;
@@ -1581,29 +1531,28 @@ export class CompilerGLSL extends Compiler
                 this.emit_binary_func_op(ops[0], ops[1], ops[2], ops[3], "mod");
                 break;
 
-            /*case Op.OpFRem:
-            {
-                if (is_legacy())
-                    throw new Error("OpFRem requires trunc() and is only supported on non-legacy targets. A workaround is "
-                "needed for legacy.");
+            case Op.OpFRem: {
+                if (this.is_legacy())
+                    throw new Error("OpFRem requires trunc() and is only supported on non-legacy targets. A" +
+                        " workaround is needed for legacy.");
 
-                uint32_t result_type = ops[0];
-                uint32_t result_id = ops[1];
-                uint32_t op0 = ops[2];
-                uint32_t op1 = ops[3];
+                const result_type = ops[0];
+                const result_id = ops[1];
+                const op0 = ops[2];
+                const op1 = ops[3];
 
                 // Needs special handling.
-                bool forward = should_forward(op0) && should_forward(op1);
-                auto expr = join(to_enclosed_expression(op0), " - ", to_enclosed_expression(op1), " * ", "trunc(",
-                to_enclosed_expression(op0), " / ", to_enclosed_expression(op1), ")");
+                const forward = this.should_forward(op0) && this.should_forward(op1);
+                const expr = this.to_enclosed_expression(op0) + " - " + this.to_enclosed_expression(op1) + " * trunc(" +
+                    this.to_enclosed_expression(op0) + " / " + this.to_enclosed_expression(op1) + ")";
 
-                emit_op(result_type, result_id, expr, forward);
-                inherit_expression_dependencies(result_id, op0);
-                inherit_expression_dependencies(result_id, op1);
+                this.emit_op(result_type, result_id, expr, forward);
+                this.inherit_expression_dependencies(result_id, op0);
+                this.inherit_expression_dependencies(result_id, op1);
                 break;
             }
 
-                // Relational
+            // Relational
             case Op.OpAny:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "any");
                 break;
@@ -1613,39 +1562,36 @@ export class CompilerGLSL extends Compiler
                 break;
 
             case Op.OpSelect:
-                emit_mix_op(ops[0], ops[1], ops[4], ops[3], ops[2]);
+                this.emit_mix_op(ops[0], ops[1], ops[4], ops[3], ops[2]);
                 break;
 
-            case Op.OpLogicalOr:
-            {
+            case Op.OpLogicalOr: {
                 // No vector variant in GLSL for logical OR.
-                auto result_type = ops[0];
-                auto id = ops[1];
-                auto &type = get<SPIRType>(result_type);
+                const result_type = ops[0];
+                const id = ops[1];
+                const type = this.get<SPIRType>(SPIRType, result_type);
 
                 if (type.vecsize > 1)
-                    emit_unrolled_binary_op(result_type, id, ops[2], ops[3], "||", false, SPIRTypeBaseType.Unknown);
+                    this.emit_unrolled_binary_op(result_type, id, ops[2], ops[3], "||", false, SPIRTypeBaseType.Unknown);
                 else
-                    this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "||")
+                    this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "||");
                 break;
             }
 
-            case Op.OpLogicalAnd:
-            {
+            case Op.OpLogicalAnd: {
                 // No vector variant in GLSL for logical AND.
-                auto result_type = ops[0];
-                auto id = ops[1];
-                auto &type = get<SPIRType>(result_type);
+                const result_type = ops[0];
+                const id = ops[1];
+                const type = this.get<SPIRType>(SPIRType, result_type);
 
                 if (type.vecsize > 1)
-                    emit_unrolled_binary_op(result_type, id, ops[2], ops[3], "&&", false, SPIRTypeBaseType.Unknown);
+                    this.emit_unrolled_binary_op(result_type, id, ops[2], ops[3], "&&", false, SPIRTypeBaseType.Unknown);
                 else
-                    this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "&&")
+                    this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "&&");
                 break;
-            }*/
+            }
 
-            case Op.OpLogicalNot:
-            {
+            case Op.OpLogicalNot: {
                 const type = this.get<SPIRType>(SPIRType, ops[0]);
                 if (type.vecsize > 1)
                     this.emit_unary_func_op(ops[0], ops[1], ops[2], "not ");
@@ -1654,8 +1600,7 @@ export class CompilerGLSL extends Compiler
                 break;
             }
 
-            case Op.OpIEqual:
-            {
+            case Op.OpIEqual: {
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op_cast(ops[0], ops[1], ops[2], ops[3], "equal", int_type, opcode_is_sign_invariant(opcode));
                 else
@@ -1664,27 +1609,24 @@ export class CompilerGLSL extends Compiler
             }
 
             case Op.OpLogicalEqual:
-            case Op.OpFOrdEqual:
-            {
+            case Op.OpFOrdEqual: {
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op(ops[0], ops[1], ops[2], ops[3], "equal");
                 else
-                    this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "==")
+                    this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "==");
                 break;
             }
 
-            case Op.OpINotEqual:
-            {
+            case Op.OpINotEqual: {
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op_cast(ops[0], ops[1], ops[2], ops[3], "notEqual", int_type, opcode_is_sign_invariant(opcode));
                 else
-                this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "!=", int_type, opcode_is_sign_invariant(opcode));
+                    this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "!=", int_type, opcode_is_sign_invariant(opcode));
                 break;
             }
 
             case Op.OpLogicalNotEqual:
-            case Op.OpFOrdNotEqual:
-            {
+            case Op.OpFOrdNotEqual: {
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op(ops[0], ops[1], ops[2], ops[3], "notEqual");
                 else
@@ -1693,18 +1635,16 @@ export class CompilerGLSL extends Compiler
             }
 
             case Op.OpUGreaterThan:
-            case Op.OpSGreaterThan:
-            {
+            case Op.OpSGreaterThan: {
                 const type = opcode === Op.OpUGreaterThan ? uint_type : int_type;
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op_cast(ops[0], ops[1], ops[2], ops[3], "greaterThan", type, opcode_is_sign_invariant(opcode));
                 else
-                    this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], ">", type, opcode_is_sign_invariant(opcode))
+                    this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], ">", type, opcode_is_sign_invariant(opcode));
                 break;
             }
 
-            case Op.OpFOrdGreaterThan:
-            {
+            case Op.OpFOrdGreaterThan: {
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op(ops[0], ops[1], ops[2], ops[3], "greaterThan");
                 else
@@ -1713,18 +1653,16 @@ export class CompilerGLSL extends Compiler
             }
 
             case Op.OpUGreaterThanEqual:
-            case Op.OpSGreaterThanEqual:
-            {
+            case Op.OpSGreaterThanEqual: {
                 const type = opcode === Op.OpUGreaterThanEqual ? uint_type : int_type;
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op_cast(ops[0], ops[1], ops[2], ops[3], "greaterThanEqual", type, opcode_is_sign_invariant(opcode));
                 else
-                    this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], ">=", type, opcode_is_sign_invariant(opcode))
+                    this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], ">=", type, opcode_is_sign_invariant(opcode));
                 break;
             }
 
-            case Op.OpFOrdGreaterThanEqual:
-            {
+            case Op.OpFOrdGreaterThanEqual: {
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op(ops[0], ops[1], ops[2], ops[3], "greaterThanEqual");
                 else
@@ -1733,18 +1671,16 @@ export class CompilerGLSL extends Compiler
             }
 
             case Op.OpULessThan:
-            case Op.OpSLessThan:
-            {
+            case Op.OpSLessThan: {
                 const type = opcode === Op.OpULessThan ? uint_type : int_type;
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op_cast(ops[0], ops[1], ops[2], ops[3], "lessThan", type, opcode_is_sign_invariant(opcode));
                 else
-                    this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "<", type, opcode_is_sign_invariant(opcode))
+                    this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "<", type, opcode_is_sign_invariant(opcode));
                 break;
             }
 
-            case Op.OpFOrdLessThan:
-            {
+            case Op.OpFOrdLessThan: {
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op(ops[0], ops[1], ops[2], ops[3], "lessThan");
                 else
@@ -1753,18 +1689,16 @@ export class CompilerGLSL extends Compiler
             }
 
             case Op.OpULessThanEqual:
-            case Op.OpSLessThanEqual:
-            {
+            case Op.OpSLessThanEqual: {
                 const type = opcode === Op.OpULessThanEqual ? uint_type : int_type;
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op_cast(ops[0], ops[1], ops[2], ops[3], "lessThanEqual", type, opcode_is_sign_invariant(opcode));
                 else
-                    this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "<=", type, opcode_is_sign_invariant(opcode))
+                    this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "<=", type, opcode_is_sign_invariant(opcode));
                 break;
             }
 
-            case Op.OpFOrdLessThanEqual:
-            {
+            case Op.OpFOrdLessThanEqual: {
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op(ops[0], ops[1], ops[2], ops[3], "lessThanEqual");
                 else
@@ -1772,12 +1706,11 @@ export class CompilerGLSL extends Compiler
                 break;
             }
 
-                // Conversion
+            // Conversion
             case Op.OpSConvert:
             case Op.OpConvertSToF:
             case Op.OpUConvert:
-            case Op.OpConvertUToF:
-            {
+            case Op.OpConvertUToF: {
                 const input_type = opcode === Op.OpSConvert || opcode === Op.OpConvertSToF ? int_type : uint_type;
                 const result_type = ops[0];
                 const id = ops[1];
@@ -1794,8 +1727,7 @@ export class CompilerGLSL extends Compiler
             }
 
             case Op.OpConvertFToU:
-            case Op.OpConvertFToS:
-            {
+            case Op.OpConvertFToS: {
                 // Cast to expected arithmetic type, then potentially bitcast away to desired signedness.
                 const result_type = ops[0];
                 const id = ops[1];
@@ -1809,8 +1741,7 @@ export class CompilerGLSL extends Compiler
                 break;
             }
 
-            case Op.OpFConvert:
-            {
+            case Op.OpFConvert: {
                 const result_type = ops[0];
                 const id = ops[1];
 
@@ -1819,22 +1750,19 @@ export class CompilerGLSL extends Compiler
                 break;
             }
 
-            case Op.OpBitcast:
-            {
+            case Op.OpBitcast: {
                 const result_type = ops[0];
                 const id = ops[1];
                 const arg = ops[2];
 
-                if (!this.emit_complex_bitcast(result_type, id, arg))
-                {
+                if (!this.emit_complex_bitcast(result_type, id, arg)) {
                     const op = this.bitcast_glsl_op(this.get<SPIRType>(SPIRType, result_type), this.expression_type(arg));
                     this.emit_unary_func_op(result_type, id, arg, op);
                 }
                 break;
             }
 
-            case Op.OpQuantizeToF16:
-            {
+            case Op.OpQuantizeToF16: {
                 const result_type = ops[0];
                 const id = ops[1];
                 const arg = ops[2];
@@ -1842,23 +1770,20 @@ export class CompilerGLSL extends Compiler
                 let op = "";
                 const type = this.get<SPIRType>(SPIRType, result_type);
 
-                switch (type.vecsize)
-                {
+                switch (type.vecsize) {
                     case 1:
                         op = "unpackHalf2x16(packHalf2x16(vec2(" + this.to_expression(arg), "))).x";
                         break;
                     case 2:
                         op = "unpackHalf2x16(packHalf2x16(" + this.to_expression(arg) + "))";
                         break;
-                    case 3:
-                    {
+                    case 3: {
                         const op0 = "unpackHalf2x16(packHalf2x16(" + this.to_expression(arg) + ".xy))";
                         const op1 = "unpackHalf2x16(packHalf2x16(" + this.to_expression(arg) + ".zz)).x";
                         op = "vec3(" + op0 + ", " + op1 + ")";
                         break;
                     }
-                    case 4:
-                    {
+                    case 4: {
                         const op0 = "unpackHalf2x16(packHalf2x16(" + this.to_expression(arg) + ".xy))";
                         const op1 = "unpackHalf2x16(packHalf2x16(" + this.to_expression(arg) + ".zw))";
                         op = "vec4(" + op0 + ", " + op1 + ")";
@@ -1873,111 +1798,102 @@ export class CompilerGLSL extends Compiler
                 break;
             }
 
-                // Derivatives
-            /*case Op.OpDPdx:
+            // Derivatives
+            case Op.OpDPdx:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "dFdx");
-                if (is_legacy_es())
-                    require_extension_internal("GL_OES_standard_derivatives");
-                register_control_dependent_expression(ops[1]);
+                if (this.is_legacy_es())
+                    this.require_extension_internal("GL_OES_standard_derivatives");
+                this.register_control_dependent_expression(ops[1]);
                 break;
 
             case Op.OpDPdy:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "dFdy");
-                if (is_legacy_es())
-                    require_extension_internal("GL_OES_standard_derivatives");
-                register_control_dependent_expression(ops[1]);
+                if (this.is_legacy_es())
+                    this.require_extension_internal("GL_OES_standard_derivatives");
+                this.register_control_dependent_expression(ops[1]);
                 break;
 
             case Op.OpDPdxFine:
-            this.emit_unary_func_op(ops[0], ops[1], ops[2], "dFdxFine");
-                if (options.es)
-                {
+                this.emit_unary_func_op(ops[0], ops[1], ops[2], "dFdxFine");
+                if (options.es) {
                     throw new Error("GL_ARB_derivative_control is unavailable in OpenGL ES.");
                 }
                 if (options.version < 450)
-                    require_extension_internal("GL_ARB_derivative_control");
-                register_control_dependent_expression(ops[1]);
+                    this.require_extension_internal("GL_ARB_derivative_control");
+                this.register_control_dependent_expression(ops[1]);
                 break;
 
             case Op.OpDPdyFine:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "dFdyFine");
-                if (options.es)
-                {
+                if (options.es) {
                     throw new Error("GL_ARB_derivative_control is unavailable in OpenGL ES.");
                 }
                 if (options.version < 450)
-                    require_extension_internal("GL_ARB_derivative_control");
-                register_control_dependent_expression(ops[1]);
+                    this.require_extension_internal("GL_ARB_derivative_control");
+                this.register_control_dependent_expression(ops[1]);
                 break;
 
             case Op.OpDPdxCoarse:
-                if (options.es)
-                {
+                if (options.es) {
                     throw new Error("GL_ARB_derivative_control is unavailable in OpenGL ES.");
                 }
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "dFdxCoarse");
                 if (options.version < 450)
-                    require_extension_internal("GL_ARB_derivative_control");
-                register_control_dependent_expression(ops[1]);
+                    this.require_extension_internal("GL_ARB_derivative_control");
+                this.register_control_dependent_expression(ops[1]);
                 break;
 
             case Op.OpDPdyCoarse:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "dFdyCoarse");
-                if (options.es)
-                {
+                if (options.es) {
                     throw new Error("GL_ARB_derivative_control is unavailable in OpenGL ES.");
                 }
                 if (options.version < 450)
-                    require_extension_internal("GL_ARB_derivative_control");
-                register_control_dependent_expression(ops[1]);
+                    this.require_extension_internal("GL_ARB_derivative_control");
+                this.register_control_dependent_expression(ops[1]);
                 break;
 
             case Op.OpFwidth:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "fwidth");
-                if (is_legacy_es())
-                    require_extension_internal("GL_OES_standard_derivatives");
-                register_control_dependent_expression(ops[1]);
+                if (this.is_legacy_es())
+                    this.require_extension_internal("GL_OES_standard_derivatives");
+                this.register_control_dependent_expression(ops[1]);
                 break;
 
             case Op.OpFwidthCoarse:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "fwidthCoarse");
-                if (options.es)
-                {
+                if (options.es) {
                     throw new Error("GL_ARB_derivative_control is unavailable in OpenGL ES.");
                 }
                 if (options.version < 450)
-                    require_extension_internal("GL_ARB_derivative_control");
-                register_control_dependent_expression(ops[1]);
+                    this.require_extension_internal("GL_ARB_derivative_control");
+                this.register_control_dependent_expression(ops[1]);
                 break;
 
             case Op.OpFwidthFine:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "fwidthFine");
-                if (options.es)
-                {
+                if (options.es) {
                     throw new Error("GL_ARB_derivative_control is unavailable in OpenGL ES.");
                 }
                 if (options.version < 450)
-                    require_extension_internal("GL_ARB_derivative_control");
-                register_control_dependent_expression(ops[1]);
+                    this.require_extension_internal("GL_ARB_derivative_control");
+                this.register_control_dependent_expression(ops[1]);
                 break;
 
-                // Bitfield
-            case Op.OpBitFieldInsert:
-            {
-                emit_bitfield_insert_op(ops[0], ops[1], ops[2], ops[3], ops[4], ops[5], "bitfieldInsert", SPIRTypeBaseType.Int);
+            // Bitfield
+            case Op.OpBitFieldInsert: {
+                this.emit_bitfield_insert_op(ops[0], ops[1], ops[2], ops[3], ops[4], ops[5], "bitfieldInsert", SPIRTypeBaseType.Int);
                 break;
             }
 
-            case Op.OpBitFieldSExtract:
-            {
-                emit_trinary_func_op_bitextract(ops[0], ops[1], ops[2], ops[3], ops[4], "bitfieldExtract", int_type, int_type,
+            case Op.OpBitFieldSExtract: {
+                this.emit_trinary_func_op_bitextract(ops[0], ops[1], ops[2], ops[3], ops[4], "bitfieldExtract", int_type, int_type,
                     SPIRTypeBaseType.Int, SPIRTypeBaseType.Int);
                 break;
             }
 
-            case Op.OpBitFieldUExtract:
-            {
-                emit_trinary_func_op_bitextract(ops[0], ops[1], ops[2], ops[3], ops[4], "bitfieldExtract", uint_type, uint_type,
+            case Op.OpBitFieldUExtract: {
+                this.emit_trinary_func_op_bitextract(ops[0], ops[1], ops[2], ops[3], ops[4], "bitfieldExtract", uint_type, uint_type,
                     SPIRTypeBaseType.Int, SPIRTypeBaseType.Int);
                 break;
             }
@@ -1987,15 +1903,14 @@ export class CompilerGLSL extends Compiler
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "bitfieldReverse");
                 break;
 
-            case Op.OpBitCount:
-            {
-                auto basetype = expression_type(ops[2]).basetype;
-                emit_unary_func_op_cast(ops[0], ops[1], ops[2], "bitCount", basetype, int_type);
+            case Op.OpBitCount: {
+                const basetype = this.expression_type(ops[2]).basetype;
+                this.emit_unary_func_op_cast(ops[0], ops[1], ops[2], "bitCount", basetype, int_type);
                 break;
             }
 
-                // Atomics
-            case Op.OpAtomicExchange:
+            // Atomics
+            /*case Op.OpAtomicExchange:
             {
                 uint32_t result_type = ops[0];
                 uint32_t id = ops[1];
@@ -2197,48 +2112,45 @@ export class CompilerGLSL extends Compiler
                 this.emit_texture_op(instruction, false);
                 break;
 
-            /*case OpImageSparseSampleExplicitLod:
-                case OpImageSparseSampleProjExplicitLod:
-                case OpImageSparseSampleDrefExplicitLod:
-                case OpImageSparseSampleProjDrefExplicitLod:
-                case OpImageSparseSampleImplicitLod:
-                case OpImageSparseSampleProjImplicitLod:
-                case OpImageSparseSampleDrefImplicitLod:
-                case OpImageSparseSampleProjDrefImplicitLod:
-                case OpImageSparseFetch:
-                case OpImageSparseGather:
-                case OpImageSparseDrefGather:
+            case Op.OpImageSparseSampleExplicitLod:
+            case Op.OpImageSparseSampleProjExplicitLod:
+            case Op.OpImageSparseSampleDrefExplicitLod:
+            case Op.OpImageSparseSampleProjDrefExplicitLod:
+            case Op.OpImageSparseSampleImplicitLod:
+            case Op.OpImageSparseSampleProjImplicitLod:
+            case Op.OpImageSparseSampleDrefImplicitLod:
+            case Op.OpImageSparseSampleProjDrefImplicitLod:
+            case Op.OpImageSparseFetch:
+            case Op.OpImageSparseGather:
+            case Op.OpImageSparseDrefGather:
                 // Gets a bit hairy, so move this to a separate instruction.
-                emit_texture_op(instruction, true);
+                this.emit_texture_op(instruction, true);
                 break;
 
-            case OpImageSparseTexelsResident:
+            case Op.OpImageSparseTexelsResident:
                 if (options.es)
                     throw new Error("Sparse feedback is not supported in GLSL.");
-                require_extension_internal("GL_ARB_sparse_texture2");
-                emit_unary_func_op_cast(ops[0], ops[1], ops[2], "sparseTexelsResidentARB", int_type, SPIRTypeBaseType.Boolean);
+                this.require_extension_internal("GL_ARB_sparse_texture2");
+                this.emit_unary_func_op_cast(ops[0], ops[1], ops[2], "sparseTexelsResidentARB", int_type, SPIRTypeBaseType.Boolean);
                 break;
 
-            case OpImage:
-            {
-                uint32_t result_type = ops[0];
-                uint32_t id = ops[1];
+            case Op.OpImage: {
+                const result_type = ops[0];
+                const id = ops[1];
 
                 // Suppress usage tracking.
-                auto &e = emit_op(result_type, id, to_expression(ops[2]), true, true);
+                const e = this.emit_op(result_type, id, this.to_expression(ops[2]), true, true);
 
                 // When using the image, we need to know which variable it is actually loaded from.
-                auto *var = maybe_get_backing_variable(ops[2]);
-                e.loaded_from = var ? var_.self : ID(0);
+                const var_ = this.maybe_get_backing_variable(ops[2]);
+                e.loaded_from = var_ ? var_.self : <ID>(0);
                 break;
             }
 
-            case OpImageQueryLod:
-            {
-                const char *op = nullptr;
-                if (!options.es && options.version < 400)
-                {
-                    require_extension_internal("GL_ARB_texture_query_lod");
+            case Op.OpImageQueryLod: {
+                let op: string = null;
+                if (!options.es && options.version < 400) {
+                    this.require_extension_internal("GL_ARB_texture_query_lod");
                     // For some reason, the ARB spec is all-caps.
                     op = "textureQueryLOD";
                 }
@@ -2247,367 +2159,336 @@ export class CompilerGLSL extends Compiler
                 else
                     op = "textureQueryLod";
 
-                auto sampler_expr = to_expression(ops[2]);
-                if (has_decoration(ops[2], DecorationNonUniform))
-                {
-                    if (maybe_get_backing_variable(ops[2]))
-                        sampler_expr = convert_non_uniform_expression(sampler_expr, ops[2]);
-                    else if (*backend.nonuniform_qualifier !== '\0')
-                    sampler_expr = join(backend.nonuniform_qualifier, "(", sampler_expr, ")");
+                let sampler_expr = this.to_expression(ops[2]);
+                if (this.has_decoration(ops[2], Decoration.DecorationNonUniform)) {
+                    if (this.maybe_get_backing_variable(ops[2]))
+                        sampler_expr = this.convert_non_uniform_expression(sampler_expr, ops[2]);
+                    else if (backend.nonuniform_qualifier !== "\0")
+                        sampler_expr = backend.nonuniform_qualifier + "(" + sampler_expr + ")";
                 }
 
-                bool forward = should_forward(ops[3]);
-                emit_op(ops[0], ops[1],
-                    join(op, "(", sampler_expr, ", ", to_unpacked_expression(ops[3]), ")"),
+                const forward = this.should_forward(ops[3]);
+                this.emit_op(ops[0], ops[1],
+                    op + "(" + sampler_expr + ", " + this.to_unpacked_expression(ops[3]) + ")",
                     forward);
-                inherit_expression_dependencies(ops[1], ops[2]);
-                inherit_expression_dependencies(ops[1], ops[3]);
-                register_control_dependent_expression(ops[1]);
+                this.inherit_expression_dependencies(ops[1], ops[2]);
+                this.inherit_expression_dependencies(ops[1], ops[3]);
+                this.register_control_dependent_expression(ops[1]);
                 break;
             }
 
-            case OpImageQueryLevels:
-            {
-                uint32_t result_type = ops[0];
-                uint32_t id = ops[1];
+            case Op.OpImageQueryLevels: {
+                const result_type = ops[0];
+                const id = ops[1];
 
                 if (!options.es && options.version < 430)
-                    require_extension_internal("GL_ARB_texture_query_levels");
+                    this.require_extension_internal("GL_ARB_texture_query_levels");
                 if (options.es)
                     throw new Error("textureQueryLevels not supported in ES profile.");
 
-                auto expr = join("textureQueryLevels(", convert_separate_image_to_expression(ops[2]), ")");
-                auto &restype = get<SPIRType>(ops[0]);
-                expr = bitcast_expression(restype, SPIRTypeBaseType.Int, expr);
-                emit_op(result_type, id, expr, true);
+                let expr = "textureQueryLevels(" + this.convert_separate_image_to_expression(ops[2]) + ")";
+                const restype = this.get<SPIRType>(SPIRType, ops[0]);
+                expr = this.bitcast_expression(restype, SPIRTypeBaseType.Int, expr);
+                this.emit_op(result_type, id, expr, true);
                 break;
             }
 
-            case OpImageQuerySamples:
-            {
-                auto &type = expression_type(ops[2]);
-                uint32_t result_type = ops[0];
-                uint32_t id = ops[1];
+            case Op.OpImageQuerySamples: {
+                const type = this.expression_type(ops[2]);
+                const result_type = ops[0];
+                const id = ops[1];
 
-                string expr;
+                let expr: string;
                 if (type.image.sampled === 2)
-                    expr = join("imageSamples(", to_non_uniform_aware_expression(ops[2]), ")");
+                    expr = "imageSamples(" + this.to_non_uniform_aware_expression(ops[2]) + ")";
                 else
-                    expr = join("textureSamples(", convert_separate_image_to_expression(ops[2]), ")");
+                    expr = "textureSamples(" + this.convert_separate_image_to_expression(ops[2]) + ")";
 
-                auto &restype = get<SPIRType>(ops[0]);
-                expr = bitcast_expression(restype, SPIRTypeBaseType.Int, expr);
-                emit_op(result_type, id, expr, true);
+                const restype = this.get<SPIRType>(SPIRType, ops[0]);
+                expr = this.bitcast_expression(restype, SPIRTypeBaseType.Int, expr);
+                this.emit_op(result_type, id, expr, true);
                 break;
             }
 
-            case OpSampledImage:
-            {
-                uint32_t result_type = ops[0];
-                uint32_t id = ops[1];
-                emit_sampled_image_op(result_type, id, ops[2], ops[3]);
-                inherit_expression_dependencies(id, ops[2]);
-                inherit_expression_dependencies(id, ops[3]);
+            case Op.OpSampledImage: {
+                const result_type = ops[0];
+                const id = ops[1];
+                this.emit_sampled_image_op(result_type, id, ops[2], ops[3]);
+                this.inherit_expression_dependencies(id, ops[2]);
+                this.inherit_expression_dependencies(id, ops[3]);
                 break;
             }
 
-            case OpImageQuerySizeLod:
-            {
-                uint32_t result_type = ops[0];
-                uint32_t id = ops[1];
-                uint32_t img = ops[2];
+            case Op.OpImageQuerySizeLod: {
+                const result_type = ops[0];
+                const id = ops[1];
+                const img = ops[2];
 
-                std::string fname = "textureSize";
-                if (is_legacy_desktop())
-                {
-                    auto &type = expression_type(img);
-                    auto &imgtype = get<SPIRType>(type.self);
-                    fname = legacy_tex_op(fname, imgtype, img);
+                let fname = "textureSize";
+                if (this.is_legacy_desktop()) {
+                    const type = this.expression_type(img);
+                    const imgtype = this.get<SPIRType>(SPIRType, type.self);
+                    fname = this.legacy_tex_op(fname, imgtype, img);
                 }
-                else if (is_legacy_es())
+                else if (this.is_legacy_es())
                     throw new Error("textureSize is not supported in ESSL 100.");
 
-                auto expr = join(fname, "(", convert_separate_image_to_expression(img), ", ",
-                bitcast_expression(SPIRTypeBaseType.Int, ops[3]), ")");
-                auto &restype = get<SPIRType>(ops[0]);
-                expr = bitcast_expression(restype, SPIRTypeBaseType.Int, expr);
-                emit_op(result_type, id, expr, true);
+                let expr = fname + "(" + this.convert_separate_image_to_expression(img) + ", " + this.bitcast_expression(SPIRTypeBaseType.Int, ops[3]) + ")";
+                const restype = this.get<SPIRType>(SPIRType, ops[0]);
+                expr = this.bitcast_expression(restype, SPIRTypeBaseType.Int, expr);
+                this.emit_op(result_type, id, expr, true);
                 break;
             }
 
-                // Image load/store
-            case OpImageRead:
-                case OpImageSparseRead:
-            {
+            // Image load/store
+            case Op.OpImageRead:
+            case Op.OpImageSparseRead: {
                 // We added Nonreadable speculatively to the OpImage variable due to glslangValidator
                 // not adding the proper qualifiers.
                 // If it turns out we need to read the image after all, remove the qualifier and recompile.
-                auto *var = maybe_get_backing_variable(ops[2]);
-                if (var)
-                {
-                    auto &flags = ir.meta[var_.self].decoration.decoration_flags;
-                    if (flags.get(DecorationNonReadable))
-                    {
-                        flags.clear(DecorationNonReadable);
-                        force_recompile();
+                const var_ = this.maybe_get_backing_variable(ops[2]);
+                if (var_) {
+                    const flags = maplike_get(Meta, ir.meta, var_.self).decoration.decoration_flags;
+                    if (flags.get(Decoration.DecorationNonReadable)) {
+                        flags.clear(Decoration.DecorationNonReadable);
+                        this.force_recompile();
                     }
                 }
 
-                uint32_t result_type = ops[0];
-                uint32_t id = ops[1];
+                const result_type = ops[0];
+                const id = ops[1];
 
-                bool pure;
-                string imgexpr;
-                auto &type = expression_type(ops[2]);
+                let pure = false;
+                let imgexpr = "";
+                const type = this.expression_type(ops[2]);
 
-                if (var && var_.remapped_variable) // Remapped input, just read as-is without any op-code
+                if (var_ && var_.remapped_variable) // Remapped input, just read as-is without any op-code
                 {
                     if (type.image.ms)
                         throw new Error("Trying to remap multisampled image to variable, this is not possible.");
 
-                    auto itr =
-                    find_if(begin(pls_inputs), end(pls_inputs), [var](const PlsRemap &pls) { return pls.id === var_.self; });
+                    const itr_second = this.pls_inputs.find(pls => pls.id === var_.self);
 
-                    if (itr === end(pls_inputs))
-                    {
+                    if (!itr_second) {
                         // For non-PLS inputs, we rely on subpass type remapping information to get it right
                         // since ImageRead always returns 4-component vectors and the backing type is opaque.
                         if (!var_.remapped_components)
-                        throw new Error("subpassInput was remapped, but remap_components is not set correctly.");
-                        imgexpr = remap_swizzle(get<SPIRType>(result_type), var_.remapped_components, to_expression(ops[2]));
+                            throw new Error("subpassInput was remapped, but remap_components is not set correctly.");
+                        imgexpr = this.remap_swizzle(this.get<SPIRType>(SPIRType, result_type), var_.remapped_components, this.to_expression(ops[2]));
                     }
-                    else
-                    {
+                    else {
                         // PLS input could have different number of components than what the SPIR expects, swizzle to
                         // the appropriate vector size.
-                        uint32_t components = pls_format_to_components(itr->format);
-                        imgexpr = remap_swizzle(get<SPIRType>(result_type), components, to_expression(ops[2]));
+                        const components = pls_format_to_components(itr_second.format);
+                        imgexpr = this.remap_swizzle(this.get<SPIRType>(SPIRType, result_type), components, this.to_expression(ops[2]));
                     }
                     pure = true;
                 }
-            else if (type.image.dim === DimSubpassData)
-            {
-                if (var && subpass_input_is_framebuffer_fetch(var_.self))
-                {
-                    imgexpr = to_expression(var_.self);
-                }
-            else if (options.vulkan_semantics)
-            {
-                // With Vulkan semantics, use the proper Vulkan GLSL construct.
-                if (type.image.ms)
-                {
-                    uint32_t operands = ops[4];
-                    if (operands !== ImageOperandsSampleMask || length !== 6)
-                        throw new Error("Multisampled image used in OpImageRead, but unexpected "
-                    "operand mask was used.");
-
-                    uint32_t samples = ops[5];
-                    imgexpr = join("subpassLoad(", to_non_uniform_aware_expression(ops[2]), ", ", to_expression(samples), ")");
-                }
-                else
-                    imgexpr = join("subpassLoad(", to_non_uniform_aware_expression(ops[2]), ")");
-            }
-            else
-            {
-                if (type.image.ms)
-                {
-                    uint32_t operands = ops[4];
-                    if (operands !== ImageOperandsSampleMask || length !== 6)
-                        throw new Error("Multisampled image used in OpImageRead, but unexpected "
-                    "operand mask was used.");
-
-                    uint32_t samples = ops[5];
-                    imgexpr = join("texelFetch(", to_non_uniform_aware_expression(ops[2]), ", ivec2(gl_FragCoord.xy), ",
-                        to_expression(samples), ")");
-                }
-                else
-                {
-                    // Implement subpass loads via texture barrier style sampling.
-                    imgexpr = join("texelFetch(", to_non_uniform_aware_expression(ops[2]), ", ivec2(gl_FragCoord.xy), 0)");
-                }
-            }
-                imgexpr = remap_swizzle(get<SPIRType>(result_type), 4, imgexpr);
-                pure = true;
-            }
-            else
-            {
-                bool sparse = opcode === OpImageSparseRead;
-                uint32_t sparse_code_id = 0;
-                uint32_t sparse_texel_id = 0;
-                if (sparse)
-                    emit_sparse_feedback_temporaries(ops[0], ops[1], sparse_code_id, sparse_texel_id);
-
-                // imageLoad only accepts int coords, not uint.
-                auto coord_expr = to_expression(ops[3]);
-                auto target_coord_type = expression_type(ops[3]);
-                target_coord_type.basetype = SPIRTypeBaseType.Int;
-                coord_expr = bitcast_expression(target_coord_type, expression_type(ops[3]).basetype, coord_expr);
-
-                // Plain image load/store.
-                if (sparse)
-                {
-                    if (type.image.ms)
-                    {
-                        uint32_t operands = ops[4];
-                        if (operands !== ImageOperandsSampleMask || length !== 6)
-                            throw new Error("Multisampled image used in OpImageRead, but unexpected "
-                        "operand mask was used.");
-
-                        uint32_t samples = ops[5];
-                        statement(to_expression(sparse_code_id), " = sparseImageLoadARB(", to_non_uniform_aware_expression(ops[2]), ", ",
-                            coord_expr, ", ", to_expression(samples), ", ", to_expression(sparse_texel_id), ");");
+                else if (type.image.dim === Dim.DimSubpassData) {
+                    if (var_ && this.subpass_input_is_framebuffer_fetch(var_.self)) {
+                        imgexpr = this.to_expression(var_.self);
                     }
-                    else
+                    /*else if (options.vulkan_semantics)
                     {
-                        statement(to_expression(sparse_code_id), " = sparseImageLoadARB(", to_non_uniform_aware_expression(ops[2]), ", ",
-                            coord_expr, ", ", to_expression(sparse_texel_id), ");");
+                        // With Vulkan semantics, use the proper Vulkan GLSL construct.
+                        if (type.image.ms)
+                        {
+                            uint32_t operands = ops[4];
+                            if (operands !== ImageOperandsSampleMask || length !== 6)
+                                throw new Error("Multisampled image used in OpImageRead, but unexpected "
+                            "operand mask was used.");
+
+                            uint32_t samples = ops[5];
+                            imgexpr = join("subpassLoad(", to_non_uniform_aware_expression(ops[2]), ", ", to_expression(samples), ")");
+                        }
+                        else
+                            imgexpr = join("subpassLoad(", to_non_uniform_aware_expression(ops[2]), ")");
+                    }*/
+                    else {
+                        if (type.image.ms) {
+                            const operands = ops[4];
+                            if (operands !== ImageOperandsMask.ImageOperandsSampleMask || length !== 6)
+                                throw new Error("Multisampled image used in OpImageRead, but unexpected operand mask was used.");
+
+                            const samples = ops[5];
+                            imgexpr = "texelFetch(" + this.to_non_uniform_aware_expression(ops[2]) + ", ivec2(gl_FragCoord.xy), " +
+                                this.to_expression(samples) + ")";
+                        }
+                        else {
+                            // Implement subpass loads via texture barrier style sampling.
+                            imgexpr = "texelFetch(" + this.to_non_uniform_aware_expression(ops[2]) + ", ivec2(gl_FragCoord.xy), 0)";
+                        }
                     }
-                    imgexpr = join(type_to_glsl(get<SPIRType>(result_type)), "(", to_expression(sparse_code_id), ", ",
-                        to_expression(sparse_texel_id), ")");
+                    imgexpr = this.remap_swizzle(this.get<SPIRType>(SPIRType, result_type), 4, imgexpr);
+                    pure = true;
                 }
-                else
-                {
-                    if (type.image.ms)
-                    {
-                        uint32_t operands = ops[4];
-                        if (operands !== ImageOperandsSampleMask || length !== 6)
-                            throw new Error("Multisampled image used in OpImageRead, but unexpected "
-                        "operand mask was used.");
+                else {
+                    const sparse = opcode === Op.OpImageSparseRead;
+                    let props: { sparse_code_id: 0, sparse_texel_id: 0 };
+                    if (sparse)
+                        this.emit_sparse_feedback_temporaries(ops[0], ops[1], props);
 
-                        uint32_t samples = ops[5];
-                        imgexpr =
-                            join("imageLoad(", to_non_uniform_aware_expression(ops[2]), ", ", coord_expr, ", ", to_expression(samples), ")");
+                    // imageLoad only accepts int coords, not uint.
+                    let coord_expr = this.to_expression(ops[3]);
+                    const target_coord_type = defaultClone(SPIRType, this.expression_type(ops[3]));
+                    target_coord_type.basetype = SPIRTypeBaseType.Int;
+                    coord_expr = this.bitcast_expression(target_coord_type, this.expression_type(ops[3]).basetype, coord_expr);
+
+                    // Plain image load/store.
+                    if (sparse) {
+                        if (type.image.ms) {
+                            const operands = ops[4];
+                            if (operands !== ImageOperandsMask.ImageOperandsSampleMask || length !== 6)
+                                throw new Error("Multisampled image used in OpImageRead, but unexpected operand mask was used.");
+
+                            const samples = ops[5];
+                            this.statement(this.to_expression(props.sparse_code_id), " = sparseImageLoadARB(", this.to_non_uniform_aware_expression(ops[2]), ", ",
+                                coord_expr, ", ", this.to_expression(samples), ", ", this.to_expression(props.sparse_texel_id), ");");
+                        }
+                        else {
+                            this.statement(this.to_expression(props.sparse_code_id), " = sparseImageLoadARB(", this.to_non_uniform_aware_expression(ops[2]), ", ",
+                                coord_expr, ", ", this.to_expression(props.sparse_texel_id), ");");
+                        }
+                        imgexpr = this.type_to_glsl(this.get<SPIRType>(SPIRType, result_type)) + "(" + this.to_expression(props.sparse_code_id) +
+                            ", " + this.to_expression(props.sparse_texel_id) + ")";
                     }
-                    else
-                        imgexpr = join("imageLoad(", to_non_uniform_aware_expression(ops[2]), ", ", coord_expr, ")");
+                    else {
+                        if (type.image.ms) {
+                            const operands = ops[4];
+                            if (operands !== ImageOperandsMask.ImageOperandsSampleMask || length !== 6)
+                                throw new Error("Multisampled image used in OpImageRead, but unexpected operand mask was used.");
+
+                            const samples = ops[5];
+                            imgexpr = "imageLoad(" + this.to_non_uniform_aware_expression(ops[2]) + ", " + coord_expr + ", " + this.to_expression(samples) + ")";
+                        }
+                        else
+                            imgexpr = "imageLoad(" + this.to_non_uniform_aware_expression(ops[2]) + ", " + coord_expr + ")";
+                    }
+
+                    if (!sparse)
+                        imgexpr = this.remap_swizzle(this.get<SPIRType>(SPIRType, result_type), 4, imgexpr);
+                    pure = false;
                 }
 
-                if (!sparse)
-                    imgexpr = remap_swizzle(get<SPIRType>(result_type), 4, imgexpr);
-                pure = false;
-            }
-
-                if (var && var_.forwardable)
-                {
-                    bool forward = forced_temporaries.find(id) === end(forced_temporaries);
-                    auto &e = emit_op(result_type, id, imgexpr, forward);
+                if (var_ && var_.forwardable) {
+                    const forward = !this.forced_temporaries.has(id);
+                    const e = this.emit_op(result_type, id, imgexpr, forward);
 
                     // We only need to track dependencies if we're reading from image load/store.
-                    if (!pure)
-                    {
+                    if (!pure) {
                         e.loaded_from = var_.self;
                         if (forward)
-                            var_.dependees.push_back(id);
+                            var_.dependees.push(id);
                     }
                 }
-            else
-                emit_op(result_type, id, imgexpr, false);
+                else
+                    this.emit_op(result_type, id, imgexpr, false);
 
-                inherit_expression_dependencies(id, ops[2]);
+                this.inherit_expression_dependencies(id, ops[2]);
                 if (type.image.ms)
-                    inherit_expression_dependencies(id, ops[5]);
+                    this.inherit_expression_dependencies(id, ops[5]);
                 break;
             }
 
-            case OpImageTexelPointer:
+            case Op.OpImageTexelPointer:
             {
-                uint32_t result_type = ops[0];
-                uint32_t id = ops[1];
+                const result_type = ops[0];
+                const id = ops[1];
 
-                auto coord_expr = to_expression(ops[3]);
-                auto target_coord_type = expression_type(ops[3]);
+                let coord_expr = this.to_expression(ops[3]);
+                const target_coord_type = defaultClone(SPIRType, this.expression_type(ops[3]));
                 target_coord_type.basetype = SPIRTypeBaseType.Int;
-                coord_expr = bitcast_expression(target_coord_type, expression_type(ops[3]).basetype, coord_expr);
+                coord_expr = this.bitcast_expression(target_coord_type, this.expression_type(ops[3]).basetype, coord_expr);
 
-                auto expr = join(to_expression(ops[2]), ", ", coord_expr);
-                auto &e = set<SPIRExpression>(id, expr, result_type, true);
+                const expr = this.to_expression(ops[2]) + ", " + coord_expr;
+                const e = this.set<SPIRExpression>(SPIRExpression, id, expr, result_type, true);
 
                 // When using the pointer, we need to know which variable it is actually loaded from.
-                auto *var = maybe_get_backing_variable(ops[2]);
-                e.loaded_from = var ? var_.self : ID(0);
-                inherit_expression_dependencies(id, ops[3]);
+                const var_ = this.maybe_get_backing_variable(ops[2]);
+                e.loaded_from = var_ ? var_.self : <ID>(0);
+                this.inherit_expression_dependencies(id, ops[3]);
                 break;
             }
 
-            case OpImageWrite:
+            case Op.OpImageWrite:
             {
                 // We added Nonwritable speculatively to the OpImage variable due to glslangValidator
                 // not adding the proper qualifiers.
                 // If it turns out we need to write to the image after all, remove the qualifier and recompile.
-                auto *var = maybe_get_backing_variable(ops[0]);
-                if (var)
+                const var_ = this.maybe_get_backing_variable(ops[0]);
+                if (var_)
                 {
-                    auto &flags = ir.meta[var_.self].decoration.decoration_flags;
-                    if (flags.get(DecorationNonWritable))
+                    const flags = maplike_get(Meta, ir.meta, var_.self).decoration.decoration_flags;
+                    if (flags.get(Decoration.DecorationNonWritable))
                     {
-                        flags.clear(DecorationNonWritable);
-                        force_recompile();
+                        flags.clear(Decoration.DecorationNonWritable);
+                        this.force_recompile();
                     }
                 }
 
-                auto &type = expression_type(ops[0]);
-                auto &value_type = expression_type(ops[2]);
-                auto store_type = value_type;
+                const type = this.expression_type(ops[0]);
+                const value_type = this.expression_type(ops[2]);
+                const store_type = defaultClone(SPIRType, value_type);
                 store_type.vecsize = 4;
 
                 // imageStore only accepts int coords, not uint.
-                auto coord_expr = to_expression(ops[1]);
-                auto target_coord_type = expression_type(ops[1]);
+                let coord_expr = this.to_expression(ops[1]);
+                const target_coord_type = defaultClone(SPIRType, this.expression_type(ops[1]));
                 target_coord_type.basetype = SPIRTypeBaseType.Int;
-                coord_expr = bitcast_expression(target_coord_type, expression_type(ops[1]).basetype, coord_expr);
+                coord_expr = this.bitcast_expression(target_coord_type, this.expression_type(ops[1]).basetype, coord_expr);
 
                 if (type.image.ms)
                 {
-                    uint32_t operands = ops[3];
-                    if (operands !== ImageOperandsSampleMask || length !== 5)
+                    const operands = ops[3];
+                    if (operands !== ImageOperandsMask.ImageOperandsSampleMask || length !== 5)
                         throw new Error("Multisampled image used in OpImageWrite, but unexpected operand mask was used.");
-                    uint32_t samples = ops[4];
-                    statement("imageStore(", to_non_uniform_aware_expression(ops[0]), ", ", coord_expr, ", ", to_expression(samples), ", ",
-                        remap_swizzle(store_type, value_type.vecsize, to_expression(ops[2])), ");");
+                    const samples = ops[4];
+                    this.statement("imageStore(", this.to_non_uniform_aware_expression(ops[0]), ", ", coord_expr, ", ",
+                        this.to_expression(samples), ", ", this.remap_swizzle(store_type, value_type.vecsize, this.to_expression(ops[2])), ");");
                 }
                 else
-                    statement("imageStore(", to_non_uniform_aware_expression(ops[0]), ", ", coord_expr, ", ",
-                        remap_swizzle(store_type, value_type.vecsize, to_expression(ops[2])), ");");
+                    this.statement("imageStore(", this.to_non_uniform_aware_expression(ops[0]), ", ", coord_expr, ", ",
+                        this.remap_swizzle(store_type, value_type.vecsize, this.to_expression(ops[2])), ");");
 
-                if (var && variable_storage_is_aliased(*var))
-                flush_all_aliased_variables();
+                if (var_ && this.variable_storage_is_aliased(var_))
+                    this.flush_all_aliased_variables();
                 break;
             }
 
-            case OpImageQuerySize:
+            case Op.OpImageQuerySize:
             {
-                auto &type = expression_type(ops[2]);
-                uint32_t result_type = ops[0];
-                uint32_t id = ops[1];
+                const type = this.expression_type(ops[2]);
+                const result_type = ops[0];
+                const id = ops[1];
 
                 if (type.basetype === SPIRTypeBaseType.Image)
                 {
-                    string expr;
+                    let expr: string;
                     if (type.image.sampled === 2)
                     {
                         if (!options.es && options.version < 430)
-                            require_extension_internal("GL_ARB_shader_image_size");
+                            this.require_extension_internal("GL_ARB_shader_image_size");
                         else if (options.es && options.version < 310)
                             throw new Error("At least ESSL 3.10 required for imageSize.");
 
                         // The size of an image is always constant.
-                        expr = join("imageSize(", to_non_uniform_aware_expression(ops[2]), ")");
+                        expr = "imageSize(" + this.to_non_uniform_aware_expression(ops[2]) + ")";
                     }
                     else
                     {
                         // This path is hit for samplerBuffers and multisampled images which do not have LOD.
-                        std::string fname = "textureSize";
-                        if (is_legacy())
+                        let fname = "textureSize";
+                        if (this.is_legacy())
                         {
-                            auto &imgtype = get<SPIRType>(type.self);
-                            fname = legacy_tex_op(fname, imgtype, ops[2]);
+                            const imgtype = this.get<SPIRType>(SPIRType, type.self);
+                            fname = this.legacy_tex_op(fname, imgtype, ops[2]);
                         }
-                        expr = join(fname, "(", convert_separate_image_to_expression(ops[2]), ")");
+                        expr = fname + "(" + this.convert_separate_image_to_expression(ops[2]) + ")";
                     }
 
-                    auto &restype = get<SPIRType>(ops[0]);
-                    expr = bitcast_expression(restype, SPIRTypeBaseType.Int, expr);
-                    emit_op(result_type, id, expr, true);
+                    const restype = this.get<SPIRType>(SPIRType, ops[0]);
+                    expr = this.bitcast_expression(restype, SPIRTypeBaseType.Int, expr);
+                    this.emit_op(result_type, id, expr, true);
                 }
                 else
                     throw new Error("Invalid type for OpImageQuerySize.");
@@ -2615,23 +2496,23 @@ export class CompilerGLSL extends Compiler
             }
 
                 // Compute
-            case OpControlBarrier:
-                case OpMemoryBarrier:
+            /*case Op.OpControlBarrier:
+            case Op.OpMemoryBarrier:
             {
-                uint32_t execution_scope = 0;
-                uint32_t memory;
-                uint32_t semantics;
+                let execution_scope = 0;
+                let memory = 0;
+                let semantics = 0;
 
-                if (opcode === OpMemoryBarrier)
+                if (opcode === Op.OpMemoryBarrier)
                 {
-                    memory = evaluate_constant_u32(ops[0]);
-                    semantics = evaluate_constant_u32(ops[1]);
+                    memory = this.evaluate_constant_u32(ops[0]);
+                    semantics = this.evaluate_constant_u32(ops[1]);
                 }
                 else
                 {
-                    execution_scope = evaluate_constant_u32(ops[0]);
-                    memory = evaluate_constant_u32(ops[1]);
-                    semantics = evaluate_constant_u32(ops[2]);
+                    execution_scope = this.evaluate_constant_u32(ops[0]);
+                    memory = this.evaluate_constant_u32(ops[1]);
+                    semantics = this.evaluate_constant_u32(ops[2]);
                 }
 
                 if (execution_scope === ScopeSubgroup || memory === ScopeSubgroup)
@@ -2779,39 +2660,42 @@ export class CompilerGLSL extends Compiler
                         statement("barrier();");
                 }
                 break;
-            }
+            }*/
 
-            case OpExtInst:
+            case Op.OpExtInst:
             {
-                uint32_t extension_set = ops[2];
+                const extension_set = ops[2];
 
-                if (get<SPIRExtension>(extension_set).ext === SPIRExtension::GLSL)
+                const ext = this.get<SPIRExtension>(SPIRExtension, extension_set).ext;
+                const ops4 = ops.slice(4);
+
+                if (ext === SPIRExtensionExtension.GLSL)
                 {
-                    emit_glsl_op(ops[0], ops[1], ops[3], &ops[4], length - 4);
+                    this.emit_glsl_op(ops[0], ops[1], ops[3], ops4, length - 4);
                 }
-                else if (get<SPIRExtension>(extension_set).ext === SPIRExtension::SPV_AMD_shader_ballot)
+                /*else if (ext === SPIRExtensionExtension.SPV_AMD_shader_ballot)
                 {
-                    emit_spv_amd_shader_ballot_op(ops[0], ops[1], ops[3], &ops[4], length - 4);
+                    this.emit_spv_amd_shader_ballot_op(ops[0], ops[1], ops[3], ops4, length - 4);
                 }
-                else if (get<SPIRExtension>(extension_set).ext === SPIRExtension::SPV_AMD_shader_explicit_vertex_parameter)
+                else if (ext === SPIRExtensionExtension.SPV_AMD_shader_explicit_vertex_parameter)
                 {
-                    emit_spv_amd_shader_explicit_vertex_parameter_op(ops[0], ops[1], ops[3], &ops[4], length - 4);
+                    this.emit_spv_amd_shader_explicit_vertex_parameter_op(ops[0], ops[1], ops[3], ops4, length - 4);
                 }
-                else if (get<SPIRExtension>(extension_set).ext === SPIRExtension::SPV_AMD_shader_trinary_minmax)
+                else if (ext === SPIRExtensionExtension.SPV_AMD_shader_trinary_minmax)
                 {
-                    emit_spv_amd_shader_trinary_minmax_op(ops[0], ops[1], ops[3], &ops[4], length - 4);
+                    this.emit_spv_amd_shader_trinary_minmax_op(ops[0], ops[1], ops[3], ops4, length - 4);
                 }
-                else if (get<SPIRExtension>(extension_set).ext === SPIRExtension::SPV_AMD_gcn_shader)
+                else if (ext === SPIRExtensionExtension.SPV_AMD_gcn_shader)
                 {
-                    emit_spv_amd_gcn_shader_op(ops[0], ops[1], ops[3], &ops[4], length - 4);
-                }
-                else if (get<SPIRExtension>(extension_set).ext === SPIRExtension::SPV_debug_info)
+                    this.emit_spv_amd_gcn_shader_op(ops[0], ops[1], ops[3], ops4, length - 4);
+                }*/
+                else if (ext === SPIRExtensionExtension.SPV_debug_info)
                 {
                     break; // Ignore SPIR-V debug information extended instructions.
                 }
                 else
                 {
-                    statement("// unimplemented ext op ", instruction.op);
+                    this.statement("// unimplemented ext op ", instruction.op);
                     break;
                 }
 
@@ -2819,7 +2703,7 @@ export class CompilerGLSL extends Compiler
             }
 
                 // Legacy sub-group stuff ...
-            case OpSubgroupBallotKHR:
+            /*case OpSubgroupBallotKHR:
             {
                 uint32_t result_type = ops[0];
                 uint32_t id = ops[1];
@@ -3001,102 +2885,102 @@ export class CompilerGLSL extends Compiler
                 case OpGroupNonUniformQuadBroadcast:
                 emit_subgroup_op(instruction);
                 break;
-
-            case OpFUnordEqual:
-                case OpFUnordNotEqual:
-                case OpFUnordLessThan:
-                case OpFUnordGreaterThan:
-                case OpFUnordLessThanEqual:
-                case OpFUnordGreaterThanEqual:
+            */
+            case Op.OpFUnordEqual:
+                case Op.OpFUnordNotEqual:
+                case Op.OpFUnordLessThan:
+                case Op.OpFUnordGreaterThan:
+                case Op.OpFUnordLessThanEqual:
+                case Op.OpFUnordGreaterThanEqual:
             {
                 // GLSL doesn't specify if floating point comparisons are ordered or unordered,
                 // but glslang always emits ordered floating point compares for GLSL.
                 // To get unordered compares, we can test the opposite thing and invert the result.
                 // This way, we force true when there is any NaN present.
-                uint32_t op0 = ops[2];
-                uint32_t op1 = ops[3];
+                const op0 = ops[2];
+                const op1 = ops[3];
 
-                string expr;
-                if (expression_type(op0).vecsize > 1)
+                let expr: string;
+                if (this.expression_type(op0).vecsize > 1)
                 {
-                    const char *comp_op = nullptr;
+                    let comp_op: string = null;
                     switch (opcode)
                     {
-                        case OpFUnordEqual:
+                        case Op.OpFUnordEqual:
                             comp_op = "notEqual";
                             break;
 
-                        case OpFUnordNotEqual:
+                        case Op.OpFUnordNotEqual:
                             comp_op = "equal";
                             break;
 
-                        case OpFUnordLessThan:
+                        case Op.OpFUnordLessThan:
                             comp_op = "greaterThanEqual";
                             break;
 
-                        case OpFUnordLessThanEqual:
+                        case Op.OpFUnordLessThanEqual:
                             comp_op = "greaterThan";
                             break;
 
-                        case OpFUnordGreaterThan:
+                        case Op.OpFUnordGreaterThan:
                             comp_op = "lessThanEqual";
                             break;
 
-                        case OpFUnordGreaterThanEqual:
+                        case Op.OpFUnordGreaterThanEqual:
                             comp_op = "lessThan";
                             break;
 
                         default:
-                            assert(0);
+                            console.assert(0);
                             break;
                     }
 
-                    expr = join("not(", comp_op, "(", to_unpacked_expression(op0), ", ", to_unpacked_expression(op1), "))");
+                    expr = "not(" + comp_op + "(" + this.to_unpacked_expression(op0) + ", " + this.to_unpacked_expression(op1) + "))";
                 }
                 else
                 {
-                    const char *comp_op = nullptr;
+                    let comp_op = null;
                     switch (opcode)
                     {
-                        case OpFUnordEqual:
+                        case Op.OpFUnordEqual:
                             comp_op = " !== ";
                             break;
 
-                        case OpFUnordNotEqual:
+                        case Op.OpFUnordNotEqual:
                             comp_op = " === ";
                             break;
 
-                        case OpFUnordLessThan:
+                        case Op.OpFUnordLessThan:
                             comp_op = " >= ";
                             break;
 
-                        case OpFUnordLessThanEqual:
+                        case Op.OpFUnordLessThanEqual:
                             comp_op = " > ";
                             break;
 
-                        case OpFUnordGreaterThan:
+                        case Op.OpFUnordGreaterThan:
                             comp_op = " <= ";
                             break;
 
-                        case OpFUnordGreaterThanEqual:
+                        case Op.OpFUnordGreaterThanEqual:
                             comp_op = " < ";
                             break;
 
                         default:
-                            assert(0);
+                            console.assert(0);
                             break;
                     }
 
-                    expr = join("!(", to_enclosed_unpacked_expression(op0), comp_op, to_enclosed_unpacked_expression(op1), ")");
+                    expr = "!(" + this.to_enclosed_unpacked_expression(op0) + comp_op + this.to_enclosed_unpacked_expression(op1) + ")";
                 }
 
-                emit_op(ops[0], ops[1], expr, should_forward(op0) && should_forward(op1));
-                inherit_expression_dependencies(ops[1], op0);
-                inherit_expression_dependencies(ops[1], op1);
+                this.emit_op(ops[0], ops[1], expr, this.should_forward(op0) && this.should_forward(op1));
+                this.inherit_expression_dependencies(ops[1], op0);
+                this.inherit_expression_dependencies(ops[1], op1);
                 break;
             }
 
-            case OpReportIntersectionKHR:
+            /*case OpReportIntersectionKHR:
                 // NV is same opcode.
                 forced_temporaries.insert(ops[1]);
                 if (ray_tracing_is_khr)
@@ -3201,66 +3085,66 @@ export class CompilerGLSL extends Compiler
             case OpConvertUToAccelerationStructureKHR:
                 require_extension_internal("GL_EXT_ray_tracing");
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "accelerationStructureEXT");
-                break;
+                break;*/
 
-            case OpConvertUToPtr:
+            case Op.OpConvertUToPtr:
             {
-                auto &type = get<SPIRType>(ops[0]);
-                if (type.storage !== StorageClassPhysicalStorageBufferEXT)
+                const type = this.get<SPIRType>(SPIRType, ops[0]);
+                if (type.storage !== StorageClass.StorageClassPhysicalStorageBufferEXT)
                     throw new Error("Only StorageClassPhysicalStorageBufferEXT is supported by OpConvertUToPtr.");
 
-                auto &in_type = expression_type(ops[2]);
+                const in_type = this.expression_type(ops[2]);
                 if (in_type.vecsize === 2)
-                    require_extension_internal("GL_EXT_buffer_reference_uvec2");
+                    this.require_extension_internal("GL_EXT_buffer_reference_uvec2");
 
-                auto op = type_to_glsl(type);
-                emit_unary_func_op(ops[0], ops[1], ops[2], op.c_str());
+                const op = this.type_to_glsl(type);
+                this.emit_unary_func_op(ops[0], ops[1], ops[2], op);
                 break;
             }
 
-            case OpConvertPtrToU:
+            case Op.OpConvertPtrToU:
             {
-                auto &type = get<SPIRType>(ops[0]);
-                auto &ptr_type = expression_type(ops[2]);
-                if (ptr_type.storage !== StorageClassPhysicalStorageBufferEXT)
+                const type = this.get<SPIRType>(SPIRType, ops[0]);
+                const ptr_type = this.expression_type(ops[2]);
+                if (ptr_type.storage !== StorageClass.StorageClassPhysicalStorageBufferEXT)
                     throw new Error("Only StorageClassPhysicalStorageBufferEXT is supported by OpConvertPtrToU.");
 
                 if (type.vecsize === 2)
-                    require_extension_internal("GL_EXT_buffer_reference_uvec2");
+                    this.require_extension_internal("GL_EXT_buffer_reference_uvec2");
 
-                auto op = type_to_glsl(type);
-                emit_unary_func_op(ops[0], ops[1], ops[2], op.c_str());
+                const op = this.type_to_glsl(type);
+                this.emit_unary_func_op(ops[0], ops[1], ops[2], op);
                 break;
             }
 
-            case OpUndef:
+            case Op.OpUndef:
                 // Undefined value has been declared.
                 break;
 
-            case OpLine:
+            case Op.OpLine:
             {
-                emit_line_directive(ops[0], ops[1]);
+                this.emit_line_directive(ops[0], ops[1]);
                 break;
             }
 
-            case OpNoLine:
+            case Op.OpNoLine:
                 break;
 
-            case OpDemoteToHelperInvocationEXT:
-                if (!options.vulkan_semantics)
+            case Op.OpDemoteToHelperInvocationEXT:
+                // if (!options.vulkan_semantics)
                     throw new Error("GL_EXT_demote_to_helper_invocation is only supported in Vulkan GLSL.");
-                require_extension_internal("GL_EXT_demote_to_helper_invocation");
-                statement(backend.demote_literal, ";");
+                // require_extension_internal("GL_EXT_demote_to_helper_invocation");
+                // statement(backend.demote_literal, ";");
                 break;
 
-            case OpIsHelperInvocationEXT:
-                if (!options.vulkan_semantics)
+            case Op.OpIsHelperInvocationEXT:
+                // if (!options.vulkan_semantics)
                     throw new Error("GL_EXT_demote_to_helper_invocation is only supported in Vulkan GLSL.");
-                require_extension_internal("GL_EXT_demote_to_helper_invocation");
-                emit_op(ops[0], ops[1], "helperInvocationEXT()", false);
+                // require_extension_internal("GL_EXT_demote_to_helper_invocation");
+                // emit_op(ops[0], ops[1], "helperInvocationEXT()", false);
                 break;
 
-            case OpBeginInvocationInterlockEXT:
+            /*case OpBeginInvocationInterlockEXT:
                 // If the interlock is complex, we emit this elsewhere.
                 if (!interlocked_is_complex)
                 {
@@ -3287,11 +3171,399 @@ export class CompilerGLSL extends Compiler
         }
     }
 
+    protected emit_block_instructions(block: SPIRBlock)
+    {
+        this.current_emitting_block = block;
+        for (let op of block.ops)
+            this.emit_instruction(op);
+        this.current_emitting_block = null;
+    }
+
+    protected emit_glsl_op(result_type: number, id: number, eop: number, args: number[] | Uint32Array, length: number)
+{
+    const op = <GLSLstd450>(eop);
+
+    if (this.is_legacy() && is_unsigned_glsl_opcode(op))
+        throw new Error("Unsigned integers are not supported on legacy GLSL targets.");
+
+    // If we need to do implicit bitcasts, make sure we do it with the correct type.
+    const integer_width = this.get_integer_width_for_glsl_instruction(op, args, length);
+    const int_type = to_signed_basetype(integer_width);
+    const uint_type = to_unsigned_basetype(integer_width);
+
+    const { options, ir } = this;
+
+    switch (op)
+    {
+        // FP fiddling
+    case GLSLstd450.GLSLstd450Round:
+        if (!this.is_legacy())
+            this.emit_unary_func_op(result_type, id, args[0], "round");
+        else
+        {
+            const op0 = this.to_enclosed_expression(args[0]);
+            const op0_type = this.expression_type(args[0]);
+            const expr = "floor(" + op0 + " + " + this.type_to_glsl_constructor(op0_type) + "(0.5))";
+            const forward = this.should_forward(args[0]);
+            this.emit_op(result_type, id, expr, forward);
+            this.inherit_expression_dependencies(id, args[0]);
+        }
+        break;
+
+    case GLSLstd450.GLSLstd450RoundEven:
+        if (!this.is_legacy())
+            this.emit_unary_func_op(result_type, id, args[0], "roundEven");
+        else if (!options.es)
+        {
+            // This extension provides round() with round-to-even semantics.
+            this.require_extension_internal("GL_EXT_gpu_shader4");
+            this.emit_unary_func_op(result_type, id, args[0], "round");
+        }
+        else
+            throw new Error("roundEven supported only in ESSL 300.");
+        break;
+
+    case GLSLstd450.GLSLstd450Trunc:
+        this.emit_unary_func_op(result_type, id, args[0], "trunc");
+        break;
+    case GLSLstd450.GLSLstd450SAbs:
+        this.emit_unary_func_op_cast(result_type, id, args[0], "abs", int_type, int_type);
+        break;
+    case GLSLstd450.GLSLstd450FAbs:
+        this.emit_unary_func_op(result_type, id, args[0], "abs");
+        break;
+    case GLSLstd450.GLSLstd450SSign:
+        this.emit_unary_func_op_cast(result_type, id, args[0], "sign", int_type, int_type);
+        break;
+    case GLSLstd450.GLSLstd450FSign:
+        this.emit_unary_func_op(result_type, id, args[0], "sign");
+        break;
+    case GLSLstd450.GLSLstd450Floor:
+        this.emit_unary_func_op(result_type, id, args[0], "floor");
+        break;
+    case GLSLstd450.GLSLstd450Ceil:
+        this.emit_unary_func_op(result_type, id, args[0], "ceil");
+        break;
+    case GLSLstd450.GLSLstd450Fract:
+        this.emit_unary_func_op(result_type, id, args[0], "fract");
+        break;
+    case GLSLstd450.GLSLstd450Radians:
+        this.emit_unary_func_op(result_type, id, args[0], "radians");
+        break;
+    case GLSLstd450.GLSLstd450Degrees:
+        this.emit_unary_func_op(result_type, id, args[0], "degrees");
+        break;
+    case GLSLstd450.GLSLstd450Fma:
+        if ((!options.es && options.version < 400) || (options.es && options.version < 320))
+        {
+            const expr = this.to_enclosed_expression(args[0]) + " * " + this.to_enclosed_expression(args[1]) + " + " +
+                        this.to_enclosed_expression(args[2]);
+
+            this.emit_op(result_type, id, expr,
+                this.should_forward(args[0]) && this.should_forward(args[1]) && this.should_forward(args[2]));
+            for (let i = 0; i < 3; i++)
+                this.inherit_expression_dependencies(id, args[i]);
+        }
+        else
+            this.emit_trinary_func_op(result_type, id, args[0], args[1], args[2], "fma");
+        break;
+    case GLSLstd450.GLSLstd450Modf:
+        this.register_call_out_argument(args[1]);
+        this.forced_temporaries.add(id);
+        this.emit_binary_func_op(result_type, id, args[0], args[1], "modf");
+        break;
+
+    case GLSLstd450.GLSLstd450ModfStruct:
+    {
+        const type = this.get<SPIRType>(SPIRType, result_type);
+        this.emit_uninitialized_temporary_expression(result_type, id);
+        this.statement(this.to_expression(id), ".", this.to_member_name(type, 0), " = ", "modf(", this.to_expression(args[0]), ", ",
+            this.to_expression(id), ".", this.to_member_name(type, 1), ");");
+        break;
+    }
+
+        // Minmax
+    case GLSLstd450.GLSLstd450UMin:
+        this.emit_binary_func_op_cast(result_type, id, args[0], args[1], "min", uint_type, false);
+        break;
+
+    case GLSLstd450.GLSLstd450SMin:
+        this.emit_binary_func_op_cast(result_type, id, args[0], args[1], "min", int_type, false);
+        break;
+
+    case GLSLstd450.GLSLstd450FMin:
+        this.emit_binary_func_op(result_type, id, args[0], args[1], "min");
+        break;
+
+    case GLSLstd450.GLSLstd450FMax:
+        this.emit_binary_func_op(result_type, id, args[0], args[1], "max");
+        break;
+
+    case GLSLstd450.GLSLstd450UMax:
+        this.emit_binary_func_op_cast(result_type, id, args[0], args[1], "max", uint_type, false);
+        break;
+
+    case GLSLstd450.GLSLstd450SMax:
+        this.emit_binary_func_op_cast(result_type, id, args[0], args[1], "max", int_type, false);
+        break;
+
+    case GLSLstd450.GLSLstd450FClamp:
+        this.emit_trinary_func_op(result_type, id, args[0], args[1], args[2], "clamp");
+        break;
+
+    case GLSLstd450.GLSLstd450UClamp:
+        this.emit_trinary_func_op_cast(result_type, id, args[0], args[1], args[2], "clamp", uint_type);
+        break;
+
+    case GLSLstd450.GLSLstd450SClamp:
+        this.emit_trinary_func_op_cast(result_type, id, args[0], args[1], args[2], "clamp", int_type);
+        break;
+
+        // Trig
+    case GLSLstd450.GLSLstd450Sin:
+        this.emit_unary_func_op(result_type, id, args[0], "sin");
+        break;
+    case GLSLstd450.GLSLstd450Cos:
+        this.emit_unary_func_op(result_type, id, args[0], "cos");
+        break;
+    case GLSLstd450.GLSLstd450Tan:
+        this.emit_unary_func_op(result_type, id, args[0], "tan");
+        break;
+    case GLSLstd450.GLSLstd450Asin:
+        this.emit_unary_func_op(result_type, id, args[0], "asin");
+        break;
+    case GLSLstd450.GLSLstd450Acos:
+        this.emit_unary_func_op(result_type, id, args[0], "acos");
+        break;
+    case GLSLstd450.GLSLstd450Atan:
+        this.emit_unary_func_op(result_type, id, args[0], "atan");
+        break;
+    case GLSLstd450.GLSLstd450Sinh:
+        this.emit_unary_func_op(result_type, id, args[0], "sinh");
+        break;
+    case GLSLstd450.GLSLstd450Cosh:
+        this.emit_unary_func_op(result_type, id, args[0], "cosh");
+        break;
+    case GLSLstd450.GLSLstd450Tanh:
+        this.emit_unary_func_op(result_type, id, args[0], "tanh");
+        break;
+    case GLSLstd450.GLSLstd450Asinh:
+        this.emit_unary_func_op(result_type, id, args[0], "asinh");
+        break;
+    case GLSLstd450.GLSLstd450Acosh:
+        this.emit_unary_func_op(result_type, id, args[0], "acosh");
+        break;
+    case GLSLstd450.GLSLstd450Atanh:
+        this.emit_unary_func_op(result_type, id, args[0], "atanh");
+        break;
+    case GLSLstd450.GLSLstd450Atan2:
+        this.emit_binary_func_op(result_type, id, args[0], args[1], "atan");
+        break;
+
+        // Exponentials
+    case GLSLstd450.GLSLstd450Pow:
+        this.emit_binary_func_op(result_type, id, args[0], args[1], "pow");
+        break;
+    case GLSLstd450.GLSLstd450Exp:
+        this.emit_unary_func_op(result_type, id, args[0], "exp");
+        break;
+    case GLSLstd450.GLSLstd450Log:
+        this.emit_unary_func_op(result_type, id, args[0], "log");
+        break;
+    case GLSLstd450.GLSLstd450Exp2:
+        this.emit_unary_func_op(result_type, id, args[0], "exp2");
+        break;
+    case GLSLstd450.GLSLstd450Log2:
+        this.emit_unary_func_op(result_type, id, args[0], "log2");
+        break;
+    case GLSLstd450.GLSLstd450Sqrt:
+        this.emit_unary_func_op(result_type, id, args[0], "sqrt");
+        break;
+    case GLSLstd450.GLSLstd450InverseSqrt:
+        this.emit_unary_func_op(result_type, id, args[0], "inversesqrt");
+        break;
+
+        // Matrix math
+    case GLSLstd450.GLSLstd450Determinant:
+        this.emit_unary_func_op(result_type, id, args[0], "determinant");
+        break;
+    case GLSLstd450.GLSLstd450MatrixInverse:
+        this.emit_unary_func_op(result_type, id, args[0], "inverse");
+        break;
+
+        // Lerping
+    case GLSLstd450.GLSLstd450FMix:
+        case GLSLstd450.GLSLstd450IMix:
+    {
+        this.emit_mix_op(result_type, id, args[0], args[1], args[2]);
+        break;
+    }
+    case GLSLstd450.GLSLstd450Step:
+        this.emit_binary_func_op(result_type, id, args[0], args[1], "step");
+        break;
+    case GLSLstd450.GLSLstd450SmoothStep:
+        this.emit_trinary_func_op(result_type, id, args[0], args[1], args[2], "smoothstep");
+        break;
+
+        // Packing
+    case GLSLstd450.GLSLstd450Frexp:
+        this.register_call_out_argument(args[1]);
+        this.forced_temporaries.add(id);
+        this.emit_binary_func_op(result_type, id, args[0], args[1], "frexp");
+        break;
+
+    case GLSLstd450.GLSLstd450FrexpStruct:
+    {
+        const type = this.get<SPIRType>(SPIRType, result_type);
+        this.emit_uninitialized_temporary_expression(result_type, id);
+        this.statement(this.to_expression(id), ".", this.to_member_name(type, 0), " = ", "frexp(", this.to_expression(args[0]), ", ",
+            this.to_expression(id), ".", this.to_member_name(type, 1), ");");
+        break;
+    }
+
+    case GLSLstd450.GLSLstd450Ldexp:
+    {
+        const forward = this.should_forward(args[0]) && this.should_forward(args[1]);
+
+        const op0 = this.to_unpacked_expression(args[0]);
+        let op1 = this.to_unpacked_expression(args[1]);
+        const op1_type = this.expression_type(args[1]);
+        if (op1_type.basetype !== SPIRTypeBaseType.Int)
+        {
+            // Need a value cast here.
+            const target_type = defaultClone(SPIRType, op1_type);
+            target_type.basetype = SPIRTypeBaseType.Int;
+            op1 = this.type_to_glsl_constructor(target_type) + "(" + op1 + ")";
+        }
+
+        const expr = "ldexp(" + op0 + ", " + op1 + ")";
+
+        this.emit_op(result_type, id, expr, forward);
+        this.inherit_expression_dependencies(id, args[0]);
+        this.inherit_expression_dependencies(id, args[1]);
+        break;
+    }
+
+    case GLSLstd450.GLSLstd450PackSnorm4x8:
+        this.emit_unary_func_op(result_type, id, args[0], "packSnorm4x8");
+        break;
+    case GLSLstd450.GLSLstd450PackUnorm4x8:
+        this.emit_unary_func_op(result_type, id, args[0], "packUnorm4x8");
+        break;
+    case GLSLstd450.GLSLstd450PackSnorm2x16:
+        this.emit_unary_func_op(result_type, id, args[0], "packSnorm2x16");
+        break;
+    case GLSLstd450.GLSLstd450PackUnorm2x16:
+        this.emit_unary_func_op(result_type, id, args[0], "packUnorm2x16");
+        break;
+    case GLSLstd450.GLSLstd450PackHalf2x16:
+        this.emit_unary_func_op(result_type, id, args[0], "packHalf2x16");
+        break;
+    case GLSLstd450.GLSLstd450UnpackSnorm4x8:
+        this.emit_unary_func_op(result_type, id, args[0], "unpackSnorm4x8");
+        break;
+    case GLSLstd450.GLSLstd450UnpackUnorm4x8:
+        this.emit_unary_func_op(result_type, id, args[0], "unpackUnorm4x8");
+        break;
+    case GLSLstd450.GLSLstd450UnpackSnorm2x16:
+        this.emit_unary_func_op(result_type, id, args[0], "unpackSnorm2x16");
+        break;
+    case GLSLstd450.GLSLstd450UnpackUnorm2x16:
+        this.emit_unary_func_op(result_type, id, args[0], "unpackUnorm2x16");
+        break;
+    case GLSLstd450.GLSLstd450UnpackHalf2x16:
+        this.emit_unary_func_op(result_type, id, args[0], "unpackHalf2x16");
+        break;
+
+    case GLSLstd450.GLSLstd450PackDouble2x32:
+        this.emit_unary_func_op(result_type, id, args[0], "packDouble2x32");
+        break;
+    case GLSLstd450.GLSLstd450UnpackDouble2x32:
+        this.emit_unary_func_op(result_type, id, args[0], "unpackDouble2x32");
+        break;
+
+        // Vector math
+    case GLSLstd450.GLSLstd450Length:
+        this.emit_unary_func_op(result_type, id, args[0], "length");
+        break;
+    case GLSLstd450.GLSLstd450Distance:
+        this.emit_binary_func_op(result_type, id, args[0], args[1], "distance");
+        break;
+    case GLSLstd450.GLSLstd450Cross:
+        this.emit_binary_func_op(result_type, id, args[0], args[1], "cross");
+        break;
+    case GLSLstd450.GLSLstd450Normalize:
+        this.emit_unary_func_op(result_type, id, args[0], "normalize");
+        break;
+    case GLSLstd450.GLSLstd450FaceForward:
+        this.emit_trinary_func_op(result_type, id, args[0], args[1], args[2], "faceforward");
+        break;
+    case GLSLstd450.GLSLstd450Reflect:
+        this.emit_binary_func_op(result_type, id, args[0], args[1], "reflect");
+        break;
+    case GLSLstd450.GLSLstd450Refract:
+        this.emit_trinary_func_op(result_type, id, args[0], args[1], args[2], "refract");
+        break;
+
+        // Bit-fiddling
+    case GLSLstd450.GLSLstd450FindILsb:
+        // findLSB always returns int.
+        this.emit_unary_func_op_cast(result_type, id, args[0], "findLSB", this.expression_type(args[0]).basetype, int_type);
+        break;
+
+    case GLSLstd450.GLSLstd450FindSMsb:
+        this.emit_unary_func_op_cast(result_type, id, args[0], "findMSB", int_type, int_type);
+        break;
+
+    case GLSLstd450.GLSLstd450FindUMsb:
+        this.emit_unary_func_op_cast(result_type, id, args[0], "findMSB", uint_type, int_type); // findMSB always
+        // returns int.
+        break;
+
+        // Multisampled varying
+    case GLSLstd450.GLSLstd450InterpolateAtCentroid:
+        this.emit_unary_func_op(result_type, id, args[0], "interpolateAtCentroid");
+        break;
+    case GLSLstd450.GLSLstd450InterpolateAtSample:
+        this.emit_binary_func_op(result_type, id, args[0], args[1], "interpolateAtSample");
+        break;
+    case GLSLstd450.GLSLstd450InterpolateAtOffset:
+        this.emit_binary_func_op(result_type, id, args[0], args[1], "interpolateAtOffset");
+        break;
+
+    case GLSLstd450.GLSLstd450NMin:
+        case GLSLstd450.GLSLstd450NMax:
+    {
+        this.emit_nminmax_op(result_type, id, args[0], args[1], op);
+        break;
+    }
+
+    case GLSLstd450.GLSLstd450NClamp:
+    {
+        // Make sure we have a unique ID here to avoid aliasing the extra sub-expressions between clamp and NMin sub-op.
+        // IDs cannot exceed 24 bits, so we can make use of the higher bits for some unique flags.
+        let max_id = maplike_get(0, this.extra_sub_expressions, id | ExtraSubExpressionType.EXTRA_SUB_EXPRESSION_TYPE_AUX);
+        if (!max_id)
+            max_id = ir.increase_bound_by(1);
+
+        // Inherit precision qualifiers.
+        ir.meta[max_id] = defaultClone(Meta, ir.meta[id]);
+
+        this.emit_nminmax_op(result_type, max_id, args[0], args[1], GLSLstd450.GLSLstd450NMax);
+        this.emit_nminmax_op(result_type, id, max_id, args[2], GLSLstd450.GLSLstd450NMin);
+        break;
+    }
+
+    default:
+        this.statement("// unimplemented GLSL op ", eop);
+        break;
+    }
+}
+
     protected emit_header()
     {
         const execution = this.get_entry_point();
         const options = this.options;
-        // const ir = this.ir;
 
         // WEBGL 1 doesn't support version number
         if (options.version !== 100)
@@ -3634,6 +3906,24 @@ export class CompilerGLSL extends Compiler
         this.statement("");
     }
 
+    protected emit_sampled_image_op(result_type: number, result_id: number, image_id: number, samp_id: number)
+    {
+        /*if (options.vulkan_semantics && combined_image_samplers.empty())
+    {
+        emit_binary_func_op(result_type, result_id, image_id, samp_id,
+                            type_to_glsl(get<SPIRType>(result_type), result_id).c_str());
+    }
+    else
+    {*/
+        // Make sure to suppress usage tracking. It is illegal to create temporaries of opaque types.
+        this.emit_op(result_type, result_id, this.to_combined_image_sampler(image_id, samp_id), true, true);
+        // }
+
+        // Make sure to suppress usage tracking and any expression invalidation.
+        // It is illegal to create temporaries of opaque types.
+        this.forwarded_temporaries.delete(result_id);
+    }
+
     protected emit_texture_op(i: Instruction, sparse: boolean)
     {
         const ops = this.stream(i);
@@ -3971,8 +4261,7 @@ export class CompilerGLSL extends Compiler
     protected to_function_name(args: TextureFunctionNameArguments): string
     {
         const { options } = this;
-        if (args.has_min_lod)
-        {
+        if (args.has_min_lod) {
             if (options.es)
                 throw new Error("Sparse residency is not supported in ESSL.");
             this.require_extension_internal("GL_ARB_sparse_texture_clamp");
@@ -3988,10 +4277,8 @@ export class CompilerGLSL extends Compiler
         // This happens for HLSL SampleCmpLevelZero on Texture2DArray and TextureCube.
         let workaround_lod_array_shadow_as_grad = false;
         if (((imgtype.image.arrayed && imgtype.image.dim === Dim.Dim2D) || imgtype.image.dim === Dim.DimCube) &&
-            this.is_depth_image(imgtype, tex) && args.lod)
-        {
-            if (!this.expression_is_constant_null(args.lod))
-            {
+            this.is_depth_image(imgtype, tex) && args.lod) {
+            if (!this.expression_is_constant_null(args.lod)) {
                 throw new Error("textureLod on sampler2DArrayShadow is not constant 0.0. This cannot be expressed in" +
                     " GLSL.");
             }
@@ -4003,8 +4290,7 @@ export class CompilerGLSL extends Compiler
 
         if (args.base.is_fetch)
             fname += args.is_sparse_feedback ? "TexelFetch" : "texelFetch";
-        else
-        {
+        else {
             fname += args.is_sparse_feedback ? "Texture" : "texture";
 
             if (args.base.is_gather)
@@ -4031,7 +4317,7 @@ export class CompilerGLSL extends Compiler
         return (this.is_legacy() && !args.base.is_gather) ? this.legacy_tex_op(fname, imgtype, tex) : fname;
     }
 
-    protected to_function_args(args: TextureFunctionArguments, p_forward: { value: boolean  }): string
+    protected to_function_args(args: TextureFunctionArguments, p_forward: { value: boolean }): string
     {
         const img = args.base.img;
         const imgtype = args.base.imgtype;
@@ -4044,19 +4330,18 @@ export class CompilerGLSL extends Compiler
         else
             farg_str = this.to_non_uniform_aware_expression(img);
 
-        if (args.nonuniform_expression && farg_str.indexOf('[') >= 0)
-        {
+        if (args.nonuniform_expression && farg_str.indexOf("[") >= 0) {
             // Only emit nonuniformEXT() wrapper if the underlying expression is arrayed in some way.
             farg_str = backend.nonuniform_qualifier + "(" + farg_str + ")";
         }
 
         const swizz_func = backend.swizzle_is_function;
-        const swizzle = (comps, in_comps): string => {
+        const swizzle = (comps, in_comps): string =>
+        {
             if (comps === in_comps)
                 return "";
 
-            switch (comps)
-            {
+            switch (comps) {
                 case 1:
                     return ".x";
                 case 2:
@@ -4077,8 +4362,7 @@ export class CompilerGLSL extends Compiler
 
         // texelFetch only takes int, not uint.
         const coord_type = this.expression_type(args.coord);
-        if (coord_type.basetype === SPIRTypeBaseType.UInt)
-        {
+        if (coord_type.basetype === SPIRTypeBaseType.UInt) {
             const expected_type = defaultClone(SPIRType, coord_type);
             expected_type.vecsize = args.coord_components;
             expected_type.basetype = SPIRTypeBaseType.Int;
@@ -4090,11 +4374,10 @@ export class CompilerGLSL extends Compiler
         // The workaround will assert that the LOD is in fact constant 0, or we cannot emit correct code.
         // This happens for HLSL SampleCmpLevelZero on Texture2DArray and TextureCube.
         const workaround_lod_array_shadow_as_grad =
-        ((imgtype.image.arrayed && imgtype.image.dim === Dim.Dim2D) || imgtype.image.dim === Dim.DimCube) &&
-        this.is_depth_image(imgtype, img) && args.lod !== 0;
+            ((imgtype.image.arrayed && imgtype.image.dim === Dim.Dim2D) || imgtype.image.dim === Dim.DimCube) &&
+            this.is_depth_image(imgtype, img) && args.lod !== 0;
 
-        if (args.dref)
-        {
+        if (args.dref) {
             forward = forward && this.should_forward(args.dref);
 
             // SPIR-V splits dref and coordinate.
@@ -4106,15 +4389,13 @@ export class CompilerGLSL extends Compiler
                 farg_str += ", ";
                 farg_str += this.to_expression(args.dref);
             }
-            else if (args.base.is_proj)
-            {
+            else if (args.base.is_proj) {
                 // Have to reshuffle so we get vec4(coord, dref, proj), special case.
                 // Other shading languages splits up the arguments for coord and compare value like SPIR-V.
                 // The coordinate type for textureProj shadow is always vec4 even for sampler1DShadow.
                 farg_str += ", vec4(";
 
-                if (imgtype.image.dim === Dim.Dim1D)
-                {
+                if (imgtype.image.dim === Dim.Dim1D) {
                     // Could reuse coord_expr, but we will mess up the temporary usage checking.
                     farg_str += this.to_enclosed_expression(args.coord) + ".x";
                     farg_str += ", ";
@@ -4123,8 +4404,7 @@ export class CompilerGLSL extends Compiler
                     farg_str += ", ";
                     farg_str += this.to_enclosed_expression(args.coord) + ".y)";
                 }
-                else if (imgtype.image.dim === Dim.Dim2D)
-                {
+                else if (imgtype.image.dim === Dim.Dim2D) {
                     // Could reuse coord_expr, but we will mess up the temporary usage checking.
                     farg_str += this.to_enclosed_expression(args.coord) + (swizz_func ? ".xy()" : ".xy");
                     farg_str += ", ";
@@ -4135,10 +4415,9 @@ export class CompilerGLSL extends Compiler
                 else
                     throw new Error("Invalid type for textureProj with shadow.");
             }
-            else
-            {
+            else {
                 // Create a composite which merges coord/dref into a single vector.
-                const type = this.expression_type(args.coord);
+                const type = defaultClone(SPIRType, this.expression_type(args.coord));
                 type.vecsize = args.coord_components + 1;
                 farg_str += ", ";
                 farg_str += this.type_to_glsl_constructor(type);
@@ -4149,14 +4428,12 @@ export class CompilerGLSL extends Compiler
                 farg_str += ")";
             }
         }
-        else
-        {
+        else {
             farg_str += ", ";
             farg_str += coord_expr;
         }
 
-        if (args.grad_x || args.grad_y)
-        {
+        if (args.grad_x || args.grad_y) {
             forward = forward && this.should_forward(args.grad_x);
             forward = forward && this.should_forward(args.grad_y);
             farg_str += ", ";
@@ -4165,10 +4442,8 @@ export class CompilerGLSL extends Compiler
             farg_str += this.to_expression(args.grad_y);
         }
 
-        if (args.lod)
-        {
-            if (workaround_lod_array_shadow_as_grad)
-            {
+        if (args.lod) {
+            if (workaround_lod_array_shadow_as_grad) {
                 // Implement textureGrad() instead. LOD === 0.0 is implemented as gradient of 0.0.
                 // Implementing this as plain texture() is not safe on some implementations.
                 if (imgtype.image.dim === Dim.Dim2D)
@@ -4176,8 +4451,7 @@ export class CompilerGLSL extends Compiler
                 else if (imgtype.image.dim === Dim.DimCube)
                     farg_str += ", vec3(0.0), vec3(0.0)";
             }
-            else
-            {
+            else {
                 forward = forward && this.should_forward(args.lod);
                 farg_str += ", ";
 
@@ -4185,63 +4459,53 @@ export class CompilerGLSL extends Compiler
 
                 // Lod expression for TexelFetch in GLSL must be int, and only int.
                 if (args.base.is_fetch && imgtype.image.dim !== Dim.DimBuffer && !imgtype.image.ms &&
-                    lod_expr_type.basetype !== SPIRTypeBaseType.Int)
-                {
+                    lod_expr_type.basetype !== SPIRTypeBaseType.Int) {
                     farg_str += "int(" + this.to_expression(args.lod) + ")";
                 }
-                else
-                {
+                else {
                     farg_str += this.to_expression(args.lod);
                 }
             }
         }
-        else if (args.base.is_fetch && imgtype.image.dim !== Dim.DimBuffer && !imgtype.image.ms)
-        {
+        else if (args.base.is_fetch && imgtype.image.dim !== Dim.DimBuffer && !imgtype.image.ms) {
             // Lod argument is optional in OpImageFetch, but we require a LOD value, pick 0 as the default.
             farg_str += ", 0";
         }
 
-        if (args.coffset)
-        {
+        if (args.coffset) {
             forward = forward && this.should_forward(args.coffset);
             farg_str += ", ";
             farg_str += this.to_expression(args.coffset);
         }
-        else if (args.offset)
-        {
+        else if (args.offset) {
             forward = forward && this.should_forward(args.offset);
             farg_str += ", ";
             farg_str += this.to_expression(args.offset);
         }
 
-        if (args.sample)
-        {
+        if (args.sample) {
             farg_str += ", ";
             farg_str += this.to_expression(args.sample);
         }
 
-        if (args.min_lod)
-        {
+        if (args.min_lod) {
             farg_str += ", ";
             farg_str += this.to_expression(args.min_lod);
         }
 
-        if (args.sparse_texel)
-        {
+        if (args.sparse_texel) {
             // Sparse texel output parameter comes after everything else, except it's before the optional, component/bias arguments.
             farg_str += ", ";
             farg_str += this.to_expression(args.sparse_texel);
         }
 
-        if (args.bias)
-        {
+        if (args.bias) {
             forward = forward && this.should_forward(args.bias);
             farg_str += ", ";
             farg_str += this.to_expression(args.bias);
         }
 
-        if (args.component && !this.expression_is_constant_null(args.component))
-        {
+        if (args.component && !this.expression_is_constant_null(args.component)) {
             forward = forward && this.should_forward(args.component);
             farg_str += ", ";
             const component_type = this.expression_type(args.component);
@@ -4530,13 +4794,11 @@ export class CompilerGLSL extends Compiler
             // This is the newer loop behavior in glslang which branches from Loop header directly to
         // a new block, which in turn has a OpBranchSelection without a selection merge.
         else if (this.block_is_loop_candidate(block, SPIRBlockMethod.MergeToDirectForLoop)) {
-            console.log("BEGIN FOR");
             this.flush_undeclared_variables(block);
             if (this.attempt_emit_loop_header(block, SPIRBlockMethod.MergeToDirectForLoop)) {
                 skip_direct_branch = true;
                 emitted_loop_header_variables = true;
             }
-            console.log("END FOR");
         }
         else if (continue_type === SPIRBlockContinueBlockType.DoWhileLoop) {
             this.flush_undeclared_variables(block);
@@ -5118,9 +5380,80 @@ export class CompilerGLSL extends Compiler
         return false;
     }
 
+    protected emit_copy_logical_type(lhs_id: number, lhs_type_id: number, rhs_id: number, rhs_type_id: number, chain: number[])
+    {
+        // Fully unroll all member/array indices one by one.
+
+        const lhs_type = this.get<SPIRType>(SPIRType, lhs_type_id);
+        const rhs_type = this.get<SPIRType>(SPIRType, rhs_type_id);
+
+        if (lhs_type.array.length > 0) {
+            // Could use a loop here to support specialization constants, but it gets rather complicated with nested array types,
+            // and this is a rather obscure opcode anyways, keep it simple unless we are forced to.
+            const array_size = this.to_array_size_literal(lhs_type);
+            chain.push(0);
+
+            for (let i = 0; i < array_size; i++) {
+                chain[chain.length - 1] = i;
+                this.emit_copy_logical_type(lhs_id, lhs_type.parent_type, rhs_id, rhs_type.parent_type, chain);
+            }
+        }
+        else if (lhs_type.basetype === SPIRTypeBaseType.Struct) {
+            chain.push(0);
+            const member_count = lhs_type.member_types.length;
+            for (let i = 0; i < member_count; i++) {
+                chain[chain.length - 1] = i;
+                this.emit_copy_logical_type(lhs_id, lhs_type.member_types[i], rhs_id, rhs_type.member_types[i], chain);
+            }
+        }
+        else {
+            // Need to handle unpack/packing fixups since this can differ wildly between the logical types,
+            // particularly in MSL.
+            // To deal with this, we emit access chains and go through emit_store_statement
+            // to deal with all the special cases we can encounter.
+
+            const lhs_meta = new AccessChainMeta();
+            const rhs_meta = new AccessChainMeta();
+            const lhs = this.access_chain_internal(lhs_id, chain, chain.length, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, lhs_meta);
+            const rhs = this.access_chain_internal(rhs_id, chain, chain.length, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, rhs_meta);
+
+            const id = this.ir.increase_bound_by(2);
+            lhs_id = id;
+            rhs_id = id + 1;
+
+            {
+                const lhs_expr = this.set<SPIRExpression>(SPIRExpression, lhs_id, lhs, lhs_type_id, true);
+                lhs_expr.need_transpose = lhs_meta.need_transpose;
+
+                if (lhs_meta.storage_is_packed)
+                    this.set_extended_decoration(lhs_id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked);
+                if (lhs_meta.storage_physical_type !== 0)
+                    this.set_extended_decoration(lhs_id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID, lhs_meta.storage_physical_type);
+
+                this.forwarded_temporaries.add(lhs_id);
+                this.suppressed_usage_tracking.add(lhs_id);
+            }
+
+            {
+                const rhs_expr = this.set<SPIRExpression>(SPIRExpression, rhs_id, rhs, rhs_type_id, true);
+                rhs_expr.need_transpose = rhs_meta.need_transpose;
+
+                if (rhs_meta.storage_is_packed)
+                    this.set_extended_decoration(rhs_id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked);
+                if (rhs_meta.storage_physical_type !== 0)
+                    this.set_extended_decoration(rhs_id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID, rhs_meta.storage_physical_type);
+
+                this.forwarded_temporaries.add(rhs_id);
+                this.suppressed_usage_tracking.add(rhs_id);
+            }
+
+            this.emit_store_statement(lhs_id, rhs_id);
+        }
+    }
+
     protected statement_inner(...args)
     {
-        let str = ""
+        let str = "";
         for (let i = 0; i < args.length; ++i) {
             str += args[i];
             this.buffer.append(args[i]);
@@ -8373,9 +8706,7 @@ export class CompilerGLSL extends Compiler
                             target_block = child.false_block;
                         }
 
-                        console.log("BEGIN CONTINUE BLOCK");
                         const continue_block = this.emit_continue_block(block.continue_block, false, false);
-                        console.log("END CONTINUE BLOCK");
                         this.emit_block_hints(block);
                         this.statement("for (", initializer, "; ", condition, "; ", continue_block, ")");
                         break;
@@ -8734,6 +9065,90 @@ export class CompilerGLSL extends Compiler
         return false;
     }
 
+    protected should_suppress_usage_tracking(id: number): boolean
+    {
+        // Used only by opcodes which don't do any real "work", they just swizzle data in some fashion.
+        return !this.expression_is_forwarded(id) || this.expression_suppresses_usage_tracking(id);
+    }
+
+    protected emit_mix_op(result_type: number, id: number, left: number, right: number, lerp: number)
+    {
+        const lerptype = this.expression_type(lerp);
+        const restype = this.get<SPIRType>(SPIRType, result_type);
+
+        // If this results in a variable pointer, assume it may be written through.
+        if (restype.pointer) {
+            this.register_write(left);
+            this.register_write(right);
+        }
+
+        const { backend, options } = this;
+
+        let has_boolean_mix = backend.boolean_mix_function &&
+            ((options.es && options.version >= 310) || (!options.es && options.version >= 450));
+        const mix_op = this.to_trivial_mix_op(restype, left, right, lerp);
+        const trivial_mix = mix_op !== undefined;
+
+        // Cannot use boolean mix when the lerp argument is just one boolean,
+        // fall back to regular trinary statements.
+        if (lerptype.vecsize === 1)
+            has_boolean_mix = false;
+
+        // If we can reduce the mix to a simple cast, do so.
+        // This helps for cases like int(bool), uint(bool) which is implemented with
+        // OpSelect bool 1 0.
+        if (trivial_mix) {
+            this.emit_unary_func_op(result_type, id, lerp, mix_op);
+        }
+        else if (!has_boolean_mix && lerptype.basetype === SPIRTypeBaseType.Boolean) {
+            // Boolean mix not supported on desktop without extension.
+            // Was added in OpenGL 4.5 with ES 3.1 compat.
+            //
+            // Could use GL_EXT_shader_integer_mix on desktop at least,
+            // but Apple doesn't support it. :(
+            // Just implement it as ternary expressions.
+            const expr = this.to_ternary_expression(this.get<SPIRType>(SPIRType, result_type), lerp, right, left);
+            this.emit_op(result_type, id, expr, this.should_forward(left) && this.should_forward(right) && this.should_forward(lerp));
+            this.inherit_expression_dependencies(id, left);
+            this.inherit_expression_dependencies(id, right);
+            this.inherit_expression_dependencies(id, lerp);
+        }
+        else if (lerptype.basetype === SPIRTypeBaseType.Boolean)
+            this.emit_trinary_func_op(result_type, id, left, right, lerp, backend.boolean_mix_function);
+        else
+            this.emit_trinary_func_op(result_type, id, left, right, lerp, "mix");
+    }
+
+    protected emit_nminmax_op(result_type: number, id: number, op0: number, op1: number, op: GLSLstd450)
+    {
+        const {ir} = this;
+        // Need to emulate this call.
+        let ids = maplike_get(0, this.extra_sub_expressions, id);
+        if (!ids)
+        {
+            ids = ir.increase_bound_by(5);
+            const btype = defaultClone(SPIRType, this.get<SPIRType>(SPIRType, result_type));
+            btype.basetype = SPIRTypeBaseType.Boolean;
+            this.set<SPIRType>(SPIRType, ids, btype);
+        }
+
+        const btype_id = ids + 0;
+        const left_nan_id = ids + 1;
+        const right_nan_id = ids + 2;
+        const tmp_id = ids + 3;
+        const mixed_first_id = ids + 4;
+
+        // Inherit precision qualifiers.
+        ir.meta[tmp_id] = defaultClone(Meta, ir.meta[id]);
+        ir.meta[mixed_first_id] = defaultClone(Meta, ir.meta[id]);
+
+        this.emit_unary_func_op(btype_id, left_nan_id, op0, "isnan");
+        this.emit_unary_func_op(btype_id, right_nan_id, op1, "isnan");
+        this.emit_binary_func_op(result_type, tmp_id, op0, op1, op === GLSLstd450.GLSLstd450NMin ? "min" : "max");
+        this.emit_mix_op(result_type, mixed_first_id, tmp_id, op1, left_nan_id);
+        this.emit_mix_op(result_type, id, mixed_first_id, op0, right_nan_id);
+    }
+
     protected to_trivial_mix_op(type: SPIRType, left: number, right: number, lerp: number): string
     {
         const { backend } = this;
@@ -8807,12 +9222,99 @@ export class CompilerGLSL extends Compiler
         return undefined;
     }
 
+    protected emit_trinary_func_op(result_type: number, result_id: number, op0: number, op1: number, op2: number, op: string)
+    {
+        const forward = this.should_forward(op0) && this.should_forward(op1) && this.should_forward(op2);
+        this.emit_op(result_type, result_id, op + "(" + this.to_unpacked_expression(op0) + ", " +
+            this.to_unpacked_expression(op1) + ", " + this.to_unpacked_expression(op2) + ")", forward);
+
+        this.inherit_expression_dependencies(result_id, op0);
+        this.inherit_expression_dependencies(result_id, op1);
+        this.inherit_expression_dependencies(result_id, op2);
+    }
+
     protected emit_binary_func_op(result_type: number, result_id: number, op0: number, op1: number, op: string)
     {
         const forward = this.should_forward(op0) && this.should_forward(op1);
         this.emit_op(result_type, result_id, op + "(" + this.to_unpacked_expression(op0) + ", " + this.to_unpacked_expression(op1) + ")", forward);
         this.inherit_expression_dependencies(result_id, op0);
         this.inherit_expression_dependencies(result_id, op1);
+    }
+
+    protected emit_trinary_func_op_bitextract(result_type: number, result_id: number, op0: number, op1: number,
+                                              op2: number, op: string, expected_result_type: SPIRTypeBaseType, input_type0: SPIRTypeBaseType,
+                                              input_type1: SPIRTypeBaseType, input_type2: SPIRTypeBaseType)
+    {
+        const out_type = this.get<SPIRType>(SPIRType, result_type);
+        const expected_type = defaultClone(SPIRType, out_type);
+        expected_type.basetype = input_type0;
+
+        const cast_op0 = this.expression_type(op0).basetype !== input_type0 ? this.bitcast_glsl(expected_type, op0) : this.to_unpacked_expression(op0);
+        const op1_expr = this.to_unpacked_expression(op1);
+        const op2_expr = this.to_unpacked_expression(op2);
+
+        // Use value casts here instead. Input must be exactly int or uint, but SPIR-V might be 16-bit.
+        expected_type.basetype = input_type1;
+        expected_type.vecsize = 1;
+        const cast_op1 = this.expression_type(op1).basetype !== input_type1 ?
+            this.type_to_glsl_constructor(expected_type) + "(" + op1_expr + ")" :
+            op1_expr;
+
+        expected_type.basetype = input_type2;
+        expected_type.vecsize = 1;
+        const cast_op2 = this.expression_type(op2).basetype !== input_type2 ?
+            this.type_to_glsl_constructor(expected_type) + "(" + op2_expr + ")" :
+            op2_expr;
+
+        let expr = "";
+        if (out_type.basetype !== expected_result_type) {
+            expected_type.vecsize = out_type.vecsize;
+            expected_type.basetype = expected_result_type;
+            expr = this.bitcast_glsl_op(out_type, expected_type);
+            expr += "(" + op + "(" + cast_op0 + ", " + cast_op1 + ", " + cast_op2 + ")" + ")";
+        }
+        else {
+            expr += op + "(" + cast_op0 + ", " + cast_op1 + ", " + cast_op2 + ")";
+        }
+
+        this.emit_op(result_type, result_id, expr, this.should_forward(op0) && this.should_forward(op1) && this.should_forward(op2));
+        this.inherit_expression_dependencies(result_id, op0);
+        this.inherit_expression_dependencies(result_id, op1);
+        this.inherit_expression_dependencies(result_id, op2);
+    }
+
+    protected emit_bitfield_insert_op(result_type: number, result_id: number, op0: number, op1: number, op2: number,
+                                      op3: number, op: string, offset_count_type: SPIRTypeBaseType)
+    {
+        // Only need to cast offset/count arguments. Types of base/insert must be same as result type,
+        // and bitfieldInsert is sign invariant.
+        const forward = this.should_forward(op0) && this.should_forward(op1) && this.should_forward(op2) && this.should_forward(op3);
+
+        const op0_expr = this.to_unpacked_expression(op0);
+        const op1_expr = this.to_unpacked_expression(op1);
+        let op2_expr = this.to_unpacked_expression(op2);
+        let op3_expr = this.to_unpacked_expression(op3);
+
+        const target_type = new SPIRType();
+        target_type.vecsize = 1;
+        target_type.basetype = offset_count_type;
+
+        if (this.expression_type(op2).basetype !== offset_count_type) {
+            // Value-cast here. Input might be 16-bit. GLSL requires int.
+            op2_expr = this.type_to_glsl_constructor(target_type) + "(" + op2_expr + ")";
+        }
+
+        if (this.expression_type(op3).basetype !== offset_count_type) {
+            // Value-cast here. Input might be 16-bit. GLSL requires int.
+            op3_expr = this.type_to_glsl_constructor(target_type) + "(" + op3_expr + ")";
+        }
+
+        this.emit_op(result_type, result_id, op + "(" + op0_expr + ", " + op1_expr + ", " + op2_expr + ", " + op3_expr + ")", forward);
+
+        this.inherit_expression_dependencies(result_id, op0);
+        this.inherit_expression_dependencies(result_id, op1);
+        this.inherit_expression_dependencies(result_id, op2);
+        this.inherit_expression_dependencies(result_id, op3);
     }
 
     protected emit_unary_func_op(result_type: number, result_id: number, op0: number, op: string)
@@ -8836,6 +9338,52 @@ export class CompilerGLSL extends Compiler
         this.inherit_expression_dependencies(result_id, op1);
     }
 
+    protected emit_unrolled_binary_op(result_type: number, result_id: number, op0: number, op1: number, op: string, negate: boolean, expected_type: SPIRTypeBaseType)
+    {
+        const type0 = this.expression_type(op0);
+        const type1 = this.expression_type(op1);
+
+        const target_type0 = defaultClone(SPIRType, type0);
+        const target_type1 = defaultClone(SPIRType, type1);
+        target_type0.basetype = expected_type;
+        target_type1.basetype = expected_type;
+        target_type0.vecsize = 1;
+        target_type1.vecsize = 1;
+
+        const type = this.get<SPIRType>(SPIRType, result_type);
+        let expr = this.type_to_glsl_constructor(type);
+        expr += "(";
+        for (let i = 0; i < type.vecsize; i++) {
+            // Make sure to call to_expression multiple times to ensure
+            // that these expressions are properly flushed to temporaries if needed.
+            if (negate)
+                expr += "!(";
+
+            if (expected_type !== SPIRTypeBaseType.Unknown && type0.basetype !== expected_type)
+                expr += this.bitcast_expression(target_type0, type0.basetype, this.to_extract_component_expression(op0, i));
+            else
+                expr += this.to_extract_component_expression(op0, i);
+
+            expr += " " + op + " ";
+
+            if (expected_type !== SPIRTypeBaseType.Unknown && type1.basetype !== expected_type)
+                expr += this.bitcast_expression(target_type1, type1.basetype, this.to_extract_component_expression(op1, i));
+            else
+                expr += this.to_extract_component_expression(op1, i);
+
+            if (negate)
+                expr += ")";
+
+            if (i + 1 < type.vecsize)
+                expr += ", ";
+        }
+        expr += ")";
+        this.emit_op(result_type, result_id, expr, this.should_forward(op0) && this.should_forward(op1));
+
+        this.inherit_expression_dependencies(result_id, op0);
+        this.inherit_expression_dependencies(result_id, op1);
+    }
+
     protected emit_unary_func_op_cast(result_type: number, result_id: number, op0: number, op: string, input_type: SPIRTypeBaseType, expected_result_type: SPIRTypeBaseType)
     {
         const out_type = this.get<SPIRType>(SPIRType, result_type);
@@ -8847,8 +9395,7 @@ export class CompilerGLSL extends Compiler
         expected_type.width = expr_type.width;
 
         let cast_op = "";
-        if (expr_type.basetype !== input_type)
-        {
+        if (expr_type.basetype !== input_type) {
             if (expr_type.basetype === SPIRTypeBaseType.Boolean)
                 cast_op = this.type_to_glsl(expected_type) + "(" + this.to_unpacked_expression(op0) + ")";
             else
@@ -8858,18 +9405,16 @@ export class CompilerGLSL extends Compiler
             cast_op = this.to_unpacked_expression(op0);
 
         let expr = "";
-        if (out_type.basetype !== expected_result_type)
-        {
+        if (out_type.basetype !== expected_result_type) {
             expected_type.basetype = expected_result_type;
             expected_type.width = out_type.width;
             if (out_type.basetype === SPIRTypeBaseType.Boolean)
                 expr = this.type_to_glsl(out_type);
             else
                 expr = this.bitcast_glsl_op(out_type, expected_type);
-            expr += '(' + op + "(" + cast_op + ")" + ')';
+            expr += "(" + op + "(" + cast_op + ")" + ")";
         }
-        else
-        {
+        else {
             expr += op + "(" + cast_op + ")";
         }
 
@@ -8885,20 +9430,43 @@ export class CompilerGLSL extends Compiler
 
         // Special case boolean outputs since relational opcodes output booleans instead of int/uint.
         let expr = "";
-        if (out_type.basetype !== input_type && out_type.basetype !== SPIRTypeBaseType.Boolean)
-        {
+        if (out_type.basetype !== input_type && out_type.basetype !== SPIRTypeBaseType.Boolean) {
             expected_type.basetype = input_type;
             expr = this.bitcast_glsl_op(out_type, expected_type);
             expr += "(" + op + "(" + props.cast_op0 + ", " + props.cast_op1 + "))";
         }
-        else
-        {
+        else {
             expr += op + "(" + props.cast_op0 + ", " + props.cast_op1 + ")";
         }
 
         this.emit_op(result_type, result_id, expr, this.should_forward(op0) && this.should_forward(op1));
         this.inherit_expression_dependencies(result_id, op0);
         this.inherit_expression_dependencies(result_id, op1);
+    }
+
+    protected emit_trinary_func_op_cast(result_type: number, result_id: number, op0: number, op1: number, op2: number,
+                                        op: string, input_type: SPIRTypeBaseType)
+    {
+        const out_type = this.get<SPIRType>(SPIRType, result_type);
+        const expected_type = defaultClone(SPIRType, out_type);
+        expected_type.basetype = input_type;
+        const cast_op0 = this.expression_type(op0).basetype !== input_type ? this.bitcast_glsl(expected_type, op0) : this.to_unpacked_expression(op0);
+        const cast_op1 = this.expression_type(op1).basetype !== input_type ? this.bitcast_glsl(expected_type, op1) : this.to_unpacked_expression(op1);
+        const cast_op2 = this.expression_type(op2).basetype !== input_type ? this.bitcast_glsl(expected_type, op2) : this.to_unpacked_expression(op2);
+
+        let expr = "";
+        if (out_type.basetype !== input_type) {
+            expr = this.bitcast_glsl_op(out_type, expected_type);
+            expr += "(" + op + "(" + cast_op0 + ", " + cast_op1 + ", " + cast_op2 + "))";
+        }
+        else {
+            expr += op + "(" + cast_op0 + ", " + cast_op1 + ", " + cast_op2 + ")";
+        }
+
+        this.emit_op(result_type, result_id, expr, this.should_forward(op0) && this.should_forward(op1) && this.should_forward(op2));
+        this.inherit_expression_dependencies(result_id, op0);
+        this.inherit_expression_dependencies(result_id, op1);
+        this.inherit_expression_dependencies(result_id, op2);
     }
 
     protected emit_binary_op_cast(result_type: number, result_id: number, op0: number, op1: number, op: string, input_type: SPIRTypeBaseType, skip_cast_if_equal_type: boolean)
@@ -8910,9 +9478,8 @@ export class CompilerGLSL extends Compiler
         // We might have casted away from the result type, so bitcast again.
         // For example, arithmetic right shift with uint inputs.
         // Special case boolean outputs since relational opcodes output booleans instead of int/uint.
-        let expr = ""
-        if (out_type.basetype !== props.input_type && out_type.basetype !== SPIRTypeBaseType.Boolean)
-        {
+        let expr = "";
+        if (out_type.basetype !== props.input_type && out_type.basetype !== SPIRTypeBaseType.Boolean) {
             expected_type.basetype = input_type;
             expr = this.bitcast_glsl_op(out_type, expected_type);
             expr += "(" + props.cast_op0 + " " + op + " " + props.cast_op1 + ")";
@@ -10044,8 +10611,7 @@ export class CompilerGLSL extends Compiler
         const { backend } = this;
         const reroll_array = type.array.length > 0 && (!backend.array_is_value_type || (uses_buffer_offset && !backend.buffer_offset_array_is_value_type));
 
-        if (reroll_array)
-        {
+        if (reroll_array) {
             // For this case, we need to "re-roll" an array initializer from a temporary.
             // We cannot simply pass the array directly, since it decays to a pointer and it cannot
             // participate in a struct initializer. E.g.
@@ -10061,15 +10627,14 @@ export class CompilerGLSL extends Compiler
         else
             return this.to_unpacked_expression(id);
     }
-    
+
     protected to_rerolled_array_expression(base_expr: string, type: SPIRType): string
     {
         const size = this.to_array_size_literal(type);
         const parent = this.get<SPIRType>(SPIRType, type.parent_type);
         let expr = "{ ";
-    
-        for (let i = 0; i < size; i++)
-        {
+
+        for (let i = 0; i < size; i++) {
             let subexpr = base_expr + "[" + convert_to_string(i) + "]";
             if (parent.array.length === 0)
                 expr += subexpr;
@@ -10079,7 +10644,7 @@ export class CompilerGLSL extends Compiler
             if (i + 1 < size)
                 expr += ", ";
         }
-    
+
         expr += " }";
         return expr;
     }
@@ -10106,6 +10671,13 @@ export class CompilerGLSL extends Compiler
         }
         else
             return this.to_expression(id, register_expression_read);
+    }
+
+    protected to_unpacked_row_major_matrix_expression(id: number): string
+    {
+        return this.unpack_expression_type(this.to_expression(id), this.expression_type(id),
+            this.get_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID),
+            this.has_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked), true);
     }
 
     protected to_enclosed_unpacked_expression(id: number, register_expression_read: boolean = true): string
@@ -10149,6 +10721,39 @@ export class CompilerGLSL extends Compiler
             return expr + "[" + index + "]";
         else
             return expr + "." + this.index_to_swizzle(index);
+    }
+
+    protected to_extract_constant_composite_expression(result_type: number, c: SPIRConstant, chain: Uint32Array | number[], length: number)
+    {
+        // It is kinda silly if application actually enters this path since they know the constant up front.
+        // It is useful here to extract the plain constant directly.
+        const tmp = new SPIRConstant();
+        tmp.constant_type = result_type;
+        const composite_type = this.get<SPIRType>(SPIRType, c.constant_type);
+        console.assert(composite_type.basetype !== SPIRTypeBaseType.Struct && composite_type.array.length === 0);
+        console.assert(!c.specialization);
+
+        if (this.is_matrix(composite_type)) {
+            if (length === 2) {
+                tmp.m.c[0].vecsize = 1;
+                tmp.m.columns = 1;
+                tmp.m.c[0].r[0] = c.m.c[chain[0]].r[chain[1]];
+            }
+            else {
+                console.assert(length === 1);
+                tmp.m.c[0].vecsize = composite_type.vecsize;
+                tmp.m.columns = 1;
+                tmp.m.c[0] = c.m.c[chain[0]];
+            }
+        }
+        else {
+            console.assert(length === 1);
+            tmp.m.c[0].vecsize = 1;
+            tmp.m.columns = 1;
+            tmp.m.c[0].r[0] = c.m.c[0].r[chain[0]];
+        }
+
+        return this.constant_expression(tmp);
     }
 
     protected enclose_expression(expr: string): string
@@ -10317,7 +10922,7 @@ export class CompilerGLSL extends Compiler
                 direction = "out ";
         }
 
-        return (direction === ""?  "" : direction + " ") + this.to_qualifiers_glsl(arg.id) + this.variable_decl(type, this.to_name(arg.id), arg.id);
+        return (direction === "" ? "" : direction + " ") + this.to_qualifiers_glsl(arg.id) + this.variable_decl(type, this.to_name(arg.id), arg.id);
     }
 
     protected to_qualifiers_glsl(id: number): string
@@ -11784,29 +12389,25 @@ export class CompilerGLSL extends Compiler
 
         const { backend } = this;
 
-        for (let i = 0; i < length; i++)
-        {
+        for (let i = 0; i < length; i++) {
             const e = this.maybe_get<SPIRExpression>(SPIRExpression, elems[i]);
 
             // If we're merging another scalar which belongs to the same base
             // object, just merge the swizzles to avoid triggering more than 1 expression read as much as possible!
-            if (can_apply_swizzle_opt && e && e.base_expression && e.base_expression === base)
-            {
+            if (can_apply_swizzle_opt && e && e.base_expression && e.base_expression === base) {
                 // Only supposed to be used for vector swizzle -> scalar.
-                console.assert(e.expression !== "" && e.expression.charAt(0) === '.');
+                console.assert(e.expression !== "" && e.expression.charAt(0) === ".");
                 subop += e.expression.substring(1);
                 swizzle_optimization = true;
             }
-        else
-            {
+            else {
                 // We'll likely end up with duplicated swizzles, e.g.
                 // foobar.xyz.xyz from patterns like
                 // OpVectorShuffle
                 // OpCompositeExtract x 3
                 // OpCompositeConstruct 3x + other scalar.
                 // Just modify op in-place.
-                if (swizzle_optimization)
-                {
+                if (swizzle_optimization) {
                     if (backend.swizzle_is_function)
                         subop += "()";
 
@@ -11840,8 +12441,7 @@ export class CompilerGLSL extends Compiler
             base = e ? e.base_expression : <ID>(0);
         }
 
-        if (swizzle_optimization)
-        {
+        if (swizzle_optimization) {
             if (backend.swizzle_is_function)
                 subop += "()";
 
@@ -11919,15 +12519,14 @@ export class CompilerGLSL extends Compiler
     // This is a very common pattern after OpCompositeCombine.
     protected remove_unity_swizzle(base: number, op: string): string
     {
-        const pos = op.indexOf('.');
+        const pos = op.indexOf(".");
         // either not found or first char
         if (pos <= 0)
             return null;
 
         let final_swiz = op.substring(pos + 1);
 
-        if (this.backend.swizzle_is_function)
-        {
+        if (this.backend.swizzle_is_function) {
             if (final_swiz.length < 2)
                 return null;
 
@@ -11940,8 +12539,7 @@ export class CompilerGLSL extends Compiler
         // Check if final swizzle is of form .x, .xy, .xyz, .xyzw or similar.
         // If so, and previous swizzle is of same length,
         // we can drop the final swizzle altogether.
-        for (let i = 0; i < final_swiz.length; i++)
-        {
+        for (let i = 0; i < final_swiz.length; i++) {
             if (i >= 4 || final_swiz[i] !== expectedVecComps[i])
                 return null;
         }
@@ -12057,8 +12655,7 @@ export class CompilerGLSL extends Compiler
         let type: string;
         const { options } = this;
 
-        switch (imgtype.image.dim)
-        {
+        switch (imgtype.image.dim) {
             case Dim.Dim1D:
                 type = (imgtype.image.arrayed && !options.es) ? "1DArray" : "1D";
                 break;
@@ -12090,10 +12687,8 @@ export class CompilerGLSL extends Compiler
         let legacy_lod_ext = false;
         const execution = this.get_entry_point();
         if (op === "textureGrad" || op === "textureProjGrad" ||
-            ((op === "textureLod" || op === "textureProjLod") && execution.model !== ExecutionModel.ExecutionModelVertex))
-        {
-            if (this.is_legacy_es())
-            {
+            ((op === "textureLod" || op === "textureProjLod") && execution.model !== ExecutionModel.ExecutionModelVertex)) {
+            if (this.is_legacy_es()) {
                 legacy_lod_ext = true;
                 this.require_extension_internal("GL_EXT_shader_texture_lod");
             }
@@ -12101,8 +12696,7 @@ export class CompilerGLSL extends Compiler
                 this.require_extension_internal("GL_ARB_shader_texture_lod");
         }
 
-        if (op === "textureLodOffset" || op === "textureProjLodOffset")
-        {
+        if (op === "textureLodOffset" || op === "textureProjLodOffset") {
             if (this.is_legacy_es())
                 throw new Error(op + " not allowed in legacy ES");
 
@@ -12113,16 +12707,14 @@ export class CompilerGLSL extends Compiler
         // Basically shadow2D and shadow2DProj work through EXT_shadow_samplers,
         // everything else can just throw
         const is_comparison = this.is_depth_image(imgtype, tex);
-        if (is_comparison && this.is_legacy_es())
-        {
+        if (is_comparison && this.is_legacy_es()) {
             if (op === "texture" || op === "textureProj")
                 this.require_extension_internal("GL_EXT_shadow_samplers");
             else
                 throw new Error(op + " not allowed on depth samplers in legacy ES");
         }
 
-        if (op === "textureSize")
-        {
+        if (op === "textureSize") {
             if (this.is_legacy_es())
                 throw new Error("textureSize not supported in legacy ES");
             if (is_comparison)
@@ -12156,8 +12748,7 @@ export class CompilerGLSL extends Compiler
             return "textureSize" + type;
         else if (op === "texelFetch")
             return "texelFetch" + type;
-        else
-        {
+        else {
             throw new Error("Unsupported legacy texture op: " + op);
         }
     }
@@ -12668,7 +13259,7 @@ export class CompilerGLSL extends Compiler
             this.analyze_non_block_pointer_types();
 
         let pass_count = 0;
-        try {
+        // try {
         do {
             if (pass_count >= 3)
                 throw new Error("Over 3 compilation loops detected. Must be a bug!");
@@ -12685,10 +13276,10 @@ export class CompilerGLSL extends Compiler
 
             pass_count++;
         } while (this.is_forcing_recompilation());
-        }
-        catch(err) {
-            console.error(err);
-        }
+        // }
+        // catch (err) {
+        //     console.error(err);
+        // }
 
         /*
         // Implement the interlocked wrapper function at the end.
@@ -13754,7 +14345,7 @@ export class CompilerGLSL extends Compiler
         }
     }
 
-    protected get_integer_width_for_glsl_instruction(op: GLSLstd450, ops: Uint32Array, length: number): number
+    protected get_integer_width_for_glsl_instruction(op: GLSLstd450, ops: Uint32Array| number[], length: number): number
     {
         if (length < 1)
             return 32;
@@ -14031,8 +14622,7 @@ function to_pls_layout(format: PlsFormat): string
 
 function image_opcode_is_sample_no_dref(op: Op): boolean
 {
-    switch (op)
-    {
+    switch (op) {
         case Op.OpImageSampleExplicitLod:
         case Op.OpImageSampleImplicitLod:
         case Op.OpImageSampleProjExplicitLod:
@@ -14045,6 +14635,22 @@ function image_opcode_is_sample_no_dref(op: Op): boolean
         case Op.OpImageSparseSampleProjImplicitLod:
         case Op.OpImageSparseFetch:
         case Op.OpImageSparseRead:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
+function is_unsigned_glsl_opcode(op: GLSLstd450)
+{
+    // Don't have to be exhaustive, only relevant for legacy target checking ...
+    switch (op)
+    {
+        case GLSLstd450.GLSLstd450UClamp:
+        case GLSLstd450.GLSLstd450UMin:
+        case GLSLstd450.GLSLstd450UMax:
+        case GLSLstd450.GLSLstd450FindUMsb:
             return true;
 
         default:

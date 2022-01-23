@@ -1,6 +1,6 @@
 import { OpcodeHandler } from "./OpcodeHandler";
-import { Op } from "../spirv";
 import { Compiler } from "./Compiler";
+import { Op } from "../spirv/Op";
 export declare class CombinedImageSamplerDrefHandler extends OpcodeHandler {
     compiler: Compiler;
     dref_combined_samplers: Set<number>;

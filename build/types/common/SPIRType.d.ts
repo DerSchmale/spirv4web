@@ -1,6 +1,9 @@
 import { IVariant } from "./IVariant";
 import { Types } from "./Types";
-import { AccessQualifier, Dim, ImageFormat, StorageClass } from "../spirv";
+import { Dim } from "../spirv/Dim";
+import { ImageFormat } from "../spirv/ImageFormat";
+import { AccessQualifier } from "../spirv/AccessQualifier";
+import { StorageClass } from "../spirv/StorageClass";
 export declare enum SPIRTypeBaseType {
     Unknown = 0,
     Void = 1,

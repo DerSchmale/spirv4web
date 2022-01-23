@@ -206,7 +206,7 @@ export function compile_iteration(args: Args, spirv_file: Uint32Array): string
     {
         if (rename.storageClass === StorageClass.StorageClassInput)
             rename_interface_variable(compiler, res.stage_inputs, rename.location, rename.variable_name);
-    else if (rename.storageClass == StorageClass.StorageClassOutput)
+    else if (rename.storageClass === StorageClass.StorageClassOutput)
             rename_interface_variable(compiler, res.stage_outputs, rename.location, rename.variable_name);
     else
         {

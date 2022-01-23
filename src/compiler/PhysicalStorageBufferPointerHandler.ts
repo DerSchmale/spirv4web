@@ -73,13 +73,13 @@ export class PhysicalStorageBufferPointerHandler extends OpcodeHandler
         const mask = args[0];
         let offset = 0;
         length--;
-        if (length && (mask & MemoryAccessMask.MemoryAccessVolatileMask) != 0)
+        if (length && (mask & MemoryAccessMask.MemoryAccessVolatileMask) !== 0)
         {
             offset++;
             length--;
         }
 
-        if (length && (mask & MemoryAccessMask.MemoryAccessAlignedMask) != 0)
+        if (length && (mask & MemoryAccessMask.MemoryAccessAlignedMask) !== 0)
         {
             const alignment = args[offset];
             const meta = this.find_block_meta(id);
@@ -117,7 +117,7 @@ export class PhysicalStorageBufferPointerHandler extends OpcodeHandler
             this.access_chain_to_physical_block[var_id] = meta;
 
             const type = this.compiler.get<SPIRType>(SPIRType, type_id);
-            if (type.basetype != SPIRTypeBaseType.Struct)
+            if (type.basetype !== SPIRTypeBaseType.Struct)
                 this.non_block_types.add(type_id);
 
             if (meta.alignment === 0)
@@ -127,7 +127,7 @@ export class PhysicalStorageBufferPointerHandler extends OpcodeHandler
 
     get_minimum_scalar_alignment(type: SPIRType): number
     {
-        if (type.storage == StorageClass.StorageClassPhysicalStorageBufferEXT)
+        if (type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT)
             return 8;
         else if (type.basetype === SPIRTypeBaseType.Struct)
         {
@@ -163,7 +163,7 @@ export class PhysicalStorageBufferPointerHandler extends OpcodeHandler
     {
         let type = this.compiler.get<SPIRType>(SPIRType, type_id);
         while (type.pointer &&
-            type.storage == StorageClass.StorageClassPhysicalStorageBufferEXT &&
+            type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT &&
             !this.type_is_bda_block_entry(type_id))
         {
             type_id = type.parent_type;

@@ -68,7 +68,7 @@ export class ActiveBuiltinHandler extends OpcodeHandler
         {
             const type = compiler.get<SPIRType>(SPIRType, var_.basetype);
             const decorations = m.decoration;
-            const flags = type.storage == StorageClass.StorageClassInput ?
+            const flags = type.storage === StorageClass.StorageClassInput ?
                 compiler.active_input_builtins : compiler.active_output_builtins;
             if (decorations.builtin)
             {

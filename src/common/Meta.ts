@@ -1,6 +1,7 @@
 import { Bitset } from "./Bitset";
 import { BuiltIn } from "../spirv/BuiltIn";
 import { FPRoundingMode } from "../spirv/FPRoundingMode";
+import { defaultClone } from "../utils/defaultCopy";
 
 export enum ExtendedDecorations
 {
@@ -8,7 +9,7 @@ export enum ExtendedDecorations
     SPIRVCrossDecorationBufferBlockRepacked = 0,
 
     // A type in a buffer block might be declared with a different physical type than the logical type.
-    // If this is not set, PhysicalTypeID == the SPIR-V type as declared.
+    // If this is not set, PhysicalTypeID === the SPIR-V type as declared.
     SPIRVCrossDecorationPhysicalTypeID,
 
     // Marks if the physical type is to be declared with tight packing rules, i.e. packed_floatN on MSL and friends.
@@ -74,13 +75,18 @@ export class MetaDecorationExtended
 {
     flags: Bitset = new Bitset();
     values: Uint32Array = new Uint32Array(ExtendedDecorations.SPIRVCrossDecorationCount);
+
+    clone(): MetaDecorationExtended
+    {
+        return defaultClone(MetaDecorationExtended, this);
+    }
 }
 
 export class MetaDecoration
 {
-    alias: string;
-    qualified_alias: string;
-    hlsl_semantic: string;
+    alias: string = "";
+    qualified_alias: string = "";
+    hlsl_semantic: string = "";
     decoration_flags: Bitset = new Bitset();
     builtin_type = BuiltIn.BuiltInMax;
     location: number = 0;
@@ -100,6 +106,11 @@ export class MetaDecoration
     builtin: boolean = false;
 
     extended: MetaDecorationExtended = new MetaDecorationExtended();
+
+    clone(): MetaDecoration
+    {
+        return defaultClone(MetaDecoration, this);
+    }
 }
 
 export class Meta

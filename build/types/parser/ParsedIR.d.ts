@@ -1,13 +1,16 @@
 import { Variant } from "../common/Variant";
 import { Meta } from "../common/Meta";
 import { Types } from "../common/Types";
-import { AddressingModel, Capability, Decoration, MemoryModel } from "../spirv";
 import { SPIREntryPoint } from "../common/SPIREntryPoint";
 import { Bitset } from "../common/Bitset";
 import { MemberPointer, Pointer } from "../utils/Pointer";
 import { SPIRVariable } from "../common/SPIRVariable";
 import { SPIRType } from "../common/SPIRType";
 import { IVariant, IVariantType } from "../common/IVariant";
+import { Capability } from "../spirv/Capability";
+import { AddressingModel } from "../spirv/AddressingModel";
+import { MemoryModel } from "../spirv/MemoryModel";
+import { Decoration } from "../spirv/Decoration";
 export declare enum BlockMetaFlagBits {
     BLOCK_META_LOOP_HEADER_BIT = 1,
     BLOCK_META_CONTINUE_BIT = 2,

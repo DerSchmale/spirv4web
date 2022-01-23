@@ -95,7 +95,7 @@ export class SPIRBlockCase
 export class SPIRBlock extends IVariant
 {
     static type: Types = Types.TypeBlock;
-    static NoDominator: number = -1; //0xffffffff;
+    static NoDominator: number = 0xffffffff;
 
     terminator: SPIRBlockTerminator = SPIRBlockTerminator.Unknown;
     merge: SPIRBlockMerge = SPIRBlockMerge.MergeNone;

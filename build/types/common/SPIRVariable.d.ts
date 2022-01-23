@@ -1,7 +1,7 @@
 import { IVariant } from "./IVariant";
 import { Types } from "./Types";
-import { StorageClass } from "../spirv";
 import { SPIRFunctionParameter } from "./SPIRFunction";
+import { StorageClass } from "../spirv/StorageClass";
 export declare class SPIRVariable extends IVariant {
     static type: Types;
     basetype: TypeID;

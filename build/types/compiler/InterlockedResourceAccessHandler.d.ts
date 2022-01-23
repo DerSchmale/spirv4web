@@ -1,6 +1,6 @@
 import { OpcodeHandler } from "./OpcodeHandler";
 import { Compiler } from "./Compiler";
-import { Op } from "../spirv";
+import { Op } from "../spirv/Op";
 export declare class InterlockedResourceAccessHandler extends OpcodeHandler {
     compiler: Compiler;
     in_crit_sec: boolean;

@@ -1,6 +1,5 @@
 import { ParsedIR } from "../parser/ParsedIR";
 import { SPIRType, SPIRTypeBaseType } from "../common/SPIRType";
-import { BuiltIn, Decoration, ExecutionModel, ImageFormat, Op, StorageClass } from "../spirv";
 import { SPIRVariable } from "../common/SPIRVariable";
 import { IVariant, IVariantType } from "../common/IVariant";
 import { SPIREntryPoint } from "../common/SPIREntryPoint";
@@ -19,6 +18,12 @@ import { CombinedImageSampler } from "./CombinedImageSampler";
 import { CFG } from "../cfg/CFG";
 import { AnalyzeVariableScopeAccessHandler } from "./AnalyzeVariableScopeAccessHandler";
 import { PhysicalBlockMeta } from "./PhysicalBlockMeta";
+import { Decoration } from "../spirv/Decoration";
+import { StorageClass } from "../spirv/StorageClass";
+import { ExecutionModel } from "../spirv/ExecutionModel";
+import { BuiltIn } from "../spirv/BuiltIn";
+import { Op } from "../spirv/Op";
+import { ImageFormat } from "../spirv/ImageFormat";
 declare type VariableTypeRemapCallback = (type: SPIRType, name: string, type_name: string) => string;
 export declare abstract class Compiler {
     ir: ParsedIR;

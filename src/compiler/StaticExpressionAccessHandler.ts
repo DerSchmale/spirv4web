@@ -38,7 +38,7 @@ export class StaticExpressionAccessHandler extends OpcodeHandler
             case Op.OpLoad:
                 if (length < 3)
                     return false;
-                if (args[2] == this.variable_id && this.static_expression === 0) // Tried to read from variable before it
+                if (args[2] === this.variable_id && this.static_expression === 0) // Tried to read from variable before it
                     // was initialized.
                     return false;
                 break;

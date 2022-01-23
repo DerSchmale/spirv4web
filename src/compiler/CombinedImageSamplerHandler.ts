@@ -152,7 +152,7 @@ export class CombinedImageSamplerHandler extends OpcodeHandler
         const sampler_id: VariableID = is_fetch ? compiler.dummy_sampler_id : this.remap_parameter(args[3]);
 
         const element = compiler.combined_image_samplers.find(combined => {
-            return combined.image_id == image_id && combined.sampler_id == sampler_id;
+            return combined.image_id === image_id && combined.sampler_id === sampler_id;
         });
 
         if (!element)
@@ -339,8 +339,8 @@ export class CombinedImageSamplerHandler extends OpcodeHandler
             return;
 
         const itr = caller.combined_parameters.find(p => {
-            return param.image_id == p.image_id && param.sampler_id == p.sampler_id &&
-                param.global_image == p.global_image && param.global_sampler == p.global_sampler;
+            return param.image_id === p.image_id && param.sampler_id === p.sampler_id &&
+                param.global_image === p.global_image && param.global_sampler === p.global_sampler;
         });
 
         const compiler = this.compiler;

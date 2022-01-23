@@ -1,7 +1,7 @@
 import { OpcodeHandler } from "./OpcodeHandler";
 import { Compiler } from "./Compiler";
-import { Op } from "../spirv";
 import { SPIRBlock } from "../common/SPIRBlock";
+import { Op } from "../spirv/Op";
 export declare class InterlockedResourceAccessPrepassHandler extends OpcodeHandler {
     compiler: Compiler;
     interlock_function_id: number;

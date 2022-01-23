@@ -1,6 +1,9 @@
 import { Args } from "./Args";
 import { compile_iteration } from "./compileIteration";
 
+// TODO:
+//  - Everywhere we're using slice(), remove this and pass in an offset param
+
 export enum Version
 {
     WebGL1 = 100,

@@ -1,6 +1,6 @@
 import { IVariant } from "./IVariant";
 import { Types } from "./Types";
-import { StorageClass } from "../spirv";
+import { StorageClass } from "../spirv/StorageClass";
 export declare class SPIRAccessChain extends IVariant {
     static type: Types;
     basetype: TypeID;

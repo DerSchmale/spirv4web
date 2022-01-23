@@ -1,8 +1,8 @@
 import { OpcodeHandler } from "./OpcodeHandler";
 import { Compiler } from "./Compiler";
-import { Op } from "../spirv";
 import { PhysicalBlockMeta } from "./PhysicalBlockMeta";
 import { SPIRType } from "../common/SPIRType";
+import { Op } from "../spirv/Op";
 export declare class PhysicalStorageBufferPointerHandler extends OpcodeHandler {
     compiler: Compiler;
     non_block_types: Set<number>;

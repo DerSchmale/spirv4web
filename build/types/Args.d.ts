@@ -1,6 +1,8 @@
-import { BuiltIn, ExecutionModel, StorageClass } from "./spirv";
 import { Pair } from "./utils/Pair";
 import { PlsFormat } from "./compiler/glsl/glsl";
+import { ExecutionModel } from "./spirv/ExecutionModel";
+import { StorageClass } from "./spirv/StorageClass";
+import { BuiltIn } from "./spirv/BuiltIn";
 export declare class Rename {
     old_name: string;
     new_name: string;

@@ -814,7 +814,7 @@ export abstract class Compiler
                         const type = this.get<SPIRType>(SPIRType, var_.basetype);
 
                         // InputTargets are immutable.
-                        if (type.basetype != SPIRTypeBaseType.Image && type.image.dim !== Dim.DimSubpassData)
+                        if (type.basetype !== SPIRTypeBaseType.Image && type.image.dim !== Dim.DimSubpassData)
                             var_.dependees.push(id);
                     }
                     break;
@@ -2136,7 +2136,7 @@ export abstract class Compiler
                         if (potential === 0)
                             potential_loop_variables[var_first] = block;
                         else
-                            potential_loop_variables[var_first] = -1;
+                            potential_loop_variables[var_first] = 0xffffffff;
                     }
                 }
                 builder.add_block(block);
@@ -2282,7 +2282,7 @@ export abstract class Compiler
             const block = loop_variable_second;
 
             // The variable was accessed in multiple continue blocks, ignore.
-            if (block === -1 || block === 0)
+            if (block === 0xffffffff || block === 0)
                 return;
 
             // Dead code.
@@ -3097,7 +3097,7 @@ function get_default_extended_decoration(decoration: ExtendedDecorations): numbe
         case ExtendedDecorations.SPIRVCrossDecorationResourceIndexTertiary:
         case ExtendedDecorations.SPIRVCrossDecorationResourceIndexQuaternary:
         case ExtendedDecorations.SPIRVCrossDecorationInterfaceMemberIndex:
-            return ~0;
+            return 0xffffffff;
 
         default:
             return 0;

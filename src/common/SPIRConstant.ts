@@ -84,7 +84,7 @@ export class SPIRConstantConstant
 export class SPIRConstantConstantVector
 {
     r: SPIRConstantConstant[];
-    // If != 0, this element is a specialization constant, and we should keep track of it as such.
+    // If !== 0, this element is a specialization constant, and we should keep track of it as such.
     id: ID[];
     vecsize: number = 1;
 
@@ -103,7 +103,7 @@ export class SPIRConstantConstantVector
 export class SPIRConstantConstantMatrix
 {
     c: SPIRConstantConstantVector[];
-    // If != 0, this column is a specialization constant, and we should keep track of it as such.
+    // If !== 0, this column is a specialization constant, and we should keep track of it as such.
     id: ID[];
     columns: number = 1;
 

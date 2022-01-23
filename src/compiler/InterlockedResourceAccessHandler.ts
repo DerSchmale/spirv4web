@@ -88,8 +88,8 @@ export class InterlockedResourceAccessHandler extends OpcodeHandler
                 const result_type = args[0];
 
                 const type = compiler.get<SPIRType>(SPIRType, result_type);
-                if (type.storage == StorageClass.StorageClassUniform || type.storage == StorageClass.StorageClassUniformConstant ||
-                    type.storage == StorageClass.StorageClassStorageBuffer) {
+                if (type.storage === StorageClass.StorageClassUniform || type.storage === StorageClass.StorageClassUniformConstant ||
+                    type.storage === StorageClass.StorageClassStorageBuffer) {
                     const id = args[1];
                     const ptr = args[2];
                     compiler.set<SPIRExpression>(SPIRExpression, id, "", result_type, true);
@@ -142,10 +142,10 @@ export class InterlockedResourceAccessHandler extends OpcodeHandler
                     this.access_potential_resource(dst_var.self);
 
                 if (src_var) {
-                    if (src_var.storage != StorageClass.StorageClassUniform && src_var.storage != StorageClass.StorageClassStorageBuffer)
+                    if (src_var.storage !== StorageClass.StorageClassUniform && src_var.storage !== StorageClass.StorageClassStorageBuffer)
                         break;
 
-                    if (src_var.storage == StorageClass.StorageClassUniform &&
+                    if (src_var.storage === StorageClass.StorageClassUniform &&
                         !compiler.has_decoration(compiler.get<SPIRType>(SPIRType, src_var.basetype).self, Decoration.DecorationBufferBlock)) {
                         break;
                     }
@@ -203,8 +203,8 @@ export class InterlockedResourceAccessHandler extends OpcodeHandler
 
                 const ptr = args[2];
                 const var_ = compiler.maybe_get_backing_variable(ptr);
-                if (var_ && (var_.storage == StorageClass.StorageClassUniform || var_.storage == StorageClass.StorageClassUniformConstant ||
-                    var_.storage == StorageClass.StorageClassStorageBuffer)) {
+                if (var_ && (var_.storage === StorageClass.StorageClassUniform || var_.storage === StorageClass.StorageClassUniformConstant ||
+                    var_.storage === StorageClass.StorageClassStorageBuffer)) {
                     this.access_potential_resource(var_.self);
                 }
 

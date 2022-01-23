@@ -88,7 +88,7 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
 
     notify_variable_access(id: number, block: number)
     {
-        if (id == 0)
+        if (id === 0)
             return;
 
         // Access chains used in multiple blocks mean hoisting all the variables used to construct the access chain as not all backends can use pointers.
@@ -201,7 +201,7 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
                 // If we store through an access chain, we have a partial write.
                 if (var_) {
                     maplike_get(Set, this.accessed_variables_to_block, var_.self).add(this.current_block.self);
-                    if (var_.self == lhs)
+                    if (var_.self === lhs)
                         maplike_get(Set, this.complete_write_variables_to_block, var_.self).add(this.current_block.self);
                     else
                         maplike_get(Set, this.partial_write_variables_to_block, var_.self).add(this.current_block.self);
@@ -314,7 +314,7 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
                             const var_ = compiler.maybe_get_backing_variable(ptr);
                             if (var_) {
                                 maplike_get(Set, this.accessed_variables_to_block, var_.self).add(this.current_block.self);
-                                if (var_.self == ptr)
+                                if (var_.self === ptr)
                                     maplike_get(Set, this.complete_write_variables_to_block, var_.self).add(this.current_block.self);
                                 else
                                     maplike_get(Set, this.partial_write_variables_to_block, var_.self).add(this.current_block.self);
@@ -358,7 +358,7 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
             case Op.OpImageWrite:
                 for (let i = 0; i < length; i++) {
                     // Argument 3 is a literal.
-                    if (i != 3)
+                    if (i !== 3)
                         this.notify_variable_access(args[i], this.current_block.self);
                 }
                 break;
@@ -377,7 +377,7 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
             case Op.OpImageSparseRead:
                 for (let i = 1; i < length; i++) {
                     // Argument 4 is a literal.
-                    if (i != 4)
+                    if (i !== 4)
                         this.notify_variable_access(args[i], this.current_block.self);
                 }
                 break;
@@ -396,7 +396,7 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
             case Op.OpImageSparseDrefGather:
                 for (let i = 1; i < length; i++) {
                     // Argument 5 is a literal.
-                    if (i != 5)
+                    if (i !== 5)
                         this.notify_variable_access(args[i], this.current_block.self);
                 }
                 break;

@@ -1,4 +1,4 @@
-import { ExecutionModel } from "../spirv";
+import { ExecutionModel } from "../spirv/ExecutionModel";
 export declare class EntryPoint {
     name: string;
     execution_model: ExecutionModel;

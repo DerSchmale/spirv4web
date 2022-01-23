@@ -1,5 +1,6 @@
 import { Bitset } from "./Bitset";
-import { BuiltIn, FPRoundingMode } from "../spirv";
+import { BuiltIn } from "../spirv/BuiltIn";
+import { FPRoundingMode } from "../spirv/FPRoundingMode";
 export declare enum ExtendedDecorations {
     SPIRVCrossDecorationBufferBlockRepacked = 0,
     SPIRVCrossDecorationPhysicalTypeID = 1,

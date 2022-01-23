@@ -1,4 +1,4 @@
-import { BuiltIn } from "../spirv";
+import { BuiltIn } from "../spirv/BuiltIn";
 export declare class Resource {
     id: ID;
     type_id: TypeID;

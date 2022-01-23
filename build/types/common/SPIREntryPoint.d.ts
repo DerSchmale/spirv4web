@@ -1,5 +1,5 @@
-import { ExecutionModel } from "../spirv";
 import { Bitset } from "./Bitset";
+import { ExecutionModel } from "../spirv/ExecutionModel";
 declare class SPIREntryPointWorkgroupSize {
     x: number;
     y: number;

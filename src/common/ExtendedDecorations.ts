@@ -4,7 +4,7 @@ export enum ExtendedDecorations
     SPIRVCrossDecorationBufferBlockRepacked = 0,
 
     // A type in a buffer block might be declared with a different physical type than the logical type.
-    // If this is not set, PhysicalTypeID == the SPIR-V type as declared.
+    // If this is not set, PhysicalTypeID === the SPIR-V type as declared.
     SPIRVCrossDecorationPhysicalTypeID,
 
     // Marks if the physical type is to be declared with tight packing rules, i.e. packed_floatN on MSL and friends.

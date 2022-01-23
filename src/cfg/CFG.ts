@@ -109,13 +109,13 @@ export class CFG
             for (let pred of itr_second)
             {
                 let pred_block = this.compiler.get<SPIRBlock>(SPIRBlock, pred);
-                if (pred_block.merge == SPIRBlockMerge.MergeLoop && pred_block.merge_block == <ID>(block_id))
+                if (pred_block.merge === SPIRBlockMerge.MergeLoop && pred_block.merge_block === <ID>(block_id))
                 {
                     pred_block_id = pred;
                     ignore_loop_header = true;
                     break;
                 }
-                else if (pred_block.merge == SPIRBlockMerge.MergeSelection && pred_block.next_block == <ID>(block_id))
+                else if (pred_block.merge === SPIRBlockMerge.MergeSelection && pred_block.next_block === <ID>(block_id))
                 {
                     pred_block_id = pred;
                     break;
@@ -124,7 +124,7 @@ export class CFG
 
             // No merge block means we can just pick any edge. Loop headers dominate the inner loop, so any path we
             // take will lead there.
-            if (pred_block_id == SPIRBlock.NoDominator)
+            if (pred_block_id === SPIRBlock.NoDominator)
                 pred_block_id = itr_second[0];
 
             block_id = pred_block_id;
@@ -132,7 +132,7 @@ export class CFG
             if (!ignore_loop_header && block_id)
             {
                 const block = this.compiler.get<SPIRBlock>(SPIRBlock, block_id);
-                if (block.merge == SPIRBlockMerge.MergeLoop)
+                if (block.merge === SPIRBlockMerge.MergeLoop)
                     return block_id;
             }
         }
@@ -152,7 +152,7 @@ export class CFG
         if (from_block.merge === SPIRBlockMerge.MergeLoop)
             ignore_block_id = from_block.merge_block;
 
-        while (to != from)
+        while (to !== from)
         {
             const pred_itr_second = this.preceding_edges[to];
             if (!pred_itr_second)
@@ -179,11 +179,11 @@ export class CFG
                 false_path_ignore = compiler.execution_is_branchless(false_block, ignore_block);
             }
 
-            if ((dom.merge === SPIRBlockMerge.MergeSelection && dom.next_block == to) ||
-                (dom.merge === SPIRBlockMerge.MergeLoop && dom.merge_block == to) ||
-                (dom.terminator == SPIRBlockTerminator.Direct && dom.next_block == to) ||
-                (dom.terminator == SPIRBlockTerminator.Select && dom.true_block == to && false_path_ignore) ||
-                (dom.terminator == SPIRBlockTerminator.Select && dom.false_block == to && true_path_ignore))
+            if ((dom.merge === SPIRBlockMerge.MergeSelection && dom.next_block === to) ||
+                (dom.merge === SPIRBlockMerge.MergeLoop && dom.merge_block === to) ||
+                (dom.terminator === SPIRBlockTerminator.Direct && dom.next_block === to) ||
+                (dom.terminator === SPIRBlockTerminator.Select && dom.true_block === to && false_path_ignore) ||
+                (dom.terminator === SPIRBlockTerminator.Select && dom.false_block === to && true_path_ignore))
             {
                 // Allow walking selection constructs if the other branch reaches out of a loop construct.
                 // It cannot be in-scope anymore.
