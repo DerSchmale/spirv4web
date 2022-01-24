@@ -1743,9 +1743,8 @@ export abstract class Compiler
 
         // Combined image samplers are always considered active as they are "magic" variables.
         const rs = this.combined_image_samplers.find(samp => samp.combined_id === var_.self);
-        if (rs) {
+        if (rs)
             return false;
-        }
 
         const { ir } = this;
         // In SPIR-V 1.4 and up we must also use the active variable interface to disable global variables
@@ -1755,7 +1754,7 @@ export abstract class Compiler
             return true;
         }
 
-        return this.check_active_interface_variables && storage_class_is_interface(var_.storage) && this.active_interface_variables.has(var_.self);
+        return this.check_active_interface_variables && storage_class_is_interface(var_.storage) && !this.active_interface_variables.has(var_.self);
     }
 
     protected is_member_builtin(type: SPIRType, index: number): BuiltIn

@@ -2,7 +2,8 @@ import { Args } from "./Args";
 import { compile_iteration } from "./compileIteration";
 
 // TODO:
-//  - some uniforms ubos are missing
+//  - vec4 hx_objectToWorld --> parameter has _1 suffix. Looks like some variables don't go out of scope?
+//  - uniform hx_camera _410; ==> id is different from reference, but otherwise export using it looks okay
 //  - compare more against baseline compiles
 //  - Everywhere we're using slice(), remove this and pass in an offset param
 
@@ -22,7 +23,7 @@ export function compile(data: ArrayBuffer, version: Version): string
     args.es = true;
     args.set_es = true;
 
-    args.remove_unused = true;
+    args.remove_unused = false;
 
     const spirv_file = new Uint32Array(data);
 

@@ -8005,9 +8005,8 @@ var SPIRV = (function (exports) {
                 return true;
             // Combined image samplers are always considered active as they are "magic" variables.
             var rs = this.combined_image_samplers.find(function (samp) { return samp.combined_id === var_.self; });
-            if (rs) {
+            if (rs)
                 return false;
-            }
             var ir = this.ir;
             // In SPIR-V 1.4 and up we must also use the active variable interface to disable global variables
             // which are not part of the entry point.
@@ -8015,7 +8014,7 @@ var SPIRV = (function (exports) {
                 var_.storage !== StorageClass.StorageClassFunction && !this.interface_variable_exists_in_entry_point(var_.self)) {
                 return true;
             }
-            return this.check_active_interface_variables && storage_class_is_interface(var_.storage) && this.active_interface_variables.has(var_.self);
+            return this.check_active_interface_variables && storage_class_is_interface(var_.storage) && !this.active_interface_variables.has(var_.self);
         };
         Compiler.prototype.is_member_builtin = function (type, index) {
             var type_meta = this.ir.find_meta(type.self);
@@ -15704,13 +15703,14 @@ var SPIRV = (function (exports) {
                             !this.has_decoration(type.self, Decoration.DecorationBlock) &&
                             !this.has_decoration(type.self, Decoration.DecorationBufferBlock);
                         // Special case, ray payload and hit attribute blocks are not really blocks, just regular structs.
-                        if (type.basetype === SPIRTypeBaseType.Struct && type.pointer &&
+                        /*if (type.basetype === SPIRTypeBaseType.Struct && type.pointer &&
                             this.has_decoration(type.self, Decoration.DecorationBlock) &&
                             (type.storage === StorageClass.StorageClassRayPayloadKHR || type.storage === StorageClass.StorageClassIncomingRayPayloadKHR ||
-                                type.storage === StorageClass.StorageClassHitAttributeKHR)) {
-                            type = this.get(SPIRType, type.parent_type);
+                            type.storage === StorageClass.StorageClassHitAttributeKHR))
+                        {
+                            type = this.get<SPIRType>(SPIRType, type.parent_type);
                             is_natural_struct = true;
-                        }
+                        }*/
                         if (is_natural_struct) {
                             if (emitted)
                                 this.statement("");
@@ -15771,8 +15771,8 @@ var SPIRV = (function (exports) {
                 var is_block_storage = type.storage === StorageClass.StorageClassStorageBuffer ||
                     type.storage === StorageClass.StorageClassUniform ||
                     type.storage === StorageClass.StorageClassShaderRecordBufferKHR;
-                var has_block_flags = maplike_get(Meta, ir.meta, type.self).decoration.decoration_flags.get(Decoration.DecorationBlock) ||
-                    maplike_get(Meta, ir.meta, type.self).decoration.decoration_flags.get(Decoration.DecorationBufferBlock);
+                var flags = maplike_get(Meta, ir.meta, type.self).decoration.decoration_flags;
+                var has_block_flags = flags.get(Decoration.DecorationBlock) || flags.get(Decoration.DecorationBufferBlock);
                 if (var_.storage !== StorageClass.StorageClassFunction && type.pointer && is_block_storage &&
                     !_this.is_hidden_variable(var_) && has_block_flags) {
                     _this.emit_buffer_block(var_);
@@ -22148,7 +22148,8 @@ var SPIRV = (function (exports) {
     }
 
     // TODO:
-    //  - some uniforms ubos are missing
+    //  - vec4 hx_objectToWorld --> parameter has _1 suffix. Looks like some variables don't go out of scope?
+    //  - uniform hx_camera _410; ==> id is different from reference, but otherwise export using it looks okay
     //  - compare more against baseline compiles
     //  - Everywhere we're using slice(), remove this and pass in an offset param
     exports.Version = void 0;
@@ -22162,7 +22163,7 @@ var SPIRV = (function (exports) {
         args.set_version = true;
         args.es = true;
         args.set_es = true;
-        args.remove_unused = true;
+        args.remove_unused = false;
         var spirv_file = new Uint32Array(data);
         if (args.reflect && args.reflect !== "") {
             throw new Error("Reflection not yet supported!");

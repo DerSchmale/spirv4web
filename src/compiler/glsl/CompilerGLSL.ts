@@ -7223,15 +7223,16 @@ export class CompilerGLSL extends Compiler
                             !this.has_decoration(type.self, Decoration.DecorationBlock) &&
                             !this.has_decoration(type.self, Decoration.DecorationBufferBlock);
 
+
                     // Special case, ray payload and hit attribute blocks are not really blocks, just regular structs.
-                    if (type.basetype === SPIRTypeBaseType.Struct && type.pointer &&
+                    /*if (type.basetype === SPIRTypeBaseType.Struct && type.pointer &&
                         this.has_decoration(type.self, Decoration.DecorationBlock) &&
                         (type.storage === StorageClass.StorageClassRayPayloadKHR || type.storage === StorageClass.StorageClassIncomingRayPayloadKHR ||
                         type.storage === StorageClass.StorageClassHitAttributeKHR))
                     {
                         type = this.get<SPIRType>(SPIRType, type.parent_type);
                         is_natural_struct = true;
-                    }
+                    }*/
 
                     if (is_natural_struct) {
                         if (emitted)
@@ -7301,11 +7302,11 @@ export class CompilerGLSL extends Compiler
         {
             const type = this.get<SPIRType>(SPIRType, var_.basetype);
 
-            const is_block_storage = type.storage === StorageClass.StorageClassStorageBuffer ||
-                type.storage === StorageClass.StorageClassUniform ||
-                type.storage === StorageClass.StorageClassShaderRecordBufferKHR;
-            const has_block_flags = maplike_get(Meta, ir.meta, type.self).decoration.decoration_flags.get(Decoration.DecorationBlock) ||
-                maplike_get(Meta, ir.meta, type.self).decoration.decoration_flags.get(Decoration.DecorationBufferBlock);
+            const is_block_storage =    type.storage === StorageClass.StorageClassStorageBuffer ||
+                                        type.storage === StorageClass.StorageClassUniform ||
+                                        type.storage === StorageClass.StorageClassShaderRecordBufferKHR;
+            const flags = maplike_get(Meta, ir.meta, type.self).decoration.decoration_flags;
+            const has_block_flags = flags.get(Decoration.DecorationBlock) || flags.get(Decoration.DecorationBufferBlock);
 
             if (var_.storage !== StorageClass.StorageClassFunction && type.pointer && is_block_storage &&
                 !this.is_hidden_variable(var_) && has_block_flags) {
