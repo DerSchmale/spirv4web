@@ -2,7 +2,6 @@ import { Args } from "./Args";
 import { compile_iteration } from "./compileIteration";
 
 // TODO:
-//  - vec4 hx_objectToWorld --> parameter has _1 suffix. Looks like some variables don't go out of scope?
 //  - uniform hx_camera _410; ==> id is different from reference, but otherwise export using it looks okay
 //  - compare more against baseline compiles
 //  - Everywhere we're using slice(), remove this and pass in an offset param

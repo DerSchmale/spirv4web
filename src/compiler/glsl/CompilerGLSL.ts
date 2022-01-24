@@ -368,7 +368,7 @@ export class CompilerGLSL extends Compiler
             this.add_function_overload(func);
 
         // Avoid shadow declarations.
-        this.local_variable_names = this.resource_names;
+        this.local_variable_names = new Set(this.resource_names);
 
         let decl = "";
 
@@ -394,6 +394,7 @@ export class CompilerGLSL extends Compiler
         decl += "(";
 
         const arglist: string[] = [];
+        console.log("args");
         for (let arg of func.arguments) {
             // Do not pass in separate images or samplers if we're remapping
             // to combined image samplers.

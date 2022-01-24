@@ -9744,7 +9744,7 @@ var SPIRV = (function (exports) {
             if (func.self !== ir.default_entry_point)
                 this.add_function_overload(func);
             // Avoid shadow declarations.
-            this.local_variable_names = this.resource_names;
+            this.local_variable_names = new Set(this.resource_names);
             var decl = "";
             var type = this.get(SPIRType, func.return_type);
             decl += this.flags_to_qualifiers_glsl(type, return_flags);
@@ -9764,6 +9764,7 @@ var SPIRV = (function (exports) {
                 decl += this.to_name(func.self);
             decl += "(";
             var arglist = [];
+            console.log("args");
             for (var _i = 0, _a = func.arguments; _i < _a.length; _i++) {
                 var arg = _a[_i];
                 // Do not pass in separate images or samplers if we're remapping
@@ -22148,7 +22149,6 @@ var SPIRV = (function (exports) {
     }
 
     // TODO:
-    //  - vec4 hx_objectToWorld --> parameter has _1 suffix. Looks like some variables don't go out of scope?
     //  - uniform hx_camera _410; ==> id is different from reference, but otherwise export using it looks okay
     //  - compare more against baseline compiles
     //  - Everywhere we're using slice(), remove this and pass in an offset param
