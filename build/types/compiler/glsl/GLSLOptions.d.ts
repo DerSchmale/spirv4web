@@ -2,6 +2,7 @@ import { GLSLVertexOptions } from "./GLSLVertexOptions";
 import { GLSLFragmentOptions } from "./GLSLFragmentOptions";
 export declare class GLSLOptions {
     version: number;
+    specConstPrefix: string;
     es: boolean;
     force_temporary: boolean;
     separate_shader_objects: boolean;

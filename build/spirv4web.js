@@ -9291,6 +9291,7 @@ var SPIRV = (function (exports) {
         function GLSLOptions() {
             // The shading language version. Corresponds to #version $VALUE.
             this.version = 450;
+            this.specConstPrefix = "SPIRV_CROSS_CONSTANT_ID_";
             // Emit the OpenGL ES shading language instead of desktop OpenGL.
             this.es = false;
             // Debug option to always emit temporary variables for all expressions.
@@ -9764,7 +9765,6 @@ var SPIRV = (function (exports) {
                 decl += this.to_name(func.self);
             decl += "(";
             var arglist = [];
-            console.log("args");
             for (var _i = 0, _a = func.arguments; _i < _a.length; _i++) {
                 var arg = _a[_i];
                 // Do not pass in separate images or samplers if we're remapping
@@ -14893,7 +14893,7 @@ var SPIRV = (function (exports) {
             if (binary) {
                 if (cop.arguments.length < 2)
                     throw new Error("Not enough arguments to OpSpecConstantOp.");
-                var props = { cast_op0: "", cast_op1: "", input_type: SPIRTypeBaseType.Unknown };
+                var props = { cast_op0: "", cast_op1: "", input_type: input_type };
                 var expected_type = this.binary_op_bitcast_helper(props, cop.arguments[0], cop.arguments[1], skip_cast_if_equal_type);
                 input_type = props.input_type;
                 if (type.basetype !== input_type && type.basetype !== SPIRTypeBaseType.Boolean) {
@@ -16796,7 +16796,7 @@ var SPIRV = (function (exports) {
             }
         };
         CompilerGLSL.prototype.constant_value_macro_name = function (id) {
-            return "SPIRV_CROSS_CONSTANT_ID_" + id;
+            return this.options.specConstPrefix + id;
         };
         CompilerGLSL.prototype.get_constant_mapping_to_workgroup_component = function (c) {
             var entry_point = this.get_entry_point();
@@ -17565,7 +17565,7 @@ var SPIRV = (function (exports) {
             this.inherit_expression_dependencies(result_id, op0);
         };
         CompilerGLSL.prototype.emit_binary_func_op_cast = function (result_type, result_id, op0, op1, op, input_type, skip_cast_if_equal_type) {
-            var props = { cast_op0: "", cast_op1: "", input_type: SPIRTypeBaseType.Unknown };
+            var props = { cast_op0: "", cast_op1: "", input_type: input_type };
             var expected_type = this.binary_op_bitcast_helper(props, op0, op1, skip_cast_if_equal_type);
             var out_type = this.get(SPIRType, result_type);
             // Special case boolean outputs since relational opcodes output booleans instead of int/uint.
@@ -17603,7 +17603,7 @@ var SPIRV = (function (exports) {
             this.inherit_expression_dependencies(result_id, op2);
         };
         CompilerGLSL.prototype.emit_binary_op_cast = function (result_type, result_id, op0, op1, op, input_type, skip_cast_if_equal_type) {
-            var props = { cast_op0: "", cast_op1: "", input_type: SPIRTypeBaseType.Unknown };
+            var props = { cast_op0: "", cast_op1: "", input_type: input_type };
             var expected_type = this.binary_op_bitcast_helper(props, op0, op1, skip_cast_if_equal_type);
             var out_type = this.get(SPIRType, result_type);
             // We might have casted away from the result type, so bitcast again.
@@ -17628,6 +17628,7 @@ var SPIRV = (function (exports) {
             // For some functions like OpIEqual and INotEqual, we don't care if inputs are of different types than expected
             // since equality test is exactly the same.
             var cast = (type0.basetype !== type1.basetype) || (!skip_cast_if_equal_type && type0.basetype !== props.input_type);
+            console.log(op0, op1, cast, type0.basetype, type1.basetype);
             // Create a fake type so we can bitcast to it.
             // We only deal with regular arithmetic types here like int, uints and so on.
             var expected_type = new SPIRType();
@@ -21936,10 +21937,11 @@ var SPIRV = (function (exports) {
         else
             throw new Error("Invalid stage!");
     }
-    function compile_iteration(args, spirv_file) {
+    function compile_iteration(args, spirv_file, options) {
         var spirv_parser = new Parser(spirv_file);
         spirv_parser.parse();
         var compiler = new CompilerGLSL(spirv_parser.get_parsed_ir());
+        compiler.get_common_options().specConstPrefix = options.specializationConstantPrefix;
         if (args.variable_type_remaps.length !== 0) {
             var remap_cb = function (type, name) {
                 for (var _i = 0, _a = args.variable_type_remaps; _i < _a.length; _i++) {
@@ -22149,7 +22151,7 @@ var SPIRV = (function (exports) {
     }
 
     // TODO:
-    //  - uniform hx_camera _410; ==> id is different from reference, but otherwise export using it looks okay
+    //  - assertion fails in bitcast_glsl_op in frag shaders
     //  - compare more against baseline compiles
     //  - Everywhere we're using slice(), remove this and pass in an offset param
     exports.Version = void 0;
@@ -22157,18 +22159,24 @@ var SPIRV = (function (exports) {
         Version[Version["WebGL1"] = 100] = "WebGL1";
         Version[Version["WebGL2"] = 300] = "WebGL2";
     })(exports.Version || (exports.Version = {}));
-    function compile(data, version) {
+    function compile(data, version, options) {
         var args = new Args();
+        options = options || {};
+        options.removeUnused = getOrDefault(options.removeUnused, false);
+        options.specializationConstantPrefix = getOrDefault(options.specializationConstantPrefix, "SPIRV_CROSS_CONSTANT_ID_");
         args.version = version;
         args.set_version = true;
         args.es = true;
         args.set_es = true;
-        args.remove_unused = false;
+        args.remove_unused = options.removeUnused;
         var spirv_file = new Uint32Array(data);
         if (args.reflect && args.reflect !== "") {
             throw new Error("Reflection not yet supported!");
         }
-        return compile_iteration(args, spirv_file);
+        return compile_iteration(args, spirv_file, options);
+    }
+    function getOrDefault(value, def) {
+        return value === undefined || value === null ? def : value;
     }
 
     exports.compile = compile;

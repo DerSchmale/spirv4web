@@ -394,7 +394,6 @@ export class CompilerGLSL extends Compiler
         decl += "(";
 
         const arglist: string[] = [];
-        console.log("args");
         for (let arg of func.arguments) {
             // Do not pass in separate images or samplers if we're remapping
             // to combined image samplers.
@@ -6277,7 +6276,7 @@ export class CompilerGLSL extends Compiler
             if (cop.arguments.length < 2)
                 throw new Error("Not enough arguments to OpSpecConstantOp.");
 
-            const props = { cast_op0: "", cast_op1: "", input_type: SPIRTypeBaseType.Unknown };
+            const props = { cast_op0: "", cast_op1: "", input_type };
             const expected_type = this.binary_op_bitcast_helper(props, cop.arguments[0], cop.arguments[1], skip_cast_if_equal_type);
             input_type = props.input_type;
 
@@ -8459,7 +8458,7 @@ export class CompilerGLSL extends Compiler
 
     protected constant_value_macro_name(id: number): string
     {
-        return "SPIRV_CROSS_CONSTANT_ID_" + id;
+        return this.options.specConstPrefix + id;
     }
 
     protected get_constant_mapping_to_workgroup_component(c: SPIRConstant)
@@ -9422,7 +9421,7 @@ export class CompilerGLSL extends Compiler
 
     protected emit_binary_func_op_cast(result_type: number, result_id: number, op0: number, op1: number, op: string, input_type: SPIRTypeBaseType, skip_cast_if_equal_type: boolean)
     {
-        const props = { cast_op0: "", cast_op1: "", input_type: SPIRTypeBaseType.Unknown };
+        const props = { cast_op0: "", cast_op1: "", input_type };
         const expected_type = this.binary_op_bitcast_helper(props, op0, op1, skip_cast_if_equal_type);
         const out_type = this.get<SPIRType>(SPIRType, result_type);
 
@@ -9469,7 +9468,7 @@ export class CompilerGLSL extends Compiler
 
     protected emit_binary_op_cast(result_type: number, result_id: number, op0: number, op1: number, op: string, input_type: SPIRTypeBaseType, skip_cast_if_equal_type: boolean)
     {
-        const props = { cast_op0: "", cast_op1: "", input_type: SPIRTypeBaseType.Unknown };
+        const props = { cast_op0: "", cast_op1: "", input_type };
         const expected_type = this.binary_op_bitcast_helper(props, op0, op1, skip_cast_if_equal_type);
         const out_type = this.get<SPIRType>(SPIRType, result_type);
 
@@ -9499,6 +9498,8 @@ export class CompilerGLSL extends Compiler
         // For some functions like OpIEqual and INotEqual, we don't care if inputs are of different types than expected
         // since equality test is exactly the same.
         const cast = (type0.basetype !== type1.basetype) || (!skip_cast_if_equal_type && type0.basetype !== props.input_type);
+
+        console.log(op0, op1, cast, type0.basetype, type1.basetype);
 
         // Create a fake type so we can bitcast to it.
         // We only deal with regular arithmetic types here like int, uints and so on.

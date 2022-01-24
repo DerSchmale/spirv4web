@@ -7,6 +7,8 @@ export class GLSLOptions
     // The shading language version. Corresponds to #version $VALUE.
     version: number = 450;
 
+    specConstPrefix: string = "SPIRV_CROSS_CONSTANT_ID_";
+
     // Emit the OpenGL ES shading language instead of desktop OpenGL.
     es: boolean = false;
 

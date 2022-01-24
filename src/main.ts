@@ -2,7 +2,7 @@ import { Args } from "./Args";
 import { compile_iteration } from "./compileIteration";
 
 // TODO:
-//  - uniform hx_camera _410; ==> id is different from reference, but otherwise export using it looks okay
+//  - assertion fails in bitcast_glsl_op in frag shaders
 //  - compare more against baseline compiles
 //  - Everywhere we're using slice(), remove this and pass in an offset param
 
@@ -12,9 +12,20 @@ export enum Version
     WebGL2 = 300
 }
 
-export function compile(data: ArrayBuffer, version: Version): string
+export type Options =
+{
+    removeUnused?: boolean;
+    specializationConstantPrefix?: string;
+}
+
+export function compile(data: ArrayBuffer, version: Version, options?: Options): string
 {
     const args: Args = new Args();
+
+    options = options || {};
+    options.removeUnused = getOrDefault(options.removeUnused, false);
+    options.specializationConstantPrefix = getOrDefault(options.specializationConstantPrefix, "SPIRV_CROSS_CONSTANT_ID_");
+
 
     args.version = version;
     args.set_version = true;
@@ -22,7 +33,7 @@ export function compile(data: ArrayBuffer, version: Version): string
     args.es = true;
     args.set_es = true;
 
-    args.remove_unused = false;
+    args.remove_unused = options.removeUnused;
 
     const spirv_file = new Uint32Array(data);
 
@@ -31,5 +42,10 @@ export function compile(data: ArrayBuffer, version: Version): string
         return;
     }
 
-    return compile_iteration(args, spirv_file);
+    return compile_iteration(args, spirv_file, options);
+}
+
+function getOrDefault<T>(value: T, def: T): T
+{
+    return value === undefined || value === null? def : value;
 }

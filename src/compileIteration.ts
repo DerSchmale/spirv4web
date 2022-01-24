@@ -8,6 +8,7 @@ import { PlsRemap } from "./compiler/glsl/PlsRemap";
 import { ExecutionModel } from "./spirv/ExecutionModel";
 import { Decoration } from "./spirv/Decoration";
 import { StorageClass } from "./spirv/StorageClass";
+import { Options } from "./main";
 
 function stage_to_execution_model(stage: string): ExecutionModel
 {
@@ -27,7 +28,7 @@ function stage_to_execution_model(stage: string): ExecutionModel
         throw new Error("Invalid stage!");
 }
 
-export function compile_iteration(args: Args, spirv_file: Uint32Array): string
+export function compile_iteration(args: Args, spirv_file: Uint32Array, options: Options): string
 {
     const spirv_parser = new Parser(spirv_file);
     spirv_parser.parse();
@@ -36,6 +37,7 @@ export function compile_iteration(args: Args, spirv_file: Uint32Array): string
     const build_dummy_sampler = false;
 
     const compiler = new CompilerGLSL(spirv_parser.get_parsed_ir());
+    compiler.get_common_options().specConstPrefix = options.specializationConstantPrefix;
 
     if (args.variable_type_remaps.length !== 0)
     {
