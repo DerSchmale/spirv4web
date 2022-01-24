@@ -9499,8 +9499,6 @@ export class CompilerGLSL extends Compiler
         // since equality test is exactly the same.
         const cast = (type0.basetype !== type1.basetype) || (!skip_cast_if_equal_type && type0.basetype !== props.input_type);
 
-        console.log(op0, op1, cast, type0.basetype, type1.basetype);
-
         // Create a fake type so we can bitcast to it.
         // We only deal with regular arithmetic types here like int, uints and so on.
         const expected_type: SPIRType = new SPIRType();

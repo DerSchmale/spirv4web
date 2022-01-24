@@ -2,7 +2,6 @@ import { Args } from "./Args";
 import { compile_iteration } from "./compileIteration";
 
 // TODO:
-//  - assertion fails in bitcast_glsl_op in frag shaders
 //  - compare more against baseline compiles
 //  - Everywhere we're using slice(), remove this and pass in an offset param
 
@@ -23,7 +22,7 @@ export function compile(data: ArrayBuffer, version: Version, options?: Options):
     const args: Args = new Args();
 
     options = options || {};
-    options.removeUnused = getOrDefault(options.removeUnused, false);
+    options.removeUnused = getOrDefault(options.removeUnused, true);
     options.specializationConstantPrefix = getOrDefault(options.specializationConstantPrefix, "SPIRV_CROSS_CONSTANT_ID_");
 
 

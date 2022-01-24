@@ -1,0 +1,21 @@
+export declare enum ImageOperandsMask {
+    ImageOperandsMaskNone = 0,
+    ImageOperandsBiasMask = 1,
+    ImageOperandsLodMask = 2,
+    ImageOperandsGradMask = 4,
+    ImageOperandsConstOffsetMask = 8,
+    ImageOperandsOffsetMask = 16,
+    ImageOperandsConstOffsetsMask = 32,
+    ImageOperandsSampleMask = 64,
+    ImageOperandsMinLodMask = 128,
+    ImageOperandsMakeTexelAvailableMask = 256,
+    ImageOperandsMakeTexelAvailableKHRMask = 256,
+    ImageOperandsMakeTexelVisibleMask = 512,
+    ImageOperandsMakeTexelVisibleKHRMask = 512,
+    ImageOperandsNonPrivateTexelMask = 1024,
+    ImageOperandsNonPrivateTexelKHRMask = 1024,
+    ImageOperandsVolatileTexelMask = 2048,
+    ImageOperandsVolatileTexelKHRMask = 2048,
+    ImageOperandsSignExtendMask = 4096,
+    ImageOperandsZeroExtendMask = 8192
+}

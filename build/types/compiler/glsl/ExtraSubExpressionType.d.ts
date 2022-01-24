@@ -1,0 +1,4 @@
+export declare enum ExtraSubExpressionType {
+    EXTRA_SUB_EXPRESSION_TYPE_STREAM_OFFSET = 268435456,
+    EXTRA_SUB_EXPRESSION_TYPE_AUX = 536870912
+}

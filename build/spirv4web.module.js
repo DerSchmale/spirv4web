@@ -17625,7 +17625,6 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // For some functions like OpIEqual and INotEqual, we don't care if inputs are of different types than expected
         // since equality test is exactly the same.
         var cast = (type0.basetype !== type1.basetype) || (!skip_cast_if_equal_type && type0.basetype !== props.input_type);
-        console.log(op0, op1, cast, type0.basetype, type1.basetype);
         // Create a fake type so we can bitcast to it.
         // We only deal with regular arithmetic types here like int, uints and so on.
         var expected_type = new SPIRType();
@@ -22148,7 +22147,6 @@ function remap_pls(pls_variables, resources, secondary_resources) {
 }
 
 // TODO:
-//  - assertion fails in bitcast_glsl_op in frag shaders
 //  - compare more against baseline compiles
 //  - Everywhere we're using slice(), remove this and pass in an offset param
 var Version;
@@ -22159,7 +22157,7 @@ var Version;
 function compile(data, version, options) {
     var args = new Args();
     options = options || {};
-    options.removeUnused = getOrDefault(options.removeUnused, false);
+    options.removeUnused = getOrDefault(options.removeUnused, true);
     options.specializationConstantPrefix = getOrDefault(options.specializationConstantPrefix, "SPIRV_CROSS_CONSTANT_ID_");
     args.version = version;
     args.set_version = true;
