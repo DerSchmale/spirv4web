@@ -1,8 +1,8 @@
 export enum MemoryModel {
-    MemoryModelSimple = 0,
-    MemoryModelGLSL450 = 1,
-    MemoryModelOpenCL = 2,
-    MemoryModelVulkan = 3,
-    MemoryModelVulkanKHR = 3,
-    MemoryModelMax = 0x7fffffff,
+    Simple = 0,
+    GLSL450 = 1,
+    OpenCL = 2,
+    Vulkan = 3,
+    VulkanKHR = 3,
+    Max = 0x7fffffff,
 }

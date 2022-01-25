@@ -121,7 +121,7 @@ export class SPIRConstantConstantMatrix
 
 export class SPIRConstant extends IVariant
 {
-    static type = Types.TypeConstant;
+    static type = Types.Constant;
 
     constant_type: TypeID = 0;
     m: SPIRConstantConstantMatrix = new SPIRConstantConstantMatrix();

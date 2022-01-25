@@ -16,13 +16,13 @@ export class DebugHandler extends OpcodeHandler
     {
         let str = ``;
         switch (opcode) {
-            case Op.OpLoad:
+            case Op.Load:
                 str = "load " + this.get_name(args[1]) + " " + this.get_name(args[2]);
                 break;
-            case Op.OpStore:
+            case Op.Store:
                 str = "store " + this.get_name(args[0]) + " " + this.get_name(args[1]);
                 break;
-            case Op.OpAccessChain:
+            case Op.AccessChain:
                 str = "access chain " + this.get_name(args[1]) + " " + this.get_name(args[2]);
                 break;
             default:

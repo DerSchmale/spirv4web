@@ -90,7 +90,7 @@ export class SPIRVFunctionEntryLine
 
 export class SPIRFunction extends IVariant
 {
-    static type = Types.TypeFunction;
+    static type = Types.Function;
 
     return_type: TypeID;
     function_type: TypeID;

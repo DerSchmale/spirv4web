@@ -109,13 +109,13 @@ export class CFG
             for (let pred of itr_second)
             {
                 let pred_block = this.compiler.get<SPIRBlock>(SPIRBlock, pred);
-                if (pred_block.merge === SPIRBlockMerge.MergeLoop && pred_block.merge_block === <ID>(block_id))
+                if (pred_block.merge === SPIRBlockMerge.Loop && pred_block.merge_block === <ID>(block_id))
                 {
                     pred_block_id = pred;
                     ignore_loop_header = true;
                     break;
                 }
-                else if (pred_block.merge === SPIRBlockMerge.MergeSelection && pred_block.next_block === <ID>(block_id))
+                else if (pred_block.merge === SPIRBlockMerge.Selection && pred_block.next_block === <ID>(block_id))
                 {
                     pred_block_id = pred;
                     break;
@@ -132,7 +132,7 @@ export class CFG
             if (!ignore_loop_header && block_id)
             {
                 const block = this.compiler.get<SPIRBlock>(SPIRBlock, block_id);
-                if (block.merge === SPIRBlockMerge.MergeLoop)
+                if (block.merge === SPIRBlockMerge.Loop)
                     return block_id;
             }
         }
@@ -149,7 +149,7 @@ export class CFG
         const compiler = this.compiler;
         const from_block = compiler.get<SPIRBlock>(SPIRBlock, from);
         let ignore_block_id: BlockID = 0;
-        if (from_block.merge === SPIRBlockMerge.MergeLoop)
+        if (from_block.merge === SPIRBlockMerge.Loop)
             ignore_block_id = from_block.merge_block;
 
         while (to !== from)
@@ -179,8 +179,8 @@ export class CFG
                 false_path_ignore = compiler.execution_is_branchless(false_block, ignore_block);
             }
 
-            if ((dom.merge === SPIRBlockMerge.MergeSelection && dom.next_block === to) ||
-                (dom.merge === SPIRBlockMerge.MergeLoop && dom.merge_block === to) ||
+            if ((dom.merge === SPIRBlockMerge.Selection && dom.next_block === to) ||
+                (dom.merge === SPIRBlockMerge.Loop && dom.merge_block === to) ||
                 (dom.terminator === SPIRBlockTerminator.Direct && dom.next_block === to) ||
                 (dom.terminator === SPIRBlockTerminator.Select && dom.true_block === to && false_path_ignore) ||
                 (dom.terminator === SPIRBlockTerminator.Select && dom.false_block === to && true_path_ignore))
@@ -267,7 +267,7 @@ export class CFG
         // is lower than inside the loop, which is going to be key for some traversal algorithms like post-dominance analysis.
         // For selection constructs true/false blocks will end up visiting the merge block directly and it works out fine,
         // but for loops, only the header might end up actually branching to merge block.
-        if (block.merge === SPIRBlockMerge.MergeLoop && this.post_order_visit(block.merge_block))
+        if (block.merge === SPIRBlockMerge.Loop && this.post_order_visit(block.merge_block))
             this.add_branch(block_id, block.merge_block);
 
         // First visit our branch targets.
@@ -308,7 +308,7 @@ export class CFG
         // We can use the variable without a Phi since there is only one possible parent here.
         // However, in this case, we need to hoist out the inner variable to outside the branch.
         // Use same strategy as loops.
-        if (block.merge === SPIRBlockMerge.MergeSelection && this.post_order_visit(block.next_block))
+        if (block.merge === SPIRBlockMerge.Selection && this.post_order_visit(block.next_block))
         {
             // If there is only one preceding edge to the merge block and it's not ourselves, we need a fixup.
             // Add a fake branch so any dominator in either the if (), or else () block, or a lone case statement

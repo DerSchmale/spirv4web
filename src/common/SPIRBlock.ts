@@ -21,18 +21,18 @@ export enum SPIRBlockTerminator
 
 export enum SPIRBlockMerge
 {
-    MergeNone,
-    MergeLoop,
-    MergeSelection
+    None,
+    Loop,
+    Selection
 }
 
 export enum SPIRBlockHints
 {
-    HintNone,
-    HintUnroll,
-    HintDontUnroll,
-    HintFlatten,
-    HintDontFlatten
+    None,
+    Unroll,
+    DontUnroll,
+    Flatten,
+    DontFlatten
 }
 
 export enum SPIRBlockMethod
@@ -94,12 +94,12 @@ export class SPIRBlockCase
 
 export class SPIRBlock extends IVariant
 {
-    static type: Types = Types.TypeBlock;
+    static type: Types = Types.Block;
     static NoDominator: number = 0xffffffff;
 
     terminator: SPIRBlockTerminator = SPIRBlockTerminator.Unknown;
-    merge: SPIRBlockMerge = SPIRBlockMerge.MergeNone;
-    hint: SPIRBlockHints = SPIRBlockHints.HintNone;
+    merge: SPIRBlockMerge = SPIRBlockMerge.None;
+    hint: SPIRBlockHints = SPIRBlockHints.None;
     next_block: BlockID = 0;
     merge_block: BlockID = 0;
     continue_block: BlockID = 0;

@@ -1,16 +1,16 @@
-import { SPIRType, SPIRTypeBaseType } from "./SPIRType";
+import { SPIRType, SPIRBaseType } from "./SPIRType";
 import { Op } from "../spirv/Op";
 
 export function type_is_floating_point(type: SPIRType): boolean
 {
-    return type.basetype === SPIRTypeBaseType.Half || type.basetype === SPIRTypeBaseType.Float || type.basetype === SPIRTypeBaseType.Double;
+    return type.basetype === SPIRBaseType.Half || type.basetype === SPIRBaseType.Float || type.basetype === SPIRBaseType.Double;
 }
 
 export function type_is_integral(type: SPIRType): boolean
 {
-    return type.basetype === SPIRTypeBaseType.SByte || type.basetype === SPIRTypeBaseType.UByte || type.basetype === SPIRTypeBaseType.Short ||
-        type.basetype === SPIRTypeBaseType.UShort || type.basetype === SPIRTypeBaseType.Int || type.basetype === SPIRTypeBaseType.UInt ||
-        type.basetype === SPIRTypeBaseType.Int64 || type.basetype === SPIRTypeBaseType.UInt64;
+    return type.basetype === SPIRBaseType.SByte || type.basetype === SPIRBaseType.UByte || type.basetype === SPIRBaseType.Short ||
+        type.basetype === SPIRBaseType.UShort || type.basetype === SPIRBaseType.Int || type.basetype === SPIRBaseType.UInt ||
+        type.basetype === SPIRBaseType.Int64 || type.basetype === SPIRBaseType.UInt64;
 }
 
 
@@ -19,15 +19,15 @@ export function type_is_integral(type: SPIRType): boolean
 export function opcode_is_sign_invariant(opcode: Op): boolean
 {
     switch (opcode) {
-        case Op.OpIEqual:
-        case Op.OpINotEqual:
-        case Op.OpISub:
-        case Op.OpIAdd:
-        case Op.OpIMul:
-        case Op.OpShiftLeftLogical:
-        case Op.OpBitwiseOr:
-        case Op.OpBitwiseXor:
-        case Op.OpBitwiseAnd:
+        case Op.IEqual:
+        case Op.INotEqual:
+        case Op.ISub:
+        case Op.IAdd:
+        case Op.IMul:
+        case Op.ShiftLeftLogical:
+        case Op.BitwiseOr:
+        case Op.BitwiseXor:
+        case Op.BitwiseAnd:
             return true;
 
         default:
@@ -35,33 +35,33 @@ export function opcode_is_sign_invariant(opcode: Op): boolean
     }
 }
 
-export function to_signed_basetype(width: number): SPIRTypeBaseType
+export function to_signed_basetype(width: number): SPIRBaseType
 {
     switch (width) {
         case 8:
-            return SPIRTypeBaseType.SByte;
+            return SPIRBaseType.SByte;
         case 16:
-            return SPIRTypeBaseType.Short;
+            return SPIRBaseType.Short;
         case 32:
-            return SPIRTypeBaseType.Int;
+            return SPIRBaseType.Int;
         case 64:
-            return SPIRTypeBaseType.Int64;
+            return SPIRBaseType.Int64;
         default:
             throw new Error("Invalid bit width.");
     }
 }
 
-export function to_unsigned_basetype(width: number): SPIRTypeBaseType
+export function to_unsigned_basetype(width: number): SPIRBaseType
 {
     switch (width) {
         case 8:
-            return SPIRTypeBaseType.UByte;
+            return SPIRBaseType.UByte;
         case 16:
-            return SPIRTypeBaseType.UShort;
+            return SPIRBaseType.UShort;
         case 32:
-            return SPIRTypeBaseType.UInt;
+            return SPIRBaseType.UInt;
         case 64:
-            return SPIRTypeBaseType.UInt64;
+            return SPIRBaseType.UInt64;
         default:
             throw new Error("Invalid bit width.");
     }

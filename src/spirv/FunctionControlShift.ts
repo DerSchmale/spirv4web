@@ -1,7 +1,7 @@
 export enum FunctionControlShift {
-    FunctionControlInlineShift = 0,
-    FunctionControlDontInlineShift = 1,
-    FunctionControlPureShift = 2,
-    FunctionControlConstShift = 3,
-    FunctionControlMax = 0x7fffffff,
+    Inline = 0,
+    DontInline = 1,
+    Pure = 2,
+    Const = 3,
+    Max = 0x7fffffff,
 }

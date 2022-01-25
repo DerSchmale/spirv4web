@@ -6,10 +6,10 @@ import { StorageClass } from "../spirv/StorageClass";
 
 export class SPIRVariable extends IVariant
 {
-    static type = Types.TypeVariable;
+    static type = Types.Variable;
 
     basetype: TypeID = 0;
-    storage: StorageClass = StorageClass.StorageClassGeneric;
+    storage: StorageClass = StorageClass.Generic;
     decoration: number = 0;
     initializer: ID = 0;
     basevariable: VariableID = 0;

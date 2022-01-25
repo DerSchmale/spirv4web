@@ -14,16 +14,16 @@ export declare enum SPIRBlockTerminator {
     TerminateRay = 8
 }
 export declare enum SPIRBlockMerge {
-    MergeNone = 0,
-    MergeLoop = 1,
-    MergeSelection = 2
+    None = 0,
+    Loop = 1,
+    Selection = 2
 }
 export declare enum SPIRBlockHints {
-    HintNone = 0,
-    HintUnroll = 1,
-    HintDontUnroll = 2,
-    HintFlatten = 3,
-    HintDontFlatten = 4
+    None = 0,
+    Unroll = 1,
+    DontUnroll = 2,
+    Flatten = 3,
+    DontFlatten = 4
 }
 export declare enum SPIRBlockMethod {
     MergeToSelectForLoop = 0,

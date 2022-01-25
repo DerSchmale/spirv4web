@@ -11,13 +11,6 @@ import { Capability } from "../spirv/Capability";
 import { AddressingModel } from "../spirv/AddressingModel";
 import { MemoryModel } from "../spirv/MemoryModel";
 import { Decoration } from "../spirv/Decoration";
-export declare enum BlockMetaFlagBits {
-    BLOCK_META_LOOP_HEADER_BIT = 1,
-    BLOCK_META_CONTINUE_BIT = 2,
-    BLOCK_META_LOOP_MERGE_BIT = 4,
-    BLOCK_META_SELECTION_MERGE_BIT = 8,
-    BLOCK_META_MULTISELECT_MERGE_BIT = 16
-}
 declare class Source {
     version: number;
     es: boolean;

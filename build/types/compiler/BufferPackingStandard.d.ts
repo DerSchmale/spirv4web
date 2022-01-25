@@ -1,10 +1,10 @@
 export declare enum BufferPackingStandard {
-    BufferPackingStd140 = 0,
-    BufferPackingStd430 = 1,
-    BufferPackingStd140EnhancedLayout = 2,
-    BufferPackingStd430EnhancedLayout = 3,
-    _BufferPackingHLSLCbuffer = 4,
-    _BufferPackingHLSLCbufferPackOffset = 5,
-    BufferPackingScalar = 6,
-    BufferPackingScalarEnhancedLayout = 7
+    Std140 = 0,
+    Std430 = 1,
+    Std140EnhancedLayout = 2,
+    Std430EnhancedLayout = 3,
+    _HLSLCbuffer = 4,
+    _HLSLCbufferPackOffset = 5,
+    PackingScalar = 6,
+    PackingScalarEnhancedLayout = 7
 }

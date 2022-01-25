@@ -29,12 +29,12 @@ export class InterlockedResourceAccessHandler extends OpcodeHandler
     {
         // Only care about critical section analysis if we have simple case.
         if (this.use_critical_section) {
-            if (opcode === Op.OpBeginInvocationInterlockEXT) {
+            if (opcode === Op.BeginInvocationInterlockEXT) {
                 this.in_crit_sec = true;
                 return true;
             }
 
-            if (opcode === Op.OpEndInvocationInterlockEXT) {
+            if (opcode === Op.EndInvocationInterlockEXT) {
                 // End critical section--nothing more to do.
                 return false;
             }
@@ -44,7 +44,7 @@ export class InterlockedResourceAccessHandler extends OpcodeHandler
 
         // We need to figure out where images and buffers are loaded from, so do only the bare bones compilation we need.
         switch (opcode) {
-            case Op.OpLoad: {
+            case Op.Load: {
                 if (length < 3)
                     return false;
 
@@ -59,7 +59,7 @@ export class InterlockedResourceAccessHandler extends OpcodeHandler
                     default:
                         break;
 
-                    case StorageClass.StorageClassUniformConstant: {
+                    case StorageClass.UniformConstant: {
                         const result_type = args[0];
                         const id = args[1];
                         compiler.set<SPIRExpression>(SPIRExpression, id, "", result_type, true);
@@ -67,29 +67,29 @@ export class InterlockedResourceAccessHandler extends OpcodeHandler
                         break;
                     }
 
-                    case StorageClass.StorageClassUniform:
+                    case StorageClass.Uniform:
                         // Must have BufferBlock; we only care about SSBOs.
-                        if (!compiler.has_decoration(compiler.get<SPIRType>(SPIRType, var_.basetype).self, Decoration.DecorationBufferBlock))
+                        if (!compiler.has_decoration(compiler.get<SPIRType>(SPIRType, var_.basetype).self, Decoration.BufferBlock))
                             break;
                     // fallthrough
-                    case StorageClass.StorageClassStorageBuffer:
+                    case StorageClass.StorageBuffer:
                         this.access_potential_resource(var_.self);
                         break;
                 }
                 break;
             }
 
-            case Op.OpInBoundsAccessChain:
-            case Op.OpAccessChain:
-            case Op.OpPtrAccessChain: {
+            case Op.InBoundsAccessChain:
+            case Op.AccessChain:
+            case Op.PtrAccessChain: {
                 if (length < 3)
                     return false;
 
                 const result_type = args[0];
 
                 const type = compiler.get<SPIRType>(SPIRType, result_type);
-                if (type.storage === StorageClass.StorageClassUniform || type.storage === StorageClass.StorageClassUniformConstant ||
-                    type.storage === StorageClass.StorageClassStorageBuffer) {
+                if (type.storage === StorageClass.Uniform || type.storage === StorageClass.UniformConstant ||
+                    type.storage === StorageClass.StorageBuffer) {
                     const id = args[1];
                     const ptr = args[2];
                     compiler.set<SPIRExpression>(SPIRExpression, id, "", result_type, true);
@@ -99,7 +99,7 @@ export class InterlockedResourceAccessHandler extends OpcodeHandler
                 break;
             }
 
-            case Op.OpImageTexelPointer: {
+            case Op.ImageTexelPointer: {
                 if (length < 3)
                     return false;
 
@@ -113,23 +113,23 @@ export class InterlockedResourceAccessHandler extends OpcodeHandler
                 break;
             }
 
-            case Op.OpStore:
-            case Op.OpImageWrite:
-            case Op.OpAtomicStore: {
+            case Op.Store:
+            case Op.ImageWrite:
+            case Op.AtomicStore: {
                 if (length < 1)
                     return false;
 
                 const ptr = args[0];
                 const var_ = compiler.maybe_get_backing_variable(ptr);
-                if (var_ && (var_.storage === StorageClass.StorageClassUniform || var_.storage === StorageClass.StorageClassUniformConstant ||
-                    var_.storage === StorageClass.StorageClassStorageBuffer)) {
+                if (var_ && (var_.storage === StorageClass.Uniform || var_.storage === StorageClass.UniformConstant ||
+                    var_.storage === StorageClass.StorageBuffer)) {
                     this.access_potential_resource(var_.self);
                 }
 
                 break;
             }
 
-            case Op.OpCopyMemory: {
+            case Op.CopyMemory: {
                 if (length < 2)
                     return false;
 
@@ -138,15 +138,15 @@ export class InterlockedResourceAccessHandler extends OpcodeHandler
                 const dst_var = compiler.maybe_get_backing_variable(dst);
                 const src_var = compiler.maybe_get_backing_variable(src);
 
-                if (dst_var && (dst_var.storage === StorageClass.StorageClassUniform || dst_var.storage === StorageClass.StorageClassStorageBuffer))
+                if (dst_var && (dst_var.storage === StorageClass.Uniform || dst_var.storage === StorageClass.StorageBuffer))
                     this.access_potential_resource(dst_var.self);
 
                 if (src_var) {
-                    if (src_var.storage !== StorageClass.StorageClassUniform && src_var.storage !== StorageClass.StorageClassStorageBuffer)
+                    if (src_var.storage !== StorageClass.Uniform && src_var.storage !== StorageClass.StorageBuffer)
                         break;
 
-                    if (src_var.storage === StorageClass.StorageClassUniform &&
-                        !compiler.has_decoration(compiler.get<SPIRType>(SPIRType, src_var.basetype).self, Decoration.DecorationBufferBlock)) {
+                    if (src_var.storage === StorageClass.Uniform &&
+                        !compiler.has_decoration(compiler.get<SPIRType>(SPIRType, src_var.basetype).self, Decoration.BufferBlock)) {
                         break;
                     }
 
@@ -156,8 +156,8 @@ export class InterlockedResourceAccessHandler extends OpcodeHandler
                 break;
             }
 
-            case Op.OpImageRead:
-            case Op.OpAtomicLoad: {
+            case Op.ImageRead:
+            case Op.AtomicLoad: {
                 if (length < 3)
                     return false;
 
@@ -172,39 +172,39 @@ export class InterlockedResourceAccessHandler extends OpcodeHandler
                     default:
                         break;
 
-                    case StorageClass.StorageClassUniform:
+                    case StorageClass.Uniform:
                         // Must have BufferBlock; we only care about SSBOs.
-                        if (!compiler.has_decoration(compiler.get<SPIRType>(SPIRType, var_.basetype).self, Decoration.DecorationBufferBlock))
+                        if (!compiler.has_decoration(compiler.get<SPIRType>(SPIRType, var_.basetype).self, Decoration.BufferBlock))
                             break;
                     // fallthrough
-                    case StorageClass.StorageClassUniformConstant:
-                    case StorageClass.StorageClassStorageBuffer:
+                    case StorageClass.UniformConstant:
+                    case StorageClass.StorageBuffer:
                         this.access_potential_resource(var_.self);
                         break;
                 }
                 break;
             }
 
-            case Op.OpAtomicExchange:
-            case Op.OpAtomicCompareExchange:
-            case Op.OpAtomicIIncrement:
-            case Op.OpAtomicIDecrement:
-            case Op.OpAtomicIAdd:
-            case Op.OpAtomicISub:
-            case Op.OpAtomicSMin:
-            case Op.OpAtomicUMin:
-            case Op.OpAtomicSMax:
-            case Op.OpAtomicUMax:
-            case Op.OpAtomicAnd:
-            case Op.OpAtomicOr:
-            case Op.OpAtomicXor: {
+            case Op.AtomicExchange:
+            case Op.AtomicCompareExchange:
+            case Op.AtomicIIncrement:
+            case Op.AtomicIDecrement:
+            case Op.AtomicIAdd:
+            case Op.AtomicISub:
+            case Op.AtomicSMin:
+            case Op.AtomicUMin:
+            case Op.AtomicSMax:
+            case Op.AtomicUMax:
+            case Op.AtomicAnd:
+            case Op.AtomicOr:
+            case Op.AtomicXor: {
                 if (length < 3)
                     return false;
 
                 const ptr = args[2];
                 const var_ = compiler.maybe_get_backing_variable(ptr);
-                if (var_ && (var_.storage === StorageClass.StorageClassUniform || var_.storage === StorageClass.StorageClassUniformConstant ||
-                    var_.storage === StorageClass.StorageClassStorageBuffer)) {
+                if (var_ && (var_.storage === StorageClass.Uniform || var_.storage === StorageClass.UniformConstant ||
+                    var_.storage === StorageClass.StorageBuffer)) {
                     this.access_potential_resource(var_.self);
                 }
 

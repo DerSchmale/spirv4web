@@ -1,6 +1,6 @@
 import { Compiler } from "./Compiler";
 import { OpcodeHandler } from "./OpcodeHandler";
-import { SPIRType, SPIRTypeBaseType } from "../common/SPIRType";
+import { SPIRType, SPIRBaseType } from "../common/SPIRType";
 import { SPIRExpression } from "../common/SPIRExpression";
 import { Op } from "../spirv/Op";
 import { Dim } from "../spirv/Dim";
@@ -28,7 +28,7 @@ export class DummySamplerForCombinedImageHandler extends OpcodeHandler
 
         switch (opcode)
         {
-            case Op.OpLoad:
+            case Op.Load:
             {
                 if (length < 3)
                     return false;
@@ -36,7 +36,7 @@ export class DummySamplerForCombinedImageHandler extends OpcodeHandler
                 const result_type = args[0];
 
                 const type = compiler.get<SPIRType>(SPIRType, result_type);
-                const separate_image = type.basetype === SPIRTypeBaseType.Image && type.image.sampled === 1 && type.image.dim !== Dim.DimBuffer;
+                const separate_image = type.basetype === SPIRBaseType.Image && type.image.sampled === 1 && type.image.dim !== Dim.Buffer;
 
                 // If not separate image, don't bother.
                 if (!separate_image)
@@ -49,34 +49,34 @@ export class DummySamplerForCombinedImageHandler extends OpcodeHandler
                 break;
             }
 
-            case Op.OpImageFetch:
-            case Op.OpImageQuerySizeLod:
-            case Op.OpImageQuerySize:
-            case Op.OpImageQueryLevels:
-            case Op.OpImageQuerySamples:
+            case Op.ImageFetch:
+            case Op.ImageQuerySizeLod:
+            case Op.ImageQuerySize:
+            case Op.ImageQueryLevels:
+            case Op.ImageQuerySamples:
             {
                 // If we are fetching or querying LOD from a plain OpTypeImage, we must pre-combine with our dummy sampler.
                 const var_ = compiler.maybe_get_backing_variable(args[2]);
                 if (var_)
                 {
                     const type = compiler.get<SPIRType>(SPIRType, var_.basetype);
-                    if (type.basetype === SPIRTypeBaseType.Image && type.image.sampled === 1 && type.image.dim !== Dim.DimBuffer)
+                    if (type.basetype === SPIRBaseType.Image && type.image.sampled === 1 && type.image.dim !== Dim.Buffer)
                         this.need_dummy_sampler = true;
                 }
 
                 break;
             }
 
-            case Op.OpInBoundsAccessChain:
-            case Op.OpAccessChain:
-            case Op.OpPtrAccessChain:
+            case Op.InBoundsAccessChain:
+            case Op.AccessChain:
+            case Op.PtrAccessChain:
             {
                 if (length < 3)
                     return false;
 
                 const result_type = args[0];
                 const type = compiler.get<SPIRType>(SPIRType, result_type);
-                const separate_image = type.basetype === SPIRTypeBaseType.Image && type.image.sampled === 1 && type.image.dim !== Dim.DimBuffer;
+                const separate_image = type.basetype === SPIRBaseType.Image && type.image.sampled === 1 && type.image.dim !== Dim.Buffer;
                 if (!separate_image)
                     return true;
 

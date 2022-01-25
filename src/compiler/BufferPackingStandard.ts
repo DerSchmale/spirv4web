@@ -1,11 +1,11 @@
 export enum BufferPackingStandard
 {
-    BufferPackingStd140,
-    BufferPackingStd430,
-    BufferPackingStd140EnhancedLayout,
-    BufferPackingStd430EnhancedLayout,
-    _BufferPackingHLSLCbuffer,
-    _BufferPackingHLSLCbufferPackOffset,
-    BufferPackingScalar,
-    BufferPackingScalarEnhancedLayout
+    Std140,
+    Std430,
+    Std140EnhancedLayout,
+    Std430EnhancedLayout,
+    _HLSLCbuffer,
+    _HLSLCbufferPackOffset,
+    PackingScalar,
+    PackingScalarEnhancedLayout
 }

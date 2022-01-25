@@ -18,16 +18,16 @@ export class CombinedImageSamplerDrefHandler extends OpcodeHandler
         // Mark all sampled images which are used with Dref.
         switch (opcode)
         {
-            case Op.OpImageSampleDrefExplicitLod:
-            case Op.OpImageSampleDrefImplicitLod:
-            case Op.OpImageSampleProjDrefExplicitLod:
-            case Op.OpImageSampleProjDrefImplicitLod:
-            case Op.OpImageSparseSampleProjDrefImplicitLod:
-            case Op.OpImageSparseSampleDrefImplicitLod:
-            case Op.OpImageSparseSampleProjDrefExplicitLod:
-            case Op.OpImageSparseSampleDrefExplicitLod:
-            case Op.OpImageDrefGather:
-            case Op.OpImageSparseDrefGather:
+            case Op.ImageSampleDrefExplicitLod:
+            case Op.ImageSampleDrefImplicitLod:
+            case Op.ImageSampleProjDrefExplicitLod:
+            case Op.ImageSampleProjDrefImplicitLod:
+            case Op.ImageSparseSampleProjDrefImplicitLod:
+            case Op.ImageSparseSampleDrefImplicitLod:
+            case Op.ImageSparseSampleProjDrefExplicitLod:
+            case Op.ImageSparseSampleDrefExplicitLod:
+            case Op.ImageDrefGather:
+            case Op.ImageSparseDrefGather:
                 this.dref_combined_samplers.add(args[2]);
                 return true;
 

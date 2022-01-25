@@ -28,7 +28,7 @@ export class SPIREntryPoint
     workgroup_size: SPIREntryPointWorkgroupSize = new SPIREntryPointWorkgroupSize();
     invocations: number = 0;
     output_vertices: number = 0;
-    model: ExecutionModel = ExecutionModel.ExecutionModelMax;
+    model: ExecutionModel = ExecutionModel.Max;
     geometry_passthrough: boolean = false;
 
     constructor(param0: FunctionID | SPIREntryPoint, execution_model: ExecutionModel, entry_name: string)

@@ -1,5 +1,5 @@
 export declare enum SelectionControlMask {
-    SelectionControlMaskNone = 0,
-    SelectionControlFlattenMask = 1,
-    SelectionControlDontFlattenMask = 2
+    None = 0,
+    Flatten = 1,
+    DontFlatten = 2
 }

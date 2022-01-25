@@ -1,7 +1,7 @@
 import { OpcodeHandler } from "./OpcodeHandler";
 import { Compiler } from "./Compiler";
 import { PhysicalBlockMeta } from "./PhysicalBlockMeta";
-import { SPIRType, SPIRTypeBaseType } from "../common/SPIRType";
+import { SPIRType, SPIRBaseType } from "../common/SPIRType";
 import { maplike_get } from "../utils/maplike_get";
 import { Op } from "../spirv/Op";
 import { MemoryAccessMask } from "../spirv/MemoryAccessMask";
@@ -27,18 +27,18 @@ export class PhysicalStorageBufferPointerHandler extends OpcodeHandler
         // requirements.
         switch (op)
         {
-            case Op.OpConvertUToPtr:
-            case Op.OpBitcast:
-            case Op.OpCompositeExtract:
+            case Op.ConvertUToPtr:
+            case Op.Bitcast:
+            case Op.CompositeExtract:
                 // Extract can begin a new chain if we had a struct or array of pointers as input.
                 // We don't begin chains before we have a pure scalar pointer.
                 this.setup_meta_chain(args[0], args[1]);
                 break;
 
-            case Op.OpAccessChain:
-            case Op.OpInBoundsAccessChain:
-            case Op.OpPtrAccessChain:
-            case Op.OpCopyObject:
+            case Op.AccessChain:
+            case Op.InBoundsAccessChain:
+            case Op.PtrAccessChain:
+            case Op.CopyObject:
             {
                 const itr_second = this.access_chain_to_physical_block[args[2]];
                 if (itr_second)
@@ -46,7 +46,7 @@ export class PhysicalStorageBufferPointerHandler extends OpcodeHandler
                 break;
             }
 
-            case Op.OpLoad:
+            case Op.Load:
             {
                 this.setup_meta_chain(args[0], args[1]);
                 if (length >= 4)
@@ -54,7 +54,7 @@ export class PhysicalStorageBufferPointerHandler extends OpcodeHandler
                 break;
             }
 
-            case Op.OpStore:
+            case Op.Store:
             {
                 if (length >= 3)
                     this.mark_aligned_access(args[0], args.slice(3), length - 2);
@@ -73,13 +73,13 @@ export class PhysicalStorageBufferPointerHandler extends OpcodeHandler
         const mask = args[0];
         let offset = 0;
         length--;
-        if (length && (mask & MemoryAccessMask.MemoryAccessVolatileMask) !== 0)
+        if (length && (mask & MemoryAccessMask.Volatile) !== 0)
         {
             offset++;
             length--;
         }
 
-        if (length && (mask & MemoryAccessMask.MemoryAccessAlignedMask) !== 0)
+        if (length && (mask & MemoryAccessMask.Aligned) !== 0)
         {
             const alignment = args[offset];
             const meta = this.find_block_meta(id);
@@ -105,7 +105,7 @@ export class PhysicalStorageBufferPointerHandler extends OpcodeHandler
     type_is_bda_block_entry(type_id: number): boolean
     {
         const type = this.compiler.get<SPIRType>(SPIRType, type_id);
-        return type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT && type.pointer &&
+        return type.storage === StorageClass.PhysicalStorageBufferEXT && type.pointer &&
             type.pointer_depth === 1 && !this.compiler.type_is_array_of_pointers(type);
     }
 
@@ -117,7 +117,7 @@ export class PhysicalStorageBufferPointerHandler extends OpcodeHandler
             this.access_chain_to_physical_block[var_id] = meta;
 
             const type = this.compiler.get<SPIRType>(SPIRType, type_id);
-            if (type.basetype !== SPIRTypeBaseType.Struct)
+            if (type.basetype !== SPIRBaseType.Struct)
                 this.non_block_types.add(type_id);
 
             if (meta.alignment === 0)
@@ -127,9 +127,9 @@ export class PhysicalStorageBufferPointerHandler extends OpcodeHandler
 
     get_minimum_scalar_alignment(type: SPIRType): number
     {
-        if (type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT)
+        if (type.storage === StorageClass.PhysicalStorageBufferEXT)
             return 8;
-        else if (type.basetype === SPIRTypeBaseType.Struct)
+        else if (type.basetype === SPIRBaseType.Struct)
         {
             let alignment = 0;
             for (let member_type of type.member_types)
@@ -149,12 +149,12 @@ export class PhysicalStorageBufferPointerHandler extends OpcodeHandler
         for (let member of type.member_types)
         {
             const subtype = this.compiler.get<SPIRType>(SPIRType, member);
-            if (subtype.basetype !== SPIRTypeBaseType.Struct && subtype.pointer &&
-                subtype.storage === StorageClass.StorageClassPhysicalStorageBufferEXT)
+            if (subtype.basetype !== SPIRBaseType.Struct && subtype.pointer &&
+                subtype.storage === StorageClass.PhysicalStorageBufferEXT)
             {
                 this.non_block_types.add(this.get_base_non_block_type_id(member));
             }
-            else if (subtype.basetype === SPIRTypeBaseType.Struct && !subtype.pointer)
+            else if (subtype.basetype === SPIRBaseType.Struct && !subtype.pointer)
                 this.analyze_non_block_types_from_block(subtype);
         }
     }
@@ -163,7 +163,7 @@ export class PhysicalStorageBufferPointerHandler extends OpcodeHandler
     {
         let type = this.compiler.get<SPIRType>(SPIRType, type_id);
         while (type.pointer &&
-            type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT &&
+            type.storage === StorageClass.PhysicalStorageBufferEXT &&
             !this.type_is_bda_block_entry(type_id))
         {
             type_id = type.parent_type;

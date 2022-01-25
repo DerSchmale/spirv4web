@@ -1,5 +1,5 @@
 import { ParsedIR } from "../parser/ParsedIR";
-import { SPIRType, SPIRTypeBaseType } from "../common/SPIRType";
+import { SPIRType, SPIRBaseType } from "../common/SPIRType";
 import { SPIRVariable } from "../common/SPIRVariable";
 import { IVariant, IVariantType } from "../common/IVariant";
 import { SPIREntryPoint } from "../common/SPIREntryPoint";
@@ -12,7 +12,6 @@ import { SPIRConstantOp } from "../common/SPIRConstantOp";
 import { OpcodeHandler } from "./OpcodeHandler";
 import { Instruction } from "../common/Instruction";
 import { ShaderResources } from "./ShaderResources";
-import { ExtendedDecorations } from "../common/Meta";
 import { Bitset } from "../common/Bitset";
 import { CombinedImageSampler } from "./CombinedImageSampler";
 import { CFG } from "../cfg/CFG";
@@ -25,6 +24,7 @@ import { BuiltIn } from "../spirv/BuiltIn";
 import { Op } from "../spirv/Op";
 import { ImageFormat } from "../spirv/ImageFormat";
 import { SpecializationConstant } from "./SpecializationConstant";
+import { ExtendedDecorations } from "../common/ExtendedDecorations";
 declare type VariableTypeRemapCallback = (type: SPIRType, name: string, type_name: string) => string;
 export declare abstract class Compiler {
     ir: ParsedIR;
@@ -70,7 +70,7 @@ export declare abstract class Compiler {
     set_enabled_interface_variables(active_variables: Set<VariableID>): void;
     get_shader_resources(): ShaderResources;
     get_shader_resources(active_variables: Set<VariableID>): ShaderResources;
-    get_common_basic_type(type: SPIRType): SPIRTypeBaseType;
+    get_common_basic_type(type: SPIRType): SPIRBaseType;
     set_remapped_variable_state(id: VariableID, remap_enable: boolean): void;
     get_remapped_variable_state(id: VariableID): boolean;
     set_subpass_input_remapped_components(id: VariableID, components: number): void;

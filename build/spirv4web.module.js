@@ -161,27 +161,27 @@ function unique(arr, clone, compareFunc) {
 
 var Types;
 (function (Types) {
-    Types[Types["TypeNone"] = 0] = "TypeNone";
-    Types[Types["TypeType"] = 1] = "TypeType";
-    Types[Types["TypeVariable"] = 2] = "TypeVariable";
-    Types[Types["TypeConstant"] = 3] = "TypeConstant";
-    Types[Types["TypeFunction"] = 4] = "TypeFunction";
-    Types[Types["TypeFunctionPrototype"] = 5] = "TypeFunctionPrototype";
-    Types[Types["TypeBlock"] = 6] = "TypeBlock";
-    Types[Types["TypeExtension"] = 7] = "TypeExtension";
-    Types[Types["TypeExpression"] = 8] = "TypeExpression";
-    Types[Types["TypeConstantOp"] = 9] = "TypeConstantOp";
-    Types[Types["TypeCombinedImageSampler"] = 10] = "TypeCombinedImageSampler";
-    Types[Types["TypeAccessChain"] = 11] = "TypeAccessChain";
-    Types[Types["TypeUndef"] = 12] = "TypeUndef";
-    Types[Types["TypeString"] = 13] = "TypeString";
-    Types[Types["TypeCount"] = 14] = "TypeCount";
+    Types[Types["None"] = 0] = "None";
+    Types[Types["Type"] = 1] = "Type";
+    Types[Types["Variable"] = 2] = "Variable";
+    Types[Types["Constant"] = 3] = "Constant";
+    Types[Types["Function"] = 4] = "Function";
+    Types[Types["FunctionPrototype"] = 5] = "FunctionPrototype";
+    Types[Types["Block"] = 6] = "Block";
+    Types[Types["Extension"] = 7] = "Extension";
+    Types[Types["Expression"] = 8] = "Expression";
+    Types[Types["ConstantOp"] = 9] = "ConstantOp";
+    Types[Types["CombinedImageSampler"] = 10] = "CombinedImageSampler";
+    Types[Types["AccessChain"] = 11] = "AccessChain";
+    Types[Types["Undef"] = 12] = "Undef";
+    Types[Types["String"] = 13] = "String";
+    Types[Types["Count"] = 14] = "Count";
 })(Types || (Types = {}));
 
 var Variant = /** @class */ (function () {
     function Variant(group) {
         this.holder = null;
-        this.type = Types.TypeNone;
+        this.type = Types.None;
         this.allow_type_rewrite = false;
         this.group = group;
         this.createdIn = new Error().stack;
@@ -190,7 +190,7 @@ var Variant = /** @class */ (function () {
         if (this.holder)
             this.group.pools[this.type].deallocate_opaque(this.holder);
         this.holder = null;
-        if (!this.allow_type_rewrite && this.type !== Types.TypeNone && this.type !== new_type) {
+        if (!this.allow_type_rewrite && this.type !== Types.None && this.type !== new_type) {
             if (val)
                 this.group.pools[new_type].deallocate_opaque(val);
             throw new Error("Overwriting a variant with new type.");
@@ -229,7 +229,7 @@ var Variant = /** @class */ (function () {
         if (this.holder)
             this.group.pools[this.type].deallocate_opaque(this.holder);
         this.holder = null;
-        this.type = Types.TypeNone;
+        this.type = Types.None;
     };
     Variant.prototype.set_allow_type_rewrite = function () {
         this.allow_type_rewrite = true;
@@ -249,7 +249,7 @@ function variant_set(classRef, var_) {
 
 var ObjectPoolGroup = /** @class */ (function () {
     function ObjectPoolGroup() {
-        this.pools = new Array(Types.TypeCount);
+        this.pools = new Array(Types.Count);
     }
     return ObjectPoolGroup;
 }());
@@ -389,151 +389,151 @@ var Bitset = /** @class */ (function () {
 
 var BuiltIn;
 (function (BuiltIn) {
-    BuiltIn[BuiltIn["BuiltInPosition"] = 0] = "BuiltInPosition";
-    BuiltIn[BuiltIn["BuiltInPointSize"] = 1] = "BuiltInPointSize";
-    BuiltIn[BuiltIn["BuiltInClipDistance"] = 3] = "BuiltInClipDistance";
-    BuiltIn[BuiltIn["BuiltInCullDistance"] = 4] = "BuiltInCullDistance";
-    BuiltIn[BuiltIn["BuiltInVertexId"] = 5] = "BuiltInVertexId";
-    BuiltIn[BuiltIn["BuiltInInstanceId"] = 6] = "BuiltInInstanceId";
-    BuiltIn[BuiltIn["BuiltInPrimitiveId"] = 7] = "BuiltInPrimitiveId";
-    BuiltIn[BuiltIn["BuiltInInvocationId"] = 8] = "BuiltInInvocationId";
-    BuiltIn[BuiltIn["BuiltInLayer"] = 9] = "BuiltInLayer";
-    BuiltIn[BuiltIn["BuiltInViewportIndex"] = 10] = "BuiltInViewportIndex";
-    BuiltIn[BuiltIn["BuiltInTessLevelOuter"] = 11] = "BuiltInTessLevelOuter";
-    BuiltIn[BuiltIn["BuiltInTessLevelInner"] = 12] = "BuiltInTessLevelInner";
-    BuiltIn[BuiltIn["BuiltInTessCoord"] = 13] = "BuiltInTessCoord";
-    BuiltIn[BuiltIn["BuiltInPatchVertices"] = 14] = "BuiltInPatchVertices";
-    BuiltIn[BuiltIn["BuiltInFragCoord"] = 15] = "BuiltInFragCoord";
-    BuiltIn[BuiltIn["BuiltInPointCoord"] = 16] = "BuiltInPointCoord";
-    BuiltIn[BuiltIn["BuiltInFrontFacing"] = 17] = "BuiltInFrontFacing";
-    BuiltIn[BuiltIn["BuiltInSampleId"] = 18] = "BuiltInSampleId";
-    BuiltIn[BuiltIn["BuiltInSamplePosition"] = 19] = "BuiltInSamplePosition";
-    BuiltIn[BuiltIn["BuiltInSampleMask"] = 20] = "BuiltInSampleMask";
-    BuiltIn[BuiltIn["BuiltInFragDepth"] = 22] = "BuiltInFragDepth";
-    BuiltIn[BuiltIn["BuiltInHelperInvocation"] = 23] = "BuiltInHelperInvocation";
-    BuiltIn[BuiltIn["BuiltInNumWorkgroups"] = 24] = "BuiltInNumWorkgroups";
-    BuiltIn[BuiltIn["BuiltInWorkgroupSize"] = 25] = "BuiltInWorkgroupSize";
-    BuiltIn[BuiltIn["BuiltInWorkgroupId"] = 26] = "BuiltInWorkgroupId";
-    BuiltIn[BuiltIn["BuiltInLocalInvocationId"] = 27] = "BuiltInLocalInvocationId";
-    BuiltIn[BuiltIn["BuiltInGlobalInvocationId"] = 28] = "BuiltInGlobalInvocationId";
-    BuiltIn[BuiltIn["BuiltInLocalInvocationIndex"] = 29] = "BuiltInLocalInvocationIndex";
-    BuiltIn[BuiltIn["BuiltInWorkDim"] = 30] = "BuiltInWorkDim";
-    BuiltIn[BuiltIn["BuiltInGlobalSize"] = 31] = "BuiltInGlobalSize";
-    BuiltIn[BuiltIn["BuiltInEnqueuedWorkgroupSize"] = 32] = "BuiltInEnqueuedWorkgroupSize";
-    BuiltIn[BuiltIn["BuiltInGlobalOffset"] = 33] = "BuiltInGlobalOffset";
-    BuiltIn[BuiltIn["BuiltInGlobalLinearId"] = 34] = "BuiltInGlobalLinearId";
-    BuiltIn[BuiltIn["BuiltInSubgroupSize"] = 36] = "BuiltInSubgroupSize";
-    BuiltIn[BuiltIn["BuiltInSubgroupMaxSize"] = 37] = "BuiltInSubgroupMaxSize";
-    BuiltIn[BuiltIn["BuiltInNumSubgroups"] = 38] = "BuiltInNumSubgroups";
-    BuiltIn[BuiltIn["BuiltInNumEnqueuedSubgroups"] = 39] = "BuiltInNumEnqueuedSubgroups";
-    BuiltIn[BuiltIn["BuiltInSubgroupId"] = 40] = "BuiltInSubgroupId";
-    BuiltIn[BuiltIn["BuiltInSubgroupLocalInvocationId"] = 41] = "BuiltInSubgroupLocalInvocationId";
-    BuiltIn[BuiltIn["BuiltInVertexIndex"] = 42] = "BuiltInVertexIndex";
-    BuiltIn[BuiltIn["BuiltInInstanceIndex"] = 43] = "BuiltInInstanceIndex";
-    BuiltIn[BuiltIn["BuiltInSubgroupEqMask"] = 4416] = "BuiltInSubgroupEqMask";
-    BuiltIn[BuiltIn["BuiltInSubgroupEqMaskKHR"] = 4416] = "BuiltInSubgroupEqMaskKHR";
-    BuiltIn[BuiltIn["BuiltInSubgroupGeMask"] = 4417] = "BuiltInSubgroupGeMask";
-    BuiltIn[BuiltIn["BuiltInSubgroupGeMaskKHR"] = 4417] = "BuiltInSubgroupGeMaskKHR";
-    BuiltIn[BuiltIn["BuiltInSubgroupGtMask"] = 4418] = "BuiltInSubgroupGtMask";
-    BuiltIn[BuiltIn["BuiltInSubgroupGtMaskKHR"] = 4418] = "BuiltInSubgroupGtMaskKHR";
-    BuiltIn[BuiltIn["BuiltInSubgroupLeMask"] = 4419] = "BuiltInSubgroupLeMask";
-    BuiltIn[BuiltIn["BuiltInSubgroupLeMaskKHR"] = 4419] = "BuiltInSubgroupLeMaskKHR";
-    BuiltIn[BuiltIn["BuiltInSubgroupLtMask"] = 4420] = "BuiltInSubgroupLtMask";
-    BuiltIn[BuiltIn["BuiltInSubgroupLtMaskKHR"] = 4420] = "BuiltInSubgroupLtMaskKHR";
-    BuiltIn[BuiltIn["BuiltInBaseVertex"] = 4424] = "BuiltInBaseVertex";
-    BuiltIn[BuiltIn["BuiltInBaseInstance"] = 4425] = "BuiltInBaseInstance";
-    BuiltIn[BuiltIn["BuiltInDrawIndex"] = 4426] = "BuiltInDrawIndex";
-    BuiltIn[BuiltIn["BuiltInPrimitiveShadingRateKHR"] = 4432] = "BuiltInPrimitiveShadingRateKHR";
-    BuiltIn[BuiltIn["BuiltInDeviceIndex"] = 4438] = "BuiltInDeviceIndex";
-    BuiltIn[BuiltIn["BuiltInViewIndex"] = 4440] = "BuiltInViewIndex";
-    BuiltIn[BuiltIn["BuiltInShadingRateKHR"] = 4444] = "BuiltInShadingRateKHR";
-    BuiltIn[BuiltIn["BuiltInBaryCoordNoPerspAMD"] = 4992] = "BuiltInBaryCoordNoPerspAMD";
-    BuiltIn[BuiltIn["BuiltInBaryCoordNoPerspCentroidAMD"] = 4993] = "BuiltInBaryCoordNoPerspCentroidAMD";
-    BuiltIn[BuiltIn["BuiltInBaryCoordNoPerspSampleAMD"] = 4994] = "BuiltInBaryCoordNoPerspSampleAMD";
-    BuiltIn[BuiltIn["BuiltInBaryCoordSmoothAMD"] = 4995] = "BuiltInBaryCoordSmoothAMD";
-    BuiltIn[BuiltIn["BuiltInBaryCoordSmoothCentroidAMD"] = 4996] = "BuiltInBaryCoordSmoothCentroidAMD";
-    BuiltIn[BuiltIn["BuiltInBaryCoordSmoothSampleAMD"] = 4997] = "BuiltInBaryCoordSmoothSampleAMD";
-    BuiltIn[BuiltIn["BuiltInBaryCoordPullModelAMD"] = 4998] = "BuiltInBaryCoordPullModelAMD";
-    BuiltIn[BuiltIn["BuiltInFragStencilRefEXT"] = 5014] = "BuiltInFragStencilRefEXT";
-    BuiltIn[BuiltIn["BuiltInViewportMaskNV"] = 5253] = "BuiltInViewportMaskNV";
-    BuiltIn[BuiltIn["BuiltInSecondaryPositionNV"] = 5257] = "BuiltInSecondaryPositionNV";
-    BuiltIn[BuiltIn["BuiltInSecondaryViewportMaskNV"] = 5258] = "BuiltInSecondaryViewportMaskNV";
-    BuiltIn[BuiltIn["BuiltInPositionPerViewNV"] = 5261] = "BuiltInPositionPerViewNV";
-    BuiltIn[BuiltIn["BuiltInViewportMaskPerViewNV"] = 5262] = "BuiltInViewportMaskPerViewNV";
-    BuiltIn[BuiltIn["BuiltInFullyCoveredEXT"] = 5264] = "BuiltInFullyCoveredEXT";
-    BuiltIn[BuiltIn["BuiltInTaskCountNV"] = 5274] = "BuiltInTaskCountNV";
-    BuiltIn[BuiltIn["BuiltInPrimitiveCountNV"] = 5275] = "BuiltInPrimitiveCountNV";
-    BuiltIn[BuiltIn["BuiltInPrimitiveIndicesNV"] = 5276] = "BuiltInPrimitiveIndicesNV";
-    BuiltIn[BuiltIn["BuiltInClipDistancePerViewNV"] = 5277] = "BuiltInClipDistancePerViewNV";
-    BuiltIn[BuiltIn["BuiltInCullDistancePerViewNV"] = 5278] = "BuiltInCullDistancePerViewNV";
-    BuiltIn[BuiltIn["BuiltInLayerPerViewNV"] = 5279] = "BuiltInLayerPerViewNV";
-    BuiltIn[BuiltIn["BuiltInMeshViewCountNV"] = 5280] = "BuiltInMeshViewCountNV";
-    BuiltIn[BuiltIn["BuiltInMeshViewIndicesNV"] = 5281] = "BuiltInMeshViewIndicesNV";
-    BuiltIn[BuiltIn["BuiltInBaryCoordNV"] = 5286] = "BuiltInBaryCoordNV";
-    BuiltIn[BuiltIn["BuiltInBaryCoordNoPerspNV"] = 5287] = "BuiltInBaryCoordNoPerspNV";
-    BuiltIn[BuiltIn["BuiltInFragSizeEXT"] = 5292] = "BuiltInFragSizeEXT";
-    BuiltIn[BuiltIn["BuiltInFragmentSizeNV"] = 5292] = "BuiltInFragmentSizeNV";
-    BuiltIn[BuiltIn["BuiltInFragInvocationCountEXT"] = 5293] = "BuiltInFragInvocationCountEXT";
-    BuiltIn[BuiltIn["BuiltInInvocationsPerPixelNV"] = 5293] = "BuiltInInvocationsPerPixelNV";
-    BuiltIn[BuiltIn["BuiltInLaunchIdKHR"] = 5319] = "BuiltInLaunchIdKHR";
-    BuiltIn[BuiltIn["BuiltInLaunchIdNV"] = 5319] = "BuiltInLaunchIdNV";
-    BuiltIn[BuiltIn["BuiltInLaunchSizeKHR"] = 5320] = "BuiltInLaunchSizeKHR";
-    BuiltIn[BuiltIn["BuiltInLaunchSizeNV"] = 5320] = "BuiltInLaunchSizeNV";
-    BuiltIn[BuiltIn["BuiltInWorldRayOriginKHR"] = 5321] = "BuiltInWorldRayOriginKHR";
-    BuiltIn[BuiltIn["BuiltInWorldRayOriginNV"] = 5321] = "BuiltInWorldRayOriginNV";
-    BuiltIn[BuiltIn["BuiltInWorldRayDirectionKHR"] = 5322] = "BuiltInWorldRayDirectionKHR";
-    BuiltIn[BuiltIn["BuiltInWorldRayDirectionNV"] = 5322] = "BuiltInWorldRayDirectionNV";
-    BuiltIn[BuiltIn["BuiltInObjectRayOriginKHR"] = 5323] = "BuiltInObjectRayOriginKHR";
-    BuiltIn[BuiltIn["BuiltInObjectRayOriginNV"] = 5323] = "BuiltInObjectRayOriginNV";
-    BuiltIn[BuiltIn["BuiltInObjectRayDirectionKHR"] = 5324] = "BuiltInObjectRayDirectionKHR";
-    BuiltIn[BuiltIn["BuiltInObjectRayDirectionNV"] = 5324] = "BuiltInObjectRayDirectionNV";
-    BuiltIn[BuiltIn["BuiltInRayTminKHR"] = 5325] = "BuiltInRayTminKHR";
-    BuiltIn[BuiltIn["BuiltInRayTminNV"] = 5325] = "BuiltInRayTminNV";
-    BuiltIn[BuiltIn["BuiltInRayTmaxKHR"] = 5326] = "BuiltInRayTmaxKHR";
-    BuiltIn[BuiltIn["BuiltInRayTmaxNV"] = 5326] = "BuiltInRayTmaxNV";
-    BuiltIn[BuiltIn["BuiltInInstanceCustomIndexKHR"] = 5327] = "BuiltInInstanceCustomIndexKHR";
-    BuiltIn[BuiltIn["BuiltInInstanceCustomIndexNV"] = 5327] = "BuiltInInstanceCustomIndexNV";
-    BuiltIn[BuiltIn["BuiltInObjectToWorldKHR"] = 5330] = "BuiltInObjectToWorldKHR";
-    BuiltIn[BuiltIn["BuiltInObjectToWorldNV"] = 5330] = "BuiltInObjectToWorldNV";
-    BuiltIn[BuiltIn["BuiltInWorldToObjectKHR"] = 5331] = "BuiltInWorldToObjectKHR";
-    BuiltIn[BuiltIn["BuiltInWorldToObjectNV"] = 5331] = "BuiltInWorldToObjectNV";
-    BuiltIn[BuiltIn["BuiltInHitTNV"] = 5332] = "BuiltInHitTNV";
-    BuiltIn[BuiltIn["BuiltInHitKindKHR"] = 5333] = "BuiltInHitKindKHR";
-    BuiltIn[BuiltIn["BuiltInHitKindNV"] = 5333] = "BuiltInHitKindNV";
-    BuiltIn[BuiltIn["BuiltInIncomingRayFlagsKHR"] = 5351] = "BuiltInIncomingRayFlagsKHR";
-    BuiltIn[BuiltIn["BuiltInIncomingRayFlagsNV"] = 5351] = "BuiltInIncomingRayFlagsNV";
-    BuiltIn[BuiltIn["BuiltInRayGeometryIndexKHR"] = 5352] = "BuiltInRayGeometryIndexKHR";
-    BuiltIn[BuiltIn["BuiltInWarpsPerSMNV"] = 5374] = "BuiltInWarpsPerSMNV";
-    BuiltIn[BuiltIn["BuiltInSMCountNV"] = 5375] = "BuiltInSMCountNV";
-    BuiltIn[BuiltIn["BuiltInWarpIDNV"] = 5376] = "BuiltInWarpIDNV";
-    BuiltIn[BuiltIn["BuiltInSMIDNV"] = 5377] = "BuiltInSMIDNV";
-    BuiltIn[BuiltIn["BuiltInMax"] = 2147483647] = "BuiltInMax";
+    BuiltIn[BuiltIn["Position"] = 0] = "Position";
+    BuiltIn[BuiltIn["PointSize"] = 1] = "PointSize";
+    BuiltIn[BuiltIn["ClipDistance"] = 3] = "ClipDistance";
+    BuiltIn[BuiltIn["CullDistance"] = 4] = "CullDistance";
+    BuiltIn[BuiltIn["VertexId"] = 5] = "VertexId";
+    BuiltIn[BuiltIn["InstanceId"] = 6] = "InstanceId";
+    BuiltIn[BuiltIn["PrimitiveId"] = 7] = "PrimitiveId";
+    BuiltIn[BuiltIn["InvocationId"] = 8] = "InvocationId";
+    BuiltIn[BuiltIn["Layer"] = 9] = "Layer";
+    BuiltIn[BuiltIn["ViewportIndex"] = 10] = "ViewportIndex";
+    BuiltIn[BuiltIn["TessLevelOuter"] = 11] = "TessLevelOuter";
+    BuiltIn[BuiltIn["TessLevelInner"] = 12] = "TessLevelInner";
+    BuiltIn[BuiltIn["TessCoord"] = 13] = "TessCoord";
+    BuiltIn[BuiltIn["PatchVertices"] = 14] = "PatchVertices";
+    BuiltIn[BuiltIn["FragCoord"] = 15] = "FragCoord";
+    BuiltIn[BuiltIn["PointCoord"] = 16] = "PointCoord";
+    BuiltIn[BuiltIn["FrontFacing"] = 17] = "FrontFacing";
+    BuiltIn[BuiltIn["SampleId"] = 18] = "SampleId";
+    BuiltIn[BuiltIn["SamplePosition"] = 19] = "SamplePosition";
+    BuiltIn[BuiltIn["SampleMask"] = 20] = "SampleMask";
+    BuiltIn[BuiltIn["FragDepth"] = 22] = "FragDepth";
+    BuiltIn[BuiltIn["HelperInvocation"] = 23] = "HelperInvocation";
+    BuiltIn[BuiltIn["NumWorkgroups"] = 24] = "NumWorkgroups";
+    BuiltIn[BuiltIn["WorkgroupSize"] = 25] = "WorkgroupSize";
+    BuiltIn[BuiltIn["WorkgroupId"] = 26] = "WorkgroupId";
+    BuiltIn[BuiltIn["LocalInvocationId"] = 27] = "LocalInvocationId";
+    BuiltIn[BuiltIn["GlobalInvocationId"] = 28] = "GlobalInvocationId";
+    BuiltIn[BuiltIn["LocalInvocationIndex"] = 29] = "LocalInvocationIndex";
+    BuiltIn[BuiltIn["WorkDim"] = 30] = "WorkDim";
+    BuiltIn[BuiltIn["GlobalSize"] = 31] = "GlobalSize";
+    BuiltIn[BuiltIn["EnqueuedWorkgroupSize"] = 32] = "EnqueuedWorkgroupSize";
+    BuiltIn[BuiltIn["GlobalOffset"] = 33] = "GlobalOffset";
+    BuiltIn[BuiltIn["GlobalLinearId"] = 34] = "GlobalLinearId";
+    BuiltIn[BuiltIn["SubgroupSize"] = 36] = "SubgroupSize";
+    BuiltIn[BuiltIn["SubgroupMaxSize"] = 37] = "SubgroupMaxSize";
+    BuiltIn[BuiltIn["NumSubgroups"] = 38] = "NumSubgroups";
+    BuiltIn[BuiltIn["NumEnqueuedSubgroups"] = 39] = "NumEnqueuedSubgroups";
+    BuiltIn[BuiltIn["SubgroupId"] = 40] = "SubgroupId";
+    BuiltIn[BuiltIn["SubgroupLocalInvocationId"] = 41] = "SubgroupLocalInvocationId";
+    BuiltIn[BuiltIn["VertexIndex"] = 42] = "VertexIndex";
+    BuiltIn[BuiltIn["InstanceIndex"] = 43] = "InstanceIndex";
+    BuiltIn[BuiltIn["SubgroupEqMask"] = 4416] = "SubgroupEqMask";
+    BuiltIn[BuiltIn["SubgroupEqMaskKHR"] = 4416] = "SubgroupEqMaskKHR";
+    BuiltIn[BuiltIn["SubgroupGeMask"] = 4417] = "SubgroupGeMask";
+    BuiltIn[BuiltIn["SubgroupGeMaskKHR"] = 4417] = "SubgroupGeMaskKHR";
+    BuiltIn[BuiltIn["SubgroupGtMask"] = 4418] = "SubgroupGtMask";
+    BuiltIn[BuiltIn["SubgroupGtMaskKHR"] = 4418] = "SubgroupGtMaskKHR";
+    BuiltIn[BuiltIn["SubgroupLeMask"] = 4419] = "SubgroupLeMask";
+    BuiltIn[BuiltIn["SubgroupLeMaskKHR"] = 4419] = "SubgroupLeMaskKHR";
+    BuiltIn[BuiltIn["SubgroupLtMask"] = 4420] = "SubgroupLtMask";
+    BuiltIn[BuiltIn["SubgroupLtMaskKHR"] = 4420] = "SubgroupLtMaskKHR";
+    BuiltIn[BuiltIn["BaseVertex"] = 4424] = "BaseVertex";
+    BuiltIn[BuiltIn["BaseInstance"] = 4425] = "BaseInstance";
+    BuiltIn[BuiltIn["DrawIndex"] = 4426] = "DrawIndex";
+    BuiltIn[BuiltIn["PrimitiveShadingRateKHR"] = 4432] = "PrimitiveShadingRateKHR";
+    BuiltIn[BuiltIn["DeviceIndex"] = 4438] = "DeviceIndex";
+    BuiltIn[BuiltIn["ViewIndex"] = 4440] = "ViewIndex";
+    BuiltIn[BuiltIn["ShadingRateKHR"] = 4444] = "ShadingRateKHR";
+    BuiltIn[BuiltIn["BaryCoordNoPerspAMD"] = 4992] = "BaryCoordNoPerspAMD";
+    BuiltIn[BuiltIn["BaryCoordNoPerspCentroidAMD"] = 4993] = "BaryCoordNoPerspCentroidAMD";
+    BuiltIn[BuiltIn["BaryCoordNoPerspSampleAMD"] = 4994] = "BaryCoordNoPerspSampleAMD";
+    BuiltIn[BuiltIn["BaryCoordSmoothAMD"] = 4995] = "BaryCoordSmoothAMD";
+    BuiltIn[BuiltIn["BaryCoordSmoothCentroidAMD"] = 4996] = "BaryCoordSmoothCentroidAMD";
+    BuiltIn[BuiltIn["BaryCoordSmoothSampleAMD"] = 4997] = "BaryCoordSmoothSampleAMD";
+    BuiltIn[BuiltIn["BaryCoordPullModelAMD"] = 4998] = "BaryCoordPullModelAMD";
+    BuiltIn[BuiltIn["FragStencilRefEXT"] = 5014] = "FragStencilRefEXT";
+    BuiltIn[BuiltIn["ViewportMaskNV"] = 5253] = "ViewportMaskNV";
+    BuiltIn[BuiltIn["SecondaryPositionNV"] = 5257] = "SecondaryPositionNV";
+    BuiltIn[BuiltIn["SecondaryViewportMaskNV"] = 5258] = "SecondaryViewportMaskNV";
+    BuiltIn[BuiltIn["PositionPerViewNV"] = 5261] = "PositionPerViewNV";
+    BuiltIn[BuiltIn["ViewportMaskPerViewNV"] = 5262] = "ViewportMaskPerViewNV";
+    BuiltIn[BuiltIn["FullyCoveredEXT"] = 5264] = "FullyCoveredEXT";
+    BuiltIn[BuiltIn["TaskCountNV"] = 5274] = "TaskCountNV";
+    BuiltIn[BuiltIn["PrimitiveCountNV"] = 5275] = "PrimitiveCountNV";
+    BuiltIn[BuiltIn["PrimitiveIndicesNV"] = 5276] = "PrimitiveIndicesNV";
+    BuiltIn[BuiltIn["ClipDistancePerViewNV"] = 5277] = "ClipDistancePerViewNV";
+    BuiltIn[BuiltIn["CullDistancePerViewNV"] = 5278] = "CullDistancePerViewNV";
+    BuiltIn[BuiltIn["LayerPerViewNV"] = 5279] = "LayerPerViewNV";
+    BuiltIn[BuiltIn["MeshViewCountNV"] = 5280] = "MeshViewCountNV";
+    BuiltIn[BuiltIn["MeshViewIndicesNV"] = 5281] = "MeshViewIndicesNV";
+    BuiltIn[BuiltIn["BaryCoordNV"] = 5286] = "BaryCoordNV";
+    BuiltIn[BuiltIn["BaryCoordNoPerspNV"] = 5287] = "BaryCoordNoPerspNV";
+    BuiltIn[BuiltIn["FragSizeEXT"] = 5292] = "FragSizeEXT";
+    BuiltIn[BuiltIn["FragmentSizeNV"] = 5292] = "FragmentSizeNV";
+    BuiltIn[BuiltIn["FragInvocationCountEXT"] = 5293] = "FragInvocationCountEXT";
+    BuiltIn[BuiltIn["InvocationsPerPixelNV"] = 5293] = "InvocationsPerPixelNV";
+    BuiltIn[BuiltIn["LaunchIdKHR"] = 5319] = "LaunchIdKHR";
+    BuiltIn[BuiltIn["LaunchIdNV"] = 5319] = "LaunchIdNV";
+    BuiltIn[BuiltIn["LaunchSizeKHR"] = 5320] = "LaunchSizeKHR";
+    BuiltIn[BuiltIn["LaunchSizeNV"] = 5320] = "LaunchSizeNV";
+    BuiltIn[BuiltIn["WorldRayOriginKHR"] = 5321] = "WorldRayOriginKHR";
+    BuiltIn[BuiltIn["WorldRayOriginNV"] = 5321] = "WorldRayOriginNV";
+    BuiltIn[BuiltIn["WorldRayDirectionKHR"] = 5322] = "WorldRayDirectionKHR";
+    BuiltIn[BuiltIn["WorldRayDirectionNV"] = 5322] = "WorldRayDirectionNV";
+    BuiltIn[BuiltIn["ObjectRayOriginKHR"] = 5323] = "ObjectRayOriginKHR";
+    BuiltIn[BuiltIn["ObjectRayOriginNV"] = 5323] = "ObjectRayOriginNV";
+    BuiltIn[BuiltIn["ObjectRayDirectionKHR"] = 5324] = "ObjectRayDirectionKHR";
+    BuiltIn[BuiltIn["ObjectRayDirectionNV"] = 5324] = "ObjectRayDirectionNV";
+    BuiltIn[BuiltIn["RayTminKHR"] = 5325] = "RayTminKHR";
+    BuiltIn[BuiltIn["RayTminNV"] = 5325] = "RayTminNV";
+    BuiltIn[BuiltIn["RayTmaxKHR"] = 5326] = "RayTmaxKHR";
+    BuiltIn[BuiltIn["RayTmaxNV"] = 5326] = "RayTmaxNV";
+    BuiltIn[BuiltIn["InstanceCustomIndexKHR"] = 5327] = "InstanceCustomIndexKHR";
+    BuiltIn[BuiltIn["InstanceCustomIndexNV"] = 5327] = "InstanceCustomIndexNV";
+    BuiltIn[BuiltIn["ObjectToWorldKHR"] = 5330] = "ObjectToWorldKHR";
+    BuiltIn[BuiltIn["ObjectToWorldNV"] = 5330] = "ObjectToWorldNV";
+    BuiltIn[BuiltIn["WorldToObjectKHR"] = 5331] = "WorldToObjectKHR";
+    BuiltIn[BuiltIn["WorldToObjectNV"] = 5331] = "WorldToObjectNV";
+    BuiltIn[BuiltIn["HitTNV"] = 5332] = "HitTNV";
+    BuiltIn[BuiltIn["HitKindKHR"] = 5333] = "HitKindKHR";
+    BuiltIn[BuiltIn["HitKindNV"] = 5333] = "HitKindNV";
+    BuiltIn[BuiltIn["IncomingRayFlagsKHR"] = 5351] = "IncomingRayFlagsKHR";
+    BuiltIn[BuiltIn["IncomingRayFlagsNV"] = 5351] = "IncomingRayFlagsNV";
+    BuiltIn[BuiltIn["RayGeometryIndexKHR"] = 5352] = "RayGeometryIndexKHR";
+    BuiltIn[BuiltIn["WarpsPerSMNV"] = 5374] = "WarpsPerSMNV";
+    BuiltIn[BuiltIn["SMCountNV"] = 5375] = "SMCountNV";
+    BuiltIn[BuiltIn["WarpIDNV"] = 5376] = "WarpIDNV";
+    BuiltIn[BuiltIn["SMIDNV"] = 5377] = "SMIDNV";
+    BuiltIn[BuiltIn["Max"] = 2147483647] = "Max";
 })(BuiltIn || (BuiltIn = {}));
 
 var FPRoundingMode;
 (function (FPRoundingMode) {
-    FPRoundingMode[FPRoundingMode["FPRoundingModeRTE"] = 0] = "FPRoundingModeRTE";
-    FPRoundingMode[FPRoundingMode["FPRoundingModeRTZ"] = 1] = "FPRoundingModeRTZ";
-    FPRoundingMode[FPRoundingMode["FPRoundingModeRTP"] = 2] = "FPRoundingModeRTP";
-    FPRoundingMode[FPRoundingMode["FPRoundingModeRTN"] = 3] = "FPRoundingModeRTN";
-    FPRoundingMode[FPRoundingMode["FPRoundingModeMax"] = 2147483647] = "FPRoundingModeMax";
+    FPRoundingMode[FPRoundingMode["RTE"] = 0] = "RTE";
+    FPRoundingMode[FPRoundingMode["RTZ"] = 1] = "RTZ";
+    FPRoundingMode[FPRoundingMode["RTP"] = 2] = "RTP";
+    FPRoundingMode[FPRoundingMode["RTN"] = 3] = "RTN";
+    FPRoundingMode[FPRoundingMode["Max"] = 2147483647] = "Max";
 })(FPRoundingMode || (FPRoundingMode = {}));
 
 var ExtendedDecorations;
 (function (ExtendedDecorations) {
     // Marks if a buffer block is re-packed, i.e. member declaration might be subject to PhysicalTypeID remapping and padding.
-    ExtendedDecorations[ExtendedDecorations["SPIRVCrossDecorationBufferBlockRepacked"] = 0] = "SPIRVCrossDecorationBufferBlockRepacked";
+    ExtendedDecorations[ExtendedDecorations["BufferBlockRepacked"] = 0] = "BufferBlockRepacked";
     // A type in a buffer block might be declared with a different physical type than the logical type.
     // If this is not set, PhysicalTypeID === the SPIR-V type as declared.
-    ExtendedDecorations[ExtendedDecorations["SPIRVCrossDecorationPhysicalTypeID"] = 1] = "SPIRVCrossDecorationPhysicalTypeID";
+    ExtendedDecorations[ExtendedDecorations["PhysicalTypeID"] = 1] = "PhysicalTypeID";
     // Marks if the physical type is to be declared with tight packing rules, i.e. packed_floatN on MSL and friends.
     // If this is set, PhysicalTypeID might also be set. It can be set to same as logical type if all we're doing
     // is converting float3 to packed_float3 for example.
     // If this is marked on a struct, it means the struct itself must use only Packed types for all its members.
-    ExtendedDecorations[ExtendedDecorations["SPIRVCrossDecorationPhysicalTypePacked"] = 2] = "SPIRVCrossDecorationPhysicalTypePacked";
+    ExtendedDecorations[ExtendedDecorations["PhysicalTypePacked"] = 2] = "PhysicalTypePacked";
     // The padding in bytes before declaring this struct member.
     // If used on a struct type, marks the target size of a struct.
-    ExtendedDecorations[ExtendedDecorations["SPIRVCrossDecorationPaddingTarget"] = 3] = "SPIRVCrossDecorationPaddingTarget";
+    ExtendedDecorations[ExtendedDecorations["PaddingTarget"] = 3] = "PaddingTarget";
     ExtendedDecorations[ExtendedDecorations["SPIRVCrossDecorationInterfaceMemberIndex"] = 4] = "SPIRVCrossDecorationInterfaceMemberIndex";
     ExtendedDecorations[ExtendedDecorations["SPIRVCrossDecorationInterfaceOrigID"] = 5] = "SPIRVCrossDecorationInterfaceOrigID";
     ExtendedDecorations[ExtendedDecorations["SPIRVCrossDecorationResourceIndexPrimary"] = 6] = "SPIRVCrossDecorationResourceIndexPrimary";
@@ -544,41 +544,42 @@ var ExtendedDecorations;
     ExtendedDecorations[ExtendedDecorations["SPIRVCrossDecorationResourceIndexTertiary"] = 8] = "SPIRVCrossDecorationResourceIndexTertiary";
     ExtendedDecorations[ExtendedDecorations["SPIRVCrossDecorationResourceIndexQuaternary"] = 9] = "SPIRVCrossDecorationResourceIndexQuaternary";
     // Marks a buffer block for using explicit offsets (GLSL/HLSL).
-    ExtendedDecorations[ExtendedDecorations["SPIRVCrossDecorationExplicitOffset"] = 10] = "SPIRVCrossDecorationExplicitOffset";
+    ExtendedDecorations[ExtendedDecorations["ExplicitOffset"] = 10] = "ExplicitOffset";
     // Apply to a variable in the Input storage class; marks it as holding the base group passed to vkCmdDispatchBase(),
     // or the base vertex and instance indices passed to vkCmdDrawIndexed().
     // In MSL, this is used to adjust the WorkgroupId and GlobalInvocationId variables in compute shaders,
     // and to hold the BaseVertex and BaseInstance variables in vertex shaders.
-    ExtendedDecorations[ExtendedDecorations["SPIRVCrossDecorationBuiltInDispatchBase"] = 11] = "SPIRVCrossDecorationBuiltInDispatchBase";
+    ExtendedDecorations[ExtendedDecorations["BuiltInDispatchBase"] = 11] = "BuiltInDispatchBase";
     // Apply to a variable that is a function parameter; marks it as being a "dynamic"
     // combined image-sampler. In MSL, this is used when a function parameter might hold
     // either a regular combined image-sampler or one that has an attached sampler
     // Y'CbCr conversion.
-    ExtendedDecorations[ExtendedDecorations["SPIRVCrossDecorationDynamicImageSampler"] = 12] = "SPIRVCrossDecorationDynamicImageSampler";
+    ExtendedDecorations[ExtendedDecorations["DynamicImageSampler"] = 12] = "DynamicImageSampler";
     // Apply to a variable in the Input storage class; marks it as holding the size of the stage
     // input grid.
     // In MSL, this is used to hold the vertex and instance counts in a tessellation pipeline
     // vertex shader.
-    ExtendedDecorations[ExtendedDecorations["SPIRVCrossDecorationBuiltInStageInputSize"] = 13] = "SPIRVCrossDecorationBuiltInStageInputSize";
+    ExtendedDecorations[ExtendedDecorations["BuiltInStageInputSize"] = 13] = "BuiltInStageInputSize";
     // Apply to any access chain of a tessellation I/O variable; stores the type of the sub-object
     // that was chained to, as recorded in the input variable itself. This is used in case the pointer
     // is itself used as the base of an access chain, to calculate the original type of the sub-object
     // chained to, in case a swizzle needs to be applied. This should not happen normally with valid
     // SPIR-V, but the MSL backend can change the type of input variables, necessitating the
     // addition of swizzles to keep the generated code compiling.
-    ExtendedDecorations[ExtendedDecorations["SPIRVCrossDecorationTessIOOriginalInputTypeID"] = 14] = "SPIRVCrossDecorationTessIOOriginalInputTypeID";
+    ExtendedDecorations[ExtendedDecorations["TessIOOriginalInputTypeID"] = 14] = "TessIOOriginalInputTypeID";
     // Apply to any access chain of an interface variable used with pull-model interpolation, where the variable is a
     // vector but the resulting pointer is a scalar; stores the component index that is to be accessed by the chain.
     // This is used when emitting calls to interpolation functions on the chain in MSL: in this case, the component
     // must be applied to the result, since pull-model interpolants in MSL cannot be swizzled directly, but the
     // results of interpolation can.
-    ExtendedDecorations[ExtendedDecorations["SPIRVCrossDecorationInterpolantComponentExpr"] = 15] = "SPIRVCrossDecorationInterpolantComponentExpr";
-    ExtendedDecorations[ExtendedDecorations["SPIRVCrossDecorationCount"] = 16] = "SPIRVCrossDecorationCount";
+    ExtendedDecorations[ExtendedDecorations["InterpolantComponentExpr"] = 15] = "InterpolantComponentExpr";
+    ExtendedDecorations[ExtendedDecorations["Count"] = 16] = "Count";
 })(ExtendedDecorations || (ExtendedDecorations = {}));
+
 var MetaDecorationExtended = /** @class */ (function () {
     function MetaDecorationExtended() {
         this.flags = new Bitset();
-        this.values = new Uint32Array(ExtendedDecorations.SPIRVCrossDecorationCount);
+        this.values = new Uint32Array(ExtendedDecorations.Count);
     }
     MetaDecorationExtended.prototype.clone = function () {
         return defaultClone(MetaDecorationExtended, this);
@@ -591,7 +592,7 @@ var MetaDecoration = /** @class */ (function () {
         this.qualified_alias = "";
         this.hlsl_semantic = "";
         this.decoration_flags = new Bitset();
-        this.builtin_type = BuiltIn.BuiltInMax;
+        this.builtin_type = BuiltIn.Max;
         this.location = 0;
         this.component = 0;
         this.set = 0;
@@ -605,7 +606,7 @@ var MetaDecoration = /** @class */ (function () {
         this.input_attachment = 0;
         this.spec_id = 0;
         this.index = 0;
-        this.fp_rounding_mode = FPRoundingMode.FPRoundingModeMax;
+        this.fp_rounding_mode = FPRoundingMode.Max;
         this.builtin = false;
         this.extended = new MetaDecorationExtended();
     }
@@ -659,35 +660,35 @@ var IVariant = /** @class */ (function () {
 
 var StorageClass;
 (function (StorageClass) {
-    StorageClass[StorageClass["StorageClassUniformConstant"] = 0] = "StorageClassUniformConstant";
-    StorageClass[StorageClass["StorageClassInput"] = 1] = "StorageClassInput";
-    StorageClass[StorageClass["StorageClassUniform"] = 2] = "StorageClassUniform";
-    StorageClass[StorageClass["StorageClassOutput"] = 3] = "StorageClassOutput";
-    StorageClass[StorageClass["StorageClassWorkgroup"] = 4] = "StorageClassWorkgroup";
-    StorageClass[StorageClass["StorageClassCrossWorkgroup"] = 5] = "StorageClassCrossWorkgroup";
-    StorageClass[StorageClass["StorageClassPrivate"] = 6] = "StorageClassPrivate";
-    StorageClass[StorageClass["StorageClassFunction"] = 7] = "StorageClassFunction";
-    StorageClass[StorageClass["StorageClassGeneric"] = 8] = "StorageClassGeneric";
-    StorageClass[StorageClass["StorageClassPushConstant"] = 9] = "StorageClassPushConstant";
-    StorageClass[StorageClass["StorageClassAtomicCounter"] = 10] = "StorageClassAtomicCounter";
-    StorageClass[StorageClass["StorageClassImage"] = 11] = "StorageClassImage";
-    StorageClass[StorageClass["StorageClassStorageBuffer"] = 12] = "StorageClassStorageBuffer";
-    StorageClass[StorageClass["StorageClassCallableDataKHR"] = 5328] = "StorageClassCallableDataKHR";
-    StorageClass[StorageClass["StorageClassCallableDataNV"] = 5328] = "StorageClassCallableDataNV";
-    StorageClass[StorageClass["StorageClassIncomingCallableDataKHR"] = 5329] = "StorageClassIncomingCallableDataKHR";
-    StorageClass[StorageClass["StorageClassIncomingCallableDataNV"] = 5329] = "StorageClassIncomingCallableDataNV";
-    StorageClass[StorageClass["StorageClassRayPayloadKHR"] = 5338] = "StorageClassRayPayloadKHR";
-    StorageClass[StorageClass["StorageClassRayPayloadNV"] = 5338] = "StorageClassRayPayloadNV";
-    StorageClass[StorageClass["StorageClassHitAttributeKHR"] = 5339] = "StorageClassHitAttributeKHR";
-    StorageClass[StorageClass["StorageClassHitAttributeNV"] = 5339] = "StorageClassHitAttributeNV";
-    StorageClass[StorageClass["StorageClassIncomingRayPayloadKHR"] = 5342] = "StorageClassIncomingRayPayloadKHR";
-    StorageClass[StorageClass["StorageClassIncomingRayPayloadNV"] = 5342] = "StorageClassIncomingRayPayloadNV";
-    StorageClass[StorageClass["StorageClassShaderRecordBufferKHR"] = 5343] = "StorageClassShaderRecordBufferKHR";
-    StorageClass[StorageClass["StorageClassShaderRecordBufferNV"] = 5343] = "StorageClassShaderRecordBufferNV";
-    StorageClass[StorageClass["StorageClassPhysicalStorageBuffer"] = 5349] = "StorageClassPhysicalStorageBuffer";
-    StorageClass[StorageClass["StorageClassPhysicalStorageBufferEXT"] = 5349] = "StorageClassPhysicalStorageBufferEXT";
-    StorageClass[StorageClass["StorageClassCodeSectionINTEL"] = 5605] = "StorageClassCodeSectionINTEL";
-    StorageClass[StorageClass["StorageClassMax"] = 2147483647] = "StorageClassMax";
+    StorageClass[StorageClass["UniformConstant"] = 0] = "UniformConstant";
+    StorageClass[StorageClass["Input"] = 1] = "Input";
+    StorageClass[StorageClass["Uniform"] = 2] = "Uniform";
+    StorageClass[StorageClass["Output"] = 3] = "Output";
+    StorageClass[StorageClass["Workgroup"] = 4] = "Workgroup";
+    StorageClass[StorageClass["CrossWorkgroup"] = 5] = "CrossWorkgroup";
+    StorageClass[StorageClass["Private"] = 6] = "Private";
+    StorageClass[StorageClass["Function"] = 7] = "Function";
+    StorageClass[StorageClass["Generic"] = 8] = "Generic";
+    StorageClass[StorageClass["PushConstant"] = 9] = "PushConstant";
+    StorageClass[StorageClass["AtomicCounter"] = 10] = "AtomicCounter";
+    StorageClass[StorageClass["Image"] = 11] = "Image";
+    StorageClass[StorageClass["StorageBuffer"] = 12] = "StorageBuffer";
+    StorageClass[StorageClass["CallableDataKHR"] = 5328] = "CallableDataKHR";
+    StorageClass[StorageClass["CallableDataNV"] = 5328] = "CallableDataNV";
+    StorageClass[StorageClass["IncomingCallableDataKHR"] = 5329] = "IncomingCallableDataKHR";
+    StorageClass[StorageClass["IncomingCallableDataNV"] = 5329] = "IncomingCallableDataNV";
+    StorageClass[StorageClass["RayPayloadKHR"] = 5338] = "RayPayloadKHR";
+    StorageClass[StorageClass["RayPayloadNV"] = 5338] = "RayPayloadNV";
+    StorageClass[StorageClass["HitAttributeKHR"] = 5339] = "HitAttributeKHR";
+    StorageClass[StorageClass["HitAttributeNV"] = 5339] = "HitAttributeNV";
+    StorageClass[StorageClass["IncomingRayPayloadKHR"] = 5342] = "IncomingRayPayloadKHR";
+    StorageClass[StorageClass["IncomingRayPayloadNV"] = 5342] = "IncomingRayPayloadNV";
+    StorageClass[StorageClass["ShaderRecordBufferKHR"] = 5343] = "ShaderRecordBufferKHR";
+    StorageClass[StorageClass["ShaderRecordBufferNV"] = 5343] = "ShaderRecordBufferNV";
+    StorageClass[StorageClass["PhysicalStorageBuffer"] = 5349] = "PhysicalStorageBuffer";
+    StorageClass[StorageClass["PhysicalStorageBufferEXT"] = 5349] = "PhysicalStorageBufferEXT";
+    StorageClass[StorageClass["CodeSectionINTEL"] = 5605] = "CodeSectionINTEL";
+    StorageClass[StorageClass["Max"] = 2147483647] = "Max";
 })(StorageClass || (StorageClass = {}));
 
 var SPIRVariable = /** @class */ (function (_super) {
@@ -698,7 +699,7 @@ var SPIRVariable = /** @class */ (function (_super) {
         if (basevariable === void 0) { basevariable = 0; }
         var _this = _super.call(this) || this;
         _this.basetype = 0;
-        _this.storage = StorageClass.StorageClassGeneric;
+        _this.storage = StorageClass.Generic;
         _this.decoration = 0;
         _this.initializer = 0;
         _this.basevariable = 0;
@@ -737,38 +738,38 @@ var SPIRVariable = /** @class */ (function (_super) {
         }
         return _this;
     }
-    SPIRVariable.type = Types.TypeVariable;
+    SPIRVariable.type = Types.Variable;
     return SPIRVariable;
 }(IVariant));
 
-var SPIRTypeBaseType;
-(function (SPIRTypeBaseType) {
-    SPIRTypeBaseType[SPIRTypeBaseType["Unknown"] = 0] = "Unknown";
-    SPIRTypeBaseType[SPIRTypeBaseType["Void"] = 1] = "Void";
-    SPIRTypeBaseType[SPIRTypeBaseType["Boolean"] = 2] = "Boolean";
-    SPIRTypeBaseType[SPIRTypeBaseType["SByte"] = 3] = "SByte";
-    SPIRTypeBaseType[SPIRTypeBaseType["UByte"] = 4] = "UByte";
-    SPIRTypeBaseType[SPIRTypeBaseType["Short"] = 5] = "Short";
-    SPIRTypeBaseType[SPIRTypeBaseType["UShort"] = 6] = "UShort";
-    SPIRTypeBaseType[SPIRTypeBaseType["Int"] = 7] = "Int";
-    SPIRTypeBaseType[SPIRTypeBaseType["UInt"] = 8] = "UInt";
-    SPIRTypeBaseType[SPIRTypeBaseType["Int64"] = 9] = "Int64";
-    SPIRTypeBaseType[SPIRTypeBaseType["UInt64"] = 10] = "UInt64";
-    SPIRTypeBaseType[SPIRTypeBaseType["AtomicCounter"] = 11] = "AtomicCounter";
-    SPIRTypeBaseType[SPIRTypeBaseType["Half"] = 12] = "Half";
-    SPIRTypeBaseType[SPIRTypeBaseType["Float"] = 13] = "Float";
-    SPIRTypeBaseType[SPIRTypeBaseType["Double"] = 14] = "Double";
-    SPIRTypeBaseType[SPIRTypeBaseType["Struct"] = 15] = "Struct";
-    SPIRTypeBaseType[SPIRTypeBaseType["Image"] = 16] = "Image";
-    SPIRTypeBaseType[SPIRTypeBaseType["SampledImage"] = 17] = "SampledImage";
-    SPIRTypeBaseType[SPIRTypeBaseType["Sampler"] = 18] = "Sampler";
-    SPIRTypeBaseType[SPIRTypeBaseType["AccelerationStructure"] = 19] = "AccelerationStructure";
-    SPIRTypeBaseType[SPIRTypeBaseType["RayQuery"] = 20] = "RayQuery";
+var SPIRBaseType;
+(function (SPIRBaseType) {
+    SPIRBaseType[SPIRBaseType["Unknown"] = 0] = "Unknown";
+    SPIRBaseType[SPIRBaseType["Void"] = 1] = "Void";
+    SPIRBaseType[SPIRBaseType["Boolean"] = 2] = "Boolean";
+    SPIRBaseType[SPIRBaseType["SByte"] = 3] = "SByte";
+    SPIRBaseType[SPIRBaseType["UByte"] = 4] = "UByte";
+    SPIRBaseType[SPIRBaseType["Short"] = 5] = "Short";
+    SPIRBaseType[SPIRBaseType["UShort"] = 6] = "UShort";
+    SPIRBaseType[SPIRBaseType["Int"] = 7] = "Int";
+    SPIRBaseType[SPIRBaseType["UInt"] = 8] = "UInt";
+    SPIRBaseType[SPIRBaseType["Int64"] = 9] = "Int64";
+    SPIRBaseType[SPIRBaseType["UInt64"] = 10] = "UInt64";
+    SPIRBaseType[SPIRBaseType["AtomicCounter"] = 11] = "AtomicCounter";
+    SPIRBaseType[SPIRBaseType["Half"] = 12] = "Half";
+    SPIRBaseType[SPIRBaseType["Float"] = 13] = "Float";
+    SPIRBaseType[SPIRBaseType["Double"] = 14] = "Double";
+    SPIRBaseType[SPIRBaseType["Struct"] = 15] = "Struct";
+    SPIRBaseType[SPIRBaseType["Image"] = 16] = "Image";
+    SPIRBaseType[SPIRBaseType["SampledImage"] = 17] = "SampledImage";
+    SPIRBaseType[SPIRBaseType["Sampler"] = 18] = "Sampler";
+    SPIRBaseType[SPIRBaseType["AccelerationStructure"] = 19] = "AccelerationStructure";
+    SPIRBaseType[SPIRBaseType["RayQuery"] = 20] = "RayQuery";
     // Keep internal types at the end.
-    SPIRTypeBaseType[SPIRTypeBaseType["ControlPointArray"] = 21] = "ControlPointArray";
-    SPIRTypeBaseType[SPIRTypeBaseType["Interpolant"] = 22] = "Interpolant";
-    SPIRTypeBaseType[SPIRTypeBaseType["Char"] = 23] = "Char";
-})(SPIRTypeBaseType || (SPIRTypeBaseType = {}));
+    SPIRBaseType[SPIRBaseType["ControlPointArray"] = 21] = "ControlPointArray";
+    SPIRBaseType[SPIRBaseType["Interpolant"] = 22] = "Interpolant";
+    SPIRBaseType[SPIRBaseType["Char"] = 23] = "Char";
+})(SPIRBaseType || (SPIRBaseType = {}));
 var SPIRTypeImageType = /** @class */ (function () {
     function SPIRTypeImageType() {
     }
@@ -784,7 +785,7 @@ var SPIRType = /** @class */ (function (_super) {
     function SPIRType(other) {
         var _this = _super.call(this) || this;
         // Scalar/vector/matrix support.
-        _this.basetype = SPIRTypeBaseType.Unknown;
+        _this.basetype = SPIRBaseType.Unknown;
         _this.width = 0;
         _this.vecsize = 1;
         _this.columns = 1;
@@ -801,7 +802,7 @@ var SPIRType = /** @class */ (function (_super) {
         _this.pointer_depth = 0;
         _this.pointer = false;
         _this.forward_pointer = false;
-        _this.storage = StorageClass.StorageClassGeneric;
+        _this.storage = StorageClass.Generic;
         _this.member_types = [];
         // If member order has been rewritten to handle certain scenarios with Offset,
         // allow codegen to rewrite the index.
@@ -820,7 +821,7 @@ var SPIRType = /** @class */ (function (_super) {
             defaultCopy(other, _this);
         return _this;
     }
-    SPIRType.type = Types.TypeType;
+    SPIRType.type = Types.Type;
     return SPIRType;
 }(IVariant));
 
@@ -1138,7 +1139,7 @@ var SPIRConstant = /** @class */ (function (_super) {
             }
         }
     };
-    SPIRConstant.type = Types.TypeConstant;
+    SPIRConstant.type = Types.Constant;
     return SPIRConstant;
 }(IVariant));
 
@@ -1157,7 +1158,7 @@ var SPIRConstantOp = /** @class */ (function (_super) {
         }
         return _this;
     }
-    SPIRConstantOp.type = Types.TypeConstantOp;
+    SPIRConstantOp.type = Types.ConstantOp;
     return SPIRConstantOp;
 }(IVariant));
 
@@ -1299,7 +1300,7 @@ var SPIRFunction = /** @class */ (function (_super) {
         // Arguments are read-only until proven otherwise.
         this.arguments.push(new SPIRFunctionParameter(parameter_type, id, 0, 0, alias_global_variable));
     };
-    SPIRFunction.type = Types.TypeFunction;
+    SPIRFunction.type = Types.Function;
     return SPIRFunction;
 }(IVariant));
 
@@ -1314,7 +1315,7 @@ var SPIRFunctionPrototype = /** @class */ (function (_super) {
             _this.return_type = param0;
         return _this;
     }
-    SPIRFunctionPrototype.type = Types.TypeFunctionPrototype;
+    SPIRFunctionPrototype.type = Types.FunctionPrototype;
     return SPIRFunctionPrototype;
 }(IVariant));
 
@@ -1332,17 +1333,17 @@ var SPIRBlockTerminator;
 })(SPIRBlockTerminator || (SPIRBlockTerminator = {}));
 var SPIRBlockMerge;
 (function (SPIRBlockMerge) {
-    SPIRBlockMerge[SPIRBlockMerge["MergeNone"] = 0] = "MergeNone";
-    SPIRBlockMerge[SPIRBlockMerge["MergeLoop"] = 1] = "MergeLoop";
-    SPIRBlockMerge[SPIRBlockMerge["MergeSelection"] = 2] = "MergeSelection";
+    SPIRBlockMerge[SPIRBlockMerge["None"] = 0] = "None";
+    SPIRBlockMerge[SPIRBlockMerge["Loop"] = 1] = "Loop";
+    SPIRBlockMerge[SPIRBlockMerge["Selection"] = 2] = "Selection";
 })(SPIRBlockMerge || (SPIRBlockMerge = {}));
 var SPIRBlockHints;
 (function (SPIRBlockHints) {
-    SPIRBlockHints[SPIRBlockHints["HintNone"] = 0] = "HintNone";
-    SPIRBlockHints[SPIRBlockHints["HintUnroll"] = 1] = "HintUnroll";
-    SPIRBlockHints[SPIRBlockHints["HintDontUnroll"] = 2] = "HintDontUnroll";
-    SPIRBlockHints[SPIRBlockHints["HintFlatten"] = 3] = "HintFlatten";
-    SPIRBlockHints[SPIRBlockHints["HintDontFlatten"] = 4] = "HintDontFlatten";
+    SPIRBlockHints[SPIRBlockHints["None"] = 0] = "None";
+    SPIRBlockHints[SPIRBlockHints["Unroll"] = 1] = "Unroll";
+    SPIRBlockHints[SPIRBlockHints["DontUnroll"] = 2] = "DontUnroll";
+    SPIRBlockHints[SPIRBlockHints["Flatten"] = 3] = "Flatten";
+    SPIRBlockHints[SPIRBlockHints["DontFlatten"] = 4] = "DontFlatten";
 })(SPIRBlockHints || (SPIRBlockHints = {}));
 var SPIRBlockMethod;
 (function (SPIRBlockMethod) {
@@ -1390,8 +1391,8 @@ var SPIRBlock = /** @class */ (function (_super) {
     function SPIRBlock(other) {
         var _this = _super.call(this) || this;
         _this.terminator = SPIRBlockTerminator.Unknown;
-        _this.merge = SPIRBlockMerge.MergeNone;
-        _this.hint = SPIRBlockHints.HintNone;
+        _this.merge = SPIRBlockMerge.None;
+        _this.hint = SPIRBlockHints.None;
         _this.next_block = 0;
         _this.merge_block = 0;
         _this.continue_block = 0;
@@ -1439,7 +1440,7 @@ var SPIRBlock = /** @class */ (function (_super) {
             defaultCopy(other, _this);
         return _this;
     }
-    SPIRBlock.type = Types.TypeBlock;
+    SPIRBlock.type = Types.Block;
     SPIRBlock.NoDominator = 0xffffffff;
     return SPIRBlock;
 }(IVariant));
@@ -1464,7 +1465,7 @@ var SPIRExtension = /** @class */ (function (_super) {
             _this.ext = param0;
         return _this;
     }
-    SPIRExtension.type = Types.TypeExtension;
+    SPIRExtension.type = Types.Extension;
     return SPIRExtension;
 }(IVariant));
 
@@ -1509,7 +1510,7 @@ var SPIRExpression = /** @class */ (function (_super) {
         }
         return _this;
     }
-    SPIRExpression.type = Types.TypeExpression;
+    SPIRExpression.type = Types.Expression;
     return SPIRExpression;
 }(IVariant));
 
@@ -1527,7 +1528,7 @@ var SPIRCombinedImageSampler = /** @class */ (function (_super) {
         }
         return _this;
     }
-    SPIRCombinedImageSampler.type = Types.TypeCombinedImageSampler;
+    SPIRCombinedImageSampler.type = Types.CombinedImageSampler;
     return SPIRCombinedImageSampler;
 }(IVariant));
 
@@ -1556,7 +1557,7 @@ var SPIRAccessChain = /** @class */ (function (_super) {
         }
         return _this;
     }
-    SPIRAccessChain.type = Types.TypeAccessChain;
+    SPIRAccessChain.type = Types.AccessChain;
     return SPIRAccessChain;
 }(IVariant));
 
@@ -1570,7 +1571,7 @@ var SPIRUndef = /** @class */ (function (_super) {
             _this.basetype = param0;
         return _this;
     }
-    SPIRUndef.type = Types.TypeUndef;
+    SPIRUndef.type = Types.Undef;
     return SPIRUndef;
 }(IVariant));
 
@@ -1584,7 +1585,7 @@ var SPIRString = /** @class */ (function (_super) {
             _this.str = param0;
         return _this;
     }
-    SPIRString.type = Types.TypeString;
+    SPIRString.type = Types.String;
     return SPIRString;
 }(IVariant));
 
@@ -1600,691 +1601,681 @@ function convert_to_string(value, int64_type, long_long_literal_suffix) {
 
 var AddressingModel;
 (function (AddressingModel) {
-    AddressingModel[AddressingModel["AddressingModelLogical"] = 0] = "AddressingModelLogical";
-    AddressingModel[AddressingModel["AddressingModelPhysical32"] = 1] = "AddressingModelPhysical32";
-    AddressingModel[AddressingModel["AddressingModelPhysical64"] = 2] = "AddressingModelPhysical64";
-    AddressingModel[AddressingModel["AddressingModelPhysicalStorageBuffer64"] = 5348] = "AddressingModelPhysicalStorageBuffer64";
-    AddressingModel[AddressingModel["AddressingModelPhysicalStorageBuffer64EXT"] = 5348] = "AddressingModelPhysicalStorageBuffer64EXT";
-    AddressingModel[AddressingModel["AddressingModelMax"] = 2147483647] = "AddressingModelMax";
+    AddressingModel[AddressingModel["Logical"] = 0] = "Logical";
+    AddressingModel[AddressingModel["Physical32"] = 1] = "Physical32";
+    AddressingModel[AddressingModel["Physical64"] = 2] = "Physical64";
+    AddressingModel[AddressingModel["PhysicalStorageBuffer64"] = 5348] = "PhysicalStorageBuffer64";
+    AddressingModel[AddressingModel["PhysicalStorageBuffer64EXT"] = 5348] = "PhysicalStorageBuffer64EXT";
+    AddressingModel[AddressingModel["Max"] = 2147483647] = "Max";
 })(AddressingModel || (AddressingModel = {}));
 
 var MemoryModel;
 (function (MemoryModel) {
-    MemoryModel[MemoryModel["MemoryModelSimple"] = 0] = "MemoryModelSimple";
-    MemoryModel[MemoryModel["MemoryModelGLSL450"] = 1] = "MemoryModelGLSL450";
-    MemoryModel[MemoryModel["MemoryModelOpenCL"] = 2] = "MemoryModelOpenCL";
-    MemoryModel[MemoryModel["MemoryModelVulkan"] = 3] = "MemoryModelVulkan";
-    MemoryModel[MemoryModel["MemoryModelVulkanKHR"] = 3] = "MemoryModelVulkanKHR";
-    MemoryModel[MemoryModel["MemoryModelMax"] = 2147483647] = "MemoryModelMax";
+    MemoryModel[MemoryModel["Simple"] = 0] = "Simple";
+    MemoryModel[MemoryModel["GLSL450"] = 1] = "GLSL450";
+    MemoryModel[MemoryModel["OpenCL"] = 2] = "OpenCL";
+    MemoryModel[MemoryModel["Vulkan"] = 3] = "Vulkan";
+    MemoryModel[MemoryModel["VulkanKHR"] = 3] = "VulkanKHR";
+    MemoryModel[MemoryModel["Max"] = 2147483647] = "Max";
 })(MemoryModel || (MemoryModel = {}));
 
 var Decoration;
 (function (Decoration) {
-    Decoration[Decoration["DecorationRelaxedPrecision"] = 0] = "DecorationRelaxedPrecision";
-    Decoration[Decoration["DecorationSpecId"] = 1] = "DecorationSpecId";
-    Decoration[Decoration["DecorationBlock"] = 2] = "DecorationBlock";
-    Decoration[Decoration["DecorationBufferBlock"] = 3] = "DecorationBufferBlock";
-    Decoration[Decoration["DecorationRowMajor"] = 4] = "DecorationRowMajor";
-    Decoration[Decoration["DecorationColMajor"] = 5] = "DecorationColMajor";
-    Decoration[Decoration["DecorationArrayStride"] = 6] = "DecorationArrayStride";
-    Decoration[Decoration["DecorationMatrixStride"] = 7] = "DecorationMatrixStride";
-    Decoration[Decoration["DecorationGLSLShared"] = 8] = "DecorationGLSLShared";
-    Decoration[Decoration["DecorationGLSLPacked"] = 9] = "DecorationGLSLPacked";
-    Decoration[Decoration["DecorationCPacked"] = 10] = "DecorationCPacked";
-    Decoration[Decoration["DecorationBuiltIn"] = 11] = "DecorationBuiltIn";
-    Decoration[Decoration["DecorationNoPerspective"] = 13] = "DecorationNoPerspective";
-    Decoration[Decoration["DecorationFlat"] = 14] = "DecorationFlat";
-    Decoration[Decoration["DecorationPatch"] = 15] = "DecorationPatch";
-    Decoration[Decoration["DecorationCentroid"] = 16] = "DecorationCentroid";
-    Decoration[Decoration["DecorationSample"] = 17] = "DecorationSample";
-    Decoration[Decoration["DecorationInvariant"] = 18] = "DecorationInvariant";
-    Decoration[Decoration["DecorationRestrict"] = 19] = "DecorationRestrict";
-    Decoration[Decoration["DecorationAliased"] = 20] = "DecorationAliased";
-    Decoration[Decoration["DecorationVolatile"] = 21] = "DecorationVolatile";
-    Decoration[Decoration["DecorationConstant"] = 22] = "DecorationConstant";
-    Decoration[Decoration["DecorationCoherent"] = 23] = "DecorationCoherent";
-    Decoration[Decoration["DecorationNonWritable"] = 24] = "DecorationNonWritable";
-    Decoration[Decoration["DecorationNonReadable"] = 25] = "DecorationNonReadable";
-    Decoration[Decoration["DecorationUniform"] = 26] = "DecorationUniform";
-    Decoration[Decoration["DecorationUniformId"] = 27] = "DecorationUniformId";
-    Decoration[Decoration["DecorationSaturatedConversion"] = 28] = "DecorationSaturatedConversion";
-    Decoration[Decoration["DecorationStream"] = 29] = "DecorationStream";
-    Decoration[Decoration["DecorationLocation"] = 30] = "DecorationLocation";
-    Decoration[Decoration["DecorationComponent"] = 31] = "DecorationComponent";
-    Decoration[Decoration["DecorationIndex"] = 32] = "DecorationIndex";
-    Decoration[Decoration["DecorationBinding"] = 33] = "DecorationBinding";
-    Decoration[Decoration["DecorationDescriptorSet"] = 34] = "DecorationDescriptorSet";
-    Decoration[Decoration["DecorationOffset"] = 35] = "DecorationOffset";
-    Decoration[Decoration["DecorationXfbBuffer"] = 36] = "DecorationXfbBuffer";
-    Decoration[Decoration["DecorationXfbStride"] = 37] = "DecorationXfbStride";
-    Decoration[Decoration["DecorationFuncParamAttr"] = 38] = "DecorationFuncParamAttr";
-    Decoration[Decoration["DecorationFPRoundingMode"] = 39] = "DecorationFPRoundingMode";
-    Decoration[Decoration["DecorationFPFastMathMode"] = 40] = "DecorationFPFastMathMode";
-    Decoration[Decoration["DecorationLinkageAttributes"] = 41] = "DecorationLinkageAttributes";
-    Decoration[Decoration["DecorationNoContraction"] = 42] = "DecorationNoContraction";
-    Decoration[Decoration["DecorationInputAttachmentIndex"] = 43] = "DecorationInputAttachmentIndex";
-    Decoration[Decoration["DecorationAlignment"] = 44] = "DecorationAlignment";
-    Decoration[Decoration["DecorationMaxByteOffset"] = 45] = "DecorationMaxByteOffset";
-    Decoration[Decoration["DecorationAlignmentId"] = 46] = "DecorationAlignmentId";
-    Decoration[Decoration["DecorationMaxByteOffsetId"] = 47] = "DecorationMaxByteOffsetId";
-    Decoration[Decoration["DecorationNoSignedWrap"] = 4469] = "DecorationNoSignedWrap";
-    Decoration[Decoration["DecorationNoUnsignedWrap"] = 4470] = "DecorationNoUnsignedWrap";
-    Decoration[Decoration["DecorationExplicitInterpAMD"] = 4999] = "DecorationExplicitInterpAMD";
-    Decoration[Decoration["DecorationOverrideCoverageNV"] = 5248] = "DecorationOverrideCoverageNV";
-    Decoration[Decoration["DecorationPassthroughNV"] = 5250] = "DecorationPassthroughNV";
-    Decoration[Decoration["DecorationViewportRelativeNV"] = 5252] = "DecorationViewportRelativeNV";
-    Decoration[Decoration["DecorationSecondaryViewportRelativeNV"] = 5256] = "DecorationSecondaryViewportRelativeNV";
-    Decoration[Decoration["DecorationPerPrimitiveNV"] = 5271] = "DecorationPerPrimitiveNV";
-    Decoration[Decoration["DecorationPerViewNV"] = 5272] = "DecorationPerViewNV";
-    Decoration[Decoration["DecorationPerTaskNV"] = 5273] = "DecorationPerTaskNV";
-    Decoration[Decoration["DecorationPerVertexNV"] = 5285] = "DecorationPerVertexNV";
-    Decoration[Decoration["DecorationNonUniform"] = 5300] = "DecorationNonUniform";
-    Decoration[Decoration["DecorationNonUniformEXT"] = 5300] = "DecorationNonUniformEXT";
-    Decoration[Decoration["DecorationRestrictPointer"] = 5355] = "DecorationRestrictPointer";
-    Decoration[Decoration["DecorationRestrictPointerEXT"] = 5355] = "DecorationRestrictPointerEXT";
-    Decoration[Decoration["DecorationAliasedPointer"] = 5356] = "DecorationAliasedPointer";
-    Decoration[Decoration["DecorationAliasedPointerEXT"] = 5356] = "DecorationAliasedPointerEXT";
-    Decoration[Decoration["DecorationReferencedIndirectlyINTEL"] = 5602] = "DecorationReferencedIndirectlyINTEL";
-    Decoration[Decoration["DecorationCounterBuffer"] = 5634] = "DecorationCounterBuffer";
-    Decoration[Decoration["DecorationHlslCounterBufferGOOGLE"] = 5634] = "DecorationHlslCounterBufferGOOGLE";
-    Decoration[Decoration["DecorationHlslSemanticGOOGLE"] = 5635] = "DecorationHlslSemanticGOOGLE";
-    Decoration[Decoration["DecorationUserSemantic"] = 5635] = "DecorationUserSemantic";
-    Decoration[Decoration["DecorationUserTypeGOOGLE"] = 5636] = "DecorationUserTypeGOOGLE";
-    Decoration[Decoration["DecorationRegisterINTEL"] = 5825] = "DecorationRegisterINTEL";
-    Decoration[Decoration["DecorationMemoryINTEL"] = 5826] = "DecorationMemoryINTEL";
-    Decoration[Decoration["DecorationNumbanksINTEL"] = 5827] = "DecorationNumbanksINTEL";
-    Decoration[Decoration["DecorationBankwidthINTEL"] = 5828] = "DecorationBankwidthINTEL";
-    Decoration[Decoration["DecorationMaxPrivateCopiesINTEL"] = 5829] = "DecorationMaxPrivateCopiesINTEL";
-    Decoration[Decoration["DecorationSinglepumpINTEL"] = 5830] = "DecorationSinglepumpINTEL";
-    Decoration[Decoration["DecorationDoublepumpINTEL"] = 5831] = "DecorationDoublepumpINTEL";
-    Decoration[Decoration["DecorationMaxReplicatesINTEL"] = 5832] = "DecorationMaxReplicatesINTEL";
-    Decoration[Decoration["DecorationSimpleDualPortINTEL"] = 5833] = "DecorationSimpleDualPortINTEL";
-    Decoration[Decoration["DecorationMergeINTEL"] = 5834] = "DecorationMergeINTEL";
-    Decoration[Decoration["DecorationBankBitsINTEL"] = 5835] = "DecorationBankBitsINTEL";
-    Decoration[Decoration["DecorationForcePow2DepthINTEL"] = 5836] = "DecorationForcePow2DepthINTEL";
-    Decoration[Decoration["DecorationMax"] = 2147483647] = "DecorationMax";
+    Decoration[Decoration["RelaxedPrecision"] = 0] = "RelaxedPrecision";
+    Decoration[Decoration["SpecId"] = 1] = "SpecId";
+    Decoration[Decoration["Block"] = 2] = "Block";
+    Decoration[Decoration["BufferBlock"] = 3] = "BufferBlock";
+    Decoration[Decoration["RowMajor"] = 4] = "RowMajor";
+    Decoration[Decoration["ColMajor"] = 5] = "ColMajor";
+    Decoration[Decoration["ArrayStride"] = 6] = "ArrayStride";
+    Decoration[Decoration["MatrixStride"] = 7] = "MatrixStride";
+    Decoration[Decoration["GLSLShared"] = 8] = "GLSLShared";
+    Decoration[Decoration["GLSLPacked"] = 9] = "GLSLPacked";
+    Decoration[Decoration["CPacked"] = 10] = "CPacked";
+    Decoration[Decoration["BuiltIn"] = 11] = "BuiltIn";
+    Decoration[Decoration["NoPerspective"] = 13] = "NoPerspective";
+    Decoration[Decoration["Flat"] = 14] = "Flat";
+    Decoration[Decoration["Patch"] = 15] = "Patch";
+    Decoration[Decoration["Centroid"] = 16] = "Centroid";
+    Decoration[Decoration["Sample"] = 17] = "Sample";
+    Decoration[Decoration["Invariant"] = 18] = "Invariant";
+    Decoration[Decoration["Restrict"] = 19] = "Restrict";
+    Decoration[Decoration["Aliased"] = 20] = "Aliased";
+    Decoration[Decoration["Volatile"] = 21] = "Volatile";
+    Decoration[Decoration["Constant"] = 22] = "Constant";
+    Decoration[Decoration["Coherent"] = 23] = "Coherent";
+    Decoration[Decoration["NonWritable"] = 24] = "NonWritable";
+    Decoration[Decoration["NonReadable"] = 25] = "NonReadable";
+    Decoration[Decoration["Uniform"] = 26] = "Uniform";
+    Decoration[Decoration["UniformId"] = 27] = "UniformId";
+    Decoration[Decoration["SaturatedConversion"] = 28] = "SaturatedConversion";
+    Decoration[Decoration["Stream"] = 29] = "Stream";
+    Decoration[Decoration["Location"] = 30] = "Location";
+    Decoration[Decoration["Component"] = 31] = "Component";
+    Decoration[Decoration["Index"] = 32] = "Index";
+    Decoration[Decoration["Binding"] = 33] = "Binding";
+    Decoration[Decoration["DescriptorSet"] = 34] = "DescriptorSet";
+    Decoration[Decoration["Offset"] = 35] = "Offset";
+    Decoration[Decoration["XfbBuffer"] = 36] = "XfbBuffer";
+    Decoration[Decoration["XfbStride"] = 37] = "XfbStride";
+    Decoration[Decoration["FuncParamAttr"] = 38] = "FuncParamAttr";
+    Decoration[Decoration["FPRoundingMode"] = 39] = "FPRoundingMode";
+    Decoration[Decoration["FPFastMathMode"] = 40] = "FPFastMathMode";
+    Decoration[Decoration["LinkageAttributes"] = 41] = "LinkageAttributes";
+    Decoration[Decoration["NoContraction"] = 42] = "NoContraction";
+    Decoration[Decoration["InputAttachmentIndex"] = 43] = "InputAttachmentIndex";
+    Decoration[Decoration["Alignment"] = 44] = "Alignment";
+    Decoration[Decoration["MaxByteOffset"] = 45] = "MaxByteOffset";
+    Decoration[Decoration["AlignmentId"] = 46] = "AlignmentId";
+    Decoration[Decoration["MaxByteOffsetId"] = 47] = "MaxByteOffsetId";
+    Decoration[Decoration["NoSignedWrap"] = 4469] = "NoSignedWrap";
+    Decoration[Decoration["NoUnsignedWrap"] = 4470] = "NoUnsignedWrap";
+    Decoration[Decoration["ExplicitInterpAMD"] = 4999] = "ExplicitInterpAMD";
+    Decoration[Decoration["OverrideCoverageNV"] = 5248] = "OverrideCoverageNV";
+    Decoration[Decoration["PassthroughNV"] = 5250] = "PassthroughNV";
+    Decoration[Decoration["ViewportRelativeNV"] = 5252] = "ViewportRelativeNV";
+    Decoration[Decoration["SecondaryViewportRelativeNV"] = 5256] = "SecondaryViewportRelativeNV";
+    Decoration[Decoration["PerPrimitiveNV"] = 5271] = "PerPrimitiveNV";
+    Decoration[Decoration["PerViewNV"] = 5272] = "PerViewNV";
+    Decoration[Decoration["PerTaskNV"] = 5273] = "PerTaskNV";
+    Decoration[Decoration["PerVertexNV"] = 5285] = "PerVertexNV";
+    Decoration[Decoration["NonUniform"] = 5300] = "NonUniform";
+    Decoration[Decoration["NonUniformEXT"] = 5300] = "NonUniformEXT";
+    Decoration[Decoration["RestrictPointer"] = 5355] = "RestrictPointer";
+    Decoration[Decoration["RestrictPointerEXT"] = 5355] = "RestrictPointerEXT";
+    Decoration[Decoration["AliasedPointer"] = 5356] = "AliasedPointer";
+    Decoration[Decoration["AliasedPointerEXT"] = 5356] = "AliasedPointerEXT";
+    Decoration[Decoration["ReferencedIndirectlyINTEL"] = 5602] = "ReferencedIndirectlyINTEL";
+    Decoration[Decoration["CounterBuffer"] = 5634] = "CounterBuffer";
+    Decoration[Decoration["HlslCounterBufferGOOGLE"] = 5634] = "HlslCounterBufferGOOGLE";
+    Decoration[Decoration["HlslSemanticGOOGLE"] = 5635] = "HlslSemanticGOOGLE";
+    Decoration[Decoration["UserSemantic"] = 5635] = "UserSemantic";
+    Decoration[Decoration["UserTypeGOOGLE"] = 5636] = "UserTypeGOOGLE";
+    Decoration[Decoration["RegisterINTEL"] = 5825] = "RegisterINTEL";
+    Decoration[Decoration["MemoryINTEL"] = 5826] = "MemoryINTEL";
+    Decoration[Decoration["NumbanksINTEL"] = 5827] = "NumbanksINTEL";
+    Decoration[Decoration["BankwidthINTEL"] = 5828] = "BankwidthINTEL";
+    Decoration[Decoration["MaxPrivateCopiesINTEL"] = 5829] = "MaxPrivateCopiesINTEL";
+    Decoration[Decoration["SinglepumpINTEL"] = 5830] = "SinglepumpINTEL";
+    Decoration[Decoration["DoublepumpINTEL"] = 5831] = "DoublepumpINTEL";
+    Decoration[Decoration["MaxReplicatesINTEL"] = 5832] = "MaxReplicatesINTEL";
+    Decoration[Decoration["SimpleDualPortINTEL"] = 5833] = "SimpleDualPortINTEL";
+    Decoration[Decoration["MergeINTEL"] = 5834] = "MergeINTEL";
+    Decoration[Decoration["BankBitsINTEL"] = 5835] = "BankBitsINTEL";
+    Decoration[Decoration["ForcePow2DepthINTEL"] = 5836] = "ForcePow2DepthINTEL";
+    Decoration[Decoration["Max"] = 2147483647] = "Max";
 })(Decoration || (Decoration = {}));
 
 var Op;
 (function (Op) {
-    Op[Op["OpNop"] = 0] = "OpNop";
-    Op[Op["OpUndef"] = 1] = "OpUndef";
-    Op[Op["OpSourceContinued"] = 2] = "OpSourceContinued";
-    Op[Op["OpSource"] = 3] = "OpSource";
-    Op[Op["OpSourceExtension"] = 4] = "OpSourceExtension";
-    Op[Op["OpName"] = 5] = "OpName";
-    Op[Op["OpMemberName"] = 6] = "OpMemberName";
-    Op[Op["OpString"] = 7] = "OpString";
-    Op[Op["OpLine"] = 8] = "OpLine";
-    Op[Op["OpExtension"] = 10] = "OpExtension";
-    Op[Op["OpExtInstImport"] = 11] = "OpExtInstImport";
-    Op[Op["OpExtInst"] = 12] = "OpExtInst";
-    Op[Op["OpMemoryModel"] = 14] = "OpMemoryModel";
-    Op[Op["OpEntryPoint"] = 15] = "OpEntryPoint";
-    Op[Op["OpExecutionMode"] = 16] = "OpExecutionMode";
-    Op[Op["OpCapability"] = 17] = "OpCapability";
-    Op[Op["OpTypeVoid"] = 19] = "OpTypeVoid";
-    Op[Op["OpTypeBool"] = 20] = "OpTypeBool";
-    Op[Op["OpTypeInt"] = 21] = "OpTypeInt";
-    Op[Op["OpTypeFloat"] = 22] = "OpTypeFloat";
-    Op[Op["OpTypeVector"] = 23] = "OpTypeVector";
-    Op[Op["OpTypeMatrix"] = 24] = "OpTypeMatrix";
-    Op[Op["OpTypeImage"] = 25] = "OpTypeImage";
-    Op[Op["OpTypeSampler"] = 26] = "OpTypeSampler";
-    Op[Op["OpTypeSampledImage"] = 27] = "OpTypeSampledImage";
-    Op[Op["OpTypeArray"] = 28] = "OpTypeArray";
-    Op[Op["OpTypeRuntimeArray"] = 29] = "OpTypeRuntimeArray";
-    Op[Op["OpTypeStruct"] = 30] = "OpTypeStruct";
-    Op[Op["OpTypeOpaque"] = 31] = "OpTypeOpaque";
-    Op[Op["OpTypePointer"] = 32] = "OpTypePointer";
-    Op[Op["OpTypeFunction"] = 33] = "OpTypeFunction";
-    Op[Op["OpTypeEvent"] = 34] = "OpTypeEvent";
-    Op[Op["OpTypeDeviceEvent"] = 35] = "OpTypeDeviceEvent";
-    Op[Op["OpTypeReserveId"] = 36] = "OpTypeReserveId";
-    Op[Op["OpTypeQueue"] = 37] = "OpTypeQueue";
-    Op[Op["OpTypePipe"] = 38] = "OpTypePipe";
-    Op[Op["OpTypeForwardPointer"] = 39] = "OpTypeForwardPointer";
-    Op[Op["OpConstantTrue"] = 41] = "OpConstantTrue";
-    Op[Op["OpConstantFalse"] = 42] = "OpConstantFalse";
-    Op[Op["OpConstant"] = 43] = "OpConstant";
-    Op[Op["OpConstantComposite"] = 44] = "OpConstantComposite";
-    Op[Op["OpConstantSampler"] = 45] = "OpConstantSampler";
-    Op[Op["OpConstantNull"] = 46] = "OpConstantNull";
-    Op[Op["OpSpecConstantTrue"] = 48] = "OpSpecConstantTrue";
-    Op[Op["OpSpecConstantFalse"] = 49] = "OpSpecConstantFalse";
-    Op[Op["OpSpecConstant"] = 50] = "OpSpecConstant";
-    Op[Op["OpSpecConstantComposite"] = 51] = "OpSpecConstantComposite";
-    Op[Op["OpSpecConstantOp"] = 52] = "OpSpecConstantOp";
-    Op[Op["OpFunction"] = 54] = "OpFunction";
-    Op[Op["OpFunctionParameter"] = 55] = "OpFunctionParameter";
-    Op[Op["OpFunctionEnd"] = 56] = "OpFunctionEnd";
-    Op[Op["OpFunctionCall"] = 57] = "OpFunctionCall";
-    Op[Op["OpVariable"] = 59] = "OpVariable";
-    Op[Op["OpImageTexelPointer"] = 60] = "OpImageTexelPointer";
-    Op[Op["OpLoad"] = 61] = "OpLoad";
-    Op[Op["OpStore"] = 62] = "OpStore";
-    Op[Op["OpCopyMemory"] = 63] = "OpCopyMemory";
-    Op[Op["OpCopyMemorySized"] = 64] = "OpCopyMemorySized";
-    Op[Op["OpAccessChain"] = 65] = "OpAccessChain";
-    Op[Op["OpInBoundsAccessChain"] = 66] = "OpInBoundsAccessChain";
-    Op[Op["OpPtrAccessChain"] = 67] = "OpPtrAccessChain";
-    Op[Op["OpArrayLength"] = 68] = "OpArrayLength";
-    Op[Op["OpGenericPtrMemSemantics"] = 69] = "OpGenericPtrMemSemantics";
-    Op[Op["OpInBoundsPtrAccessChain"] = 70] = "OpInBoundsPtrAccessChain";
-    Op[Op["OpDecorate"] = 71] = "OpDecorate";
-    Op[Op["OpMemberDecorate"] = 72] = "OpMemberDecorate";
-    Op[Op["OpDecorationGroup"] = 73] = "OpDecorationGroup";
-    Op[Op["OpGroupDecorate"] = 74] = "OpGroupDecorate";
-    Op[Op["OpGroupMemberDecorate"] = 75] = "OpGroupMemberDecorate";
-    Op[Op["OpVectorExtractDynamic"] = 77] = "OpVectorExtractDynamic";
-    Op[Op["OpVectorInsertDynamic"] = 78] = "OpVectorInsertDynamic";
-    Op[Op["OpVectorShuffle"] = 79] = "OpVectorShuffle";
-    Op[Op["OpCompositeConstruct"] = 80] = "OpCompositeConstruct";
-    Op[Op["OpCompositeExtract"] = 81] = "OpCompositeExtract";
-    Op[Op["OpCompositeInsert"] = 82] = "OpCompositeInsert";
-    Op[Op["OpCopyObject"] = 83] = "OpCopyObject";
-    Op[Op["OpTranspose"] = 84] = "OpTranspose";
-    Op[Op["OpSampledImage"] = 86] = "OpSampledImage";
-    Op[Op["OpImageSampleImplicitLod"] = 87] = "OpImageSampleImplicitLod";
-    Op[Op["OpImageSampleExplicitLod"] = 88] = "OpImageSampleExplicitLod";
-    Op[Op["OpImageSampleDrefImplicitLod"] = 89] = "OpImageSampleDrefImplicitLod";
-    Op[Op["OpImageSampleDrefExplicitLod"] = 90] = "OpImageSampleDrefExplicitLod";
-    Op[Op["OpImageSampleProjImplicitLod"] = 91] = "OpImageSampleProjImplicitLod";
-    Op[Op["OpImageSampleProjExplicitLod"] = 92] = "OpImageSampleProjExplicitLod";
-    Op[Op["OpImageSampleProjDrefImplicitLod"] = 93] = "OpImageSampleProjDrefImplicitLod";
-    Op[Op["OpImageSampleProjDrefExplicitLod"] = 94] = "OpImageSampleProjDrefExplicitLod";
-    Op[Op["OpImageFetch"] = 95] = "OpImageFetch";
-    Op[Op["OpImageGather"] = 96] = "OpImageGather";
-    Op[Op["OpImageDrefGather"] = 97] = "OpImageDrefGather";
-    Op[Op["OpImageRead"] = 98] = "OpImageRead";
-    Op[Op["OpImageWrite"] = 99] = "OpImageWrite";
-    Op[Op["OpImage"] = 100] = "OpImage";
-    Op[Op["OpImageQueryFormat"] = 101] = "OpImageQueryFormat";
-    Op[Op["OpImageQueryOrder"] = 102] = "OpImageQueryOrder";
-    Op[Op["OpImageQuerySizeLod"] = 103] = "OpImageQuerySizeLod";
-    Op[Op["OpImageQuerySize"] = 104] = "OpImageQuerySize";
-    Op[Op["OpImageQueryLod"] = 105] = "OpImageQueryLod";
-    Op[Op["OpImageQueryLevels"] = 106] = "OpImageQueryLevels";
-    Op[Op["OpImageQuerySamples"] = 107] = "OpImageQuerySamples";
-    Op[Op["OpConvertFToU"] = 109] = "OpConvertFToU";
-    Op[Op["OpConvertFToS"] = 110] = "OpConvertFToS";
-    Op[Op["OpConvertSToF"] = 111] = "OpConvertSToF";
-    Op[Op["OpConvertUToF"] = 112] = "OpConvertUToF";
-    Op[Op["OpUConvert"] = 113] = "OpUConvert";
-    Op[Op["OpSConvert"] = 114] = "OpSConvert";
-    Op[Op["OpFConvert"] = 115] = "OpFConvert";
-    Op[Op["OpQuantizeToF16"] = 116] = "OpQuantizeToF16";
-    Op[Op["OpConvertPtrToU"] = 117] = "OpConvertPtrToU";
-    Op[Op["OpSatConvertSToU"] = 118] = "OpSatConvertSToU";
-    Op[Op["OpSatConvertUToS"] = 119] = "OpSatConvertUToS";
-    Op[Op["OpConvertUToPtr"] = 120] = "OpConvertUToPtr";
-    Op[Op["OpPtrCastToGeneric"] = 121] = "OpPtrCastToGeneric";
-    Op[Op["OpGenericCastToPtr"] = 122] = "OpGenericCastToPtr";
-    Op[Op["OpGenericCastToPtrExplicit"] = 123] = "OpGenericCastToPtrExplicit";
-    Op[Op["OpBitcast"] = 124] = "OpBitcast";
-    Op[Op["OpSNegate"] = 126] = "OpSNegate";
-    Op[Op["OpFNegate"] = 127] = "OpFNegate";
-    Op[Op["OpIAdd"] = 128] = "OpIAdd";
-    Op[Op["OpFAdd"] = 129] = "OpFAdd";
-    Op[Op["OpISub"] = 130] = "OpISub";
-    Op[Op["OpFSub"] = 131] = "OpFSub";
-    Op[Op["OpIMul"] = 132] = "OpIMul";
-    Op[Op["OpFMul"] = 133] = "OpFMul";
-    Op[Op["OpUDiv"] = 134] = "OpUDiv";
-    Op[Op["OpSDiv"] = 135] = "OpSDiv";
-    Op[Op["OpFDiv"] = 136] = "OpFDiv";
-    Op[Op["OpUMod"] = 137] = "OpUMod";
-    Op[Op["OpSRem"] = 138] = "OpSRem";
-    Op[Op["OpSMod"] = 139] = "OpSMod";
-    Op[Op["OpFRem"] = 140] = "OpFRem";
-    Op[Op["OpFMod"] = 141] = "OpFMod";
-    Op[Op["OpVectorTimesScalar"] = 142] = "OpVectorTimesScalar";
-    Op[Op["OpMatrixTimesScalar"] = 143] = "OpMatrixTimesScalar";
-    Op[Op["OpVectorTimesMatrix"] = 144] = "OpVectorTimesMatrix";
-    Op[Op["OpMatrixTimesVector"] = 145] = "OpMatrixTimesVector";
-    Op[Op["OpMatrixTimesMatrix"] = 146] = "OpMatrixTimesMatrix";
-    Op[Op["OpOuterProduct"] = 147] = "OpOuterProduct";
-    Op[Op["OpDot"] = 148] = "OpDot";
-    Op[Op["OpIAddCarry"] = 149] = "OpIAddCarry";
-    Op[Op["OpISubBorrow"] = 150] = "OpISubBorrow";
-    Op[Op["OpUMulExtended"] = 151] = "OpUMulExtended";
-    Op[Op["OpSMulExtended"] = 152] = "OpSMulExtended";
-    Op[Op["OpAny"] = 154] = "OpAny";
-    Op[Op["OpAll"] = 155] = "OpAll";
-    Op[Op["OpIsNan"] = 156] = "OpIsNan";
-    Op[Op["OpIsInf"] = 157] = "OpIsInf";
-    Op[Op["OpIsFinite"] = 158] = "OpIsFinite";
-    Op[Op["OpIsNormal"] = 159] = "OpIsNormal";
-    Op[Op["OpSignBitSet"] = 160] = "OpSignBitSet";
-    Op[Op["OpLessOrGreater"] = 161] = "OpLessOrGreater";
-    Op[Op["OpOrdered"] = 162] = "OpOrdered";
-    Op[Op["OpUnordered"] = 163] = "OpUnordered";
-    Op[Op["OpLogicalEqual"] = 164] = "OpLogicalEqual";
-    Op[Op["OpLogicalNotEqual"] = 165] = "OpLogicalNotEqual";
-    Op[Op["OpLogicalOr"] = 166] = "OpLogicalOr";
-    Op[Op["OpLogicalAnd"] = 167] = "OpLogicalAnd";
-    Op[Op["OpLogicalNot"] = 168] = "OpLogicalNot";
-    Op[Op["OpSelect"] = 169] = "OpSelect";
-    Op[Op["OpIEqual"] = 170] = "OpIEqual";
-    Op[Op["OpINotEqual"] = 171] = "OpINotEqual";
-    Op[Op["OpUGreaterThan"] = 172] = "OpUGreaterThan";
-    Op[Op["OpSGreaterThan"] = 173] = "OpSGreaterThan";
-    Op[Op["OpUGreaterThanEqual"] = 174] = "OpUGreaterThanEqual";
-    Op[Op["OpSGreaterThanEqual"] = 175] = "OpSGreaterThanEqual";
-    Op[Op["OpULessThan"] = 176] = "OpULessThan";
-    Op[Op["OpSLessThan"] = 177] = "OpSLessThan";
-    Op[Op["OpULessThanEqual"] = 178] = "OpULessThanEqual";
-    Op[Op["OpSLessThanEqual"] = 179] = "OpSLessThanEqual";
-    Op[Op["OpFOrdEqual"] = 180] = "OpFOrdEqual";
-    Op[Op["OpFUnordEqual"] = 181] = "OpFUnordEqual";
-    Op[Op["OpFOrdNotEqual"] = 182] = "OpFOrdNotEqual";
-    Op[Op["OpFUnordNotEqual"] = 183] = "OpFUnordNotEqual";
-    Op[Op["OpFOrdLessThan"] = 184] = "OpFOrdLessThan";
-    Op[Op["OpFUnordLessThan"] = 185] = "OpFUnordLessThan";
-    Op[Op["OpFOrdGreaterThan"] = 186] = "OpFOrdGreaterThan";
-    Op[Op["OpFUnordGreaterThan"] = 187] = "OpFUnordGreaterThan";
-    Op[Op["OpFOrdLessThanEqual"] = 188] = "OpFOrdLessThanEqual";
-    Op[Op["OpFUnordLessThanEqual"] = 189] = "OpFUnordLessThanEqual";
-    Op[Op["OpFOrdGreaterThanEqual"] = 190] = "OpFOrdGreaterThanEqual";
-    Op[Op["OpFUnordGreaterThanEqual"] = 191] = "OpFUnordGreaterThanEqual";
-    Op[Op["OpShiftRightLogical"] = 194] = "OpShiftRightLogical";
-    Op[Op["OpShiftRightArithmetic"] = 195] = "OpShiftRightArithmetic";
-    Op[Op["OpShiftLeftLogical"] = 196] = "OpShiftLeftLogical";
-    Op[Op["OpBitwiseOr"] = 197] = "OpBitwiseOr";
-    Op[Op["OpBitwiseXor"] = 198] = "OpBitwiseXor";
-    Op[Op["OpBitwiseAnd"] = 199] = "OpBitwiseAnd";
-    Op[Op["OpNot"] = 200] = "OpNot";
-    Op[Op["OpBitFieldInsert"] = 201] = "OpBitFieldInsert";
-    Op[Op["OpBitFieldSExtract"] = 202] = "OpBitFieldSExtract";
-    Op[Op["OpBitFieldUExtract"] = 203] = "OpBitFieldUExtract";
-    Op[Op["OpBitReverse"] = 204] = "OpBitReverse";
-    Op[Op["OpBitCount"] = 205] = "OpBitCount";
-    Op[Op["OpDPdx"] = 207] = "OpDPdx";
-    Op[Op["OpDPdy"] = 208] = "OpDPdy";
-    Op[Op["OpFwidth"] = 209] = "OpFwidth";
-    Op[Op["OpDPdxFine"] = 210] = "OpDPdxFine";
-    Op[Op["OpDPdyFine"] = 211] = "OpDPdyFine";
-    Op[Op["OpFwidthFine"] = 212] = "OpFwidthFine";
-    Op[Op["OpDPdxCoarse"] = 213] = "OpDPdxCoarse";
-    Op[Op["OpDPdyCoarse"] = 214] = "OpDPdyCoarse";
-    Op[Op["OpFwidthCoarse"] = 215] = "OpFwidthCoarse";
-    Op[Op["OpEmitVertex"] = 218] = "OpEmitVertex";
-    Op[Op["OpEndPrimitive"] = 219] = "OpEndPrimitive";
-    Op[Op["OpEmitStreamVertex"] = 220] = "OpEmitStreamVertex";
-    Op[Op["OpEndStreamPrimitive"] = 221] = "OpEndStreamPrimitive";
-    Op[Op["OpControlBarrier"] = 224] = "OpControlBarrier";
-    Op[Op["OpMemoryBarrier"] = 225] = "OpMemoryBarrier";
-    Op[Op["OpAtomicLoad"] = 227] = "OpAtomicLoad";
-    Op[Op["OpAtomicStore"] = 228] = "OpAtomicStore";
-    Op[Op["OpAtomicExchange"] = 229] = "OpAtomicExchange";
-    Op[Op["OpAtomicCompareExchange"] = 230] = "OpAtomicCompareExchange";
-    Op[Op["OpAtomicCompareExchangeWeak"] = 231] = "OpAtomicCompareExchangeWeak";
-    Op[Op["OpAtomicIIncrement"] = 232] = "OpAtomicIIncrement";
-    Op[Op["OpAtomicIDecrement"] = 233] = "OpAtomicIDecrement";
-    Op[Op["OpAtomicIAdd"] = 234] = "OpAtomicIAdd";
-    Op[Op["OpAtomicISub"] = 235] = "OpAtomicISub";
-    Op[Op["OpAtomicSMin"] = 236] = "OpAtomicSMin";
-    Op[Op["OpAtomicUMin"] = 237] = "OpAtomicUMin";
-    Op[Op["OpAtomicSMax"] = 238] = "OpAtomicSMax";
-    Op[Op["OpAtomicUMax"] = 239] = "OpAtomicUMax";
-    Op[Op["OpAtomicAnd"] = 240] = "OpAtomicAnd";
-    Op[Op["OpAtomicOr"] = 241] = "OpAtomicOr";
-    Op[Op["OpAtomicXor"] = 242] = "OpAtomicXor";
-    Op[Op["OpPhi"] = 245] = "OpPhi";
-    Op[Op["OpLoopMerge"] = 246] = "OpLoopMerge";
-    Op[Op["OpSelectionMerge"] = 247] = "OpSelectionMerge";
-    Op[Op["OpLabel"] = 248] = "OpLabel";
-    Op[Op["OpBranch"] = 249] = "OpBranch";
-    Op[Op["OpBranchConditional"] = 250] = "OpBranchConditional";
-    Op[Op["OpSwitch"] = 251] = "OpSwitch";
-    Op[Op["OpKill"] = 252] = "OpKill";
-    Op[Op["OpReturn"] = 253] = "OpReturn";
-    Op[Op["OpReturnValue"] = 254] = "OpReturnValue";
-    Op[Op["OpUnreachable"] = 255] = "OpUnreachable";
-    Op[Op["OpLifetimeStart"] = 256] = "OpLifetimeStart";
-    Op[Op["OpLifetimeStop"] = 257] = "OpLifetimeStop";
-    Op[Op["OpGroupAsyncCopy"] = 259] = "OpGroupAsyncCopy";
-    Op[Op["OpGroupWaitEvents"] = 260] = "OpGroupWaitEvents";
-    Op[Op["OpGroupAll"] = 261] = "OpGroupAll";
-    Op[Op["OpGroupAny"] = 262] = "OpGroupAny";
-    Op[Op["OpGroupBroadcast"] = 263] = "OpGroupBroadcast";
-    Op[Op["OpGroupIAdd"] = 264] = "OpGroupIAdd";
-    Op[Op["OpGroupFAdd"] = 265] = "OpGroupFAdd";
-    Op[Op["OpGroupFMin"] = 266] = "OpGroupFMin";
-    Op[Op["OpGroupUMin"] = 267] = "OpGroupUMin";
-    Op[Op["OpGroupSMin"] = 268] = "OpGroupSMin";
-    Op[Op["OpGroupFMax"] = 269] = "OpGroupFMax";
-    Op[Op["OpGroupUMax"] = 270] = "OpGroupUMax";
-    Op[Op["OpGroupSMax"] = 271] = "OpGroupSMax";
-    Op[Op["OpReadPipe"] = 274] = "OpReadPipe";
-    Op[Op["OpWritePipe"] = 275] = "OpWritePipe";
-    Op[Op["OpReservedReadPipe"] = 276] = "OpReservedReadPipe";
-    Op[Op["OpReservedWritePipe"] = 277] = "OpReservedWritePipe";
-    Op[Op["OpReserveReadPipePackets"] = 278] = "OpReserveReadPipePackets";
-    Op[Op["OpReserveWritePipePackets"] = 279] = "OpReserveWritePipePackets";
-    Op[Op["OpCommitReadPipe"] = 280] = "OpCommitReadPipe";
-    Op[Op["OpCommitWritePipe"] = 281] = "OpCommitWritePipe";
-    Op[Op["OpIsValidReserveId"] = 282] = "OpIsValidReserveId";
-    Op[Op["OpGetNumPipePackets"] = 283] = "OpGetNumPipePackets";
-    Op[Op["OpGetMaxPipePackets"] = 284] = "OpGetMaxPipePackets";
-    Op[Op["OpGroupReserveReadPipePackets"] = 285] = "OpGroupReserveReadPipePackets";
-    Op[Op["OpGroupReserveWritePipePackets"] = 286] = "OpGroupReserveWritePipePackets";
-    Op[Op["OpGroupCommitReadPipe"] = 287] = "OpGroupCommitReadPipe";
-    Op[Op["OpGroupCommitWritePipe"] = 288] = "OpGroupCommitWritePipe";
-    Op[Op["OpEnqueueMarker"] = 291] = "OpEnqueueMarker";
-    Op[Op["OpEnqueueKernel"] = 292] = "OpEnqueueKernel";
-    Op[Op["OpGetKernelNDrangeSubGroupCount"] = 293] = "OpGetKernelNDrangeSubGroupCount";
-    Op[Op["OpGetKernelNDrangeMaxSubGroupSize"] = 294] = "OpGetKernelNDrangeMaxSubGroupSize";
-    Op[Op["OpGetKernelWorkGroupSize"] = 295] = "OpGetKernelWorkGroupSize";
-    Op[Op["OpGetKernelPreferredWorkGroupSizeMultiple"] = 296] = "OpGetKernelPreferredWorkGroupSizeMultiple";
-    Op[Op["OpRetainEvent"] = 297] = "OpRetainEvent";
-    Op[Op["OpReleaseEvent"] = 298] = "OpReleaseEvent";
-    Op[Op["OpCreateUserEvent"] = 299] = "OpCreateUserEvent";
-    Op[Op["OpIsValidEvent"] = 300] = "OpIsValidEvent";
-    Op[Op["OpSetUserEventStatus"] = 301] = "OpSetUserEventStatus";
-    Op[Op["OpCaptureEventProfilingInfo"] = 302] = "OpCaptureEventProfilingInfo";
-    Op[Op["OpGetDefaultQueue"] = 303] = "OpGetDefaultQueue";
-    Op[Op["OpBuildNDRange"] = 304] = "OpBuildNDRange";
-    Op[Op["OpImageSparseSampleImplicitLod"] = 305] = "OpImageSparseSampleImplicitLod";
-    Op[Op["OpImageSparseSampleExplicitLod"] = 306] = "OpImageSparseSampleExplicitLod";
-    Op[Op["OpImageSparseSampleDrefImplicitLod"] = 307] = "OpImageSparseSampleDrefImplicitLod";
-    Op[Op["OpImageSparseSampleDrefExplicitLod"] = 308] = "OpImageSparseSampleDrefExplicitLod";
-    Op[Op["OpImageSparseSampleProjImplicitLod"] = 309] = "OpImageSparseSampleProjImplicitLod";
-    Op[Op["OpImageSparseSampleProjExplicitLod"] = 310] = "OpImageSparseSampleProjExplicitLod";
-    Op[Op["OpImageSparseSampleProjDrefImplicitLod"] = 311] = "OpImageSparseSampleProjDrefImplicitLod";
-    Op[Op["OpImageSparseSampleProjDrefExplicitLod"] = 312] = "OpImageSparseSampleProjDrefExplicitLod";
-    Op[Op["OpImageSparseFetch"] = 313] = "OpImageSparseFetch";
-    Op[Op["OpImageSparseGather"] = 314] = "OpImageSparseGather";
-    Op[Op["OpImageSparseDrefGather"] = 315] = "OpImageSparseDrefGather";
-    Op[Op["OpImageSparseTexelsResident"] = 316] = "OpImageSparseTexelsResident";
-    Op[Op["OpNoLine"] = 317] = "OpNoLine";
-    Op[Op["OpAtomicFlagTestAndSet"] = 318] = "OpAtomicFlagTestAndSet";
-    Op[Op["OpAtomicFlagClear"] = 319] = "OpAtomicFlagClear";
-    Op[Op["OpImageSparseRead"] = 320] = "OpImageSparseRead";
-    Op[Op["OpSizeOf"] = 321] = "OpSizeOf";
-    Op[Op["OpTypePipeStorage"] = 322] = "OpTypePipeStorage";
-    Op[Op["OpConstantPipeStorage"] = 323] = "OpConstantPipeStorage";
-    Op[Op["OpCreatePipeFromPipeStorage"] = 324] = "OpCreatePipeFromPipeStorage";
-    Op[Op["OpGetKernelLocalSizeForSubgroupCount"] = 325] = "OpGetKernelLocalSizeForSubgroupCount";
-    Op[Op["OpGetKernelMaxNumSubgroups"] = 326] = "OpGetKernelMaxNumSubgroups";
-    Op[Op["OpTypeNamedBarrier"] = 327] = "OpTypeNamedBarrier";
-    Op[Op["OpNamedBarrierInitialize"] = 328] = "OpNamedBarrierInitialize";
-    Op[Op["OpMemoryNamedBarrier"] = 329] = "OpMemoryNamedBarrier";
-    Op[Op["OpModuleProcessed"] = 330] = "OpModuleProcessed";
-    Op[Op["OpExecutionModeId"] = 331] = "OpExecutionModeId";
-    Op[Op["OpDecorateId"] = 332] = "OpDecorateId";
-    Op[Op["OpGroupNonUniformElect"] = 333] = "OpGroupNonUniformElect";
-    Op[Op["OpGroupNonUniformAll"] = 334] = "OpGroupNonUniformAll";
-    Op[Op["OpGroupNonUniformAny"] = 335] = "OpGroupNonUniformAny";
-    Op[Op["OpGroupNonUniformAllEqual"] = 336] = "OpGroupNonUniformAllEqual";
-    Op[Op["OpGroupNonUniformBroadcast"] = 337] = "OpGroupNonUniformBroadcast";
-    Op[Op["OpGroupNonUniformBroadcastFirst"] = 338] = "OpGroupNonUniformBroadcastFirst";
-    Op[Op["OpGroupNonUniformBallot"] = 339] = "OpGroupNonUniformBallot";
-    Op[Op["OpGroupNonUniformInverseBallot"] = 340] = "OpGroupNonUniformInverseBallot";
-    Op[Op["OpGroupNonUniformBallotBitExtract"] = 341] = "OpGroupNonUniformBallotBitExtract";
-    Op[Op["OpGroupNonUniformBallotBitCount"] = 342] = "OpGroupNonUniformBallotBitCount";
-    Op[Op["OpGroupNonUniformBallotFindLSB"] = 343] = "OpGroupNonUniformBallotFindLSB";
-    Op[Op["OpGroupNonUniformBallotFindMSB"] = 344] = "OpGroupNonUniformBallotFindMSB";
-    Op[Op["OpGroupNonUniformShuffle"] = 345] = "OpGroupNonUniformShuffle";
-    Op[Op["OpGroupNonUniformShuffleXor"] = 346] = "OpGroupNonUniformShuffleXor";
-    Op[Op["OpGroupNonUniformShuffleUp"] = 347] = "OpGroupNonUniformShuffleUp";
-    Op[Op["OpGroupNonUniformShuffleDown"] = 348] = "OpGroupNonUniformShuffleDown";
-    Op[Op["OpGroupNonUniformIAdd"] = 349] = "OpGroupNonUniformIAdd";
-    Op[Op["OpGroupNonUniformFAdd"] = 350] = "OpGroupNonUniformFAdd";
-    Op[Op["OpGroupNonUniformIMul"] = 351] = "OpGroupNonUniformIMul";
-    Op[Op["OpGroupNonUniformFMul"] = 352] = "OpGroupNonUniformFMul";
-    Op[Op["OpGroupNonUniformSMin"] = 353] = "OpGroupNonUniformSMin";
-    Op[Op["OpGroupNonUniformUMin"] = 354] = "OpGroupNonUniformUMin";
-    Op[Op["OpGroupNonUniformFMin"] = 355] = "OpGroupNonUniformFMin";
-    Op[Op["OpGroupNonUniformSMax"] = 356] = "OpGroupNonUniformSMax";
-    Op[Op["OpGroupNonUniformUMax"] = 357] = "OpGroupNonUniformUMax";
-    Op[Op["OpGroupNonUniformFMax"] = 358] = "OpGroupNonUniformFMax";
-    Op[Op["OpGroupNonUniformBitwiseAnd"] = 359] = "OpGroupNonUniformBitwiseAnd";
-    Op[Op["OpGroupNonUniformBitwiseOr"] = 360] = "OpGroupNonUniformBitwiseOr";
-    Op[Op["OpGroupNonUniformBitwiseXor"] = 361] = "OpGroupNonUniformBitwiseXor";
-    Op[Op["OpGroupNonUniformLogicalAnd"] = 362] = "OpGroupNonUniformLogicalAnd";
-    Op[Op["OpGroupNonUniformLogicalOr"] = 363] = "OpGroupNonUniformLogicalOr";
-    Op[Op["OpGroupNonUniformLogicalXor"] = 364] = "OpGroupNonUniformLogicalXor";
-    Op[Op["OpGroupNonUniformQuadBroadcast"] = 365] = "OpGroupNonUniformQuadBroadcast";
-    Op[Op["OpGroupNonUniformQuadSwap"] = 366] = "OpGroupNonUniformQuadSwap";
-    Op[Op["OpCopyLogical"] = 400] = "OpCopyLogical";
-    Op[Op["OpPtrEqual"] = 401] = "OpPtrEqual";
-    Op[Op["OpPtrNotEqual"] = 402] = "OpPtrNotEqual";
-    Op[Op["OpPtrDiff"] = 403] = "OpPtrDiff";
-    Op[Op["OpTerminateInvocation"] = 4416] = "OpTerminateInvocation";
-    Op[Op["OpSubgroupBallotKHR"] = 4421] = "OpSubgroupBallotKHR";
-    Op[Op["OpSubgroupFirstInvocationKHR"] = 4422] = "OpSubgroupFirstInvocationKHR";
-    Op[Op["OpSubgroupAllKHR"] = 4428] = "OpSubgroupAllKHR";
-    Op[Op["OpSubgroupAnyKHR"] = 4429] = "OpSubgroupAnyKHR";
-    Op[Op["OpSubgroupAllEqualKHR"] = 4430] = "OpSubgroupAllEqualKHR";
-    Op[Op["OpSubgroupReadInvocationKHR"] = 4432] = "OpSubgroupReadInvocationKHR";
-    Op[Op["OpTraceRayKHR"] = 4445] = "OpTraceRayKHR";
-    Op[Op["OpExecuteCallableKHR"] = 4446] = "OpExecuteCallableKHR";
-    Op[Op["OpConvertUToAccelerationStructureKHR"] = 4447] = "OpConvertUToAccelerationStructureKHR";
-    Op[Op["OpIgnoreIntersectionKHR"] = 4448] = "OpIgnoreIntersectionKHR";
-    Op[Op["OpTerminateRayKHR"] = 4449] = "OpTerminateRayKHR";
-    Op[Op["OpTypeRayQueryKHR"] = 4472] = "OpTypeRayQueryKHR";
-    Op[Op["OpRayQueryInitializeKHR"] = 4473] = "OpRayQueryInitializeKHR";
-    Op[Op["OpRayQueryTerminateKHR"] = 4474] = "OpRayQueryTerminateKHR";
-    Op[Op["OpRayQueryGenerateIntersectionKHR"] = 4475] = "OpRayQueryGenerateIntersectionKHR";
-    Op[Op["OpRayQueryConfirmIntersectionKHR"] = 4476] = "OpRayQueryConfirmIntersectionKHR";
-    Op[Op["OpRayQueryProceedKHR"] = 4477] = "OpRayQueryProceedKHR";
-    Op[Op["OpRayQueryGetIntersectionTypeKHR"] = 4479] = "OpRayQueryGetIntersectionTypeKHR";
-    Op[Op["OpGroupIAddNonUniformAMD"] = 5000] = "OpGroupIAddNonUniformAMD";
-    Op[Op["OpGroupFAddNonUniformAMD"] = 5001] = "OpGroupFAddNonUniformAMD";
-    Op[Op["OpGroupFMinNonUniformAMD"] = 5002] = "OpGroupFMinNonUniformAMD";
-    Op[Op["OpGroupUMinNonUniformAMD"] = 5003] = "OpGroupUMinNonUniformAMD";
-    Op[Op["OpGroupSMinNonUniformAMD"] = 5004] = "OpGroupSMinNonUniformAMD";
-    Op[Op["OpGroupFMaxNonUniformAMD"] = 5005] = "OpGroupFMaxNonUniformAMD";
-    Op[Op["OpGroupUMaxNonUniformAMD"] = 5006] = "OpGroupUMaxNonUniformAMD";
-    Op[Op["OpGroupSMaxNonUniformAMD"] = 5007] = "OpGroupSMaxNonUniformAMD";
-    Op[Op["OpFragmentMaskFetchAMD"] = 5011] = "OpFragmentMaskFetchAMD";
-    Op[Op["OpFragmentFetchAMD"] = 5012] = "OpFragmentFetchAMD";
-    Op[Op["OpReadClockKHR"] = 5056] = "OpReadClockKHR";
-    Op[Op["OpImageSampleFootprintNV"] = 5283] = "OpImageSampleFootprintNV";
-    Op[Op["OpGroupNonUniformPartitionNV"] = 5296] = "OpGroupNonUniformPartitionNV";
-    Op[Op["OpWritePackedPrimitiveIndices4x8NV"] = 5299] = "OpWritePackedPrimitiveIndices4x8NV";
-    Op[Op["OpReportIntersectionKHR"] = 5334] = "OpReportIntersectionKHR";
-    Op[Op["OpReportIntersectionNV"] = 5334] = "OpReportIntersectionNV";
-    Op[Op["OpIgnoreIntersectionNV"] = 5335] = "OpIgnoreIntersectionNV";
-    Op[Op["OpTerminateRayNV"] = 5336] = "OpTerminateRayNV";
-    Op[Op["OpTraceNV"] = 5337] = "OpTraceNV";
-    Op[Op["OpTypeAccelerationStructureKHR"] = 5341] = "OpTypeAccelerationStructureKHR";
-    Op[Op["OpTypeAccelerationStructureNV"] = 5341] = "OpTypeAccelerationStructureNV";
-    Op[Op["OpExecuteCallableNV"] = 5344] = "OpExecuteCallableNV";
-    Op[Op["OpTypeCooperativeMatrixNV"] = 5358] = "OpTypeCooperativeMatrixNV";
-    Op[Op["OpCooperativeMatrixLoadNV"] = 5359] = "OpCooperativeMatrixLoadNV";
-    Op[Op["OpCooperativeMatrixStoreNV"] = 5360] = "OpCooperativeMatrixStoreNV";
-    Op[Op["OpCooperativeMatrixMulAddNV"] = 5361] = "OpCooperativeMatrixMulAddNV";
-    Op[Op["OpCooperativeMatrixLengthNV"] = 5362] = "OpCooperativeMatrixLengthNV";
-    Op[Op["OpBeginInvocationInterlockEXT"] = 5364] = "OpBeginInvocationInterlockEXT";
-    Op[Op["OpEndInvocationInterlockEXT"] = 5365] = "OpEndInvocationInterlockEXT";
-    Op[Op["OpDemoteToHelperInvocationEXT"] = 5380] = "OpDemoteToHelperInvocationEXT";
-    Op[Op["OpIsHelperInvocationEXT"] = 5381] = "OpIsHelperInvocationEXT";
-    Op[Op["OpSubgroupShuffleINTEL"] = 5571] = "OpSubgroupShuffleINTEL";
-    Op[Op["OpSubgroupShuffleDownINTEL"] = 5572] = "OpSubgroupShuffleDownINTEL";
-    Op[Op["OpSubgroupShuffleUpINTEL"] = 5573] = "OpSubgroupShuffleUpINTEL";
-    Op[Op["OpSubgroupShuffleXorINTEL"] = 5574] = "OpSubgroupShuffleXorINTEL";
-    Op[Op["OpSubgroupBlockReadINTEL"] = 5575] = "OpSubgroupBlockReadINTEL";
-    Op[Op["OpSubgroupBlockWriteINTEL"] = 5576] = "OpSubgroupBlockWriteINTEL";
-    Op[Op["OpSubgroupImageBlockReadINTEL"] = 5577] = "OpSubgroupImageBlockReadINTEL";
-    Op[Op["OpSubgroupImageBlockWriteINTEL"] = 5578] = "OpSubgroupImageBlockWriteINTEL";
-    Op[Op["OpSubgroupImageMediaBlockReadINTEL"] = 5580] = "OpSubgroupImageMediaBlockReadINTEL";
-    Op[Op["OpSubgroupImageMediaBlockWriteINTEL"] = 5581] = "OpSubgroupImageMediaBlockWriteINTEL";
-    Op[Op["OpUCountLeadingZerosINTEL"] = 5585] = "OpUCountLeadingZerosINTEL";
-    Op[Op["OpUCountTrailingZerosINTEL"] = 5586] = "OpUCountTrailingZerosINTEL";
-    Op[Op["OpAbsISubINTEL"] = 5587] = "OpAbsISubINTEL";
-    Op[Op["OpAbsUSubINTEL"] = 5588] = "OpAbsUSubINTEL";
-    Op[Op["OpIAddSatINTEL"] = 5589] = "OpIAddSatINTEL";
-    Op[Op["OpUAddSatINTEL"] = 5590] = "OpUAddSatINTEL";
-    Op[Op["OpIAverageINTEL"] = 5591] = "OpIAverageINTEL";
-    Op[Op["OpUAverageINTEL"] = 5592] = "OpUAverageINTEL";
-    Op[Op["OpIAverageRoundedINTEL"] = 5593] = "OpIAverageRoundedINTEL";
-    Op[Op["OpUAverageRoundedINTEL"] = 5594] = "OpUAverageRoundedINTEL";
-    Op[Op["OpISubSatINTEL"] = 5595] = "OpISubSatINTEL";
-    Op[Op["OpUSubSatINTEL"] = 5596] = "OpUSubSatINTEL";
-    Op[Op["OpIMul32x16INTEL"] = 5597] = "OpIMul32x16INTEL";
-    Op[Op["OpUMul32x16INTEL"] = 5598] = "OpUMul32x16INTEL";
-    Op[Op["OpFunctionPointerINTEL"] = 5600] = "OpFunctionPointerINTEL";
-    Op[Op["OpFunctionPointerCallINTEL"] = 5601] = "OpFunctionPointerCallINTEL";
-    Op[Op["OpDecorateString"] = 5632] = "OpDecorateString";
-    Op[Op["OpDecorateStringGOOGLE"] = 5632] = "OpDecorateStringGOOGLE";
-    Op[Op["OpMemberDecorateString"] = 5633] = "OpMemberDecorateString";
-    Op[Op["OpMemberDecorateStringGOOGLE"] = 5633] = "OpMemberDecorateStringGOOGLE";
-    Op[Op["OpVmeImageINTEL"] = 5699] = "OpVmeImageINTEL";
-    Op[Op["OpTypeVmeImageINTEL"] = 5700] = "OpTypeVmeImageINTEL";
-    Op[Op["OpTypeAvcImePayloadINTEL"] = 5701] = "OpTypeAvcImePayloadINTEL";
-    Op[Op["OpTypeAvcRefPayloadINTEL"] = 5702] = "OpTypeAvcRefPayloadINTEL";
-    Op[Op["OpTypeAvcSicPayloadINTEL"] = 5703] = "OpTypeAvcSicPayloadINTEL";
-    Op[Op["OpTypeAvcMcePayloadINTEL"] = 5704] = "OpTypeAvcMcePayloadINTEL";
-    Op[Op["OpTypeAvcMceResultINTEL"] = 5705] = "OpTypeAvcMceResultINTEL";
-    Op[Op["OpTypeAvcImeResultINTEL"] = 5706] = "OpTypeAvcImeResultINTEL";
-    Op[Op["OpTypeAvcImeResultSingleReferenceStreamoutINTEL"] = 5707] = "OpTypeAvcImeResultSingleReferenceStreamoutINTEL";
-    Op[Op["OpTypeAvcImeResultDualReferenceStreamoutINTEL"] = 5708] = "OpTypeAvcImeResultDualReferenceStreamoutINTEL";
-    Op[Op["OpTypeAvcImeSingleReferenceStreaminINTEL"] = 5709] = "OpTypeAvcImeSingleReferenceStreaminINTEL";
-    Op[Op["OpTypeAvcImeDualReferenceStreaminINTEL"] = 5710] = "OpTypeAvcImeDualReferenceStreaminINTEL";
-    Op[Op["OpTypeAvcRefResultINTEL"] = 5711] = "OpTypeAvcRefResultINTEL";
-    Op[Op["OpTypeAvcSicResultINTEL"] = 5712] = "OpTypeAvcSicResultINTEL";
-    Op[Op["OpSubgroupAvcMceGetDefaultInterBaseMultiReferencePenaltyINTEL"] = 5713] = "OpSubgroupAvcMceGetDefaultInterBaseMultiReferencePenaltyINTEL";
-    Op[Op["OpSubgroupAvcMceSetInterBaseMultiReferencePenaltyINTEL"] = 5714] = "OpSubgroupAvcMceSetInterBaseMultiReferencePenaltyINTEL";
-    Op[Op["OpSubgroupAvcMceGetDefaultInterShapePenaltyINTEL"] = 5715] = "OpSubgroupAvcMceGetDefaultInterShapePenaltyINTEL";
-    Op[Op["OpSubgroupAvcMceSetInterShapePenaltyINTEL"] = 5716] = "OpSubgroupAvcMceSetInterShapePenaltyINTEL";
-    Op[Op["OpSubgroupAvcMceGetDefaultInterDirectionPenaltyINTEL"] = 5717] = "OpSubgroupAvcMceGetDefaultInterDirectionPenaltyINTEL";
-    Op[Op["OpSubgroupAvcMceSetInterDirectionPenaltyINTEL"] = 5718] = "OpSubgroupAvcMceSetInterDirectionPenaltyINTEL";
-    Op[Op["OpSubgroupAvcMceGetDefaultIntraLumaShapePenaltyINTEL"] = 5719] = "OpSubgroupAvcMceGetDefaultIntraLumaShapePenaltyINTEL";
-    Op[Op["OpSubgroupAvcMceGetDefaultInterMotionVectorCostTableINTEL"] = 5720] = "OpSubgroupAvcMceGetDefaultInterMotionVectorCostTableINTEL";
-    Op[Op["OpSubgroupAvcMceGetDefaultHighPenaltyCostTableINTEL"] = 5721] = "OpSubgroupAvcMceGetDefaultHighPenaltyCostTableINTEL";
-    Op[Op["OpSubgroupAvcMceGetDefaultMediumPenaltyCostTableINTEL"] = 5722] = "OpSubgroupAvcMceGetDefaultMediumPenaltyCostTableINTEL";
-    Op[Op["OpSubgroupAvcMceGetDefaultLowPenaltyCostTableINTEL"] = 5723] = "OpSubgroupAvcMceGetDefaultLowPenaltyCostTableINTEL";
-    Op[Op["OpSubgroupAvcMceSetMotionVectorCostFunctionINTEL"] = 5724] = "OpSubgroupAvcMceSetMotionVectorCostFunctionINTEL";
-    Op[Op["OpSubgroupAvcMceGetDefaultIntraLumaModePenaltyINTEL"] = 5725] = "OpSubgroupAvcMceGetDefaultIntraLumaModePenaltyINTEL";
-    Op[Op["OpSubgroupAvcMceGetDefaultNonDcLumaIntraPenaltyINTEL"] = 5726] = "OpSubgroupAvcMceGetDefaultNonDcLumaIntraPenaltyINTEL";
-    Op[Op["OpSubgroupAvcMceGetDefaultIntraChromaModeBasePenaltyINTEL"] = 5727] = "OpSubgroupAvcMceGetDefaultIntraChromaModeBasePenaltyINTEL";
-    Op[Op["OpSubgroupAvcMceSetAcOnlyHaarINTEL"] = 5728] = "OpSubgroupAvcMceSetAcOnlyHaarINTEL";
-    Op[Op["OpSubgroupAvcMceSetSourceInterlacedFieldPolarityINTEL"] = 5729] = "OpSubgroupAvcMceSetSourceInterlacedFieldPolarityINTEL";
-    Op[Op["OpSubgroupAvcMceSetSingleReferenceInterlacedFieldPolarityINTEL"] = 5730] = "OpSubgroupAvcMceSetSingleReferenceInterlacedFieldPolarityINTEL";
-    Op[Op["OpSubgroupAvcMceSetDualReferenceInterlacedFieldPolaritiesINTEL"] = 5731] = "OpSubgroupAvcMceSetDualReferenceInterlacedFieldPolaritiesINTEL";
-    Op[Op["OpSubgroupAvcMceConvertToImePayloadINTEL"] = 5732] = "OpSubgroupAvcMceConvertToImePayloadINTEL";
-    Op[Op["OpSubgroupAvcMceConvertToImeResultINTEL"] = 5733] = "OpSubgroupAvcMceConvertToImeResultINTEL";
-    Op[Op["OpSubgroupAvcMceConvertToRefPayloadINTEL"] = 5734] = "OpSubgroupAvcMceConvertToRefPayloadINTEL";
-    Op[Op["OpSubgroupAvcMceConvertToRefResultINTEL"] = 5735] = "OpSubgroupAvcMceConvertToRefResultINTEL";
-    Op[Op["OpSubgroupAvcMceConvertToSicPayloadINTEL"] = 5736] = "OpSubgroupAvcMceConvertToSicPayloadINTEL";
-    Op[Op["OpSubgroupAvcMceConvertToSicResultINTEL"] = 5737] = "OpSubgroupAvcMceConvertToSicResultINTEL";
-    Op[Op["OpSubgroupAvcMceGetMotionVectorsINTEL"] = 5738] = "OpSubgroupAvcMceGetMotionVectorsINTEL";
-    Op[Op["OpSubgroupAvcMceGetInterDistortionsINTEL"] = 5739] = "OpSubgroupAvcMceGetInterDistortionsINTEL";
-    Op[Op["OpSubgroupAvcMceGetBestInterDistortionsINTEL"] = 5740] = "OpSubgroupAvcMceGetBestInterDistortionsINTEL";
-    Op[Op["OpSubgroupAvcMceGetInterMajorShapeINTEL"] = 5741] = "OpSubgroupAvcMceGetInterMajorShapeINTEL";
-    Op[Op["OpSubgroupAvcMceGetInterMinorShapeINTEL"] = 5742] = "OpSubgroupAvcMceGetInterMinorShapeINTEL";
-    Op[Op["OpSubgroupAvcMceGetInterDirectionsINTEL"] = 5743] = "OpSubgroupAvcMceGetInterDirectionsINTEL";
-    Op[Op["OpSubgroupAvcMceGetInterMotionVectorCountINTEL"] = 5744] = "OpSubgroupAvcMceGetInterMotionVectorCountINTEL";
-    Op[Op["OpSubgroupAvcMceGetInterReferenceIdsINTEL"] = 5745] = "OpSubgroupAvcMceGetInterReferenceIdsINTEL";
-    Op[Op["OpSubgroupAvcMceGetInterReferenceInterlacedFieldPolaritiesINTEL"] = 5746] = "OpSubgroupAvcMceGetInterReferenceInterlacedFieldPolaritiesINTEL";
-    Op[Op["OpSubgroupAvcImeInitializeINTEL"] = 5747] = "OpSubgroupAvcImeInitializeINTEL";
-    Op[Op["OpSubgroupAvcImeSetSingleReferenceINTEL"] = 5748] = "OpSubgroupAvcImeSetSingleReferenceINTEL";
-    Op[Op["OpSubgroupAvcImeSetDualReferenceINTEL"] = 5749] = "OpSubgroupAvcImeSetDualReferenceINTEL";
-    Op[Op["OpSubgroupAvcImeRefWindowSizeINTEL"] = 5750] = "OpSubgroupAvcImeRefWindowSizeINTEL";
-    Op[Op["OpSubgroupAvcImeAdjustRefOffsetINTEL"] = 5751] = "OpSubgroupAvcImeAdjustRefOffsetINTEL";
-    Op[Op["OpSubgroupAvcImeConvertToMcePayloadINTEL"] = 5752] = "OpSubgroupAvcImeConvertToMcePayloadINTEL";
-    Op[Op["OpSubgroupAvcImeSetMaxMotionVectorCountINTEL"] = 5753] = "OpSubgroupAvcImeSetMaxMotionVectorCountINTEL";
-    Op[Op["OpSubgroupAvcImeSetUnidirectionalMixDisableINTEL"] = 5754] = "OpSubgroupAvcImeSetUnidirectionalMixDisableINTEL";
-    Op[Op["OpSubgroupAvcImeSetEarlySearchTerminationThresholdINTEL"] = 5755] = "OpSubgroupAvcImeSetEarlySearchTerminationThresholdINTEL";
-    Op[Op["OpSubgroupAvcImeSetWeightedSadINTEL"] = 5756] = "OpSubgroupAvcImeSetWeightedSadINTEL";
-    Op[Op["OpSubgroupAvcImeEvaluateWithSingleReferenceINTEL"] = 5757] = "OpSubgroupAvcImeEvaluateWithSingleReferenceINTEL";
-    Op[Op["OpSubgroupAvcImeEvaluateWithDualReferenceINTEL"] = 5758] = "OpSubgroupAvcImeEvaluateWithDualReferenceINTEL";
-    Op[Op["OpSubgroupAvcImeEvaluateWithSingleReferenceStreaminINTEL"] = 5759] = "OpSubgroupAvcImeEvaluateWithSingleReferenceStreaminINTEL";
-    Op[Op["OpSubgroupAvcImeEvaluateWithDualReferenceStreaminINTEL"] = 5760] = "OpSubgroupAvcImeEvaluateWithDualReferenceStreaminINTEL";
-    Op[Op["OpSubgroupAvcImeEvaluateWithSingleReferenceStreamoutINTEL"] = 5761] = "OpSubgroupAvcImeEvaluateWithSingleReferenceStreamoutINTEL";
-    Op[Op["OpSubgroupAvcImeEvaluateWithDualReferenceStreamoutINTEL"] = 5762] = "OpSubgroupAvcImeEvaluateWithDualReferenceStreamoutINTEL";
-    Op[Op["OpSubgroupAvcImeEvaluateWithSingleReferenceStreaminoutINTEL"] = 5763] = "OpSubgroupAvcImeEvaluateWithSingleReferenceStreaminoutINTEL";
-    Op[Op["OpSubgroupAvcImeEvaluateWithDualReferenceStreaminoutINTEL"] = 5764] = "OpSubgroupAvcImeEvaluateWithDualReferenceStreaminoutINTEL";
-    Op[Op["OpSubgroupAvcImeConvertToMceResultINTEL"] = 5765] = "OpSubgroupAvcImeConvertToMceResultINTEL";
-    Op[Op["OpSubgroupAvcImeGetSingleReferenceStreaminINTEL"] = 5766] = "OpSubgroupAvcImeGetSingleReferenceStreaminINTEL";
-    Op[Op["OpSubgroupAvcImeGetDualReferenceStreaminINTEL"] = 5767] = "OpSubgroupAvcImeGetDualReferenceStreaminINTEL";
-    Op[Op["OpSubgroupAvcImeStripSingleReferenceStreamoutINTEL"] = 5768] = "OpSubgroupAvcImeStripSingleReferenceStreamoutINTEL";
-    Op[Op["OpSubgroupAvcImeStripDualReferenceStreamoutINTEL"] = 5769] = "OpSubgroupAvcImeStripDualReferenceStreamoutINTEL";
-    Op[Op["OpSubgroupAvcImeGetStreamoutSingleReferenceMajorShapeMotionVectorsINTEL"] = 5770] = "OpSubgroupAvcImeGetStreamoutSingleReferenceMajorShapeMotionVectorsINTEL";
-    Op[Op["OpSubgroupAvcImeGetStreamoutSingleReferenceMajorShapeDistortionsINTEL"] = 5771] = "OpSubgroupAvcImeGetStreamoutSingleReferenceMajorShapeDistortionsINTEL";
-    Op[Op["OpSubgroupAvcImeGetStreamoutSingleReferenceMajorShapeReferenceIdsINTEL"] = 5772] = "OpSubgroupAvcImeGetStreamoutSingleReferenceMajorShapeReferenceIdsINTEL";
-    Op[Op["OpSubgroupAvcImeGetStreamoutDualReferenceMajorShapeMotionVectorsINTEL"] = 5773] = "OpSubgroupAvcImeGetStreamoutDualReferenceMajorShapeMotionVectorsINTEL";
-    Op[Op["OpSubgroupAvcImeGetStreamoutDualReferenceMajorShapeDistortionsINTEL"] = 5774] = "OpSubgroupAvcImeGetStreamoutDualReferenceMajorShapeDistortionsINTEL";
-    Op[Op["OpSubgroupAvcImeGetStreamoutDualReferenceMajorShapeReferenceIdsINTEL"] = 5775] = "OpSubgroupAvcImeGetStreamoutDualReferenceMajorShapeReferenceIdsINTEL";
-    Op[Op["OpSubgroupAvcImeGetBorderReachedINTEL"] = 5776] = "OpSubgroupAvcImeGetBorderReachedINTEL";
-    Op[Op["OpSubgroupAvcImeGetTruncatedSearchIndicationINTEL"] = 5777] = "OpSubgroupAvcImeGetTruncatedSearchIndicationINTEL";
-    Op[Op["OpSubgroupAvcImeGetUnidirectionalEarlySearchTerminationINTEL"] = 5778] = "OpSubgroupAvcImeGetUnidirectionalEarlySearchTerminationINTEL";
-    Op[Op["OpSubgroupAvcImeGetWeightingPatternMinimumMotionVectorINTEL"] = 5779] = "OpSubgroupAvcImeGetWeightingPatternMinimumMotionVectorINTEL";
-    Op[Op["OpSubgroupAvcImeGetWeightingPatternMinimumDistortionINTEL"] = 5780] = "OpSubgroupAvcImeGetWeightingPatternMinimumDistortionINTEL";
-    Op[Op["OpSubgroupAvcFmeInitializeINTEL"] = 5781] = "OpSubgroupAvcFmeInitializeINTEL";
-    Op[Op["OpSubgroupAvcBmeInitializeINTEL"] = 5782] = "OpSubgroupAvcBmeInitializeINTEL";
-    Op[Op["OpSubgroupAvcRefConvertToMcePayloadINTEL"] = 5783] = "OpSubgroupAvcRefConvertToMcePayloadINTEL";
-    Op[Op["OpSubgroupAvcRefSetBidirectionalMixDisableINTEL"] = 5784] = "OpSubgroupAvcRefSetBidirectionalMixDisableINTEL";
-    Op[Op["OpSubgroupAvcRefSetBilinearFilterEnableINTEL"] = 5785] = "OpSubgroupAvcRefSetBilinearFilterEnableINTEL";
-    Op[Op["OpSubgroupAvcRefEvaluateWithSingleReferenceINTEL"] = 5786] = "OpSubgroupAvcRefEvaluateWithSingleReferenceINTEL";
-    Op[Op["OpSubgroupAvcRefEvaluateWithDualReferenceINTEL"] = 5787] = "OpSubgroupAvcRefEvaluateWithDualReferenceINTEL";
-    Op[Op["OpSubgroupAvcRefEvaluateWithMultiReferenceINTEL"] = 5788] = "OpSubgroupAvcRefEvaluateWithMultiReferenceINTEL";
-    Op[Op["OpSubgroupAvcRefEvaluateWithMultiReferenceInterlacedINTEL"] = 5789] = "OpSubgroupAvcRefEvaluateWithMultiReferenceInterlacedINTEL";
-    Op[Op["OpSubgroupAvcRefConvertToMceResultINTEL"] = 5790] = "OpSubgroupAvcRefConvertToMceResultINTEL";
-    Op[Op["OpSubgroupAvcSicInitializeINTEL"] = 5791] = "OpSubgroupAvcSicInitializeINTEL";
-    Op[Op["OpSubgroupAvcSicConfigureSkcINTEL"] = 5792] = "OpSubgroupAvcSicConfigureSkcINTEL";
-    Op[Op["OpSubgroupAvcSicConfigureIpeLumaINTEL"] = 5793] = "OpSubgroupAvcSicConfigureIpeLumaINTEL";
-    Op[Op["OpSubgroupAvcSicConfigureIpeLumaChromaINTEL"] = 5794] = "OpSubgroupAvcSicConfigureIpeLumaChromaINTEL";
-    Op[Op["OpSubgroupAvcSicGetMotionVectorMaskINTEL"] = 5795] = "OpSubgroupAvcSicGetMotionVectorMaskINTEL";
-    Op[Op["OpSubgroupAvcSicConvertToMcePayloadINTEL"] = 5796] = "OpSubgroupAvcSicConvertToMcePayloadINTEL";
-    Op[Op["OpSubgroupAvcSicSetIntraLumaShapePenaltyINTEL"] = 5797] = "OpSubgroupAvcSicSetIntraLumaShapePenaltyINTEL";
-    Op[Op["OpSubgroupAvcSicSetIntraLumaModeCostFunctionINTEL"] = 5798] = "OpSubgroupAvcSicSetIntraLumaModeCostFunctionINTEL";
-    Op[Op["OpSubgroupAvcSicSetIntraChromaModeCostFunctionINTEL"] = 5799] = "OpSubgroupAvcSicSetIntraChromaModeCostFunctionINTEL";
-    Op[Op["OpSubgroupAvcSicSetBilinearFilterEnableINTEL"] = 5800] = "OpSubgroupAvcSicSetBilinearFilterEnableINTEL";
-    Op[Op["OpSubgroupAvcSicSetSkcForwardTransformEnableINTEL"] = 5801] = "OpSubgroupAvcSicSetSkcForwardTransformEnableINTEL";
-    Op[Op["OpSubgroupAvcSicSetBlockBasedRawSkipSadINTEL"] = 5802] = "OpSubgroupAvcSicSetBlockBasedRawSkipSadINTEL";
-    Op[Op["OpSubgroupAvcSicEvaluateIpeINTEL"] = 5803] = "OpSubgroupAvcSicEvaluateIpeINTEL";
-    Op[Op["OpSubgroupAvcSicEvaluateWithSingleReferenceINTEL"] = 5804] = "OpSubgroupAvcSicEvaluateWithSingleReferenceINTEL";
-    Op[Op["OpSubgroupAvcSicEvaluateWithDualReferenceINTEL"] = 5805] = "OpSubgroupAvcSicEvaluateWithDualReferenceINTEL";
-    Op[Op["OpSubgroupAvcSicEvaluateWithMultiReferenceINTEL"] = 5806] = "OpSubgroupAvcSicEvaluateWithMultiReferenceINTEL";
-    Op[Op["OpSubgroupAvcSicEvaluateWithMultiReferenceInterlacedINTEL"] = 5807] = "OpSubgroupAvcSicEvaluateWithMultiReferenceInterlacedINTEL";
-    Op[Op["OpSubgroupAvcSicConvertToMceResultINTEL"] = 5808] = "OpSubgroupAvcSicConvertToMceResultINTEL";
-    Op[Op["OpSubgroupAvcSicGetIpeLumaShapeINTEL"] = 5809] = "OpSubgroupAvcSicGetIpeLumaShapeINTEL";
-    Op[Op["OpSubgroupAvcSicGetBestIpeLumaDistortionINTEL"] = 5810] = "OpSubgroupAvcSicGetBestIpeLumaDistortionINTEL";
-    Op[Op["OpSubgroupAvcSicGetBestIpeChromaDistortionINTEL"] = 5811] = "OpSubgroupAvcSicGetBestIpeChromaDistortionINTEL";
-    Op[Op["OpSubgroupAvcSicGetPackedIpeLumaModesINTEL"] = 5812] = "OpSubgroupAvcSicGetPackedIpeLumaModesINTEL";
-    Op[Op["OpSubgroupAvcSicGetIpeChromaModeINTEL"] = 5813] = "OpSubgroupAvcSicGetIpeChromaModeINTEL";
-    Op[Op["OpSubgroupAvcSicGetPackedSkcLumaCountThresholdINTEL"] = 5814] = "OpSubgroupAvcSicGetPackedSkcLumaCountThresholdINTEL";
-    Op[Op["OpSubgroupAvcSicGetPackedSkcLumaSumThresholdINTEL"] = 5815] = "OpSubgroupAvcSicGetPackedSkcLumaSumThresholdINTEL";
-    Op[Op["OpSubgroupAvcSicGetInterRawSadsINTEL"] = 5816] = "OpSubgroupAvcSicGetInterRawSadsINTEL";
-    Op[Op["OpLoopControlINTEL"] = 5887] = "OpLoopControlINTEL";
-    Op[Op["OpReadPipeBlockingINTEL"] = 5946] = "OpReadPipeBlockingINTEL";
-    Op[Op["OpWritePipeBlockingINTEL"] = 5947] = "OpWritePipeBlockingINTEL";
-    Op[Op["OpFPGARegINTEL"] = 5949] = "OpFPGARegINTEL";
-    Op[Op["OpRayQueryGetRayTMinKHR"] = 6016] = "OpRayQueryGetRayTMinKHR";
-    Op[Op["OpRayQueryGetRayFlagsKHR"] = 6017] = "OpRayQueryGetRayFlagsKHR";
-    Op[Op["OpRayQueryGetIntersectionTKHR"] = 6018] = "OpRayQueryGetIntersectionTKHR";
-    Op[Op["OpRayQueryGetIntersectionInstanceCustomIndexKHR"] = 6019] = "OpRayQueryGetIntersectionInstanceCustomIndexKHR";
-    Op[Op["OpRayQueryGetIntersectionInstanceIdKHR"] = 6020] = "OpRayQueryGetIntersectionInstanceIdKHR";
-    Op[Op["OpRayQueryGetIntersectionInstanceShaderBindingTableRecordOffsetKHR"] = 6021] = "OpRayQueryGetIntersectionInstanceShaderBindingTableRecordOffsetKHR";
-    Op[Op["OpRayQueryGetIntersectionGeometryIndexKHR"] = 6022] = "OpRayQueryGetIntersectionGeometryIndexKHR";
-    Op[Op["OpRayQueryGetIntersectionPrimitiveIndexKHR"] = 6023] = "OpRayQueryGetIntersectionPrimitiveIndexKHR";
-    Op[Op["OpRayQueryGetIntersectionBarycentricsKHR"] = 6024] = "OpRayQueryGetIntersectionBarycentricsKHR";
-    Op[Op["OpRayQueryGetIntersectionFrontFaceKHR"] = 6025] = "OpRayQueryGetIntersectionFrontFaceKHR";
-    Op[Op["OpRayQueryGetIntersectionCandidateAABBOpaqueKHR"] = 6026] = "OpRayQueryGetIntersectionCandidateAABBOpaqueKHR";
-    Op[Op["OpRayQueryGetIntersectionObjectRayDirectionKHR"] = 6027] = "OpRayQueryGetIntersectionObjectRayDirectionKHR";
-    Op[Op["OpRayQueryGetIntersectionObjectRayOriginKHR"] = 6028] = "OpRayQueryGetIntersectionObjectRayOriginKHR";
-    Op[Op["OpRayQueryGetWorldRayDirectionKHR"] = 6029] = "OpRayQueryGetWorldRayDirectionKHR";
-    Op[Op["OpRayQueryGetWorldRayOriginKHR"] = 6030] = "OpRayQueryGetWorldRayOriginKHR";
-    Op[Op["OpRayQueryGetIntersectionObjectToWorldKHR"] = 6031] = "OpRayQueryGetIntersectionObjectToWorldKHR";
-    Op[Op["OpRayQueryGetIntersectionWorldToObjectKHR"] = 6032] = "OpRayQueryGetIntersectionWorldToObjectKHR";
-    Op[Op["OpAtomicFAddEXT"] = 6035] = "OpAtomicFAddEXT";
-    Op[Op["OpMax"] = 2147483647] = "OpMax";
+    Op[Op["Nop"] = 0] = "Nop";
+    Op[Op["Undef"] = 1] = "Undef";
+    Op[Op["SourceContinued"] = 2] = "SourceContinued";
+    Op[Op["Source"] = 3] = "Source";
+    Op[Op["SourceExtension"] = 4] = "SourceExtension";
+    Op[Op["Name"] = 5] = "Name";
+    Op[Op["MemberName"] = 6] = "MemberName";
+    Op[Op["String"] = 7] = "String";
+    Op[Op["Line"] = 8] = "Line";
+    Op[Op["Extension"] = 10] = "Extension";
+    Op[Op["ExtInstImport"] = 11] = "ExtInstImport";
+    Op[Op["ExtInst"] = 12] = "ExtInst";
+    Op[Op["MemoryModel"] = 14] = "MemoryModel";
+    Op[Op["EntryPoint"] = 15] = "EntryPoint";
+    Op[Op["ExecutionMode"] = 16] = "ExecutionMode";
+    Op[Op["Capability"] = 17] = "Capability";
+    Op[Op["TypeVoid"] = 19] = "TypeVoid";
+    Op[Op["TypeBool"] = 20] = "TypeBool";
+    Op[Op["TypeInt"] = 21] = "TypeInt";
+    Op[Op["TypeFloat"] = 22] = "TypeFloat";
+    Op[Op["TypeVector"] = 23] = "TypeVector";
+    Op[Op["TypeMatrix"] = 24] = "TypeMatrix";
+    Op[Op["TypeImage"] = 25] = "TypeImage";
+    Op[Op["TypeSampler"] = 26] = "TypeSampler";
+    Op[Op["TypeSampledImage"] = 27] = "TypeSampledImage";
+    Op[Op["TypeArray"] = 28] = "TypeArray";
+    Op[Op["TypeRuntimeArray"] = 29] = "TypeRuntimeArray";
+    Op[Op["TypeStruct"] = 30] = "TypeStruct";
+    Op[Op["TypeOpaque"] = 31] = "TypeOpaque";
+    Op[Op["TypePointer"] = 32] = "TypePointer";
+    Op[Op["TypeFunction"] = 33] = "TypeFunction";
+    Op[Op["TypeEvent"] = 34] = "TypeEvent";
+    Op[Op["TypeDeviceEvent"] = 35] = "TypeDeviceEvent";
+    Op[Op["TypeReserveId"] = 36] = "TypeReserveId";
+    Op[Op["TypeQueue"] = 37] = "TypeQueue";
+    Op[Op["TypePipe"] = 38] = "TypePipe";
+    Op[Op["TypeForwardPointer"] = 39] = "TypeForwardPointer";
+    Op[Op["ConstantTrue"] = 41] = "ConstantTrue";
+    Op[Op["ConstantFalse"] = 42] = "ConstantFalse";
+    Op[Op["Constant"] = 43] = "Constant";
+    Op[Op["ConstantComposite"] = 44] = "ConstantComposite";
+    Op[Op["ConstantSampler"] = 45] = "ConstantSampler";
+    Op[Op["ConstantNull"] = 46] = "ConstantNull";
+    Op[Op["SpecConstantTrue"] = 48] = "SpecConstantTrue";
+    Op[Op["SpecConstantFalse"] = 49] = "SpecConstantFalse";
+    Op[Op["SpecConstant"] = 50] = "SpecConstant";
+    Op[Op["SpecConstantComposite"] = 51] = "SpecConstantComposite";
+    Op[Op["SpecConstantOp"] = 52] = "SpecConstantOp";
+    Op[Op["Function"] = 54] = "Function";
+    Op[Op["FunctionParameter"] = 55] = "FunctionParameter";
+    Op[Op["FunctionEnd"] = 56] = "FunctionEnd";
+    Op[Op["FunctionCall"] = 57] = "FunctionCall";
+    Op[Op["Variable"] = 59] = "Variable";
+    Op[Op["ImageTexelPointer"] = 60] = "ImageTexelPointer";
+    Op[Op["Load"] = 61] = "Load";
+    Op[Op["Store"] = 62] = "Store";
+    Op[Op["CopyMemory"] = 63] = "CopyMemory";
+    Op[Op["CopyMemorySized"] = 64] = "CopyMemorySized";
+    Op[Op["AccessChain"] = 65] = "AccessChain";
+    Op[Op["InBoundsAccessChain"] = 66] = "InBoundsAccessChain";
+    Op[Op["PtrAccessChain"] = 67] = "PtrAccessChain";
+    Op[Op["ArrayLength"] = 68] = "ArrayLength";
+    Op[Op["GenericPtrMemSemantics"] = 69] = "GenericPtrMemSemantics";
+    Op[Op["InBoundsPtrAccessChain"] = 70] = "InBoundsPtrAccessChain";
+    Op[Op["Decorate"] = 71] = "Decorate";
+    Op[Op["MemberDecorate"] = 72] = "MemberDecorate";
+    Op[Op["DecorationGroup"] = 73] = "DecorationGroup";
+    Op[Op["GroupDecorate"] = 74] = "GroupDecorate";
+    Op[Op["GroupMemberDecorate"] = 75] = "GroupMemberDecorate";
+    Op[Op["VectorExtractDynamic"] = 77] = "VectorExtractDynamic";
+    Op[Op["VectorInsertDynamic"] = 78] = "VectorInsertDynamic";
+    Op[Op["VectorShuffle"] = 79] = "VectorShuffle";
+    Op[Op["CompositeConstruct"] = 80] = "CompositeConstruct";
+    Op[Op["CompositeExtract"] = 81] = "CompositeExtract";
+    Op[Op["CompositeInsert"] = 82] = "CompositeInsert";
+    Op[Op["CopyObject"] = 83] = "CopyObject";
+    Op[Op["Transpose"] = 84] = "Transpose";
+    Op[Op["SampledImage"] = 86] = "SampledImage";
+    Op[Op["ImageSampleImplicitLod"] = 87] = "ImageSampleImplicitLod";
+    Op[Op["ImageSampleExplicitLod"] = 88] = "ImageSampleExplicitLod";
+    Op[Op["ImageSampleDrefImplicitLod"] = 89] = "ImageSampleDrefImplicitLod";
+    Op[Op["ImageSampleDrefExplicitLod"] = 90] = "ImageSampleDrefExplicitLod";
+    Op[Op["ImageSampleProjImplicitLod"] = 91] = "ImageSampleProjImplicitLod";
+    Op[Op["ImageSampleProjExplicitLod"] = 92] = "ImageSampleProjExplicitLod";
+    Op[Op["ImageSampleProjDrefImplicitLod"] = 93] = "ImageSampleProjDrefImplicitLod";
+    Op[Op["ImageSampleProjDrefExplicitLod"] = 94] = "ImageSampleProjDrefExplicitLod";
+    Op[Op["ImageFetch"] = 95] = "ImageFetch";
+    Op[Op["ImageGather"] = 96] = "ImageGather";
+    Op[Op["ImageDrefGather"] = 97] = "ImageDrefGather";
+    Op[Op["ImageRead"] = 98] = "ImageRead";
+    Op[Op["ImageWrite"] = 99] = "ImageWrite";
+    Op[Op["Image"] = 100] = "Image";
+    Op[Op["ImageQueryFormat"] = 101] = "ImageQueryFormat";
+    Op[Op["ImageQueryOrder"] = 102] = "ImageQueryOrder";
+    Op[Op["ImageQuerySizeLod"] = 103] = "ImageQuerySizeLod";
+    Op[Op["ImageQuerySize"] = 104] = "ImageQuerySize";
+    Op[Op["ImageQueryLod"] = 105] = "ImageQueryLod";
+    Op[Op["ImageQueryLevels"] = 106] = "ImageQueryLevels";
+    Op[Op["ImageQuerySamples"] = 107] = "ImageQuerySamples";
+    Op[Op["ConvertFToU"] = 109] = "ConvertFToU";
+    Op[Op["ConvertFToS"] = 110] = "ConvertFToS";
+    Op[Op["ConvertSToF"] = 111] = "ConvertSToF";
+    Op[Op["ConvertUToF"] = 112] = "ConvertUToF";
+    Op[Op["UConvert"] = 113] = "UConvert";
+    Op[Op["SConvert"] = 114] = "SConvert";
+    Op[Op["FConvert"] = 115] = "FConvert";
+    Op[Op["QuantizeToF16"] = 116] = "QuantizeToF16";
+    Op[Op["ConvertPtrToU"] = 117] = "ConvertPtrToU";
+    Op[Op["SatConvertSToU"] = 118] = "SatConvertSToU";
+    Op[Op["SatConvertUToS"] = 119] = "SatConvertUToS";
+    Op[Op["ConvertUToPtr"] = 120] = "ConvertUToPtr";
+    Op[Op["PtrCastToGeneric"] = 121] = "PtrCastToGeneric";
+    Op[Op["GenericCastToPtr"] = 122] = "GenericCastToPtr";
+    Op[Op["GenericCastToPtrExplicit"] = 123] = "GenericCastToPtrExplicit";
+    Op[Op["Bitcast"] = 124] = "Bitcast";
+    Op[Op["SNegate"] = 126] = "SNegate";
+    Op[Op["FNegate"] = 127] = "FNegate";
+    Op[Op["IAdd"] = 128] = "IAdd";
+    Op[Op["FAdd"] = 129] = "FAdd";
+    Op[Op["ISub"] = 130] = "ISub";
+    Op[Op["FSub"] = 131] = "FSub";
+    Op[Op["IMul"] = 132] = "IMul";
+    Op[Op["FMul"] = 133] = "FMul";
+    Op[Op["UDiv"] = 134] = "UDiv";
+    Op[Op["SDiv"] = 135] = "SDiv";
+    Op[Op["FDiv"] = 136] = "FDiv";
+    Op[Op["UMod"] = 137] = "UMod";
+    Op[Op["SRem"] = 138] = "SRem";
+    Op[Op["SMod"] = 139] = "SMod";
+    Op[Op["FRem"] = 140] = "FRem";
+    Op[Op["FMod"] = 141] = "FMod";
+    Op[Op["VectorTimesScalar"] = 142] = "VectorTimesScalar";
+    Op[Op["MatrixTimesScalar"] = 143] = "MatrixTimesScalar";
+    Op[Op["VectorTimesMatrix"] = 144] = "VectorTimesMatrix";
+    Op[Op["MatrixTimesVector"] = 145] = "MatrixTimesVector";
+    Op[Op["MatrixTimesMatrix"] = 146] = "MatrixTimesMatrix";
+    Op[Op["OuterProduct"] = 147] = "OuterProduct";
+    Op[Op["Dot"] = 148] = "Dot";
+    Op[Op["IAddCarry"] = 149] = "IAddCarry";
+    Op[Op["ISubBorrow"] = 150] = "ISubBorrow";
+    Op[Op["UMulExtended"] = 151] = "UMulExtended";
+    Op[Op["SMulExtended"] = 152] = "SMulExtended";
+    Op[Op["Any"] = 154] = "Any";
+    Op[Op["All"] = 155] = "All";
+    Op[Op["IsNan"] = 156] = "IsNan";
+    Op[Op["IsInf"] = 157] = "IsInf";
+    Op[Op["IsFinite"] = 158] = "IsFinite";
+    Op[Op["IsNormal"] = 159] = "IsNormal";
+    Op[Op["SignBitSet"] = 160] = "SignBitSet";
+    Op[Op["LessOrGreater"] = 161] = "LessOrGreater";
+    Op[Op["Ordered"] = 162] = "Ordered";
+    Op[Op["Unordered"] = 163] = "Unordered";
+    Op[Op["LogicalEqual"] = 164] = "LogicalEqual";
+    Op[Op["LogicalNotEqual"] = 165] = "LogicalNotEqual";
+    Op[Op["LogicalOr"] = 166] = "LogicalOr";
+    Op[Op["LogicalAnd"] = 167] = "LogicalAnd";
+    Op[Op["LogicalNot"] = 168] = "LogicalNot";
+    Op[Op["Select"] = 169] = "Select";
+    Op[Op["IEqual"] = 170] = "IEqual";
+    Op[Op["INotEqual"] = 171] = "INotEqual";
+    Op[Op["UGreaterThan"] = 172] = "UGreaterThan";
+    Op[Op["SGreaterThan"] = 173] = "SGreaterThan";
+    Op[Op["UGreaterThanEqual"] = 174] = "UGreaterThanEqual";
+    Op[Op["SGreaterThanEqual"] = 175] = "SGreaterThanEqual";
+    Op[Op["ULessThan"] = 176] = "ULessThan";
+    Op[Op["SLessThan"] = 177] = "SLessThan";
+    Op[Op["ULessThanEqual"] = 178] = "ULessThanEqual";
+    Op[Op["SLessThanEqual"] = 179] = "SLessThanEqual";
+    Op[Op["FOrdEqual"] = 180] = "FOrdEqual";
+    Op[Op["FUnordEqual"] = 181] = "FUnordEqual";
+    Op[Op["FOrdNotEqual"] = 182] = "FOrdNotEqual";
+    Op[Op["FUnordNotEqual"] = 183] = "FUnordNotEqual";
+    Op[Op["FOrdLessThan"] = 184] = "FOrdLessThan";
+    Op[Op["FUnordLessThan"] = 185] = "FUnordLessThan";
+    Op[Op["FOrdGreaterThan"] = 186] = "FOrdGreaterThan";
+    Op[Op["FUnordGreaterThan"] = 187] = "FUnordGreaterThan";
+    Op[Op["FOrdLessThanEqual"] = 188] = "FOrdLessThanEqual";
+    Op[Op["FUnordLessThanEqual"] = 189] = "FUnordLessThanEqual";
+    Op[Op["FOrdGreaterThanEqual"] = 190] = "FOrdGreaterThanEqual";
+    Op[Op["FUnordGreaterThanEqual"] = 191] = "FUnordGreaterThanEqual";
+    Op[Op["ShiftRightLogical"] = 194] = "ShiftRightLogical";
+    Op[Op["ShiftRightArithmetic"] = 195] = "ShiftRightArithmetic";
+    Op[Op["ShiftLeftLogical"] = 196] = "ShiftLeftLogical";
+    Op[Op["BitwiseOr"] = 197] = "BitwiseOr";
+    Op[Op["BitwiseXor"] = 198] = "BitwiseXor";
+    Op[Op["BitwiseAnd"] = 199] = "BitwiseAnd";
+    Op[Op["Not"] = 200] = "Not";
+    Op[Op["BitFieldInsert"] = 201] = "BitFieldInsert";
+    Op[Op["BitFieldSExtract"] = 202] = "BitFieldSExtract";
+    Op[Op["BitFieldUExtract"] = 203] = "BitFieldUExtract";
+    Op[Op["BitReverse"] = 204] = "BitReverse";
+    Op[Op["BitCount"] = 205] = "BitCount";
+    Op[Op["DPdx"] = 207] = "DPdx";
+    Op[Op["DPdy"] = 208] = "DPdy";
+    Op[Op["Fwidth"] = 209] = "Fwidth";
+    Op[Op["DPdxFine"] = 210] = "DPdxFine";
+    Op[Op["DPdyFine"] = 211] = "DPdyFine";
+    Op[Op["FwidthFine"] = 212] = "FwidthFine";
+    Op[Op["DPdxCoarse"] = 213] = "DPdxCoarse";
+    Op[Op["DPdyCoarse"] = 214] = "DPdyCoarse";
+    Op[Op["FwidthCoarse"] = 215] = "FwidthCoarse";
+    Op[Op["EmitVertex"] = 218] = "EmitVertex";
+    Op[Op["EndPrimitive"] = 219] = "EndPrimitive";
+    Op[Op["EmitStreamVertex"] = 220] = "EmitStreamVertex";
+    Op[Op["EndStreamPrimitive"] = 221] = "EndStreamPrimitive";
+    Op[Op["ControlBarrier"] = 224] = "ControlBarrier";
+    Op[Op["MemoryBarrier"] = 225] = "MemoryBarrier";
+    Op[Op["AtomicLoad"] = 227] = "AtomicLoad";
+    Op[Op["AtomicStore"] = 228] = "AtomicStore";
+    Op[Op["AtomicExchange"] = 229] = "AtomicExchange";
+    Op[Op["AtomicCompareExchange"] = 230] = "AtomicCompareExchange";
+    Op[Op["AtomicCompareExchangeWeak"] = 231] = "AtomicCompareExchangeWeak";
+    Op[Op["AtomicIIncrement"] = 232] = "AtomicIIncrement";
+    Op[Op["AtomicIDecrement"] = 233] = "AtomicIDecrement";
+    Op[Op["AtomicIAdd"] = 234] = "AtomicIAdd";
+    Op[Op["AtomicISub"] = 235] = "AtomicISub";
+    Op[Op["AtomicSMin"] = 236] = "AtomicSMin";
+    Op[Op["AtomicUMin"] = 237] = "AtomicUMin";
+    Op[Op["AtomicSMax"] = 238] = "AtomicSMax";
+    Op[Op["AtomicUMax"] = 239] = "AtomicUMax";
+    Op[Op["AtomicAnd"] = 240] = "AtomicAnd";
+    Op[Op["AtomicOr"] = 241] = "AtomicOr";
+    Op[Op["AtomicXor"] = 242] = "AtomicXor";
+    Op[Op["Phi"] = 245] = "Phi";
+    Op[Op["LoopMerge"] = 246] = "LoopMerge";
+    Op[Op["SelectionMerge"] = 247] = "SelectionMerge";
+    Op[Op["Label"] = 248] = "Label";
+    Op[Op["Branch"] = 249] = "Branch";
+    Op[Op["BranchConditional"] = 250] = "BranchConditional";
+    Op[Op["Switch"] = 251] = "Switch";
+    Op[Op["Kill"] = 252] = "Kill";
+    Op[Op["Return"] = 253] = "Return";
+    Op[Op["ReturnValue"] = 254] = "ReturnValue";
+    Op[Op["Unreachable"] = 255] = "Unreachable";
+    Op[Op["LifetimeStart"] = 256] = "LifetimeStart";
+    Op[Op["LifetimeStop"] = 257] = "LifetimeStop";
+    Op[Op["GroupAsyncCopy"] = 259] = "GroupAsyncCopy";
+    Op[Op["GroupWaitEvents"] = 260] = "GroupWaitEvents";
+    Op[Op["GroupAll"] = 261] = "GroupAll";
+    Op[Op["GroupAny"] = 262] = "GroupAny";
+    Op[Op["GroupBroadcast"] = 263] = "GroupBroadcast";
+    Op[Op["GroupIAdd"] = 264] = "GroupIAdd";
+    Op[Op["GroupFAdd"] = 265] = "GroupFAdd";
+    Op[Op["GroupFMin"] = 266] = "GroupFMin";
+    Op[Op["GroupUMin"] = 267] = "GroupUMin";
+    Op[Op["GroupSMin"] = 268] = "GroupSMin";
+    Op[Op["GroupFMax"] = 269] = "GroupFMax";
+    Op[Op["GroupUMax"] = 270] = "GroupUMax";
+    Op[Op["GroupSMax"] = 271] = "GroupSMax";
+    Op[Op["ReadPipe"] = 274] = "ReadPipe";
+    Op[Op["WritePipe"] = 275] = "WritePipe";
+    Op[Op["ReservedReadPipe"] = 276] = "ReservedReadPipe";
+    Op[Op["ReservedWritePipe"] = 277] = "ReservedWritePipe";
+    Op[Op["ReserveReadPipePackets"] = 278] = "ReserveReadPipePackets";
+    Op[Op["ReserveWritePipePackets"] = 279] = "ReserveWritePipePackets";
+    Op[Op["CommitReadPipe"] = 280] = "CommitReadPipe";
+    Op[Op["CommitWritePipe"] = 281] = "CommitWritePipe";
+    Op[Op["IsValidReserveId"] = 282] = "IsValidReserveId";
+    Op[Op["GetNumPipePackets"] = 283] = "GetNumPipePackets";
+    Op[Op["GetMaxPipePackets"] = 284] = "GetMaxPipePackets";
+    Op[Op["GroupReserveReadPipePackets"] = 285] = "GroupReserveReadPipePackets";
+    Op[Op["GroupReserveWritePipePackets"] = 286] = "GroupReserveWritePipePackets";
+    Op[Op["GroupCommitReadPipe"] = 287] = "GroupCommitReadPipe";
+    Op[Op["GroupCommitWritePipe"] = 288] = "GroupCommitWritePipe";
+    Op[Op["EnqueueMarker"] = 291] = "EnqueueMarker";
+    Op[Op["EnqueueKernel"] = 292] = "EnqueueKernel";
+    Op[Op["GetKernelNDrangeSubGroupCount"] = 293] = "GetKernelNDrangeSubGroupCount";
+    Op[Op["GetKernelNDrangeMaxSubGroupSize"] = 294] = "GetKernelNDrangeMaxSubGroupSize";
+    Op[Op["GetKernelWorkGroupSize"] = 295] = "GetKernelWorkGroupSize";
+    Op[Op["GetKernelPreferredWorkGroupSizeMultiple"] = 296] = "GetKernelPreferredWorkGroupSizeMultiple";
+    Op[Op["RetainEvent"] = 297] = "RetainEvent";
+    Op[Op["ReleaseEvent"] = 298] = "ReleaseEvent";
+    Op[Op["CreateUserEvent"] = 299] = "CreateUserEvent";
+    Op[Op["IsValidEvent"] = 300] = "IsValidEvent";
+    Op[Op["SetUserEventStatus"] = 301] = "SetUserEventStatus";
+    Op[Op["CaptureEventProfilingInfo"] = 302] = "CaptureEventProfilingInfo";
+    Op[Op["GetDefaultQueue"] = 303] = "GetDefaultQueue";
+    Op[Op["BuildNDRange"] = 304] = "BuildNDRange";
+    Op[Op["ImageSparseSampleImplicitLod"] = 305] = "ImageSparseSampleImplicitLod";
+    Op[Op["ImageSparseSampleExplicitLod"] = 306] = "ImageSparseSampleExplicitLod";
+    Op[Op["ImageSparseSampleDrefImplicitLod"] = 307] = "ImageSparseSampleDrefImplicitLod";
+    Op[Op["ImageSparseSampleDrefExplicitLod"] = 308] = "ImageSparseSampleDrefExplicitLod";
+    Op[Op["ImageSparseSampleProjImplicitLod"] = 309] = "ImageSparseSampleProjImplicitLod";
+    Op[Op["ImageSparseSampleProjExplicitLod"] = 310] = "ImageSparseSampleProjExplicitLod";
+    Op[Op["ImageSparseSampleProjDrefImplicitLod"] = 311] = "ImageSparseSampleProjDrefImplicitLod";
+    Op[Op["ImageSparseSampleProjDrefExplicitLod"] = 312] = "ImageSparseSampleProjDrefExplicitLod";
+    Op[Op["ImageSparseFetch"] = 313] = "ImageSparseFetch";
+    Op[Op["ImageSparseGather"] = 314] = "ImageSparseGather";
+    Op[Op["ImageSparseDrefGather"] = 315] = "ImageSparseDrefGather";
+    Op[Op["ImageSparseTexelsResident"] = 316] = "ImageSparseTexelsResident";
+    Op[Op["NoLine"] = 317] = "NoLine";
+    Op[Op["AtomicFlagTestAndSet"] = 318] = "AtomicFlagTestAndSet";
+    Op[Op["AtomicFlagClear"] = 319] = "AtomicFlagClear";
+    Op[Op["ImageSparseRead"] = 320] = "ImageSparseRead";
+    Op[Op["SizeOf"] = 321] = "SizeOf";
+    Op[Op["TypePipeStorage"] = 322] = "TypePipeStorage";
+    Op[Op["ConstantPipeStorage"] = 323] = "ConstantPipeStorage";
+    Op[Op["CreatePipeFromPipeStorage"] = 324] = "CreatePipeFromPipeStorage";
+    Op[Op["GetKernelLocalSizeForSubgroupCount"] = 325] = "GetKernelLocalSizeForSubgroupCount";
+    Op[Op["GetKernelMaxNumSubgroups"] = 326] = "GetKernelMaxNumSubgroups";
+    Op[Op["TypeNamedBarrier"] = 327] = "TypeNamedBarrier";
+    Op[Op["NamedBarrierInitialize"] = 328] = "NamedBarrierInitialize";
+    Op[Op["MemoryNamedBarrier"] = 329] = "MemoryNamedBarrier";
+    Op[Op["ModuleProcessed"] = 330] = "ModuleProcessed";
+    Op[Op["ExecutionModeId"] = 331] = "ExecutionModeId";
+    Op[Op["DecorateId"] = 332] = "DecorateId";
+    Op[Op["GroupNonUniformElect"] = 333] = "GroupNonUniformElect";
+    Op[Op["GroupNonUniformAll"] = 334] = "GroupNonUniformAll";
+    Op[Op["GroupNonUniformAny"] = 335] = "GroupNonUniformAny";
+    Op[Op["GroupNonUniformAllEqual"] = 336] = "GroupNonUniformAllEqual";
+    Op[Op["GroupNonUniformBroadcast"] = 337] = "GroupNonUniformBroadcast";
+    Op[Op["GroupNonUniformBroadcastFirst"] = 338] = "GroupNonUniformBroadcastFirst";
+    Op[Op["GroupNonUniformBallot"] = 339] = "GroupNonUniformBallot";
+    Op[Op["GroupNonUniformInverseBallot"] = 340] = "GroupNonUniformInverseBallot";
+    Op[Op["GroupNonUniformBallotBitExtract"] = 341] = "GroupNonUniformBallotBitExtract";
+    Op[Op["GroupNonUniformBallotBitCount"] = 342] = "GroupNonUniformBallotBitCount";
+    Op[Op["GroupNonUniformBallotFindLSB"] = 343] = "GroupNonUniformBallotFindLSB";
+    Op[Op["GroupNonUniformBallotFindMSB"] = 344] = "GroupNonUniformBallotFindMSB";
+    Op[Op["GroupNonUniformShuffle"] = 345] = "GroupNonUniformShuffle";
+    Op[Op["GroupNonUniformShuffleXor"] = 346] = "GroupNonUniformShuffleXor";
+    Op[Op["GroupNonUniformShuffleUp"] = 347] = "GroupNonUniformShuffleUp";
+    Op[Op["GroupNonUniformShuffleDown"] = 348] = "GroupNonUniformShuffleDown";
+    Op[Op["GroupNonUniformIAdd"] = 349] = "GroupNonUniformIAdd";
+    Op[Op["GroupNonUniformFAdd"] = 350] = "GroupNonUniformFAdd";
+    Op[Op["GroupNonUniformIMul"] = 351] = "GroupNonUniformIMul";
+    Op[Op["GroupNonUniformFMul"] = 352] = "GroupNonUniformFMul";
+    Op[Op["GroupNonUniformSMin"] = 353] = "GroupNonUniformSMin";
+    Op[Op["GroupNonUniformUMin"] = 354] = "GroupNonUniformUMin";
+    Op[Op["GroupNonUniformFMin"] = 355] = "GroupNonUniformFMin";
+    Op[Op["GroupNonUniformSMax"] = 356] = "GroupNonUniformSMax";
+    Op[Op["GroupNonUniformUMax"] = 357] = "GroupNonUniformUMax";
+    Op[Op["GroupNonUniformFMax"] = 358] = "GroupNonUniformFMax";
+    Op[Op["GroupNonUniformBitwiseAnd"] = 359] = "GroupNonUniformBitwiseAnd";
+    Op[Op["GroupNonUniformBitwiseOr"] = 360] = "GroupNonUniformBitwiseOr";
+    Op[Op["GroupNonUniformBitwiseXor"] = 361] = "GroupNonUniformBitwiseXor";
+    Op[Op["GroupNonUniformLogicalAnd"] = 362] = "GroupNonUniformLogicalAnd";
+    Op[Op["GroupNonUniformLogicalOr"] = 363] = "GroupNonUniformLogicalOr";
+    Op[Op["GroupNonUniformLogicalXor"] = 364] = "GroupNonUniformLogicalXor";
+    Op[Op["GroupNonUniformQuadBroadcast"] = 365] = "GroupNonUniformQuadBroadcast";
+    Op[Op["GroupNonUniformQuadSwap"] = 366] = "GroupNonUniformQuadSwap";
+    Op[Op["CopyLogical"] = 400] = "CopyLogical";
+    Op[Op["PtrEqual"] = 401] = "PtrEqual";
+    Op[Op["PtrNotEqual"] = 402] = "PtrNotEqual";
+    Op[Op["PtrDiff"] = 403] = "PtrDiff";
+    Op[Op["TerminateInvocation"] = 4416] = "TerminateInvocation";
+    Op[Op["SubgroupBallotKHR"] = 4421] = "SubgroupBallotKHR";
+    Op[Op["SubgroupFirstInvocationKHR"] = 4422] = "SubgroupFirstInvocationKHR";
+    Op[Op["SubgroupAllKHR"] = 4428] = "SubgroupAllKHR";
+    Op[Op["SubgroupAnyKHR"] = 4429] = "SubgroupAnyKHR";
+    Op[Op["SubgroupAllEqualKHR"] = 4430] = "SubgroupAllEqualKHR";
+    Op[Op["SubgroupReadInvocationKHR"] = 4432] = "SubgroupReadInvocationKHR";
+    Op[Op["TraceRayKHR"] = 4445] = "TraceRayKHR";
+    Op[Op["ExecuteCallableKHR"] = 4446] = "ExecuteCallableKHR";
+    Op[Op["ConvertUToAccelerationStructureKHR"] = 4447] = "ConvertUToAccelerationStructureKHR";
+    Op[Op["IgnoreIntersectionKHR"] = 4448] = "IgnoreIntersectionKHR";
+    Op[Op["TerminateRayKHR"] = 4449] = "TerminateRayKHR";
+    Op[Op["TypeRayQueryKHR"] = 4472] = "TypeRayQueryKHR";
+    Op[Op["RayQueryInitializeKHR"] = 4473] = "RayQueryInitializeKHR";
+    Op[Op["RayQueryTerminateKHR"] = 4474] = "RayQueryTerminateKHR";
+    Op[Op["RayQueryGenerateIntersectionKHR"] = 4475] = "RayQueryGenerateIntersectionKHR";
+    Op[Op["RayQueryConfirmIntersectionKHR"] = 4476] = "RayQueryConfirmIntersectionKHR";
+    Op[Op["RayQueryProceedKHR"] = 4477] = "RayQueryProceedKHR";
+    Op[Op["RayQueryGetIntersectionTypeKHR"] = 4479] = "RayQueryGetIntersectionTypeKHR";
+    Op[Op["GroupIAddNonUniformAMD"] = 5000] = "GroupIAddNonUniformAMD";
+    Op[Op["GroupFAddNonUniformAMD"] = 5001] = "GroupFAddNonUniformAMD";
+    Op[Op["GroupFMinNonUniformAMD"] = 5002] = "GroupFMinNonUniformAMD";
+    Op[Op["GroupUMinNonUniformAMD"] = 5003] = "GroupUMinNonUniformAMD";
+    Op[Op["GroupSMinNonUniformAMD"] = 5004] = "GroupSMinNonUniformAMD";
+    Op[Op["GroupFMaxNonUniformAMD"] = 5005] = "GroupFMaxNonUniformAMD";
+    Op[Op["GroupUMaxNonUniformAMD"] = 5006] = "GroupUMaxNonUniformAMD";
+    Op[Op["GroupSMaxNonUniformAMD"] = 5007] = "GroupSMaxNonUniformAMD";
+    Op[Op["FragmentMaskFetchAMD"] = 5011] = "FragmentMaskFetchAMD";
+    Op[Op["FragmentFetchAMD"] = 5012] = "FragmentFetchAMD";
+    Op[Op["ReadClockKHR"] = 5056] = "ReadClockKHR";
+    Op[Op["ImageSampleFootprintNV"] = 5283] = "ImageSampleFootprintNV";
+    Op[Op["GroupNonUniformPartitionNV"] = 5296] = "GroupNonUniformPartitionNV";
+    Op[Op["WritePackedPrimitiveIndices4x8NV"] = 5299] = "WritePackedPrimitiveIndices4x8NV";
+    Op[Op["ReportIntersectionKHR"] = 5334] = "ReportIntersectionKHR";
+    Op[Op["ReportIntersectionNV"] = 5334] = "ReportIntersectionNV";
+    Op[Op["IgnoreIntersectionNV"] = 5335] = "IgnoreIntersectionNV";
+    Op[Op["TerminateRayNV"] = 5336] = "TerminateRayNV";
+    Op[Op["TraceNV"] = 5337] = "TraceNV";
+    Op[Op["TypeAccelerationStructureKHR"] = 5341] = "TypeAccelerationStructureKHR";
+    Op[Op["TypeAccelerationStructureNV"] = 5341] = "TypeAccelerationStructureNV";
+    Op[Op["ExecuteCallableNV"] = 5344] = "ExecuteCallableNV";
+    Op[Op["TypeCooperativeMatrixNV"] = 5358] = "TypeCooperativeMatrixNV";
+    Op[Op["CooperativeMatrixLoadNV"] = 5359] = "CooperativeMatrixLoadNV";
+    Op[Op["CooperativeMatrixStoreNV"] = 5360] = "CooperativeMatrixStoreNV";
+    Op[Op["CooperativeMatrixMulAddNV"] = 5361] = "CooperativeMatrixMulAddNV";
+    Op[Op["CooperativeMatrixLengthNV"] = 5362] = "CooperativeMatrixLengthNV";
+    Op[Op["BeginInvocationInterlockEXT"] = 5364] = "BeginInvocationInterlockEXT";
+    Op[Op["EndInvocationInterlockEXT"] = 5365] = "EndInvocationInterlockEXT";
+    Op[Op["DemoteToHelperInvocationEXT"] = 5380] = "DemoteToHelperInvocationEXT";
+    Op[Op["IsHelperInvocationEXT"] = 5381] = "IsHelperInvocationEXT";
+    Op[Op["SubgroupShuffleINTEL"] = 5571] = "SubgroupShuffleINTEL";
+    Op[Op["SubgroupShuffleDownINTEL"] = 5572] = "SubgroupShuffleDownINTEL";
+    Op[Op["SubgroupShuffleUpINTEL"] = 5573] = "SubgroupShuffleUpINTEL";
+    Op[Op["SubgroupShuffleXorINTEL"] = 5574] = "SubgroupShuffleXorINTEL";
+    Op[Op["SubgroupBlockReadINTEL"] = 5575] = "SubgroupBlockReadINTEL";
+    Op[Op["SubgroupBlockWriteINTEL"] = 5576] = "SubgroupBlockWriteINTEL";
+    Op[Op["SubgroupImageBlockReadINTEL"] = 5577] = "SubgroupImageBlockReadINTEL";
+    Op[Op["SubgroupImageBlockWriteINTEL"] = 5578] = "SubgroupImageBlockWriteINTEL";
+    Op[Op["SubgroupImageMediaBlockReadINTEL"] = 5580] = "SubgroupImageMediaBlockReadINTEL";
+    Op[Op["SubgroupImageMediaBlockWriteINTEL"] = 5581] = "SubgroupImageMediaBlockWriteINTEL";
+    Op[Op["UCountLeadingZerosINTEL"] = 5585] = "UCountLeadingZerosINTEL";
+    Op[Op["UCountTrailingZerosINTEL"] = 5586] = "UCountTrailingZerosINTEL";
+    Op[Op["AbsISubINTEL"] = 5587] = "AbsISubINTEL";
+    Op[Op["AbsUSubINTEL"] = 5588] = "AbsUSubINTEL";
+    Op[Op["IAddSatINTEL"] = 5589] = "IAddSatINTEL";
+    Op[Op["UAddSatINTEL"] = 5590] = "UAddSatINTEL";
+    Op[Op["IAverageINTEL"] = 5591] = "IAverageINTEL";
+    Op[Op["UAverageINTEL"] = 5592] = "UAverageINTEL";
+    Op[Op["IAverageRoundedINTEL"] = 5593] = "IAverageRoundedINTEL";
+    Op[Op["UAverageRoundedINTEL"] = 5594] = "UAverageRoundedINTEL";
+    Op[Op["ISubSatINTEL"] = 5595] = "ISubSatINTEL";
+    Op[Op["USubSatINTEL"] = 5596] = "USubSatINTEL";
+    Op[Op["IMul32x16INTEL"] = 5597] = "IMul32x16INTEL";
+    Op[Op["UMul32x16INTEL"] = 5598] = "UMul32x16INTEL";
+    Op[Op["FunctionPointerINTEL"] = 5600] = "FunctionPointerINTEL";
+    Op[Op["FunctionPointerCallINTEL"] = 5601] = "FunctionPointerCallINTEL";
+    Op[Op["DecorateString"] = 5632] = "DecorateString";
+    Op[Op["DecorateStringGOOGLE"] = 5632] = "DecorateStringGOOGLE";
+    Op[Op["MemberDecorateString"] = 5633] = "MemberDecorateString";
+    Op[Op["MemberDecorateStringGOOGLE"] = 5633] = "MemberDecorateStringGOOGLE";
+    Op[Op["VmeImageINTEL"] = 5699] = "VmeImageINTEL";
+    Op[Op["TypeVmeImageINTEL"] = 5700] = "TypeVmeImageINTEL";
+    Op[Op["TypeAvcImePayloadINTEL"] = 5701] = "TypeAvcImePayloadINTEL";
+    Op[Op["TypeAvcRefPayloadINTEL"] = 5702] = "TypeAvcRefPayloadINTEL";
+    Op[Op["TypeAvcSicPayloadINTEL"] = 5703] = "TypeAvcSicPayloadINTEL";
+    Op[Op["TypeAvcMcePayloadINTEL"] = 5704] = "TypeAvcMcePayloadINTEL";
+    Op[Op["TypeAvcMceResultINTEL"] = 5705] = "TypeAvcMceResultINTEL";
+    Op[Op["TypeAvcImeResultINTEL"] = 5706] = "TypeAvcImeResultINTEL";
+    Op[Op["TypeAvcImeResultSingleReferenceStreamoutINTEL"] = 5707] = "TypeAvcImeResultSingleReferenceStreamoutINTEL";
+    Op[Op["TypeAvcImeResultDualReferenceStreamoutINTEL"] = 5708] = "TypeAvcImeResultDualReferenceStreamoutINTEL";
+    Op[Op["TypeAvcImeSingleReferenceStreaminINTEL"] = 5709] = "TypeAvcImeSingleReferenceStreaminINTEL";
+    Op[Op["TypeAvcImeDualReferenceStreaminINTEL"] = 5710] = "TypeAvcImeDualReferenceStreaminINTEL";
+    Op[Op["TypeAvcRefResultINTEL"] = 5711] = "TypeAvcRefResultINTEL";
+    Op[Op["TypeAvcSicResultINTEL"] = 5712] = "TypeAvcSicResultINTEL";
+    Op[Op["SubgroupAvcMceGetDefaultInterBaseMultiReferencePenaltyINTEL"] = 5713] = "SubgroupAvcMceGetDefaultInterBaseMultiReferencePenaltyINTEL";
+    Op[Op["SubgroupAvcMceSetInterBaseMultiReferencePenaltyINTEL"] = 5714] = "SubgroupAvcMceSetInterBaseMultiReferencePenaltyINTEL";
+    Op[Op["SubgroupAvcMceGetDefaultInterShapePenaltyINTEL"] = 5715] = "SubgroupAvcMceGetDefaultInterShapePenaltyINTEL";
+    Op[Op["SubgroupAvcMceSetInterShapePenaltyINTEL"] = 5716] = "SubgroupAvcMceSetInterShapePenaltyINTEL";
+    Op[Op["SubgroupAvcMceGetDefaultInterDirectionPenaltyINTEL"] = 5717] = "SubgroupAvcMceGetDefaultInterDirectionPenaltyINTEL";
+    Op[Op["SubgroupAvcMceSetInterDirectionPenaltyINTEL"] = 5718] = "SubgroupAvcMceSetInterDirectionPenaltyINTEL";
+    Op[Op["SubgroupAvcMceGetDefaultIntraLumaShapePenaltyINTEL"] = 5719] = "SubgroupAvcMceGetDefaultIntraLumaShapePenaltyINTEL";
+    Op[Op["SubgroupAvcMceGetDefaultInterMotionVectorCostTableINTEL"] = 5720] = "SubgroupAvcMceGetDefaultInterMotionVectorCostTableINTEL";
+    Op[Op["SubgroupAvcMceGetDefaultHighPenaltyCostTableINTEL"] = 5721] = "SubgroupAvcMceGetDefaultHighPenaltyCostTableINTEL";
+    Op[Op["SubgroupAvcMceGetDefaultMediumPenaltyCostTableINTEL"] = 5722] = "SubgroupAvcMceGetDefaultMediumPenaltyCostTableINTEL";
+    Op[Op["SubgroupAvcMceGetDefaultLowPenaltyCostTableINTEL"] = 5723] = "SubgroupAvcMceGetDefaultLowPenaltyCostTableINTEL";
+    Op[Op["SubgroupAvcMceSetMotionVectorCostFunctionINTEL"] = 5724] = "SubgroupAvcMceSetMotionVectorCostFunctionINTEL";
+    Op[Op["SubgroupAvcMceGetDefaultIntraLumaModePenaltyINTEL"] = 5725] = "SubgroupAvcMceGetDefaultIntraLumaModePenaltyINTEL";
+    Op[Op["SubgroupAvcMceGetDefaultNonDcLumaIntraPenaltyINTEL"] = 5726] = "SubgroupAvcMceGetDefaultNonDcLumaIntraPenaltyINTEL";
+    Op[Op["SubgroupAvcMceGetDefaultIntraChromaModeBasePenaltyINTEL"] = 5727] = "SubgroupAvcMceGetDefaultIntraChromaModeBasePenaltyINTEL";
+    Op[Op["SubgroupAvcMceSetAcOnlyHaarINTEL"] = 5728] = "SubgroupAvcMceSetAcOnlyHaarINTEL";
+    Op[Op["SubgroupAvcMceSetSourceInterlacedFieldPolarityINTEL"] = 5729] = "SubgroupAvcMceSetSourceInterlacedFieldPolarityINTEL";
+    Op[Op["SubgroupAvcMceSetSingleReferenceInterlacedFieldPolarityINTEL"] = 5730] = "SubgroupAvcMceSetSingleReferenceInterlacedFieldPolarityINTEL";
+    Op[Op["SubgroupAvcMceSetDualReferenceInterlacedFieldPolaritiesINTEL"] = 5731] = "SubgroupAvcMceSetDualReferenceInterlacedFieldPolaritiesINTEL";
+    Op[Op["SubgroupAvcMceConvertToImePayloadINTEL"] = 5732] = "SubgroupAvcMceConvertToImePayloadINTEL";
+    Op[Op["SubgroupAvcMceConvertToImeResultINTEL"] = 5733] = "SubgroupAvcMceConvertToImeResultINTEL";
+    Op[Op["SubgroupAvcMceConvertToRefPayloadINTEL"] = 5734] = "SubgroupAvcMceConvertToRefPayloadINTEL";
+    Op[Op["SubgroupAvcMceConvertToRefResultINTEL"] = 5735] = "SubgroupAvcMceConvertToRefResultINTEL";
+    Op[Op["SubgroupAvcMceConvertToSicPayloadINTEL"] = 5736] = "SubgroupAvcMceConvertToSicPayloadINTEL";
+    Op[Op["SubgroupAvcMceConvertToSicResultINTEL"] = 5737] = "SubgroupAvcMceConvertToSicResultINTEL";
+    Op[Op["SubgroupAvcMceGetMotionVectorsINTEL"] = 5738] = "SubgroupAvcMceGetMotionVectorsINTEL";
+    Op[Op["SubgroupAvcMceGetInterDistortionsINTEL"] = 5739] = "SubgroupAvcMceGetInterDistortionsINTEL";
+    Op[Op["SubgroupAvcMceGetBestInterDistortionsINTEL"] = 5740] = "SubgroupAvcMceGetBestInterDistortionsINTEL";
+    Op[Op["SubgroupAvcMceGetInterMajorShapeINTEL"] = 5741] = "SubgroupAvcMceGetInterMajorShapeINTEL";
+    Op[Op["SubgroupAvcMceGetInterMinorShapeINTEL"] = 5742] = "SubgroupAvcMceGetInterMinorShapeINTEL";
+    Op[Op["SubgroupAvcMceGetInterDirectionsINTEL"] = 5743] = "SubgroupAvcMceGetInterDirectionsINTEL";
+    Op[Op["SubgroupAvcMceGetInterMotionVectorCountINTEL"] = 5744] = "SubgroupAvcMceGetInterMotionVectorCountINTEL";
+    Op[Op["SubgroupAvcMceGetInterReferenceIdsINTEL"] = 5745] = "SubgroupAvcMceGetInterReferenceIdsINTEL";
+    Op[Op["SubgroupAvcMceGetInterReferenceInterlacedFieldPolaritiesINTEL"] = 5746] = "SubgroupAvcMceGetInterReferenceInterlacedFieldPolaritiesINTEL";
+    Op[Op["SubgroupAvcImeInitializeINTEL"] = 5747] = "SubgroupAvcImeInitializeINTEL";
+    Op[Op["SubgroupAvcImeSetSingleReferenceINTEL"] = 5748] = "SubgroupAvcImeSetSingleReferenceINTEL";
+    Op[Op["SubgroupAvcImeSetDualReferenceINTEL"] = 5749] = "SubgroupAvcImeSetDualReferenceINTEL";
+    Op[Op["SubgroupAvcImeRefWindowSizeINTEL"] = 5750] = "SubgroupAvcImeRefWindowSizeINTEL";
+    Op[Op["SubgroupAvcImeAdjustRefOffsetINTEL"] = 5751] = "SubgroupAvcImeAdjustRefOffsetINTEL";
+    Op[Op["SubgroupAvcImeConvertToMcePayloadINTEL"] = 5752] = "SubgroupAvcImeConvertToMcePayloadINTEL";
+    Op[Op["SubgroupAvcImeSetMaxMotionVectorCountINTEL"] = 5753] = "SubgroupAvcImeSetMaxMotionVectorCountINTEL";
+    Op[Op["SubgroupAvcImeSetUnidirectionalMixDisableINTEL"] = 5754] = "SubgroupAvcImeSetUnidirectionalMixDisableINTEL";
+    Op[Op["SubgroupAvcImeSetEarlySearchTerminationThresholdINTEL"] = 5755] = "SubgroupAvcImeSetEarlySearchTerminationThresholdINTEL";
+    Op[Op["SubgroupAvcImeSetWeightedSadINTEL"] = 5756] = "SubgroupAvcImeSetWeightedSadINTEL";
+    Op[Op["SubgroupAvcImeEvaluateWithSingleReferenceINTEL"] = 5757] = "SubgroupAvcImeEvaluateWithSingleReferenceINTEL";
+    Op[Op["SubgroupAvcImeEvaluateWithDualReferenceINTEL"] = 5758] = "SubgroupAvcImeEvaluateWithDualReferenceINTEL";
+    Op[Op["SubgroupAvcImeEvaluateWithSingleReferenceStreaminINTEL"] = 5759] = "SubgroupAvcImeEvaluateWithSingleReferenceStreaminINTEL";
+    Op[Op["SubgroupAvcImeEvaluateWithDualReferenceStreaminINTEL"] = 5760] = "SubgroupAvcImeEvaluateWithDualReferenceStreaminINTEL";
+    Op[Op["SubgroupAvcImeEvaluateWithSingleReferenceStreamoutINTEL"] = 5761] = "SubgroupAvcImeEvaluateWithSingleReferenceStreamoutINTEL";
+    Op[Op["SubgroupAvcImeEvaluateWithDualReferenceStreamoutINTEL"] = 5762] = "SubgroupAvcImeEvaluateWithDualReferenceStreamoutINTEL";
+    Op[Op["SubgroupAvcImeEvaluateWithSingleReferenceStreaminoutINTEL"] = 5763] = "SubgroupAvcImeEvaluateWithSingleReferenceStreaminoutINTEL";
+    Op[Op["SubgroupAvcImeEvaluateWithDualReferenceStreaminoutINTEL"] = 5764] = "SubgroupAvcImeEvaluateWithDualReferenceStreaminoutINTEL";
+    Op[Op["SubgroupAvcImeConvertToMceResultINTEL"] = 5765] = "SubgroupAvcImeConvertToMceResultINTEL";
+    Op[Op["SubgroupAvcImeGetSingleReferenceStreaminINTEL"] = 5766] = "SubgroupAvcImeGetSingleReferenceStreaminINTEL";
+    Op[Op["SubgroupAvcImeGetDualReferenceStreaminINTEL"] = 5767] = "SubgroupAvcImeGetDualReferenceStreaminINTEL";
+    Op[Op["SubgroupAvcImeStripSingleReferenceStreamoutINTEL"] = 5768] = "SubgroupAvcImeStripSingleReferenceStreamoutINTEL";
+    Op[Op["SubgroupAvcImeStripDualReferenceStreamoutINTEL"] = 5769] = "SubgroupAvcImeStripDualReferenceStreamoutINTEL";
+    Op[Op["SubgroupAvcImeGetStreamoutSingleReferenceMajorShapeMotionVectorsINTEL"] = 5770] = "SubgroupAvcImeGetStreamoutSingleReferenceMajorShapeMotionVectorsINTEL";
+    Op[Op["SubgroupAvcImeGetStreamoutSingleReferenceMajorShapeDistortionsINTEL"] = 5771] = "SubgroupAvcImeGetStreamoutSingleReferenceMajorShapeDistortionsINTEL";
+    Op[Op["SubgroupAvcImeGetStreamoutSingleReferenceMajorShapeReferenceIdsINTEL"] = 5772] = "SubgroupAvcImeGetStreamoutSingleReferenceMajorShapeReferenceIdsINTEL";
+    Op[Op["SubgroupAvcImeGetStreamoutDualReferenceMajorShapeMotionVectorsINTEL"] = 5773] = "SubgroupAvcImeGetStreamoutDualReferenceMajorShapeMotionVectorsINTEL";
+    Op[Op["SubgroupAvcImeGetStreamoutDualReferenceMajorShapeDistortionsINTEL"] = 5774] = "SubgroupAvcImeGetStreamoutDualReferenceMajorShapeDistortionsINTEL";
+    Op[Op["SubgroupAvcImeGetStreamoutDualReferenceMajorShapeReferenceIdsINTEL"] = 5775] = "SubgroupAvcImeGetStreamoutDualReferenceMajorShapeReferenceIdsINTEL";
+    Op[Op["SubgroupAvcImeGetBorderReachedINTEL"] = 5776] = "SubgroupAvcImeGetBorderReachedINTEL";
+    Op[Op["SubgroupAvcImeGetTruncatedSearchIndicationINTEL"] = 5777] = "SubgroupAvcImeGetTruncatedSearchIndicationINTEL";
+    Op[Op["SubgroupAvcImeGetUnidirectionalEarlySearchTerminationINTEL"] = 5778] = "SubgroupAvcImeGetUnidirectionalEarlySearchTerminationINTEL";
+    Op[Op["SubgroupAvcImeGetWeightingPatternMinimumMotionVectorINTEL"] = 5779] = "SubgroupAvcImeGetWeightingPatternMinimumMotionVectorINTEL";
+    Op[Op["SubgroupAvcImeGetWeightingPatternMinimumDistortionINTEL"] = 5780] = "SubgroupAvcImeGetWeightingPatternMinimumDistortionINTEL";
+    Op[Op["SubgroupAvcFmeInitializeINTEL"] = 5781] = "SubgroupAvcFmeInitializeINTEL";
+    Op[Op["SubgroupAvcBmeInitializeINTEL"] = 5782] = "SubgroupAvcBmeInitializeINTEL";
+    Op[Op["SubgroupAvcRefConvertToMcePayloadINTEL"] = 5783] = "SubgroupAvcRefConvertToMcePayloadINTEL";
+    Op[Op["SubgroupAvcRefSetBidirectionalMixDisableINTEL"] = 5784] = "SubgroupAvcRefSetBidirectionalMixDisableINTEL";
+    Op[Op["SubgroupAvcRefSetBilinearFilterEnableINTEL"] = 5785] = "SubgroupAvcRefSetBilinearFilterEnableINTEL";
+    Op[Op["SubgroupAvcRefEvaluateWithSingleReferenceINTEL"] = 5786] = "SubgroupAvcRefEvaluateWithSingleReferenceINTEL";
+    Op[Op["SubgroupAvcRefEvaluateWithDualReferenceINTEL"] = 5787] = "SubgroupAvcRefEvaluateWithDualReferenceINTEL";
+    Op[Op["SubgroupAvcRefEvaluateWithMultiReferenceINTEL"] = 5788] = "SubgroupAvcRefEvaluateWithMultiReferenceINTEL";
+    Op[Op["SubgroupAvcRefEvaluateWithMultiReferenceInterlacedINTEL"] = 5789] = "SubgroupAvcRefEvaluateWithMultiReferenceInterlacedINTEL";
+    Op[Op["SubgroupAvcRefConvertToMceResultINTEL"] = 5790] = "SubgroupAvcRefConvertToMceResultINTEL";
+    Op[Op["SubgroupAvcSicInitializeINTEL"] = 5791] = "SubgroupAvcSicInitializeINTEL";
+    Op[Op["SubgroupAvcSicConfigureSkcINTEL"] = 5792] = "SubgroupAvcSicConfigureSkcINTEL";
+    Op[Op["SubgroupAvcSicConfigureIpeLumaINTEL"] = 5793] = "SubgroupAvcSicConfigureIpeLumaINTEL";
+    Op[Op["SubgroupAvcSicConfigureIpeLumaChromaINTEL"] = 5794] = "SubgroupAvcSicConfigureIpeLumaChromaINTEL";
+    Op[Op["SubgroupAvcSicGetMotionVectorMaskINTEL"] = 5795] = "SubgroupAvcSicGetMotionVectorMaskINTEL";
+    Op[Op["SubgroupAvcSicConvertToMcePayloadINTEL"] = 5796] = "SubgroupAvcSicConvertToMcePayloadINTEL";
+    Op[Op["SubgroupAvcSicSetIntraLumaShapePenaltyINTEL"] = 5797] = "SubgroupAvcSicSetIntraLumaShapePenaltyINTEL";
+    Op[Op["SubgroupAvcSicSetIntraLumaModeCostFunctionINTEL"] = 5798] = "SubgroupAvcSicSetIntraLumaModeCostFunctionINTEL";
+    Op[Op["SubgroupAvcSicSetIntraChromaModeCostFunctionINTEL"] = 5799] = "SubgroupAvcSicSetIntraChromaModeCostFunctionINTEL";
+    Op[Op["SubgroupAvcSicSetBilinearFilterEnableINTEL"] = 5800] = "SubgroupAvcSicSetBilinearFilterEnableINTEL";
+    Op[Op["SubgroupAvcSicSetSkcForwardTransformEnableINTEL"] = 5801] = "SubgroupAvcSicSetSkcForwardTransformEnableINTEL";
+    Op[Op["SubgroupAvcSicSetBlockBasedRawSkipSadINTEL"] = 5802] = "SubgroupAvcSicSetBlockBasedRawSkipSadINTEL";
+    Op[Op["SubgroupAvcSicEvaluateIpeINTEL"] = 5803] = "SubgroupAvcSicEvaluateIpeINTEL";
+    Op[Op["SubgroupAvcSicEvaluateWithSingleReferenceINTEL"] = 5804] = "SubgroupAvcSicEvaluateWithSingleReferenceINTEL";
+    Op[Op["SubgroupAvcSicEvaluateWithDualReferenceINTEL"] = 5805] = "SubgroupAvcSicEvaluateWithDualReferenceINTEL";
+    Op[Op["SubgroupAvcSicEvaluateWithMultiReferenceINTEL"] = 5806] = "SubgroupAvcSicEvaluateWithMultiReferenceINTEL";
+    Op[Op["SubgroupAvcSicEvaluateWithMultiReferenceInterlacedINTEL"] = 5807] = "SubgroupAvcSicEvaluateWithMultiReferenceInterlacedINTEL";
+    Op[Op["SubgroupAvcSicConvertToMceResultINTEL"] = 5808] = "SubgroupAvcSicConvertToMceResultINTEL";
+    Op[Op["SubgroupAvcSicGetIpeLumaShapeINTEL"] = 5809] = "SubgroupAvcSicGetIpeLumaShapeINTEL";
+    Op[Op["SubgroupAvcSicGetBestIpeLumaDistortionINTEL"] = 5810] = "SubgroupAvcSicGetBestIpeLumaDistortionINTEL";
+    Op[Op["SubgroupAvcSicGetBestIpeChromaDistortionINTEL"] = 5811] = "SubgroupAvcSicGetBestIpeChromaDistortionINTEL";
+    Op[Op["SubgroupAvcSicGetPackedIpeLumaModesINTEL"] = 5812] = "SubgroupAvcSicGetPackedIpeLumaModesINTEL";
+    Op[Op["SubgroupAvcSicGetIpeChromaModeINTEL"] = 5813] = "SubgroupAvcSicGetIpeChromaModeINTEL";
+    Op[Op["SubgroupAvcSicGetPackedSkcLumaCountThresholdINTEL"] = 5814] = "SubgroupAvcSicGetPackedSkcLumaCountThresholdINTEL";
+    Op[Op["SubgroupAvcSicGetPackedSkcLumaSumThresholdINTEL"] = 5815] = "SubgroupAvcSicGetPackedSkcLumaSumThresholdINTEL";
+    Op[Op["SubgroupAvcSicGetInterRawSadsINTEL"] = 5816] = "SubgroupAvcSicGetInterRawSadsINTEL";
+    Op[Op["LoopControlINTEL"] = 5887] = "LoopControlINTEL";
+    Op[Op["ReadPipeBlockingINTEL"] = 5946] = "ReadPipeBlockingINTEL";
+    Op[Op["WritePipeBlockingINTEL"] = 5947] = "WritePipeBlockingINTEL";
+    Op[Op["FPGARegINTEL"] = 5949] = "FPGARegINTEL";
+    Op[Op["RayQueryGetRayTMinKHR"] = 6016] = "RayQueryGetRayTMinKHR";
+    Op[Op["RayQueryGetRayFlagsKHR"] = 6017] = "RayQueryGetRayFlagsKHR";
+    Op[Op["RayQueryGetIntersectionTKHR"] = 6018] = "RayQueryGetIntersectionTKHR";
+    Op[Op["RayQueryGetIntersectionInstanceCustomIndexKHR"] = 6019] = "RayQueryGetIntersectionInstanceCustomIndexKHR";
+    Op[Op["RayQueryGetIntersectionInstanceIdKHR"] = 6020] = "RayQueryGetIntersectionInstanceIdKHR";
+    Op[Op["RayQueryGetIntersectionInstanceShaderBindingTableRecordOffsetKHR"] = 6021] = "RayQueryGetIntersectionInstanceShaderBindingTableRecordOffsetKHR";
+    Op[Op["RayQueryGetIntersectionGeometryIndexKHR"] = 6022] = "RayQueryGetIntersectionGeometryIndexKHR";
+    Op[Op["RayQueryGetIntersectionPrimitiveIndexKHR"] = 6023] = "RayQueryGetIntersectionPrimitiveIndexKHR";
+    Op[Op["RayQueryGetIntersectionBarycentricsKHR"] = 6024] = "RayQueryGetIntersectionBarycentricsKHR";
+    Op[Op["RayQueryGetIntersectionFrontFaceKHR"] = 6025] = "RayQueryGetIntersectionFrontFaceKHR";
+    Op[Op["RayQueryGetIntersectionCandidateAABBOpaqueKHR"] = 6026] = "RayQueryGetIntersectionCandidateAABBOpaqueKHR";
+    Op[Op["RayQueryGetIntersectionObjectRayDirectionKHR"] = 6027] = "RayQueryGetIntersectionObjectRayDirectionKHR";
+    Op[Op["RayQueryGetIntersectionObjectRayOriginKHR"] = 6028] = "RayQueryGetIntersectionObjectRayOriginKHR";
+    Op[Op["RayQueryGetWorldRayDirectionKHR"] = 6029] = "RayQueryGetWorldRayDirectionKHR";
+    Op[Op["RayQueryGetWorldRayOriginKHR"] = 6030] = "RayQueryGetWorldRayOriginKHR";
+    Op[Op["RayQueryGetIntersectionObjectToWorldKHR"] = 6031] = "RayQueryGetIntersectionObjectToWorldKHR";
+    Op[Op["RayQueryGetIntersectionWorldToObjectKHR"] = 6032] = "RayQueryGetIntersectionWorldToObjectKHR";
+    Op[Op["AtomicFAddEXT"] = 6035] = "AtomicFAddEXT";
+    Op[Op["Max"] = 2147483647] = "Max";
 })(Op || (Op = {}));
 
 // @ts-ignore
-// Meta data about blocks. The cross-compiler needs to query if a block is either of these types.
-// It is a bitset as there can be more than one tag per block.
-var BlockMetaFlagBits;
-(function (BlockMetaFlagBits) {
-    BlockMetaFlagBits[BlockMetaFlagBits["BLOCK_META_LOOP_HEADER_BIT"] = 1] = "BLOCK_META_LOOP_HEADER_BIT";
-    BlockMetaFlagBits[BlockMetaFlagBits["BLOCK_META_CONTINUE_BIT"] = 2] = "BLOCK_META_CONTINUE_BIT";
-    BlockMetaFlagBits[BlockMetaFlagBits["BLOCK_META_LOOP_MERGE_BIT"] = 4] = "BLOCK_META_LOOP_MERGE_BIT";
-    BlockMetaFlagBits[BlockMetaFlagBits["BLOCK_META_SELECTION_MERGE_BIT"] = 8] = "BLOCK_META_SELECTION_MERGE_BIT";
-    BlockMetaFlagBits[BlockMetaFlagBits["BLOCK_META_MULTISELECT_MERGE_BIT"] = 16] = "BLOCK_META_MULTISELECT_MERGE_BIT";
-})(BlockMetaFlagBits || (BlockMetaFlagBits = {}));
 var Source = /** @class */ (function () {
     function Source() {
         this.version = 0;
@@ -2315,7 +2306,7 @@ var ParsedIR = /** @class */ (function () {
         // Holds all IDs which have a certain type.
         // This is needed so we can iterate through a specific kind of resource quickly,
         // and in-order of module declaration.
-        this.ids_for_type = new Array(Types.TypeCount);
+        this.ids_for_type = new Array(Types.Count);
         // Special purpose lists which contain a union of types.
         // This is needed so we can declare specialization constants and structs in an interleaved fashion,
         // among other things.
@@ -2341,8 +2332,8 @@ var ParsedIR = /** @class */ (function () {
         this.entry_points = [];
         this.default_entry_point = 0;
         this.source = new Source();
-        this.addressing_model = AddressingModel.AddressingModelMax;
-        this.memory_model = MemoryModel.MemoryModelMax;
+        this.addressing_model = AddressingModel.Max;
+        this.memory_model = MemoryModel.Max;
         this.loop_iteration_depth_hard = 0;
         this.loop_iteration_depth_soft = 0;
         this.empty_string = "";
@@ -2352,19 +2343,19 @@ var ParsedIR = /** @class */ (function () {
             this.ids_for_type[i] = [];
         // we're not using pools for now because we don't have destructors
         this.pool_group = new ObjectPoolGroup();
-        this.pool_group.pools[Types.TypeType] = new ObjectPool(SPIRType);
-        this.pool_group.pools[Types.TypeVariable] = new ObjectPool(SPIRVariable);
-        this.pool_group.pools[Types.TypeConstant] = new ObjectPool(SPIRConstant);
-        this.pool_group.pools[Types.TypeFunction] = new ObjectPool(SPIRFunction);
-        this.pool_group.pools[Types.TypeFunctionPrototype] = new ObjectPool(SPIRFunctionPrototype);
-        this.pool_group.pools[Types.TypeBlock] = new ObjectPool(SPIRBlock);
-        this.pool_group.pools[Types.TypeExtension] = new ObjectPool(SPIRExtension);
-        this.pool_group.pools[Types.TypeExpression] = new ObjectPool(SPIRExpression);
-        this.pool_group.pools[Types.TypeConstantOp] = new ObjectPool(SPIRConstantOp);
-        this.pool_group.pools[Types.TypeCombinedImageSampler] = new ObjectPool(SPIRCombinedImageSampler);
-        this.pool_group.pools[Types.TypeAccessChain] = new ObjectPool(SPIRAccessChain);
-        this.pool_group.pools[Types.TypeUndef] = new ObjectPool(SPIRUndef);
-        this.pool_group.pools[Types.TypeString] = new ObjectPool(SPIRString);
+        this.pool_group.pools[Types.Type] = new ObjectPool(SPIRType);
+        this.pool_group.pools[Types.Variable] = new ObjectPool(SPIRVariable);
+        this.pool_group.pools[Types.Constant] = new ObjectPool(SPIRConstant);
+        this.pool_group.pools[Types.Function] = new ObjectPool(SPIRFunction);
+        this.pool_group.pools[Types.FunctionPrototype] = new ObjectPool(SPIRFunctionPrototype);
+        this.pool_group.pools[Types.Block] = new ObjectPool(SPIRBlock);
+        this.pool_group.pools[Types.Extension] = new ObjectPool(SPIRExtension);
+        this.pool_group.pools[Types.Expression] = new ObjectPool(SPIRExpression);
+        this.pool_group.pools[Types.ConstantOp] = new ObjectPool(SPIRConstantOp);
+        this.pool_group.pools[Types.CombinedImageSampler] = new ObjectPool(SPIRCombinedImageSampler);
+        this.pool_group.pools[Types.AccessChain] = new ObjectPool(SPIRAccessChain);
+        this.pool_group.pools[Types.Undef] = new ObjectPool(SPIRUndef);
+        this.pool_group.pools[Types.String] = new ObjectPool(SPIRString);
     }
     // Resizes ids, meta and block_meta.
     ParsedIR.prototype.set_id_bounds = function (bounds) {
@@ -2394,54 +2385,54 @@ var ParsedIR = /** @class */ (function () {
         var dec = this.get_meta(id).decoration;
         dec.decoration_flags.set(decoration);
         switch (decoration) {
-            case Decoration.DecorationBuiltIn:
+            case Decoration.BuiltIn:
                 dec.builtin = true;
                 dec.builtin_type = argument;
                 break;
-            case Decoration.DecorationLocation:
+            case Decoration.Location:
                 dec.location = argument;
                 break;
-            case Decoration.DecorationComponent:
+            case Decoration.Component:
                 dec.component = argument;
                 break;
-            case Decoration.DecorationOffset:
+            case Decoration.Offset:
                 dec.offset = argument;
                 break;
-            case Decoration.DecorationXfbBuffer:
+            case Decoration.XfbBuffer:
                 dec.xfb_buffer = argument;
                 break;
-            case Decoration.DecorationXfbStride:
+            case Decoration.XfbStride:
                 dec.xfb_stride = argument;
                 break;
-            case Decoration.DecorationStream:
+            case Decoration.Stream:
                 dec.stream = argument;
                 break;
-            case Decoration.DecorationArrayStride:
+            case Decoration.ArrayStride:
                 dec.array_stride = argument;
                 break;
-            case Decoration.DecorationMatrixStride:
+            case Decoration.MatrixStride:
                 dec.matrix_stride = argument;
                 break;
-            case Decoration.DecorationBinding:
+            case Decoration.Binding:
                 dec.binding = argument;
                 break;
-            case Decoration.DecorationDescriptorSet:
+            case Decoration.DescriptorSet:
                 dec.set = argument;
                 break;
-            case Decoration.DecorationInputAttachmentIndex:
+            case Decoration.InputAttachmentIndex:
                 dec.input_attachment = argument;
                 break;
-            case Decoration.DecorationSpecId:
+            case Decoration.SpecId:
                 dec.spec_id = argument;
                 break;
-            case Decoration.DecorationIndex:
+            case Decoration.Index:
                 dec.index = argument;
                 break;
-            case Decoration.DecorationHlslCounterBufferGOOGLE:
+            case Decoration.HlslCounterBufferGOOGLE:
                 this.get_meta(id).hlsl_magic_counter_buffer = argument;
                 this.meta[argument].hlsl_is_magic_counter_buffer = true;
                 break;
-            case Decoration.DecorationFPRoundingMode:
+            case Decoration.FPRoundingMode:
                 dec.fp_rounding_mode = argument;
                 break;
         }
@@ -2450,7 +2441,7 @@ var ParsedIR = /** @class */ (function () {
         var dec = this.get_meta(id).decoration;
         dec.decoration_flags.set(decoration);
         switch (decoration) {
-            case Decoration.DecorationHlslSemanticGOOGLE:
+            case Decoration.HlslSemanticGOOGLE:
                 dec.hlsl_semantic = argument;
                 break;
         }
@@ -2466,35 +2457,35 @@ var ParsedIR = /** @class */ (function () {
         if (!dec.decoration_flags.get(decoration))
             return 0;
         switch (decoration) {
-            case Decoration.DecorationBuiltIn:
+            case Decoration.BuiltIn:
                 return dec.builtin_type;
-            case Decoration.DecorationLocation:
+            case Decoration.Location:
                 return dec.location;
-            case Decoration.DecorationComponent:
+            case Decoration.Component:
                 return dec.component;
-            case Decoration.DecorationOffset:
+            case Decoration.Offset:
                 return dec.offset;
-            case Decoration.DecorationXfbBuffer:
+            case Decoration.XfbBuffer:
                 return dec.xfb_buffer;
-            case Decoration.DecorationXfbStride:
+            case Decoration.XfbStride:
                 return dec.xfb_stride;
-            case Decoration.DecorationStream:
+            case Decoration.Stream:
                 return dec.stream;
-            case Decoration.DecorationBinding:
+            case Decoration.Binding:
                 return dec.binding;
-            case Decoration.DecorationDescriptorSet:
+            case Decoration.DescriptorSet:
                 return dec.set;
-            case Decoration.DecorationInputAttachmentIndex:
+            case Decoration.InputAttachmentIndex:
                 return dec.input_attachment;
-            case Decoration.DecorationSpecId:
+            case Decoration.SpecId:
                 return dec.spec_id;
-            case Decoration.DecorationArrayStride:
+            case Decoration.ArrayStride:
                 return dec.array_stride;
-            case Decoration.DecorationMatrixStride:
+            case Decoration.MatrixStride:
                 return dec.matrix_stride;
-            case Decoration.DecorationIndex:
+            case Decoration.Index:
                 return dec.index;
-            case Decoration.DecorationFPRoundingMode:
+            case Decoration.FPRoundingMode:
                 return dec.fp_rounding_mode;
             default:
                 return 1;
@@ -2508,7 +2499,7 @@ var ParsedIR = /** @class */ (function () {
         if (!dec.decoration_flags.get(decoration))
             return this.empty_string;
         switch (decoration) {
-            case Decoration.DecorationHlslSemanticGOOGLE:
+            case Decoration.HlslSemanticGOOGLE:
                 return dec.hlsl_semantic;
             default:
                 return this.empty_string;
@@ -2527,46 +2518,46 @@ var ParsedIR = /** @class */ (function () {
         var dec = this.get_meta(id).decoration;
         dec.decoration_flags.clear(decoration);
         switch (decoration) {
-            case Decoration.DecorationBuiltIn:
+            case Decoration.BuiltIn:
                 dec.builtin = false;
                 break;
-            case Decoration.DecorationLocation:
+            case Decoration.Location:
                 dec.location = 0;
                 break;
-            case Decoration.DecorationComponent:
+            case Decoration.Component:
                 dec.component = 0;
                 break;
-            case Decoration.DecorationOffset:
+            case Decoration.Offset:
                 dec.offset = 0;
                 break;
-            case Decoration.DecorationXfbBuffer:
+            case Decoration.XfbBuffer:
                 dec.xfb_buffer = 0;
                 break;
-            case Decoration.DecorationXfbStride:
+            case Decoration.XfbStride:
                 dec.xfb_stride = 0;
                 break;
-            case Decoration.DecorationStream:
+            case Decoration.Stream:
                 dec.stream = 0;
                 break;
-            case Decoration.DecorationBinding:
+            case Decoration.Binding:
                 dec.binding = 0;
                 break;
-            case Decoration.DecorationDescriptorSet:
+            case Decoration.DescriptorSet:
                 dec.set = 0;
                 break;
-            case Decoration.DecorationInputAttachmentIndex:
+            case Decoration.InputAttachmentIndex:
                 dec.input_attachment = 0;
                 break;
-            case Decoration.DecorationSpecId:
+            case Decoration.SpecId:
                 dec.spec_id = 0;
                 break;
-            case Decoration.DecorationHlslSemanticGOOGLE:
+            case Decoration.HlslSemanticGOOGLE:
                 dec.hlsl_semantic = "";
                 break;
-            case Decoration.DecorationFPRoundingMode:
-                dec.fp_rounding_mode = FPRoundingMode.FPRoundingModeMax;
+            case Decoration.FPRoundingMode:
+                dec.fp_rounding_mode = FPRoundingMode.Max;
                 break;
-            case Decoration.DecorationHlslCounterBufferGOOGLE: {
+            case Decoration.HlslCounterBufferGOOGLE: {
                 var meta = this.get_meta(id);
                 var counter = meta.hlsl_magic_counter_buffer;
                 if (counter) {
@@ -2610,38 +2601,38 @@ var ParsedIR = /** @class */ (function () {
         var dec = m.members[index];
         dec.decoration_flags.set(decoration);
         switch (decoration) {
-            case Decoration.DecorationBuiltIn:
+            case Decoration.BuiltIn:
                 dec.builtin = true;
                 dec.builtin_type = argument;
                 break;
-            case Decoration.DecorationLocation:
+            case Decoration.Location:
                 dec.location = argument;
                 break;
-            case Decoration.DecorationComponent:
+            case Decoration.Component:
                 dec.component = argument;
                 break;
-            case Decoration.DecorationBinding:
+            case Decoration.Binding:
                 dec.binding = argument;
                 break;
-            case Decoration.DecorationOffset:
+            case Decoration.Offset:
                 dec.offset = argument;
                 break;
-            case Decoration.DecorationXfbBuffer:
+            case Decoration.XfbBuffer:
                 dec.xfb_buffer = argument;
                 break;
-            case Decoration.DecorationXfbStride:
+            case Decoration.XfbStride:
                 dec.xfb_stride = argument;
                 break;
-            case Decoration.DecorationStream:
+            case Decoration.Stream:
                 dec.stream = argument;
                 break;
-            case Decoration.DecorationSpecId:
+            case Decoration.SpecId:
                 dec.spec_id = argument;
                 break;
-            case Decoration.DecorationMatrixStride:
+            case Decoration.MatrixStride:
                 dec.matrix_stride = argument;
                 break;
-            case Decoration.DecorationIndex:
+            case Decoration.Index:
                 dec.index = argument;
                 break;
         }
@@ -2653,7 +2644,7 @@ var ParsedIR = /** @class */ (function () {
         var dec = m.members[index];
         dec.decoration_flags.set(decoration);
         switch (decoration) {
-            case Decoration.DecorationHlslSemanticGOOGLE:
+            case Decoration.HlslSemanticGOOGLE:
                 dec.hlsl_semantic = argument;
                 break;
         }
@@ -2668,25 +2659,25 @@ var ParsedIR = /** @class */ (function () {
         if (!dec.decoration_flags.get(decoration))
             return 0;
         switch (decoration) {
-            case Decoration.DecorationBuiltIn:
+            case Decoration.BuiltIn:
                 return dec.builtin_type;
-            case Decoration.DecorationLocation:
+            case Decoration.Location:
                 return dec.location;
-            case Decoration.DecorationComponent:
+            case Decoration.Component:
                 return dec.component;
-            case Decoration.DecorationBinding:
+            case Decoration.Binding:
                 return dec.binding;
-            case Decoration.DecorationOffset:
+            case Decoration.Offset:
                 return dec.offset;
-            case Decoration.DecorationXfbBuffer:
+            case Decoration.XfbBuffer:
                 return dec.xfb_buffer;
-            case Decoration.DecorationXfbStride:
+            case Decoration.XfbStride:
                 return dec.xfb_stride;
-            case Decoration.DecorationStream:
+            case Decoration.Stream:
                 return dec.stream;
-            case Decoration.DecorationSpecId:
+            case Decoration.SpecId:
                 return dec.spec_id;
-            case Decoration.DecorationIndex:
+            case Decoration.Index:
                 return dec.index;
             default:
                 return 1;
@@ -2699,7 +2690,7 @@ var ParsedIR = /** @class */ (function () {
                 return this.empty_string;
             var dec = m.members[index];
             switch (decoration) {
-                case Decoration.DecorationHlslSemanticGOOGLE:
+                case Decoration.HlslSemanticGOOGLE:
                     return dec.hlsl_semantic;
                 default:
                     return this.empty_string;
@@ -2728,46 +2719,46 @@ var ParsedIR = /** @class */ (function () {
         var dec = m.members[index];
         dec.decoration_flags.clear(decoration);
         switch (decoration) {
-            case Decoration.DecorationBuiltIn:
+            case Decoration.BuiltIn:
                 dec.builtin = false;
                 break;
-            case Decoration.DecorationLocation:
+            case Decoration.Location:
                 dec.location = 0;
                 break;
-            case Decoration.DecorationComponent:
+            case Decoration.Component:
                 dec.component = 0;
                 break;
-            case Decoration.DecorationOffset:
+            case Decoration.Offset:
                 dec.offset = 0;
                 break;
-            case Decoration.DecorationXfbBuffer:
+            case Decoration.XfbBuffer:
                 dec.xfb_buffer = 0;
                 break;
-            case Decoration.DecorationXfbStride:
+            case Decoration.XfbStride:
                 dec.xfb_stride = 0;
                 break;
-            case Decoration.DecorationStream:
+            case Decoration.Stream:
                 dec.stream = 0;
                 break;
-            case Decoration.DecorationSpecId:
+            case Decoration.SpecId:
                 dec.spec_id = 0;
                 break;
-            case Decoration.DecorationHlslSemanticGOOGLE:
+            case Decoration.HlslSemanticGOOGLE:
                 dec.hlsl_semantic = "";
                 break;
         }
     };
     ParsedIR.prototype.mark_used_as_array_length = function (id) {
         switch (this.ids[id].get_type()) {
-            case Types.TypeConstant:
+            case Types.Constant:
                 this.get(SPIRConstant, id).is_used_as_array_length = true;
                 break;
-            case Types.TypeConstantOp:
+            case Types.ConstantOp:
                 {
                     var cop = this.get(SPIRConstantOp, id);
-                    if (cop.opcode === Op.OpCompositeExtract)
+                    if (cop.opcode === Op.CompositeExtract)
                         this.mark_used_as_array_length(cop.arguments[0]);
-                    else if (cop.opcode === Op.OpCompositeInsert) {
+                    else if (cop.opcode === Op.CompositeInsert) {
                         this.mark_used_as_array_length(cop.arguments[0]);
                         this.mark_used_as_array_length(cop.arguments[1]);
                     }
@@ -2778,7 +2769,7 @@ var ParsedIR = /** @class */ (function () {
                         }
                     break;
                 }
-            case Types.TypeUndef:
+            case Types.Undef:
                 break;
             default:
                 throw new Error("Shouldn't reach this branch");
@@ -2786,7 +2777,7 @@ var ParsedIR = /** @class */ (function () {
     };
     ParsedIR.prototype.get_buffer_block_flags = function (var_) {
         var type = this.get(SPIRType, var_.basetype);
-        if (type.basetype !== SPIRTypeBaseType.Struct) {
+        if (type.basetype !== SPIRBaseType.Struct) {
             throw new Error("Assertion failure");
         }
         // Some flags like non-writable, non-readable are actually found
@@ -2823,15 +2814,15 @@ var ParsedIR = /** @class */ (function () {
         }
         if (_id.empty() || _id.get_type() !== type) {
             switch (type) {
-                case Types.TypeConstant:
+                case Types.Constant:
                     this.ids_for_constant_or_variable.push(id);
                     this.ids_for_constant_or_type.push(id);
                     break;
-                case Types.TypeVariable:
+                case Types.Variable:
                     this.ids_for_constant_or_variable.push(id);
                     break;
-                case Types.TypeType:
-                case Types.TypeConstantOp:
+                case Types.Type:
+                case Types.ConstantOp:
                     this.ids_for_constant_or_type.push(id);
                     break;
             }
@@ -2896,7 +2887,7 @@ var ParsedIR = /** @class */ (function () {
         var constant_type = this.get(SPIRType, type);
         if (constant_type.pointer) {
             if (add_to_typed_id_set)
-                this.add_typed_id(Types.TypeConstant, id);
+                this.add_typed_id(Types.Constant, id);
             var constant = variant_set(SPIRConstant, this.ids[id], type);
             constant.self = id;
             constant.make_null(constant_type);
@@ -2911,7 +2902,7 @@ var ParsedIR = /** @class */ (function () {
             for (var i = 0; i < constant_type.array.length; i++)
                 elements[i] = parent_id;
             if (add_to_typed_id_set)
-                this.add_typed_id(Types.TypeConstant, id);
+                this.add_typed_id(Types.Constant, id);
             variant_set(SPIRConstant, this.ids[id], type, elements, elements.length, false).self = id;
         }
         else if (constant_type.member_types.length !== 0) {
@@ -2922,12 +2913,12 @@ var ParsedIR = /** @class */ (function () {
                 elements[i] = member_ids + i;
             }
             if (add_to_typed_id_set)
-                this.add_typed_id(Types.TypeConstant, id);
+                this.add_typed_id(Types.Constant, id);
             variant_set(SPIRConstant, this.ids[id], type, elements, elements.length, false).self = id;
         }
         else {
             if (add_to_typed_id_set)
-                this.add_typed_id(Types.TypeConstant, id);
+                this.add_typed_id(Types.Constant, id);
             var constant = variant_set(SPIRConstant, this.ids[id], type);
             constant.self = id;
             constant.make_null(constant_type);
@@ -3132,28 +3123,28 @@ var Pair = /** @class */ (function () {
 
 var ExecutionModel;
 (function (ExecutionModel) {
-    ExecutionModel[ExecutionModel["ExecutionModelVertex"] = 0] = "ExecutionModelVertex";
-    ExecutionModel[ExecutionModel["ExecutionModelTessellationControl"] = 1] = "ExecutionModelTessellationControl";
-    ExecutionModel[ExecutionModel["ExecutionModelTessellationEvaluation"] = 2] = "ExecutionModelTessellationEvaluation";
-    ExecutionModel[ExecutionModel["ExecutionModelGeometry"] = 3] = "ExecutionModelGeometry";
-    ExecutionModel[ExecutionModel["ExecutionModelFragment"] = 4] = "ExecutionModelFragment";
-    ExecutionModel[ExecutionModel["ExecutionModelGLCompute"] = 5] = "ExecutionModelGLCompute";
-    ExecutionModel[ExecutionModel["ExecutionModelKernel"] = 6] = "ExecutionModelKernel";
-    ExecutionModel[ExecutionModel["ExecutionModelTaskNV"] = 5267] = "ExecutionModelTaskNV";
-    ExecutionModel[ExecutionModel["ExecutionModelMeshNV"] = 5268] = "ExecutionModelMeshNV";
-    ExecutionModel[ExecutionModel["ExecutionModelRayGenerationKHR"] = 5313] = "ExecutionModelRayGenerationKHR";
-    ExecutionModel[ExecutionModel["ExecutionModelRayGenerationNV"] = 5313] = "ExecutionModelRayGenerationNV";
-    ExecutionModel[ExecutionModel["ExecutionModelIntersectionKHR"] = 5314] = "ExecutionModelIntersectionKHR";
-    ExecutionModel[ExecutionModel["ExecutionModelIntersectionNV"] = 5314] = "ExecutionModelIntersectionNV";
-    ExecutionModel[ExecutionModel["ExecutionModelAnyHitKHR"] = 5315] = "ExecutionModelAnyHitKHR";
-    ExecutionModel[ExecutionModel["ExecutionModelAnyHitNV"] = 5315] = "ExecutionModelAnyHitNV";
-    ExecutionModel[ExecutionModel["ExecutionModelClosestHitKHR"] = 5316] = "ExecutionModelClosestHitKHR";
-    ExecutionModel[ExecutionModel["ExecutionModelClosestHitNV"] = 5316] = "ExecutionModelClosestHitNV";
-    ExecutionModel[ExecutionModel["ExecutionModelMissKHR"] = 5317] = "ExecutionModelMissKHR";
-    ExecutionModel[ExecutionModel["ExecutionModelMissNV"] = 5317] = "ExecutionModelMissNV";
-    ExecutionModel[ExecutionModel["ExecutionModelCallableKHR"] = 5318] = "ExecutionModelCallableKHR";
-    ExecutionModel[ExecutionModel["ExecutionModelCallableNV"] = 5318] = "ExecutionModelCallableNV";
-    ExecutionModel[ExecutionModel["ExecutionModelMax"] = 2147483647] = "ExecutionModelMax";
+    ExecutionModel[ExecutionModel["Vertex"] = 0] = "Vertex";
+    ExecutionModel[ExecutionModel["TessellationControl"] = 1] = "TessellationControl";
+    ExecutionModel[ExecutionModel["TessellationEvaluation"] = 2] = "TessellationEvaluation";
+    ExecutionModel[ExecutionModel["Geometry"] = 3] = "Geometry";
+    ExecutionModel[ExecutionModel["Fragment"] = 4] = "Fragment";
+    ExecutionModel[ExecutionModel["GLCompute"] = 5] = "GLCompute";
+    ExecutionModel[ExecutionModel["Kernel"] = 6] = "Kernel";
+    ExecutionModel[ExecutionModel["TaskNV"] = 5267] = "TaskNV";
+    ExecutionModel[ExecutionModel["MeshNV"] = 5268] = "MeshNV";
+    ExecutionModel[ExecutionModel["RayGenerationKHR"] = 5313] = "RayGenerationKHR";
+    ExecutionModel[ExecutionModel["RayGenerationNV"] = 5313] = "RayGenerationNV";
+    ExecutionModel[ExecutionModel["IntersectionKHR"] = 5314] = "IntersectionKHR";
+    ExecutionModel[ExecutionModel["IntersectionNV"] = 5314] = "IntersectionNV";
+    ExecutionModel[ExecutionModel["AnyHitKHR"] = 5315] = "AnyHitKHR";
+    ExecutionModel[ExecutionModel["AnyHitNV"] = 5315] = "AnyHitNV";
+    ExecutionModel[ExecutionModel["ClosestHitKHR"] = 5316] = "ClosestHitKHR";
+    ExecutionModel[ExecutionModel["ClosestHitNV"] = 5316] = "ClosestHitNV";
+    ExecutionModel[ExecutionModel["MissKHR"] = 5317] = "MissKHR";
+    ExecutionModel[ExecutionModel["MissNV"] = 5317] = "MissNV";
+    ExecutionModel[ExecutionModel["CallableKHR"] = 5318] = "CallableKHR";
+    ExecutionModel[ExecutionModel["CallableNV"] = 5318] = "CallableNV";
+    ExecutionModel[ExecutionModel["Max"] = 2147483647] = "Max";
 })(ExecutionModel || (ExecutionModel = {}));
 
 var SPIREntryPointWorkgroupSize = /** @class */ (function () {
@@ -3179,7 +3170,7 @@ var SPIREntryPoint = /** @class */ (function () {
         this.workgroup_size = new SPIREntryPointWorkgroupSize();
         this.invocations = 0;
         this.output_vertices = 0;
-        this.model = ExecutionModel.ExecutionModelMax;
+        this.model = ExecutionModel.Max;
         this.geometry_passthrough = false;
         if (param0 instanceof SPIREntryPoint) {
             defaultCopy(param0, this);
@@ -3198,297 +3189,308 @@ var MagicNumber = 0x07230203;
 
 var SourceLanguage;
 (function (SourceLanguage) {
-    SourceLanguage[SourceLanguage["SourceLanguageUnknown"] = 0] = "SourceLanguageUnknown";
-    SourceLanguage[SourceLanguage["SourceLanguageESSL"] = 1] = "SourceLanguageESSL";
-    SourceLanguage[SourceLanguage["SourceLanguageGLSL"] = 2] = "SourceLanguageGLSL";
-    SourceLanguage[SourceLanguage["SourceLanguageOpenCL_C"] = 3] = "SourceLanguageOpenCL_C";
-    SourceLanguage[SourceLanguage["SourceLanguageOpenCL_CPP"] = 4] = "SourceLanguageOpenCL_CPP";
-    SourceLanguage[SourceLanguage["SourceLanguageHLSL"] = 5] = "SourceLanguageHLSL";
-    SourceLanguage[SourceLanguage["SourceLanguageMax"] = 2147483647] = "SourceLanguageMax";
+    SourceLanguage[SourceLanguage["Unknown"] = 0] = "Unknown";
+    SourceLanguage[SourceLanguage["ESSL"] = 1] = "ESSL";
+    SourceLanguage[SourceLanguage["GLSL"] = 2] = "GLSL";
+    SourceLanguage[SourceLanguage["OpenCL_C"] = 3] = "OpenCL_C";
+    SourceLanguage[SourceLanguage["OpenCL_CPP"] = 4] = "OpenCL_CPP";
+    SourceLanguage[SourceLanguage["HLSL"] = 5] = "HLSL";
+    SourceLanguage[SourceLanguage["Max"] = 2147483647] = "Max";
 })(SourceLanguage || (SourceLanguage = {}));
 
 var Capability;
 (function (Capability) {
-    Capability[Capability["CapabilityMatrix"] = 0] = "CapabilityMatrix";
-    Capability[Capability["CapabilityShader"] = 1] = "CapabilityShader";
-    Capability[Capability["CapabilityGeometry"] = 2] = "CapabilityGeometry";
-    Capability[Capability["CapabilityTessellation"] = 3] = "CapabilityTessellation";
-    Capability[Capability["CapabilityAddresses"] = 4] = "CapabilityAddresses";
-    Capability[Capability["CapabilityLinkage"] = 5] = "CapabilityLinkage";
-    Capability[Capability["CapabilityKernel"] = 6] = "CapabilityKernel";
-    Capability[Capability["CapabilityVector16"] = 7] = "CapabilityVector16";
-    Capability[Capability["CapabilityFloat16Buffer"] = 8] = "CapabilityFloat16Buffer";
-    Capability[Capability["CapabilityFloat16"] = 9] = "CapabilityFloat16";
-    Capability[Capability["CapabilityFloat64"] = 10] = "CapabilityFloat64";
-    Capability[Capability["CapabilityInt64"] = 11] = "CapabilityInt64";
-    Capability[Capability["CapabilityInt64Atomics"] = 12] = "CapabilityInt64Atomics";
-    Capability[Capability["CapabilityImageBasic"] = 13] = "CapabilityImageBasic";
-    Capability[Capability["CapabilityImageReadWrite"] = 14] = "CapabilityImageReadWrite";
-    Capability[Capability["CapabilityImageMipmap"] = 15] = "CapabilityImageMipmap";
-    Capability[Capability["CapabilityPipes"] = 17] = "CapabilityPipes";
-    Capability[Capability["CapabilityGroups"] = 18] = "CapabilityGroups";
-    Capability[Capability["CapabilityDeviceEnqueue"] = 19] = "CapabilityDeviceEnqueue";
-    Capability[Capability["CapabilityLiteralSampler"] = 20] = "CapabilityLiteralSampler";
-    Capability[Capability["CapabilityAtomicStorage"] = 21] = "CapabilityAtomicStorage";
-    Capability[Capability["CapabilityInt16"] = 22] = "CapabilityInt16";
-    Capability[Capability["CapabilityTessellationPointSize"] = 23] = "CapabilityTessellationPointSize";
-    Capability[Capability["CapabilityGeometryPointSize"] = 24] = "CapabilityGeometryPointSize";
-    Capability[Capability["CapabilityImageGatherExtended"] = 25] = "CapabilityImageGatherExtended";
-    Capability[Capability["CapabilityStorageImageMultisample"] = 27] = "CapabilityStorageImageMultisample";
-    Capability[Capability["CapabilityUniformBufferArrayDynamicIndexing"] = 28] = "CapabilityUniformBufferArrayDynamicIndexing";
-    Capability[Capability["CapabilitySampledImageArrayDynamicIndexing"] = 29] = "CapabilitySampledImageArrayDynamicIndexing";
-    Capability[Capability["CapabilityStorageBufferArrayDynamicIndexing"] = 30] = "CapabilityStorageBufferArrayDynamicIndexing";
-    Capability[Capability["CapabilityStorageImageArrayDynamicIndexing"] = 31] = "CapabilityStorageImageArrayDynamicIndexing";
-    Capability[Capability["CapabilityClipDistance"] = 32] = "CapabilityClipDistance";
-    Capability[Capability["CapabilityCullDistance"] = 33] = "CapabilityCullDistance";
-    Capability[Capability["CapabilityImageCubeArray"] = 34] = "CapabilityImageCubeArray";
-    Capability[Capability["CapabilitySampleRateShading"] = 35] = "CapabilitySampleRateShading";
-    Capability[Capability["CapabilityImageRect"] = 36] = "CapabilityImageRect";
-    Capability[Capability["CapabilitySampledRect"] = 37] = "CapabilitySampledRect";
-    Capability[Capability["CapabilityGenericPointer"] = 38] = "CapabilityGenericPointer";
-    Capability[Capability["CapabilityInt8"] = 39] = "CapabilityInt8";
-    Capability[Capability["CapabilityInputAttachment"] = 40] = "CapabilityInputAttachment";
-    Capability[Capability["CapabilitySparseResidency"] = 41] = "CapabilitySparseResidency";
-    Capability[Capability["CapabilityMinLod"] = 42] = "CapabilityMinLod";
-    Capability[Capability["CapabilitySampled1D"] = 43] = "CapabilitySampled1D";
-    Capability[Capability["CapabilityImage1D"] = 44] = "CapabilityImage1D";
-    Capability[Capability["CapabilitySampledCubeArray"] = 45] = "CapabilitySampledCubeArray";
-    Capability[Capability["CapabilitySampledBuffer"] = 46] = "CapabilitySampledBuffer";
-    Capability[Capability["CapabilityImageBuffer"] = 47] = "CapabilityImageBuffer";
-    Capability[Capability["CapabilityImageMSArray"] = 48] = "CapabilityImageMSArray";
-    Capability[Capability["CapabilityStorageImageExtendedFormats"] = 49] = "CapabilityStorageImageExtendedFormats";
-    Capability[Capability["CapabilityImageQuery"] = 50] = "CapabilityImageQuery";
-    Capability[Capability["CapabilityDerivativeControl"] = 51] = "CapabilityDerivativeControl";
-    Capability[Capability["CapabilityInterpolationFunction"] = 52] = "CapabilityInterpolationFunction";
-    Capability[Capability["CapabilityTransformFeedback"] = 53] = "CapabilityTransformFeedback";
-    Capability[Capability["CapabilityGeometryStreams"] = 54] = "CapabilityGeometryStreams";
-    Capability[Capability["CapabilityStorageImageReadWithoutFormat"] = 55] = "CapabilityStorageImageReadWithoutFormat";
-    Capability[Capability["CapabilityStorageImageWriteWithoutFormat"] = 56] = "CapabilityStorageImageWriteWithoutFormat";
-    Capability[Capability["CapabilityMultiViewport"] = 57] = "CapabilityMultiViewport";
-    Capability[Capability["CapabilitySubgroupDispatch"] = 58] = "CapabilitySubgroupDispatch";
-    Capability[Capability["CapabilityNamedBarrier"] = 59] = "CapabilityNamedBarrier";
-    Capability[Capability["CapabilityPipeStorage"] = 60] = "CapabilityPipeStorage";
-    Capability[Capability["CapabilityGroupNonUniform"] = 61] = "CapabilityGroupNonUniform";
-    Capability[Capability["CapabilityGroupNonUniformVote"] = 62] = "CapabilityGroupNonUniformVote";
-    Capability[Capability["CapabilityGroupNonUniformArithmetic"] = 63] = "CapabilityGroupNonUniformArithmetic";
-    Capability[Capability["CapabilityGroupNonUniformBallot"] = 64] = "CapabilityGroupNonUniformBallot";
-    Capability[Capability["CapabilityGroupNonUniformShuffle"] = 65] = "CapabilityGroupNonUniformShuffle";
-    Capability[Capability["CapabilityGroupNonUniformShuffleRelative"] = 66] = "CapabilityGroupNonUniformShuffleRelative";
-    Capability[Capability["CapabilityGroupNonUniformClustered"] = 67] = "CapabilityGroupNonUniformClustered";
-    Capability[Capability["CapabilityGroupNonUniformQuad"] = 68] = "CapabilityGroupNonUniformQuad";
-    Capability[Capability["CapabilityShaderLayer"] = 69] = "CapabilityShaderLayer";
-    Capability[Capability["CapabilityShaderViewportIndex"] = 70] = "CapabilityShaderViewportIndex";
-    Capability[Capability["CapabilityFragmentShadingRateKHR"] = 4422] = "CapabilityFragmentShadingRateKHR";
-    Capability[Capability["CapabilitySubgroupBallotKHR"] = 4423] = "CapabilitySubgroupBallotKHR";
-    Capability[Capability["CapabilityDrawParameters"] = 4427] = "CapabilityDrawParameters";
-    Capability[Capability["CapabilitySubgroupVoteKHR"] = 4431] = "CapabilitySubgroupVoteKHR";
-    Capability[Capability["CapabilityStorageBuffer16BitAccess"] = 4433] = "CapabilityStorageBuffer16BitAccess";
-    Capability[Capability["CapabilityStorageUniformBufferBlock16"] = 4433] = "CapabilityStorageUniformBufferBlock16";
-    Capability[Capability["CapabilityStorageUniform16"] = 4434] = "CapabilityStorageUniform16";
-    Capability[Capability["CapabilityUniformAndStorageBuffer16BitAccess"] = 4434] = "CapabilityUniformAndStorageBuffer16BitAccess";
-    Capability[Capability["CapabilityStoragePushConstant16"] = 4435] = "CapabilityStoragePushConstant16";
-    Capability[Capability["CapabilityStorageInputOutput16"] = 4436] = "CapabilityStorageInputOutput16";
-    Capability[Capability["CapabilityDeviceGroup"] = 4437] = "CapabilityDeviceGroup";
-    Capability[Capability["CapabilityMultiView"] = 4439] = "CapabilityMultiView";
-    Capability[Capability["CapabilityVariablePointersStorageBuffer"] = 4441] = "CapabilityVariablePointersStorageBuffer";
-    Capability[Capability["CapabilityVariablePointers"] = 4442] = "CapabilityVariablePointers";
-    Capability[Capability["CapabilityAtomicStorageOps"] = 4445] = "CapabilityAtomicStorageOps";
-    Capability[Capability["CapabilitySampleMaskPostDepthCoverage"] = 4447] = "CapabilitySampleMaskPostDepthCoverage";
-    Capability[Capability["CapabilityStorageBuffer8BitAccess"] = 4448] = "CapabilityStorageBuffer8BitAccess";
-    Capability[Capability["CapabilityUniformAndStorageBuffer8BitAccess"] = 4449] = "CapabilityUniformAndStorageBuffer8BitAccess";
-    Capability[Capability["CapabilityStoragePushConstant8"] = 4450] = "CapabilityStoragePushConstant8";
-    Capability[Capability["CapabilityDenormPreserve"] = 4464] = "CapabilityDenormPreserve";
-    Capability[Capability["CapabilityDenormFlushToZero"] = 4465] = "CapabilityDenormFlushToZero";
-    Capability[Capability["CapabilitySignedZeroInfNanPreserve"] = 4466] = "CapabilitySignedZeroInfNanPreserve";
-    Capability[Capability["CapabilityRoundingModeRTE"] = 4467] = "CapabilityRoundingModeRTE";
-    Capability[Capability["CapabilityRoundingModeRTZ"] = 4468] = "CapabilityRoundingModeRTZ";
-    Capability[Capability["CapabilityRayQueryProvisionalKHR"] = 4471] = "CapabilityRayQueryProvisionalKHR";
-    Capability[Capability["CapabilityRayQueryKHR"] = 4472] = "CapabilityRayQueryKHR";
-    Capability[Capability["CapabilityRayTraversalPrimitiveCullingKHR"] = 4478] = "CapabilityRayTraversalPrimitiveCullingKHR";
-    Capability[Capability["CapabilityRayTracingKHR"] = 4479] = "CapabilityRayTracingKHR";
-    Capability[Capability["CapabilityFloat16ImageAMD"] = 5008] = "CapabilityFloat16ImageAMD";
-    Capability[Capability["CapabilityImageGatherBiasLodAMD"] = 5009] = "CapabilityImageGatherBiasLodAMD";
-    Capability[Capability["CapabilityFragmentMaskAMD"] = 5010] = "CapabilityFragmentMaskAMD";
-    Capability[Capability["CapabilityStencilExportEXT"] = 5013] = "CapabilityStencilExportEXT";
-    Capability[Capability["CapabilityImageReadWriteLodAMD"] = 5015] = "CapabilityImageReadWriteLodAMD";
-    Capability[Capability["CapabilityInt64ImageEXT"] = 5016] = "CapabilityInt64ImageEXT";
-    Capability[Capability["CapabilityShaderClockKHR"] = 5055] = "CapabilityShaderClockKHR";
-    Capability[Capability["CapabilitySampleMaskOverrideCoverageNV"] = 5249] = "CapabilitySampleMaskOverrideCoverageNV";
-    Capability[Capability["CapabilityGeometryShaderPassthroughNV"] = 5251] = "CapabilityGeometryShaderPassthroughNV";
-    Capability[Capability["CapabilityShaderViewportIndexLayerEXT"] = 5254] = "CapabilityShaderViewportIndexLayerEXT";
-    Capability[Capability["CapabilityShaderViewportIndexLayerNV"] = 5254] = "CapabilityShaderViewportIndexLayerNV";
-    Capability[Capability["CapabilityShaderViewportMaskNV"] = 5255] = "CapabilityShaderViewportMaskNV";
-    Capability[Capability["CapabilityShaderStereoViewNV"] = 5259] = "CapabilityShaderStereoViewNV";
-    Capability[Capability["CapabilityPerViewAttributesNV"] = 5260] = "CapabilityPerViewAttributesNV";
-    Capability[Capability["CapabilityFragmentFullyCoveredEXT"] = 5265] = "CapabilityFragmentFullyCoveredEXT";
-    Capability[Capability["CapabilityMeshShadingNV"] = 5266] = "CapabilityMeshShadingNV";
-    Capability[Capability["CapabilityImageFootprintNV"] = 5282] = "CapabilityImageFootprintNV";
-    Capability[Capability["CapabilityFragmentBarycentricNV"] = 5284] = "CapabilityFragmentBarycentricNV";
-    Capability[Capability["CapabilityComputeDerivativeGroupQuadsNV"] = 5288] = "CapabilityComputeDerivativeGroupQuadsNV";
-    Capability[Capability["CapabilityFragmentDensityEXT"] = 5291] = "CapabilityFragmentDensityEXT";
-    Capability[Capability["CapabilityShadingRateNV"] = 5291] = "CapabilityShadingRateNV";
-    Capability[Capability["CapabilityGroupNonUniformPartitionedNV"] = 5297] = "CapabilityGroupNonUniformPartitionedNV";
-    Capability[Capability["CapabilityShaderNonUniform"] = 5301] = "CapabilityShaderNonUniform";
-    Capability[Capability["CapabilityShaderNonUniformEXT"] = 5301] = "CapabilityShaderNonUniformEXT";
-    Capability[Capability["CapabilityRuntimeDescriptorArray"] = 5302] = "CapabilityRuntimeDescriptorArray";
-    Capability[Capability["CapabilityRuntimeDescriptorArrayEXT"] = 5302] = "CapabilityRuntimeDescriptorArrayEXT";
-    Capability[Capability["CapabilityInputAttachmentArrayDynamicIndexing"] = 5303] = "CapabilityInputAttachmentArrayDynamicIndexing";
-    Capability[Capability["CapabilityInputAttachmentArrayDynamicIndexingEXT"] = 5303] = "CapabilityInputAttachmentArrayDynamicIndexingEXT";
-    Capability[Capability["CapabilityUniformTexelBufferArrayDynamicIndexing"] = 5304] = "CapabilityUniformTexelBufferArrayDynamicIndexing";
-    Capability[Capability["CapabilityUniformTexelBufferArrayDynamicIndexingEXT"] = 5304] = "CapabilityUniformTexelBufferArrayDynamicIndexingEXT";
-    Capability[Capability["CapabilityStorageTexelBufferArrayDynamicIndexing"] = 5305] = "CapabilityStorageTexelBufferArrayDynamicIndexing";
-    Capability[Capability["CapabilityStorageTexelBufferArrayDynamicIndexingEXT"] = 5305] = "CapabilityStorageTexelBufferArrayDynamicIndexingEXT";
-    Capability[Capability["CapabilityUniformBufferArrayNonUniformIndexing"] = 5306] = "CapabilityUniformBufferArrayNonUniformIndexing";
-    Capability[Capability["CapabilityUniformBufferArrayNonUniformIndexingEXT"] = 5306] = "CapabilityUniformBufferArrayNonUniformIndexingEXT";
-    Capability[Capability["CapabilitySampledImageArrayNonUniformIndexing"] = 5307] = "CapabilitySampledImageArrayNonUniformIndexing";
-    Capability[Capability["CapabilitySampledImageArrayNonUniformIndexingEXT"] = 5307] = "CapabilitySampledImageArrayNonUniformIndexingEXT";
-    Capability[Capability["CapabilityStorageBufferArrayNonUniformIndexing"] = 5308] = "CapabilityStorageBufferArrayNonUniformIndexing";
-    Capability[Capability["CapabilityStorageBufferArrayNonUniformIndexingEXT"] = 5308] = "CapabilityStorageBufferArrayNonUniformIndexingEXT";
-    Capability[Capability["CapabilityStorageImageArrayNonUniformIndexing"] = 5309] = "CapabilityStorageImageArrayNonUniformIndexing";
-    Capability[Capability["CapabilityStorageImageArrayNonUniformIndexingEXT"] = 5309] = "CapabilityStorageImageArrayNonUniformIndexingEXT";
-    Capability[Capability["CapabilityInputAttachmentArrayNonUniformIndexing"] = 5310] = "CapabilityInputAttachmentArrayNonUniformIndexing";
-    Capability[Capability["CapabilityInputAttachmentArrayNonUniformIndexingEXT"] = 5310] = "CapabilityInputAttachmentArrayNonUniformIndexingEXT";
-    Capability[Capability["CapabilityUniformTexelBufferArrayNonUniformIndexing"] = 5311] = "CapabilityUniformTexelBufferArrayNonUniformIndexing";
-    Capability[Capability["CapabilityUniformTexelBufferArrayNonUniformIndexingEXT"] = 5311] = "CapabilityUniformTexelBufferArrayNonUniformIndexingEXT";
-    Capability[Capability["CapabilityStorageTexelBufferArrayNonUniformIndexing"] = 5312] = "CapabilityStorageTexelBufferArrayNonUniformIndexing";
-    Capability[Capability["CapabilityStorageTexelBufferArrayNonUniformIndexingEXT"] = 5312] = "CapabilityStorageTexelBufferArrayNonUniformIndexingEXT";
-    Capability[Capability["CapabilityRayTracingNV"] = 5340] = "CapabilityRayTracingNV";
-    Capability[Capability["CapabilityVulkanMemoryModel"] = 5345] = "CapabilityVulkanMemoryModel";
-    Capability[Capability["CapabilityVulkanMemoryModelKHR"] = 5345] = "CapabilityVulkanMemoryModelKHR";
-    Capability[Capability["CapabilityVulkanMemoryModelDeviceScope"] = 5346] = "CapabilityVulkanMemoryModelDeviceScope";
-    Capability[Capability["CapabilityVulkanMemoryModelDeviceScopeKHR"] = 5346] = "CapabilityVulkanMemoryModelDeviceScopeKHR";
-    Capability[Capability["CapabilityPhysicalStorageBufferAddresses"] = 5347] = "CapabilityPhysicalStorageBufferAddresses";
-    Capability[Capability["CapabilityPhysicalStorageBufferAddressesEXT"] = 5347] = "CapabilityPhysicalStorageBufferAddressesEXT";
-    Capability[Capability["CapabilityComputeDerivativeGroupLinearNV"] = 5350] = "CapabilityComputeDerivativeGroupLinearNV";
-    Capability[Capability["CapabilityRayTracingProvisionalKHR"] = 5353] = "CapabilityRayTracingProvisionalKHR";
-    Capability[Capability["CapabilityCooperativeMatrixNV"] = 5357] = "CapabilityCooperativeMatrixNV";
-    Capability[Capability["CapabilityFragmentShaderSampleInterlockEXT"] = 5363] = "CapabilityFragmentShaderSampleInterlockEXT";
-    Capability[Capability["CapabilityFragmentShaderShadingRateInterlockEXT"] = 5372] = "CapabilityFragmentShaderShadingRateInterlockEXT";
-    Capability[Capability["CapabilityShaderSMBuiltinsNV"] = 5373] = "CapabilityShaderSMBuiltinsNV";
-    Capability[Capability["CapabilityFragmentShaderPixelInterlockEXT"] = 5378] = "CapabilityFragmentShaderPixelInterlockEXT";
-    Capability[Capability["CapabilityDemoteToHelperInvocationEXT"] = 5379] = "CapabilityDemoteToHelperInvocationEXT";
-    Capability[Capability["CapabilitySubgroupShuffleINTEL"] = 5568] = "CapabilitySubgroupShuffleINTEL";
-    Capability[Capability["CapabilitySubgroupBufferBlockIOINTEL"] = 5569] = "CapabilitySubgroupBufferBlockIOINTEL";
-    Capability[Capability["CapabilitySubgroupImageBlockIOINTEL"] = 5570] = "CapabilitySubgroupImageBlockIOINTEL";
-    Capability[Capability["CapabilitySubgroupImageMediaBlockIOINTEL"] = 5579] = "CapabilitySubgroupImageMediaBlockIOINTEL";
-    Capability[Capability["CapabilityIntegerFunctions2INTEL"] = 5584] = "CapabilityIntegerFunctions2INTEL";
-    Capability[Capability["CapabilityFunctionPointersINTEL"] = 5603] = "CapabilityFunctionPointersINTEL";
-    Capability[Capability["CapabilityIndirectReferencesINTEL"] = 5604] = "CapabilityIndirectReferencesINTEL";
-    Capability[Capability["CapabilitySubgroupAvcMotionEstimationINTEL"] = 5696] = "CapabilitySubgroupAvcMotionEstimationINTEL";
-    Capability[Capability["CapabilitySubgroupAvcMotionEstimationIntraINTEL"] = 5697] = "CapabilitySubgroupAvcMotionEstimationIntraINTEL";
-    Capability[Capability["CapabilitySubgroupAvcMotionEstimationChromaINTEL"] = 5698] = "CapabilitySubgroupAvcMotionEstimationChromaINTEL";
-    Capability[Capability["CapabilityFPGAMemoryAttributesINTEL"] = 5824] = "CapabilityFPGAMemoryAttributesINTEL";
-    Capability[Capability["CapabilityUnstructuredLoopControlsINTEL"] = 5886] = "CapabilityUnstructuredLoopControlsINTEL";
-    Capability[Capability["CapabilityFPGALoopControlsINTEL"] = 5888] = "CapabilityFPGALoopControlsINTEL";
-    Capability[Capability["CapabilityKernelAttributesINTEL"] = 5892] = "CapabilityKernelAttributesINTEL";
-    Capability[Capability["CapabilityFPGAKernelAttributesINTEL"] = 5897] = "CapabilityFPGAKernelAttributesINTEL";
-    Capability[Capability["CapabilityBlockingPipesINTEL"] = 5945] = "CapabilityBlockingPipesINTEL";
-    Capability[Capability["CapabilityFPGARegINTEL"] = 5948] = "CapabilityFPGARegINTEL";
-    Capability[Capability["CapabilityAtomicFloat32AddEXT"] = 6033] = "CapabilityAtomicFloat32AddEXT";
-    Capability[Capability["CapabilityAtomicFloat64AddEXT"] = 6034] = "CapabilityAtomicFloat64AddEXT";
-    Capability[Capability["CapabilityMax"] = 2147483647] = "CapabilityMax";
+    Capability[Capability["Matrix"] = 0] = "Matrix";
+    Capability[Capability["Shader"] = 1] = "Shader";
+    Capability[Capability["Geometry"] = 2] = "Geometry";
+    Capability[Capability["Tessellation"] = 3] = "Tessellation";
+    Capability[Capability["Addresses"] = 4] = "Addresses";
+    Capability[Capability["Linkage"] = 5] = "Linkage";
+    Capability[Capability["Kernel"] = 6] = "Kernel";
+    Capability[Capability["Vector16"] = 7] = "Vector16";
+    Capability[Capability["Float16Buffer"] = 8] = "Float16Buffer";
+    Capability[Capability["Float16"] = 9] = "Float16";
+    Capability[Capability["Float64"] = 10] = "Float64";
+    Capability[Capability["Int64"] = 11] = "Int64";
+    Capability[Capability["Int64Atomics"] = 12] = "Int64Atomics";
+    Capability[Capability["ImageBasic"] = 13] = "ImageBasic";
+    Capability[Capability["ImageReadWrite"] = 14] = "ImageReadWrite";
+    Capability[Capability["ImageMipmap"] = 15] = "ImageMipmap";
+    Capability[Capability["Pipes"] = 17] = "Pipes";
+    Capability[Capability["Groups"] = 18] = "Groups";
+    Capability[Capability["DeviceEnqueue"] = 19] = "DeviceEnqueue";
+    Capability[Capability["LiteralSampler"] = 20] = "LiteralSampler";
+    Capability[Capability["AtomicStorage"] = 21] = "AtomicStorage";
+    Capability[Capability["Int16"] = 22] = "Int16";
+    Capability[Capability["TessellationPointSize"] = 23] = "TessellationPointSize";
+    Capability[Capability["GeometryPointSize"] = 24] = "GeometryPointSize";
+    Capability[Capability["ImageGatherExtended"] = 25] = "ImageGatherExtended";
+    Capability[Capability["StorageImageMultisample"] = 27] = "StorageImageMultisample";
+    Capability[Capability["UniformBufferArrayDynamicIndexing"] = 28] = "UniformBufferArrayDynamicIndexing";
+    Capability[Capability["SampledImageArrayDynamicIndexing"] = 29] = "SampledImageArrayDynamicIndexing";
+    Capability[Capability["StorageBufferArrayDynamicIndexing"] = 30] = "StorageBufferArrayDynamicIndexing";
+    Capability[Capability["StorageImageArrayDynamicIndexing"] = 31] = "StorageImageArrayDynamicIndexing";
+    Capability[Capability["ClipDistance"] = 32] = "ClipDistance";
+    Capability[Capability["CullDistance"] = 33] = "CullDistance";
+    Capability[Capability["ImageCubeArray"] = 34] = "ImageCubeArray";
+    Capability[Capability["SampleRateShading"] = 35] = "SampleRateShading";
+    Capability[Capability["ImageRect"] = 36] = "ImageRect";
+    Capability[Capability["SampledRect"] = 37] = "SampledRect";
+    Capability[Capability["GenericPointer"] = 38] = "GenericPointer";
+    Capability[Capability["Int8"] = 39] = "Int8";
+    Capability[Capability["InputAttachment"] = 40] = "InputAttachment";
+    Capability[Capability["SparseResidency"] = 41] = "SparseResidency";
+    Capability[Capability["MinLod"] = 42] = "MinLod";
+    Capability[Capability["Sampled1D"] = 43] = "Sampled1D";
+    Capability[Capability["Image1D"] = 44] = "Image1D";
+    Capability[Capability["SampledCubeArray"] = 45] = "SampledCubeArray";
+    Capability[Capability["SampledBuffer"] = 46] = "SampledBuffer";
+    Capability[Capability["ImageBuffer"] = 47] = "ImageBuffer";
+    Capability[Capability["ImageMSArray"] = 48] = "ImageMSArray";
+    Capability[Capability["StorageImageExtendedFormats"] = 49] = "StorageImageExtendedFormats";
+    Capability[Capability["ImageQuery"] = 50] = "ImageQuery";
+    Capability[Capability["DerivativeControl"] = 51] = "DerivativeControl";
+    Capability[Capability["InterpolationFunction"] = 52] = "InterpolationFunction";
+    Capability[Capability["TransformFeedback"] = 53] = "TransformFeedback";
+    Capability[Capability["GeometryStreams"] = 54] = "GeometryStreams";
+    Capability[Capability["StorageImageReadWithoutFormat"] = 55] = "StorageImageReadWithoutFormat";
+    Capability[Capability["StorageImageWriteWithoutFormat"] = 56] = "StorageImageWriteWithoutFormat";
+    Capability[Capability["MultiViewport"] = 57] = "MultiViewport";
+    Capability[Capability["SubgroupDispatch"] = 58] = "SubgroupDispatch";
+    Capability[Capability["NamedBarrier"] = 59] = "NamedBarrier";
+    Capability[Capability["PipeStorage"] = 60] = "PipeStorage";
+    Capability[Capability["GroupNonUniform"] = 61] = "GroupNonUniform";
+    Capability[Capability["GroupNonUniformVote"] = 62] = "GroupNonUniformVote";
+    Capability[Capability["GroupNonUniformArithmetic"] = 63] = "GroupNonUniformArithmetic";
+    Capability[Capability["GroupNonUniformBallot"] = 64] = "GroupNonUniformBallot";
+    Capability[Capability["GroupNonUniformShuffle"] = 65] = "GroupNonUniformShuffle";
+    Capability[Capability["GroupNonUniformShuffleRelative"] = 66] = "GroupNonUniformShuffleRelative";
+    Capability[Capability["GroupNonUniformClustered"] = 67] = "GroupNonUniformClustered";
+    Capability[Capability["GroupNonUniformQuad"] = 68] = "GroupNonUniformQuad";
+    Capability[Capability["ShaderLayer"] = 69] = "ShaderLayer";
+    Capability[Capability["ShaderViewportIndex"] = 70] = "ShaderViewportIndex";
+    Capability[Capability["FragmentShadingRateKHR"] = 4422] = "FragmentShadingRateKHR";
+    Capability[Capability["SubgroupBallotKHR"] = 4423] = "SubgroupBallotKHR";
+    Capability[Capability["DrawParameters"] = 4427] = "DrawParameters";
+    Capability[Capability["SubgroupVoteKHR"] = 4431] = "SubgroupVoteKHR";
+    Capability[Capability["StorageBuffer16BitAccess"] = 4433] = "StorageBuffer16BitAccess";
+    Capability[Capability["StorageUniformBufferBlock16"] = 4433] = "StorageUniformBufferBlock16";
+    Capability[Capability["StorageUniform16"] = 4434] = "StorageUniform16";
+    Capability[Capability["UniformAndStorageBuffer16BitAccess"] = 4434] = "UniformAndStorageBuffer16BitAccess";
+    Capability[Capability["StoragePushConstant16"] = 4435] = "StoragePushConstant16";
+    Capability[Capability["StorageInputOutput16"] = 4436] = "StorageInputOutput16";
+    Capability[Capability["DeviceGroup"] = 4437] = "DeviceGroup";
+    Capability[Capability["MultiView"] = 4439] = "MultiView";
+    Capability[Capability["VariablePointersStorageBuffer"] = 4441] = "VariablePointersStorageBuffer";
+    Capability[Capability["VariablePointers"] = 4442] = "VariablePointers";
+    Capability[Capability["AtomicStorageOps"] = 4445] = "AtomicStorageOps";
+    Capability[Capability["SampleMaskPostDepthCoverage"] = 4447] = "SampleMaskPostDepthCoverage";
+    Capability[Capability["StorageBuffer8BitAccess"] = 4448] = "StorageBuffer8BitAccess";
+    Capability[Capability["UniformAndStorageBuffer8BitAccess"] = 4449] = "UniformAndStorageBuffer8BitAccess";
+    Capability[Capability["StoragePushConstant8"] = 4450] = "StoragePushConstant8";
+    Capability[Capability["DenormPreserve"] = 4464] = "DenormPreserve";
+    Capability[Capability["DenormFlushToZero"] = 4465] = "DenormFlushToZero";
+    Capability[Capability["SignedZeroInfNanPreserve"] = 4466] = "SignedZeroInfNanPreserve";
+    Capability[Capability["RoundingModeRTE"] = 4467] = "RoundingModeRTE";
+    Capability[Capability["RoundingModeRTZ"] = 4468] = "RoundingModeRTZ";
+    Capability[Capability["RayQueryProvisionalKHR"] = 4471] = "RayQueryProvisionalKHR";
+    Capability[Capability["RayQueryKHR"] = 4472] = "RayQueryKHR";
+    Capability[Capability["RayTraversalPrimitiveCullingKHR"] = 4478] = "RayTraversalPrimitiveCullingKHR";
+    Capability[Capability["RayTracingKHR"] = 4479] = "RayTracingKHR";
+    Capability[Capability["Float16ImageAMD"] = 5008] = "Float16ImageAMD";
+    Capability[Capability["ImageGatherBiasLodAMD"] = 5009] = "ImageGatherBiasLodAMD";
+    Capability[Capability["FragmentMaskAMD"] = 5010] = "FragmentMaskAMD";
+    Capability[Capability["StencilExportEXT"] = 5013] = "StencilExportEXT";
+    Capability[Capability["ImageReadWriteLodAMD"] = 5015] = "ImageReadWriteLodAMD";
+    Capability[Capability["Int64ImageEXT"] = 5016] = "Int64ImageEXT";
+    Capability[Capability["ShaderClockKHR"] = 5055] = "ShaderClockKHR";
+    Capability[Capability["SampleMaskOverrideCoverageNV"] = 5249] = "SampleMaskOverrideCoverageNV";
+    Capability[Capability["GeometryShaderPassthroughNV"] = 5251] = "GeometryShaderPassthroughNV";
+    Capability[Capability["ShaderViewportIndexLayerEXT"] = 5254] = "ShaderViewportIndexLayerEXT";
+    Capability[Capability["ShaderViewportIndexLayerNV"] = 5254] = "ShaderViewportIndexLayerNV";
+    Capability[Capability["ShaderViewportMaskNV"] = 5255] = "ShaderViewportMaskNV";
+    Capability[Capability["ShaderStereoViewNV"] = 5259] = "ShaderStereoViewNV";
+    Capability[Capability["PerViewAttributesNV"] = 5260] = "PerViewAttributesNV";
+    Capability[Capability["FragmentFullyCoveredEXT"] = 5265] = "FragmentFullyCoveredEXT";
+    Capability[Capability["MeshShadingNV"] = 5266] = "MeshShadingNV";
+    Capability[Capability["ImageFootprintNV"] = 5282] = "ImageFootprintNV";
+    Capability[Capability["FragmentBarycentricNV"] = 5284] = "FragmentBarycentricNV";
+    Capability[Capability["ComputeDerivativeGroupQuadsNV"] = 5288] = "ComputeDerivativeGroupQuadsNV";
+    Capability[Capability["FragmentDensityEXT"] = 5291] = "FragmentDensityEXT";
+    Capability[Capability["ShadingRateNV"] = 5291] = "ShadingRateNV";
+    Capability[Capability["GroupNonUniformPartitionedNV"] = 5297] = "GroupNonUniformPartitionedNV";
+    Capability[Capability["ShaderNonUniform"] = 5301] = "ShaderNonUniform";
+    Capability[Capability["ShaderNonUniformEXT"] = 5301] = "ShaderNonUniformEXT";
+    Capability[Capability["RuntimeDescriptorArray"] = 5302] = "RuntimeDescriptorArray";
+    Capability[Capability["RuntimeDescriptorArrayEXT"] = 5302] = "RuntimeDescriptorArrayEXT";
+    Capability[Capability["InputAttachmentArrayDynamicIndexing"] = 5303] = "InputAttachmentArrayDynamicIndexing";
+    Capability[Capability["InputAttachmentArrayDynamicIndexingEXT"] = 5303] = "InputAttachmentArrayDynamicIndexingEXT";
+    Capability[Capability["UniformTexelBufferArrayDynamicIndexing"] = 5304] = "UniformTexelBufferArrayDynamicIndexing";
+    Capability[Capability["UniformTexelBufferArrayDynamicIndexingEXT"] = 5304] = "UniformTexelBufferArrayDynamicIndexingEXT";
+    Capability[Capability["StorageTexelBufferArrayDynamicIndexing"] = 5305] = "StorageTexelBufferArrayDynamicIndexing";
+    Capability[Capability["StorageTexelBufferArrayDynamicIndexingEXT"] = 5305] = "StorageTexelBufferArrayDynamicIndexingEXT";
+    Capability[Capability["UniformBufferArrayNonUniformIndexing"] = 5306] = "UniformBufferArrayNonUniformIndexing";
+    Capability[Capability["UniformBufferArrayNonUniformIndexingEXT"] = 5306] = "UniformBufferArrayNonUniformIndexingEXT";
+    Capability[Capability["SampledImageArrayNonUniformIndexing"] = 5307] = "SampledImageArrayNonUniformIndexing";
+    Capability[Capability["SampledImageArrayNonUniformIndexingEXT"] = 5307] = "SampledImageArrayNonUniformIndexingEXT";
+    Capability[Capability["StorageBufferArrayNonUniformIndexing"] = 5308] = "StorageBufferArrayNonUniformIndexing";
+    Capability[Capability["StorageBufferArrayNonUniformIndexingEXT"] = 5308] = "StorageBufferArrayNonUniformIndexingEXT";
+    Capability[Capability["StorageImageArrayNonUniformIndexing"] = 5309] = "StorageImageArrayNonUniformIndexing";
+    Capability[Capability["StorageImageArrayNonUniformIndexingEXT"] = 5309] = "StorageImageArrayNonUniformIndexingEXT";
+    Capability[Capability["InputAttachmentArrayNonUniformIndexing"] = 5310] = "InputAttachmentArrayNonUniformIndexing";
+    Capability[Capability["InputAttachmentArrayNonUniformIndexingEXT"] = 5310] = "InputAttachmentArrayNonUniformIndexingEXT";
+    Capability[Capability["UniformTexelBufferArrayNonUniformIndexing"] = 5311] = "UniformTexelBufferArrayNonUniformIndexing";
+    Capability[Capability["UniformTexelBufferArrayNonUniformIndexingEXT"] = 5311] = "UniformTexelBufferArrayNonUniformIndexingEXT";
+    Capability[Capability["StorageTexelBufferArrayNonUniformIndexing"] = 5312] = "StorageTexelBufferArrayNonUniformIndexing";
+    Capability[Capability["StorageTexelBufferArrayNonUniformIndexingEXT"] = 5312] = "StorageTexelBufferArrayNonUniformIndexingEXT";
+    Capability[Capability["RayTracingNV"] = 5340] = "RayTracingNV";
+    Capability[Capability["VulkanMemoryModel"] = 5345] = "VulkanMemoryModel";
+    Capability[Capability["VulkanMemoryModelKHR"] = 5345] = "VulkanMemoryModelKHR";
+    Capability[Capability["VulkanMemoryModelDeviceScope"] = 5346] = "VulkanMemoryModelDeviceScope";
+    Capability[Capability["VulkanMemoryModelDeviceScopeKHR"] = 5346] = "VulkanMemoryModelDeviceScopeKHR";
+    Capability[Capability["PhysicalStorageBufferAddresses"] = 5347] = "PhysicalStorageBufferAddresses";
+    Capability[Capability["PhysicalStorageBufferAddressesEXT"] = 5347] = "PhysicalStorageBufferAddressesEXT";
+    Capability[Capability["ComputeDerivativeGroupLinearNV"] = 5350] = "ComputeDerivativeGroupLinearNV";
+    Capability[Capability["RayTracingProvisionalKHR"] = 5353] = "RayTracingProvisionalKHR";
+    Capability[Capability["CooperativeMatrixNV"] = 5357] = "CooperativeMatrixNV";
+    Capability[Capability["FragmentShaderSampleInterlockEXT"] = 5363] = "FragmentShaderSampleInterlockEXT";
+    Capability[Capability["FragmentShaderShadingRateInterlockEXT"] = 5372] = "FragmentShaderShadingRateInterlockEXT";
+    Capability[Capability["ShaderSMBuiltinsNV"] = 5373] = "ShaderSMBuiltinsNV";
+    Capability[Capability["FragmentShaderPixelInterlockEXT"] = 5378] = "FragmentShaderPixelInterlockEXT";
+    Capability[Capability["DemoteToHelperInvocationEXT"] = 5379] = "DemoteToHelperInvocationEXT";
+    Capability[Capability["SubgroupShuffleINTEL"] = 5568] = "SubgroupShuffleINTEL";
+    Capability[Capability["SubgroupBufferBlockIOINTEL"] = 5569] = "SubgroupBufferBlockIOINTEL";
+    Capability[Capability["SubgroupImageBlockIOINTEL"] = 5570] = "SubgroupImageBlockIOINTEL";
+    Capability[Capability["SubgroupImageMediaBlockIOINTEL"] = 5579] = "SubgroupImageMediaBlockIOINTEL";
+    Capability[Capability["IntegerFunctions2INTEL"] = 5584] = "IntegerFunctions2INTEL";
+    Capability[Capability["FunctionPointersINTEL"] = 5603] = "FunctionPointersINTEL";
+    Capability[Capability["IndirectReferencesINTEL"] = 5604] = "IndirectReferencesINTEL";
+    Capability[Capability["SubgroupAvcMotionEstimationINTEL"] = 5696] = "SubgroupAvcMotionEstimationINTEL";
+    Capability[Capability["SubgroupAvcMotionEstimationIntraINTEL"] = 5697] = "SubgroupAvcMotionEstimationIntraINTEL";
+    Capability[Capability["SubgroupAvcMotionEstimationChromaINTEL"] = 5698] = "SubgroupAvcMotionEstimationChromaINTEL";
+    Capability[Capability["FPGAMemoryAttributesINTEL"] = 5824] = "FPGAMemoryAttributesINTEL";
+    Capability[Capability["UnstructuredLoopControlsINTEL"] = 5886] = "UnstructuredLoopControlsINTEL";
+    Capability[Capability["FPGALoopControlsINTEL"] = 5888] = "FPGALoopControlsINTEL";
+    Capability[Capability["KernelAttributesINTEL"] = 5892] = "KernelAttributesINTEL";
+    Capability[Capability["FPGAKernelAttributesINTEL"] = 5897] = "FPGAKernelAttributesINTEL";
+    Capability[Capability["BlockingPipesINTEL"] = 5945] = "BlockingPipesINTEL";
+    Capability[Capability["FPGARegINTEL"] = 5948] = "FPGARegINTEL";
+    Capability[Capability["AtomicFloat32AddEXT"] = 6033] = "AtomicFloat32AddEXT";
+    Capability[Capability["AtomicFloat64AddEXT"] = 6034] = "AtomicFloat64AddEXT";
+    Capability[Capability["Max"] = 2147483647] = "Max";
 })(Capability || (Capability = {}));
 
 var ExecutionMode;
 (function (ExecutionMode) {
-    ExecutionMode[ExecutionMode["ExecutionModeInvocations"] = 0] = "ExecutionModeInvocations";
-    ExecutionMode[ExecutionMode["ExecutionModeSpacingEqual"] = 1] = "ExecutionModeSpacingEqual";
-    ExecutionMode[ExecutionMode["ExecutionModeSpacingFractionalEven"] = 2] = "ExecutionModeSpacingFractionalEven";
-    ExecutionMode[ExecutionMode["ExecutionModeSpacingFractionalOdd"] = 3] = "ExecutionModeSpacingFractionalOdd";
-    ExecutionMode[ExecutionMode["ExecutionModeVertexOrderCw"] = 4] = "ExecutionModeVertexOrderCw";
-    ExecutionMode[ExecutionMode["ExecutionModeVertexOrderCcw"] = 5] = "ExecutionModeVertexOrderCcw";
-    ExecutionMode[ExecutionMode["ExecutionModePixelCenterInteger"] = 6] = "ExecutionModePixelCenterInteger";
-    ExecutionMode[ExecutionMode["ExecutionModeOriginUpperLeft"] = 7] = "ExecutionModeOriginUpperLeft";
-    ExecutionMode[ExecutionMode["ExecutionModeOriginLowerLeft"] = 8] = "ExecutionModeOriginLowerLeft";
-    ExecutionMode[ExecutionMode["ExecutionModeEarlyFragmentTests"] = 9] = "ExecutionModeEarlyFragmentTests";
-    ExecutionMode[ExecutionMode["ExecutionModePointMode"] = 10] = "ExecutionModePointMode";
-    ExecutionMode[ExecutionMode["ExecutionModeXfb"] = 11] = "ExecutionModeXfb";
-    ExecutionMode[ExecutionMode["ExecutionModeDepthReplacing"] = 12] = "ExecutionModeDepthReplacing";
-    ExecutionMode[ExecutionMode["ExecutionModeDepthGreater"] = 14] = "ExecutionModeDepthGreater";
-    ExecutionMode[ExecutionMode["ExecutionModeDepthLess"] = 15] = "ExecutionModeDepthLess";
-    ExecutionMode[ExecutionMode["ExecutionModeDepthUnchanged"] = 16] = "ExecutionModeDepthUnchanged";
-    ExecutionMode[ExecutionMode["ExecutionModeLocalSize"] = 17] = "ExecutionModeLocalSize";
-    ExecutionMode[ExecutionMode["ExecutionModeLocalSizeHint"] = 18] = "ExecutionModeLocalSizeHint";
-    ExecutionMode[ExecutionMode["ExecutionModeInputPoints"] = 19] = "ExecutionModeInputPoints";
-    ExecutionMode[ExecutionMode["ExecutionModeInputLines"] = 20] = "ExecutionModeInputLines";
-    ExecutionMode[ExecutionMode["ExecutionModeInputLinesAdjacency"] = 21] = "ExecutionModeInputLinesAdjacency";
-    ExecutionMode[ExecutionMode["ExecutionModeTriangles"] = 22] = "ExecutionModeTriangles";
-    ExecutionMode[ExecutionMode["ExecutionModeInputTrianglesAdjacency"] = 23] = "ExecutionModeInputTrianglesAdjacency";
-    ExecutionMode[ExecutionMode["ExecutionModeQuads"] = 24] = "ExecutionModeQuads";
-    ExecutionMode[ExecutionMode["ExecutionModeIsolines"] = 25] = "ExecutionModeIsolines";
-    ExecutionMode[ExecutionMode["ExecutionModeOutputVertices"] = 26] = "ExecutionModeOutputVertices";
-    ExecutionMode[ExecutionMode["ExecutionModeOutputPoints"] = 27] = "ExecutionModeOutputPoints";
-    ExecutionMode[ExecutionMode["ExecutionModeOutputLineStrip"] = 28] = "ExecutionModeOutputLineStrip";
-    ExecutionMode[ExecutionMode["ExecutionModeOutputTriangleStrip"] = 29] = "ExecutionModeOutputTriangleStrip";
-    ExecutionMode[ExecutionMode["ExecutionModeVecTypeHint"] = 30] = "ExecutionModeVecTypeHint";
-    ExecutionMode[ExecutionMode["ExecutionModeContractionOff"] = 31] = "ExecutionModeContractionOff";
-    ExecutionMode[ExecutionMode["ExecutionModeInitializer"] = 33] = "ExecutionModeInitializer";
-    ExecutionMode[ExecutionMode["ExecutionModeFinalizer"] = 34] = "ExecutionModeFinalizer";
-    ExecutionMode[ExecutionMode["ExecutionModeSubgroupSize"] = 35] = "ExecutionModeSubgroupSize";
-    ExecutionMode[ExecutionMode["ExecutionModeSubgroupsPerWorkgroup"] = 36] = "ExecutionModeSubgroupsPerWorkgroup";
-    ExecutionMode[ExecutionMode["ExecutionModeSubgroupsPerWorkgroupId"] = 37] = "ExecutionModeSubgroupsPerWorkgroupId";
-    ExecutionMode[ExecutionMode["ExecutionModeLocalSizeId"] = 38] = "ExecutionModeLocalSizeId";
-    ExecutionMode[ExecutionMode["ExecutionModeLocalSizeHintId"] = 39] = "ExecutionModeLocalSizeHintId";
-    ExecutionMode[ExecutionMode["ExecutionModePostDepthCoverage"] = 4446] = "ExecutionModePostDepthCoverage";
-    ExecutionMode[ExecutionMode["ExecutionModeDenormPreserve"] = 4459] = "ExecutionModeDenormPreserve";
-    ExecutionMode[ExecutionMode["ExecutionModeDenormFlushToZero"] = 4460] = "ExecutionModeDenormFlushToZero";
-    ExecutionMode[ExecutionMode["ExecutionModeSignedZeroInfNanPreserve"] = 4461] = "ExecutionModeSignedZeroInfNanPreserve";
-    ExecutionMode[ExecutionMode["ExecutionModeRoundingModeRTE"] = 4462] = "ExecutionModeRoundingModeRTE";
-    ExecutionMode[ExecutionMode["ExecutionModeRoundingModeRTZ"] = 4463] = "ExecutionModeRoundingModeRTZ";
-    ExecutionMode[ExecutionMode["ExecutionModeStencilRefReplacingEXT"] = 5027] = "ExecutionModeStencilRefReplacingEXT";
-    ExecutionMode[ExecutionMode["ExecutionModeOutputLinesNV"] = 5269] = "ExecutionModeOutputLinesNV";
-    ExecutionMode[ExecutionMode["ExecutionModeOutputPrimitivesNV"] = 5270] = "ExecutionModeOutputPrimitivesNV";
-    ExecutionMode[ExecutionMode["ExecutionModeDerivativeGroupQuadsNV"] = 5289] = "ExecutionModeDerivativeGroupQuadsNV";
-    ExecutionMode[ExecutionMode["ExecutionModeDerivativeGroupLinearNV"] = 5290] = "ExecutionModeDerivativeGroupLinearNV";
-    ExecutionMode[ExecutionMode["ExecutionModeOutputTrianglesNV"] = 5298] = "ExecutionModeOutputTrianglesNV";
-    ExecutionMode[ExecutionMode["ExecutionModePixelInterlockOrderedEXT"] = 5366] = "ExecutionModePixelInterlockOrderedEXT";
-    ExecutionMode[ExecutionMode["ExecutionModePixelInterlockUnorderedEXT"] = 5367] = "ExecutionModePixelInterlockUnorderedEXT";
-    ExecutionMode[ExecutionMode["ExecutionModeSampleInterlockOrderedEXT"] = 5368] = "ExecutionModeSampleInterlockOrderedEXT";
-    ExecutionMode[ExecutionMode["ExecutionModeSampleInterlockUnorderedEXT"] = 5369] = "ExecutionModeSampleInterlockUnorderedEXT";
-    ExecutionMode[ExecutionMode["ExecutionModeShadingRateInterlockOrderedEXT"] = 5370] = "ExecutionModeShadingRateInterlockOrderedEXT";
-    ExecutionMode[ExecutionMode["ExecutionModeShadingRateInterlockUnorderedEXT"] = 5371] = "ExecutionModeShadingRateInterlockUnorderedEXT";
-    ExecutionMode[ExecutionMode["ExecutionModeMaxWorkgroupSizeINTEL"] = 5893] = "ExecutionModeMaxWorkgroupSizeINTEL";
-    ExecutionMode[ExecutionMode["ExecutionModeMaxWorkDimINTEL"] = 5894] = "ExecutionModeMaxWorkDimINTEL";
-    ExecutionMode[ExecutionMode["ExecutionModeNoGlobalOffsetINTEL"] = 5895] = "ExecutionModeNoGlobalOffsetINTEL";
-    ExecutionMode[ExecutionMode["ExecutionModeNumSIMDWorkitemsINTEL"] = 5896] = "ExecutionModeNumSIMDWorkitemsINTEL";
-    ExecutionMode[ExecutionMode["ExecutionModeMax"] = 2147483647] = "ExecutionModeMax";
+    ExecutionMode[ExecutionMode["Invocations"] = 0] = "Invocations";
+    ExecutionMode[ExecutionMode["SpacingEqual"] = 1] = "SpacingEqual";
+    ExecutionMode[ExecutionMode["SpacingFractionalEven"] = 2] = "SpacingFractionalEven";
+    ExecutionMode[ExecutionMode["SpacingFractionalOdd"] = 3] = "SpacingFractionalOdd";
+    ExecutionMode[ExecutionMode["VertexOrderCw"] = 4] = "VertexOrderCw";
+    ExecutionMode[ExecutionMode["VertexOrderCcw"] = 5] = "VertexOrderCcw";
+    ExecutionMode[ExecutionMode["PixelCenterInteger"] = 6] = "PixelCenterInteger";
+    ExecutionMode[ExecutionMode["OriginUpperLeft"] = 7] = "OriginUpperLeft";
+    ExecutionMode[ExecutionMode["OriginLowerLeft"] = 8] = "OriginLowerLeft";
+    ExecutionMode[ExecutionMode["EarlyFragmentTests"] = 9] = "EarlyFragmentTests";
+    ExecutionMode[ExecutionMode["PointMode"] = 10] = "PointMode";
+    ExecutionMode[ExecutionMode["Xfb"] = 11] = "Xfb";
+    ExecutionMode[ExecutionMode["DepthReplacing"] = 12] = "DepthReplacing";
+    ExecutionMode[ExecutionMode["DepthGreater"] = 14] = "DepthGreater";
+    ExecutionMode[ExecutionMode["DepthLess"] = 15] = "DepthLess";
+    ExecutionMode[ExecutionMode["DepthUnchanged"] = 16] = "DepthUnchanged";
+    ExecutionMode[ExecutionMode["LocalSize"] = 17] = "LocalSize";
+    ExecutionMode[ExecutionMode["LocalSizeHint"] = 18] = "LocalSizeHint";
+    ExecutionMode[ExecutionMode["InputPoints"] = 19] = "InputPoints";
+    ExecutionMode[ExecutionMode["InputLines"] = 20] = "InputLines";
+    ExecutionMode[ExecutionMode["InputLinesAdjacency"] = 21] = "InputLinesAdjacency";
+    ExecutionMode[ExecutionMode["Triangles"] = 22] = "Triangles";
+    ExecutionMode[ExecutionMode["InputTrianglesAdjacency"] = 23] = "InputTrianglesAdjacency";
+    ExecutionMode[ExecutionMode["Quads"] = 24] = "Quads";
+    ExecutionMode[ExecutionMode["Isolines"] = 25] = "Isolines";
+    ExecutionMode[ExecutionMode["OutputVertices"] = 26] = "OutputVertices";
+    ExecutionMode[ExecutionMode["OutputPoints"] = 27] = "OutputPoints";
+    ExecutionMode[ExecutionMode["OutputLineStrip"] = 28] = "OutputLineStrip";
+    ExecutionMode[ExecutionMode["OutputTriangleStrip"] = 29] = "OutputTriangleStrip";
+    ExecutionMode[ExecutionMode["VecTypeHint"] = 30] = "VecTypeHint";
+    ExecutionMode[ExecutionMode["ContractionOff"] = 31] = "ContractionOff";
+    ExecutionMode[ExecutionMode["Initializer"] = 33] = "Initializer";
+    ExecutionMode[ExecutionMode["Finalizer"] = 34] = "Finalizer";
+    ExecutionMode[ExecutionMode["SubgroupSize"] = 35] = "SubgroupSize";
+    ExecutionMode[ExecutionMode["SubgroupsPerWorkgroup"] = 36] = "SubgroupsPerWorkgroup";
+    ExecutionMode[ExecutionMode["SubgroupsPerWorkgroupId"] = 37] = "SubgroupsPerWorkgroupId";
+    ExecutionMode[ExecutionMode["LocalSizeId"] = 38] = "LocalSizeId";
+    ExecutionMode[ExecutionMode["LocalSizeHintId"] = 39] = "LocalSizeHintId";
+    ExecutionMode[ExecutionMode["PostDepthCoverage"] = 4446] = "PostDepthCoverage";
+    ExecutionMode[ExecutionMode["DenormPreserve"] = 4459] = "DenormPreserve";
+    ExecutionMode[ExecutionMode["DenormFlushToZero"] = 4460] = "DenormFlushToZero";
+    ExecutionMode[ExecutionMode["SignedZeroInfNanPreserve"] = 4461] = "SignedZeroInfNanPreserve";
+    ExecutionMode[ExecutionMode["RoundingModeRTE"] = 4462] = "RoundingModeRTE";
+    ExecutionMode[ExecutionMode["RoundingModeRTZ"] = 4463] = "RoundingModeRTZ";
+    ExecutionMode[ExecutionMode["StencilRefReplacingEXT"] = 5027] = "StencilRefReplacingEXT";
+    ExecutionMode[ExecutionMode["OutputLinesNV"] = 5269] = "OutputLinesNV";
+    ExecutionMode[ExecutionMode["OutputPrimitivesNV"] = 5270] = "OutputPrimitivesNV";
+    ExecutionMode[ExecutionMode["DerivativeGroupQuadsNV"] = 5289] = "DerivativeGroupQuadsNV";
+    ExecutionMode[ExecutionMode["DerivativeGroupLinearNV"] = 5290] = "DerivativeGroupLinearNV";
+    ExecutionMode[ExecutionMode["OutputTrianglesNV"] = 5298] = "OutputTrianglesNV";
+    ExecutionMode[ExecutionMode["PixelInterlockOrderedEXT"] = 5366] = "PixelInterlockOrderedEXT";
+    ExecutionMode[ExecutionMode["PixelInterlockUnorderedEXT"] = 5367] = "PixelInterlockUnorderedEXT";
+    ExecutionMode[ExecutionMode["SampleInterlockOrderedEXT"] = 5368] = "SampleInterlockOrderedEXT";
+    ExecutionMode[ExecutionMode["SampleInterlockUnorderedEXT"] = 5369] = "SampleInterlockUnorderedEXT";
+    ExecutionMode[ExecutionMode["ShadingRateInterlockOrderedEXT"] = 5370] = "ShadingRateInterlockOrderedEXT";
+    ExecutionMode[ExecutionMode["ShadingRateInterlockUnorderedEXT"] = 5371] = "ShadingRateInterlockUnorderedEXT";
+    ExecutionMode[ExecutionMode["MaxWorkgroupSizeINTEL"] = 5893] = "MaxWorkgroupSizeINTEL";
+    ExecutionMode[ExecutionMode["MaxWorkDimINTEL"] = 5894] = "MaxWorkDimINTEL";
+    ExecutionMode[ExecutionMode["NoGlobalOffsetINTEL"] = 5895] = "NoGlobalOffsetINTEL";
+    ExecutionMode[ExecutionMode["NumSIMDWorkitemsINTEL"] = 5896] = "NumSIMDWorkitemsINTEL";
+    ExecutionMode[ExecutionMode["Max"] = 2147483647] = "Max";
 })(ExecutionMode || (ExecutionMode = {}));
 
 var AccessQualifier;
 (function (AccessQualifier) {
-    AccessQualifier[AccessQualifier["AccessQualifierReadOnly"] = 0] = "AccessQualifierReadOnly";
-    AccessQualifier[AccessQualifier["AccessQualifierWriteOnly"] = 1] = "AccessQualifierWriteOnly";
-    AccessQualifier[AccessQualifier["AccessQualifierReadWrite"] = 2] = "AccessQualifierReadWrite";
-    AccessQualifier[AccessQualifier["AccessQualifierMax"] = 2147483647] = "AccessQualifierMax";
+    AccessQualifier[AccessQualifier["ReadOnly"] = 0] = "ReadOnly";
+    AccessQualifier[AccessQualifier["WriteOnly"] = 1] = "WriteOnly";
+    AccessQualifier[AccessQualifier["ReadWrite"] = 2] = "ReadWrite";
+    AccessQualifier[AccessQualifier["Max"] = 2147483647] = "Max";
 })(AccessQualifier || (AccessQualifier = {}));
 
 var SelectionControlMask;
 (function (SelectionControlMask) {
-    SelectionControlMask[SelectionControlMask["SelectionControlMaskNone"] = 0] = "SelectionControlMaskNone";
-    SelectionControlMask[SelectionControlMask["SelectionControlFlattenMask"] = 1] = "SelectionControlFlattenMask";
-    SelectionControlMask[SelectionControlMask["SelectionControlDontFlattenMask"] = 2] = "SelectionControlDontFlattenMask";
+    SelectionControlMask[SelectionControlMask["None"] = 0] = "None";
+    SelectionControlMask[SelectionControlMask["Flatten"] = 1] = "Flatten";
+    SelectionControlMask[SelectionControlMask["DontFlatten"] = 2] = "DontFlatten";
 })(SelectionControlMask || (SelectionControlMask = {}));
 
 var LoopControlMask;
 (function (LoopControlMask) {
-    LoopControlMask[LoopControlMask["LoopControlMaskNone"] = 0] = "LoopControlMaskNone";
-    LoopControlMask[LoopControlMask["LoopControlUnrollMask"] = 1] = "LoopControlUnrollMask";
-    LoopControlMask[LoopControlMask["LoopControlDontUnrollMask"] = 2] = "LoopControlDontUnrollMask";
-    LoopControlMask[LoopControlMask["LoopControlDependencyInfiniteMask"] = 4] = "LoopControlDependencyInfiniteMask";
-    LoopControlMask[LoopControlMask["LoopControlDependencyLengthMask"] = 8] = "LoopControlDependencyLengthMask";
-    LoopControlMask[LoopControlMask["LoopControlMinIterationsMask"] = 16] = "LoopControlMinIterationsMask";
-    LoopControlMask[LoopControlMask["LoopControlMaxIterationsMask"] = 32] = "LoopControlMaxIterationsMask";
-    LoopControlMask[LoopControlMask["LoopControlIterationMultipleMask"] = 64] = "LoopControlIterationMultipleMask";
-    LoopControlMask[LoopControlMask["LoopControlPeelCountMask"] = 128] = "LoopControlPeelCountMask";
-    LoopControlMask[LoopControlMask["LoopControlPartialCountMask"] = 256] = "LoopControlPartialCountMask";
-    LoopControlMask[LoopControlMask["LoopControlInitiationIntervalINTELMask"] = 65536] = "LoopControlInitiationIntervalINTELMask";
-    LoopControlMask[LoopControlMask["LoopControlMaxConcurrencyINTELMask"] = 131072] = "LoopControlMaxConcurrencyINTELMask";
-    LoopControlMask[LoopControlMask["LoopControlDependencyArrayINTELMask"] = 262144] = "LoopControlDependencyArrayINTELMask";
-    LoopControlMask[LoopControlMask["LoopControlPipelineEnableINTELMask"] = 524288] = "LoopControlPipelineEnableINTELMask";
-    LoopControlMask[LoopControlMask["LoopControlLoopCoalesceINTELMask"] = 1048576] = "LoopControlLoopCoalesceINTELMask";
-    LoopControlMask[LoopControlMask["LoopControlMaxInterleavingINTELMask"] = 2097152] = "LoopControlMaxInterleavingINTELMask";
-    LoopControlMask[LoopControlMask["LoopControlSpeculatedIterationsINTELMask"] = 4194304] = "LoopControlSpeculatedIterationsINTELMask";
+    LoopControlMask[LoopControlMask["None"] = 0] = "None";
+    LoopControlMask[LoopControlMask["Unroll"] = 1] = "Unroll";
+    LoopControlMask[LoopControlMask["DontUnroll"] = 2] = "DontUnroll";
+    LoopControlMask[LoopControlMask["DependencyInfinite"] = 4] = "DependencyInfinite";
+    LoopControlMask[LoopControlMask["DependencyLength"] = 8] = "DependencyLength";
+    LoopControlMask[LoopControlMask["MinIterations"] = 16] = "MinIterations";
+    LoopControlMask[LoopControlMask["MaxIterations"] = 32] = "MaxIterations";
+    LoopControlMask[LoopControlMask["IterationMultiple"] = 64] = "IterationMultiple";
+    LoopControlMask[LoopControlMask["PeelCount"] = 128] = "PeelCount";
+    LoopControlMask[LoopControlMask["PartialCount"] = 256] = "PartialCount";
+    LoopControlMask[LoopControlMask["InitiationIntervalINTEL"] = 65536] = "InitiationIntervalINTEL";
+    LoopControlMask[LoopControlMask["MaxConcurrencyINTEL"] = 131072] = "MaxConcurrencyINTEL";
+    LoopControlMask[LoopControlMask["DependencyArrayINTEL"] = 262144] = "DependencyArrayINTEL";
+    LoopControlMask[LoopControlMask["PipelineEnableINTEL"] = 524288] = "PipelineEnableINTEL";
+    LoopControlMask[LoopControlMask["LoopCoalesceINTEL"] = 1048576] = "LoopCoalesceINTEL";
+    LoopControlMask[LoopControlMask["MaxInterleavingINTEL"] = 2097152] = "MaxInterleavingINTEL";
+    LoopControlMask[LoopControlMask["SpeculatedIterationsINTEL"] = 4194304] = "SpeculatedIterationsINTEL";
 })(LoopControlMask || (LoopControlMask = {}));
+
+// Meta data about blocks. The cross-compiler needs to query if a block is either of these types.
+// It is a bitset as there can be more than one tag per block.
+var BlockMetaFlagBits;
+(function (BlockMetaFlagBits) {
+    BlockMetaFlagBits[BlockMetaFlagBits["LOOP_HEADER_BIT"] = 1] = "LOOP_HEADER_BIT";
+    BlockMetaFlagBits[BlockMetaFlagBits["CONTINUE_BIT"] = 2] = "CONTINUE_BIT";
+    BlockMetaFlagBits[BlockMetaFlagBits["LOOP_MERGE_BIT"] = 4] = "LOOP_MERGE_BIT";
+    BlockMetaFlagBits[BlockMetaFlagBits["SELECTION_MERGE_BIT"] = 8] = "SELECTION_MERGE_BIT";
+    BlockMetaFlagBits[BlockMetaFlagBits["MULTISELECT_MERGE_BIT"] = 16] = "MULTISELECT_MERGE_BIT";
+})(BlockMetaFlagBits || (BlockMetaFlagBits = {}));
 
 var Parser = /** @class */ (function () {
     function Parser(spirv) {
@@ -3556,35 +3558,35 @@ var Parser = /** @class */ (function () {
         var ir = this.ir;
         var length = instruction.length;
         switch (op) {
-            case Op.OpSourceContinued:
-            case Op.OpSourceExtension:
-            case Op.OpNop:
-            case Op.OpModuleProcessed:
+            case Op.SourceContinued:
+            case Op.SourceExtension:
+            case Op.Nop:
+            case Op.ModuleProcessed:
                 break;
-            case Op.OpString: {
+            case Op.String: {
                 this.set(SPIRString, ops[0], extract_string(ir.spirv, instruction.offset + 1));
                 break;
             }
-            case Op.OpMemoryModel:
+            case Op.MemoryModel:
                 ir.addressing_model = ops[0];
                 ir.memory_model = ops[1];
                 break;
-            case Op.OpSource: {
+            case Op.Source: {
                 var lang = ops[0];
                 switch (lang) {
-                    case SourceLanguage.SourceLanguageESSL:
+                    case SourceLanguage.ESSL:
                         ir.source.es = true;
                         ir.source.version = ops[1];
                         ir.source.known = true;
                         ir.source.hlsl = false;
                         break;
-                    case SourceLanguage.SourceLanguageGLSL:
+                    case SourceLanguage.GLSL:
                         ir.source.es = false;
                         ir.source.version = ops[1];
                         ir.source.known = true;
                         ir.source.hlsl = false;
                         break;
-                    case SourceLanguage.SourceLanguageHLSL:
+                    case SourceLanguage.HLSL:
                         // For purposes of cross-compiling, this is GLSL 450.
                         ir.source.es = false;
                         ir.source.version = 450;
@@ -3597,7 +3599,7 @@ var Parser = /** @class */ (function () {
                 }
                 break;
             }
-            case Op.OpUndef: {
+            case Op.Undef: {
                 var result_type = ops[0];
                 var id = ops[1];
                 this.set(SPIRUndef, id, result_type);
@@ -3605,19 +3607,19 @@ var Parser = /** @class */ (function () {
                     this.current_block.ops.push(instruction);
                 break;
             }
-            case Op.OpCapability: {
+            case Op.Capability: {
                 var cap = ops[0];
-                if (cap === Capability.CapabilityKernel)
+                if (cap === Capability.Kernel)
                     throw new Error("Kernel capability not supported.");
                 ir.declared_capabilities.push(ops[0]);
                 break;
             }
-            case Op.OpExtension: {
+            case Op.Extension: {
                 var ext = extract_string(ir.spirv, instruction.offset);
                 ir.declared_extensions.push(ext);
                 break;
             }
-            case Op.OpExtInstImport: {
+            case Op.ExtInstImport: {
                 var id = ops[0];
                 var ext = extract_string(ir.spirv, instruction.offset + 1);
                 if (ext === "GLSL.std.450")
@@ -3637,13 +3639,13 @@ var Parser = /** @class */ (function () {
                 // Other SPIR-V extensions which have ExtInstrs are currently not supported.
                 break;
             }
-            case Op.OpExtInst: {
+            case Op.ExtInst: {
                 // The SPIR-V debug information extended instructions might come at global scope.
                 if (this.current_block)
                     this.current_block.ops.push(instruction);
                 break;
             }
-            case Op.OpEntryPoint: {
+            case Op.EntryPoint: {
                 var e = new SPIREntryPoint(ops[1], (ops[0]), extract_string(ir.spirv, instruction.offset + 2));
                 ir.entry_points[ops[1]] = e;
                 // Strings need nul-terminator and consume the whole word.
@@ -3657,42 +3659,42 @@ var Parser = /** @class */ (function () {
                     ir.default_entry_point = ops[1];
                 break;
             }
-            case Op.OpExecutionMode: {
+            case Op.ExecutionMode: {
                 var execution = ir.entry_points[ops[0]];
                 var mode = (ops[1]);
                 execution.flags.set(mode);
                 switch (mode) {
-                    case ExecutionMode.ExecutionModeInvocations:
+                    case ExecutionMode.Invocations:
                         execution.invocations = ops[2];
                         break;
-                    case ExecutionMode.ExecutionModeLocalSize:
+                    case ExecutionMode.LocalSize:
                         execution.workgroup_size.x = ops[2];
                         execution.workgroup_size.y = ops[3];
                         execution.workgroup_size.z = ops[4];
                         break;
-                    case ExecutionMode.ExecutionModeOutputVertices:
+                    case ExecutionMode.OutputVertices:
                         execution.output_vertices = ops[2];
                         break;
                 }
                 break;
             }
-            case Op.OpName: {
+            case Op.Name: {
                 var id = ops[0];
                 ir.set_name(id, extract_string(ir.spirv, instruction.offset + 1));
                 break;
             }
-            case Op.OpMemberName: {
+            case Op.MemberName: {
                 var id = ops[0];
                 var member = ops[1];
                 ir.set_member_name(id, member, extract_string(ir.spirv, instruction.offset + 2));
                 break;
             }
-            case Op.OpDecorationGroup: {
+            case Op.DecorationGroup: {
                 // Noop, this simply means an ID should be a collector of decorations.
                 // The meta array is already a flat array of decorations which will contain the relevant decorations.
                 break;
             }
-            case Op.OpGroupDecorate: {
+            case Op.GroupDecorate: {
                 var group_id_1 = ops[0];
                 var decorations = ir.get_meta(group_id_1).decoration;
                 var flags = decorations.decoration_flags;
@@ -3717,7 +3719,7 @@ var Parser = /** @class */ (function () {
                 }
                 break;
             }
-            case Op.OpGroupMemberDecorate: {
+            case Op.GroupMemberDecorate: {
                 var group_id_2 = ops[0];
                 var flags = ir.get_meta(group_id_2).decoration.decoration_flags;
                 var _loop_2 = function (i) {
@@ -3738,8 +3740,8 @@ var Parser = /** @class */ (function () {
                 }
                 break;
             }
-            case Op.OpDecorate:
-            case Op.OpDecorateId: {
+            case Op.Decorate:
+            case Op.DecorateId: {
                 // OpDecorateId technically supports an array of arguments, but our only supported decorations are single uint,
                 // so merge decorate and decorate-id here.
                 var id = ops[0];
@@ -3754,13 +3756,13 @@ var Parser = /** @class */ (function () {
                     ir.set_decoration(id, decoration);
                 break;
             }
-            case Op.OpDecorateStringGOOGLE: {
+            case Op.DecorateStringGOOGLE: {
                 var id = ops[0];
                 var decoration = ops[1];
                 ir.set_decoration_string(id, decoration, extract_string(ir.spirv, instruction.offset + 2));
                 break;
             }
-            case Op.OpMemberDecorate: {
+            case Op.MemberDecorate: {
                 var id = ops[0];
                 var member = ops[1];
                 var decoration = ops[2];
@@ -3770,7 +3772,7 @@ var Parser = /** @class */ (function () {
                     ir.set_member_decoration(id, member, decoration);
                 break;
             }
-            case Op.OpMemberDecorateStringGOOGLE: {
+            case Op.MemberDecorateStringGOOGLE: {
                 var id = ops[0];
                 var member = ops[1];
                 var decoration = ops[2];
@@ -3778,35 +3780,35 @@ var Parser = /** @class */ (function () {
                 break;
             }
             // Build up basic types.
-            case Op.OpTypeVoid: {
+            case Op.TypeVoid: {
                 var id = ops[0];
                 var type = this.set(SPIRType, id);
-                type.basetype = SPIRTypeBaseType.Void;
+                type.basetype = SPIRBaseType.Void;
                 break;
             }
-            case Op.OpTypeBool: {
+            case Op.TypeBool: {
                 var id = ops[0];
                 var type = this.set(SPIRType, id);
-                type.basetype = SPIRTypeBaseType.Boolean;
+                type.basetype = SPIRBaseType.Boolean;
                 type.width = 1;
                 break;
             }
-            case Op.OpTypeFloat: {
+            case Op.TypeFloat: {
                 var id = ops[0];
                 var width = ops[1];
                 var type = this.set(SPIRType, id);
                 if (width === 64)
-                    type.basetype = SPIRTypeBaseType.Double;
+                    type.basetype = SPIRBaseType.Double;
                 else if (width === 32)
-                    type.basetype = SPIRTypeBaseType.Float;
+                    type.basetype = SPIRBaseType.Float;
                 else if (width === 16)
-                    type.basetype = SPIRTypeBaseType.Half;
+                    type.basetype = SPIRBaseType.Half;
                 else
                     throw new Error("Unrecognized bit-width of floating point type.");
                 type.width = width;
                 break;
             }
-            case Op.OpTypeInt: {
+            case Op.TypeInt: {
                 var id = ops[0];
                 var width = ops[1];
                 var signedness = ops[2] !== 0;
@@ -3818,7 +3820,7 @@ var Parser = /** @class */ (function () {
             // Build composite types by "inheriting".
             // NOTE: The self member is also copied! For pointers and array modifiers this is a good thing
             // since we can refer to decorations on pointee classes which is needed for UBO/SSBO, I/O blocks in geometry/tess etc.
-            case Op.OpTypeVector: {
+            case Op.TypeVector: {
                 var id = ops[0];
                 var vecsize = ops[2];
                 var base = this.get(SPIRType, ops[1]);
@@ -3829,7 +3831,7 @@ var Parser = /** @class */ (function () {
                 vecbase.parent_type = ops[1];
                 break;
             }
-            case Op.OpTypeMatrix: {
+            case Op.TypeMatrix: {
                 var id = ops[0];
                 var colcount = ops[2];
                 var base = this.get(SPIRType, ops[1]);
@@ -3840,7 +3842,7 @@ var Parser = /** @class */ (function () {
                 matrixbase.parent_type = ops[1];
                 break;
             }
-            case Op.OpTypeArray: {
+            case Op.TypeArray: {
                 var id = ops[0];
                 var arraybase = this.set(SPIRType, id);
                 var tid = ops[1];
@@ -3860,7 +3862,7 @@ var Parser = /** @class */ (function () {
                 // Do NOT set arraybase.self!
                 break;
             }
-            case Op.OpTypeRuntimeArray: {
+            case Op.TypeRuntimeArray: {
                 var id = ops[0];
                 var base = this.get(SPIRType, ops[1]);
                 var arraybase = this.set(SPIRType, id);
@@ -3875,10 +3877,10 @@ var Parser = /** @class */ (function () {
                 // Do NOT set arraybase.self!
                 break;
             }
-            case Op.OpTypeImage: {
+            case Op.TypeImage: {
                 var id = ops[0];
                 var type = this.set(SPIRType, id);
-                type.basetype = SPIRTypeBaseType.Image;
+                type.basetype = SPIRBaseType.Image;
                 type.image.type = ops[1];
                 type.image.dim = (ops[2]);
                 type.image.depth = ops[3] === 1;
@@ -3886,25 +3888,25 @@ var Parser = /** @class */ (function () {
                 type.image.ms = ops[5] !== 0;
                 type.image.sampled = ops[6];
                 type.image.format = (ops[7]);
-                type.image.access = (length >= 9) ? (ops[8]) : AccessQualifier.AccessQualifierMax;
+                type.image.access = (length >= 9) ? (ops[8]) : AccessQualifier.Max;
                 break;
             }
-            case Op.OpTypeSampledImage: {
+            case Op.TypeSampledImage: {
                 var id = ops[0];
                 var imagetype = ops[1];
                 var type = this.set(SPIRType, id);
                 defaultCopy(this.get(SPIRType, imagetype), type);
-                type.basetype = SPIRTypeBaseType.SampledImage;
+                type.basetype = SPIRBaseType.SampledImage;
                 type.self = id;
                 break;
             }
-            case Op.OpTypeSampler: {
+            case Op.TypeSampler: {
                 var id = ops[0];
                 var type = this.set(SPIRType, id);
-                type.basetype = SPIRTypeBaseType.Sampler;
+                type.basetype = SPIRBaseType.Sampler;
                 break;
             }
-            case Op.OpTypePointer: {
+            case Op.TypePointer: {
                 var id = ops[0];
                 // Very rarely, we might receive a FunctionPrototype here.
                 // We won't be able to compile it, but we shouldn't crash when parsing.
@@ -3916,29 +3918,29 @@ var Parser = /** @class */ (function () {
                 ptrbase.pointer = true;
                 ptrbase.pointer_depth++;
                 ptrbase.storage = (ops[1]);
-                if (ptrbase.storage === StorageClass.StorageClassAtomicCounter)
-                    ptrbase.basetype = SPIRTypeBaseType.AtomicCounter;
+                if (ptrbase.storage === StorageClass.AtomicCounter)
+                    ptrbase.basetype = SPIRBaseType.AtomicCounter;
                 if (base && base.forward_pointer)
                     this.forward_pointer_fixups.push(new Pair(id, ops[2]));
                 ptrbase.parent_type = ops[2];
                 // Do NOT set ptrbase.self!
                 break;
             }
-            case Op.OpTypeForwardPointer: {
+            case Op.TypeForwardPointer: {
                 var id = ops[0];
                 var ptrbase = this.set(SPIRType, id);
                 ptrbase.pointer = true;
                 ptrbase.pointer_depth++;
                 ptrbase.storage = (ops[1]);
                 ptrbase.forward_pointer = true;
-                if (ptrbase.storage === StorageClass.StorageClassAtomicCounter)
-                    ptrbase.basetype = SPIRTypeBaseType.AtomicCounter;
+                if (ptrbase.storage === StorageClass.AtomicCounter)
+                    ptrbase.basetype = SPIRBaseType.AtomicCounter;
                 break;
             }
-            case Op.OpTypeStruct: {
+            case Op.TypeStruct: {
                 var id = ops[0];
                 var type = this.set(SPIRType, id);
-                type.basetype = SPIRTypeBaseType.Struct;
+                type.basetype = SPIRBaseType.Struct;
                 for (var i = 1; i < length; i++)
                     type.member_types.push(ops[i]);
                 // Check if we have seen this struct type before, with just different
@@ -3966,7 +3968,7 @@ var Parser = /** @class */ (function () {
                 }
                 break;
             }
-            case Op.OpTypeFunction:
+            case Op.TypeFunction:
                 {
                     var id = ops[0];
                     var ret = ops[1];
@@ -3975,29 +3977,29 @@ var Parser = /** @class */ (function () {
                         func.parameter_types.push(ops[i]);
                     break;
                 }
-            case Op.OpTypeAccelerationStructureKHR:
+            case Op.TypeAccelerationStructureKHR:
                 {
                     var id = ops[0];
                     var type = this.set(SPIRType, id);
-                    type.basetype = SPIRTypeBaseType.AccelerationStructure;
+                    type.basetype = SPIRBaseType.AccelerationStructure;
                     break;
                 }
-            case Op.OpTypeRayQueryKHR:
+            case Op.TypeRayQueryKHR:
                 {
                     var id = ops[0];
                     var type = this.set(SPIRType, id);
-                    type.basetype = SPIRTypeBaseType.RayQuery;
+                    type.basetype = SPIRBaseType.RayQuery;
                     break;
                 }
             // Variable declaration
             // All variables are essentially pointers with a storage qualifier.
-            case Op.OpVariable:
+            case Op.Variable:
                 {
                     var type = ops[0];
                     var id = ops[1];
                     var storage = (ops[2]);
                     var initializer = length === 4 ? ops[3] : 0;
-                    if (storage === StorageClass.StorageClassFunction) {
+                    if (storage === StorageClass.Function) {
                         if (!this.current_function)
                             throw new Error("No function currently in scope");
                         this.current_function.add_local_variable(id);
@@ -4010,7 +4012,7 @@ var Parser = /** @class */ (function () {
             // It selects temporary variables based on which parent block we *came from*.
             // In high-level languages we can "de-SSA" by creating a function local, and flush out temporaries to this function-local
             // variable to emulate SSA Phi.
-            case Op.OpPhi:
+            case Op.Phi:
                 {
                     if (!this.current_function)
                         throw new Error("No function currently in scope");
@@ -4019,7 +4021,7 @@ var Parser = /** @class */ (function () {
                     var result_type = ops[0];
                     var id = ops[1];
                     // Instead of a temporary, create a new function-wide temporary with this ID instead.
-                    var var_ = this.set(SPIRVariable, id, result_type, StorageClass.StorageClassFunction);
+                    var var_ = this.set(SPIRVariable, id, result_type, StorageClass.Function);
                     var_.phi_variable = true;
                     this.current_function.add_local_variable(id);
                     for (var i = 2; i + 2 <= length; i += 2)
@@ -4027,37 +4029,37 @@ var Parser = /** @class */ (function () {
                     break;
                 }
             // Constants
-            case Op.OpSpecConstant:
-            case Op.OpConstant:
+            case Op.SpecConstant:
+            case Op.Constant:
                 {
                     var id = ops[1];
                     var type = this.get(SPIRType, ops[0]);
                     if (type.width > 32) {
-                        this.set(SPIRConstant, id, ops[0], bigintFrom(ops[3], ops[2]), op === Op.OpSpecConstant);
+                        this.set(SPIRConstant, id, ops[0], bigintFrom(ops[3], ops[2]), op === Op.SpecConstant);
                     }
                     else
-                        this.set(SPIRConstant, id, ops[0], ops[2], op === Op.OpSpecConstant);
+                        this.set(SPIRConstant, id, ops[0], ops[2], op === Op.SpecConstant);
                     break;
                 }
-            case Op.OpSpecConstantFalse:
-            case Op.OpConstantFalse:
+            case Op.SpecConstantFalse:
+            case Op.ConstantFalse:
                 {
-                    this.set(SPIRConstant, ops[1], ops[0], 0, op === Op.OpSpecConstantFalse);
+                    this.set(SPIRConstant, ops[1], ops[0], 0, op === Op.SpecConstantFalse);
                     break;
                 }
-            case Op.OpSpecConstantTrue:
-            case Op.OpConstantTrue:
+            case Op.SpecConstantTrue:
+            case Op.ConstantTrue:
                 {
-                    this.set(SPIRConstant, ops[1], ops[0], 1, op === Op.OpSpecConstantTrue);
+                    this.set(SPIRConstant, ops[1], ops[0], 1, op === Op.SpecConstantTrue);
                     break;
                 }
-            case Op.OpConstantNull:
+            case Op.ConstantNull:
                 {
                     ir.make_constant_null(ops[1], ops[0], true);
                     break;
                 }
-            case Op.OpSpecConstantComposite:
-            case Op.OpConstantComposite:
+            case Op.SpecConstantComposite:
+            case Op.ConstantComposite:
                 {
                     var id = ops[1];
                     var type = ops[0];
@@ -4065,9 +4067,9 @@ var Parser = /** @class */ (function () {
                     // We can have constants which are structs and arrays.
                     // In this case, our SPIRConstant will be a list of other SPIRConstant ids which we
                     // can refer to.
-                    if (ctype.basetype === SPIRTypeBaseType.Struct || ctype.array.length !== 0) {
+                    if (ctype.basetype === SPIRBaseType.Struct || ctype.array.length !== 0) {
                         var elements = ops.slice(2);
-                        this.set(SPIRConstant, id, type, elements, length - 2, op === Op.OpSpecConstantComposite);
+                        this.set(SPIRConstant, id, type, elements, length - 2, op === Op.SpecConstantComposite);
                     }
                     else {
                         var elements = length - 2;
@@ -4082,7 +4084,7 @@ var Parser = /** @class */ (function () {
                             var constant_op = this.maybe_get(SPIRConstantOp, ops[2 + i]);
                             var undef_op = this.maybe_get(SPIRUndef, ops[2 + i]);
                             if (constant_op) {
-                                if (op === Op.OpConstantComposite)
+                                if (op === Op.ConstantComposite)
                                     throw new Error("Specialization constant operation used in OpConstantComposite.");
                                 remapped_constant_ops[i].make_null(this.get(SPIRType, constant_op.basetype));
                                 remapped_constant_ops[i].self = constant_op.self;
@@ -4099,12 +4101,12 @@ var Parser = /** @class */ (function () {
                             else
                                 c[i] = this.get(SPIRConstant, ops[2 + i]);
                         }
-                        this.set(SPIRConstant, id, type, c, elements, op === Op.OpSpecConstantComposite);
+                        this.set(SPIRConstant, id, type, c, elements, op === Op.SpecConstantComposite);
                     }
                     break;
                 }
             // Functions
-            case Op.OpFunction:
+            case Op.Function:
                 {
                     var res = ops[0];
                     var id = ops[1];
@@ -4115,17 +4117,17 @@ var Parser = /** @class */ (function () {
                     this.current_function = this.set(SPIRFunction, id, res, type);
                     break;
                 }
-            case Op.OpFunctionParameter:
+            case Op.FunctionParameter:
                 {
                     var type = ops[0];
                     var id = ops[1];
                     if (!this.current_function)
                         throw new Error("Must be in a function!");
                     this.current_function.add_parameter(type, id);
-                    this.set(SPIRVariable, id, type, StorageClass.StorageClassFunction);
+                    this.set(SPIRVariable, id, type, StorageClass.Function);
                     break;
                 }
-            case Op.OpFunctionEnd:
+            case Op.FunctionEnd:
                 {
                     if (this.current_block) {
                         // Very specific error message, but seems to come up quite often.
@@ -4136,7 +4138,7 @@ var Parser = /** @class */ (function () {
                     break;
                 }
             // Blocks
-            case Op.OpLabel:
+            case Op.Label:
                 {
                     // OpLabel always starts a block.
                     if (!this.current_function)
@@ -4151,7 +4153,7 @@ var Parser = /** @class */ (function () {
                     break;
                 }
             // Branch instructions end blocks.
-            case Op.OpBranch:
+            case Op.Branch:
                 {
                     if (!this.current_block)
                         throw new Error("Trying to end a non-existing block.");
@@ -4162,7 +4164,7 @@ var Parser = /** @class */ (function () {
                     this.current_block = null;
                     break;
                 }
-            case Op.OpBranchConditional:
+            case Op.BranchConditional:
                 {
                     if (!this.current_block)
                         throw new Error("Trying to end a non-existing block.");
@@ -4180,10 +4182,10 @@ var Parser = /** @class */ (function () {
                         // In this scenario, we should see the selection construct as more of a Switch with one default case.
                         // The problem here is that this breaks any attempt to break out of outer switch statements,
                         // but it's theoretically solvable if this ever comes up using the ladder breaking system ...
-                        if (current_block.true_block !== current_block.next_block && current_block.merge === SPIRBlockMerge.MergeSelection) {
+                        if (current_block.true_block !== current_block.next_block && current_block.merge === SPIRBlockMerge.Selection) {
                             var ids = ir.increase_bound_by(2);
                             var type = new SPIRType();
-                            type.basetype = SPIRTypeBaseType.Int;
+                            type.basetype = SPIRBaseType.Int;
                             type.width = 32;
                             this.set(SPIRType, ids, type);
                             var c = this.set(SPIRConstant, ids + 1, ids);
@@ -4191,25 +4193,25 @@ var Parser = /** @class */ (function () {
                             current_block.default_block = current_block.true_block;
                             current_block.terminator = SPIRBlockTerminator.MultiSelect;
                             ir.block_meta[current_block.next_block] = ir.block_meta[current_block.next_block] || 0;
-                            ir.block_meta[current_block.next_block] &= ~BlockMetaFlagBits.BLOCK_META_SELECTION_MERGE_BIT;
-                            ir.block_meta[current_block.next_block] |= BlockMetaFlagBits.BLOCK_META_MULTISELECT_MERGE_BIT;
+                            ir.block_meta[current_block.next_block] &= ~BlockMetaFlagBits.SELECTION_MERGE_BIT;
+                            ir.block_meta[current_block.next_block] |= BlockMetaFlagBits.MULTISELECT_MERGE_BIT;
                         }
                         else {
                             ir.block_meta[current_block.next_block] = ir.block_meta[current_block.next_block] || 0;
-                            ir.block_meta[current_block.next_block] &= ~BlockMetaFlagBits.BLOCK_META_SELECTION_MERGE_BIT;
+                            ir.block_meta[current_block.next_block] &= ~BlockMetaFlagBits.SELECTION_MERGE_BIT;
                             current_block.next_block = current_block.true_block;
                             current_block.condition = 0;
                             current_block.true_block = 0;
                             current_block.false_block = 0;
                             current_block.merge_block = 0;
-                            current_block.merge = SPIRBlockMerge.MergeNone;
+                            current_block.merge = SPIRBlockMerge.None;
                             current_block.terminator = SPIRBlockTerminator.Direct;
                         }
                     }
                     this.current_block = null;
                     break;
                 }
-            case Op.OpSwitch:
+            case Op.Switch:
                 {
                     var current_block = this.current_block;
                     if (!current_block)
@@ -4229,11 +4231,11 @@ var Parser = /** @class */ (function () {
                     }
                     // If we jump to next block, make it break instead since we're inside a switch case block at that point.
                     ir.block_meta[current_block.next_block] = ir.block_meta[current_block.next_block] || 0;
-                    ir.block_meta[current_block.next_block] |= BlockMetaFlagBits.BLOCK_META_MULTISELECT_MERGE_BIT;
+                    ir.block_meta[current_block.next_block] |= BlockMetaFlagBits.MULTISELECT_MERGE_BIT;
                     this.current_block = null;
                     break;
                 }
-            case Op.OpKill:
+            case Op.Kill:
                 {
                     if (!this.current_block)
                         throw new Error("Trying to end a non-existing block.");
@@ -4241,21 +4243,21 @@ var Parser = /** @class */ (function () {
                     this.current_block = null;
                     break;
                 }
-            case Op.OpTerminateRayKHR:
+            case Op.TerminateRayKHR:
                 // NV variant is not a terminator.
                 if (!this.current_block)
                     throw new Error("Trying to end a non-existing block.");
                 this.current_block.terminator = SPIRBlockTerminator.TerminateRay;
                 this.current_block = null;
                 break;
-            case Op.OpIgnoreIntersectionKHR:
+            case Op.IgnoreIntersectionKHR:
                 // NV variant is not a terminator.
                 if (!this.current_block)
                     throw new Error("Trying to end a non-existing block.");
                 this.current_block.terminator = SPIRBlockTerminator.IgnoreIntersection;
                 this.current_block = null;
                 break;
-            case Op.OpReturn:
+            case Op.Return:
                 {
                     if (!this.current_block)
                         throw new Error("Trying to end a non-existing block.");
@@ -4263,7 +4265,7 @@ var Parser = /** @class */ (function () {
                     this.current_block = null;
                     break;
                 }
-            case Op.OpReturnValue:
+            case Op.ReturnValue:
                 {
                     var current_block = this.current_block;
                     if (!current_block)
@@ -4273,7 +4275,7 @@ var Parser = /** @class */ (function () {
                     this.current_block = null;
                     break;
                 }
-            case Op.OpUnreachable:
+            case Op.Unreachable:
                 {
                     if (!this.current_block)
                         throw new Error("Trying to end a non-existing block.");
@@ -4281,52 +4283,52 @@ var Parser = /** @class */ (function () {
                     this.current_block = null;
                     break;
                 }
-            case Op.OpSelectionMerge:
+            case Op.SelectionMerge:
                 {
                     var current_block = this.current_block;
                     if (!current_block)
                         throw new Error("Trying to modify a non-existing block.");
                     current_block.next_block = ops[0];
-                    current_block.merge = SPIRBlockMerge.MergeSelection;
+                    current_block.merge = SPIRBlockMerge.Selection;
                     ir.block_meta[current_block.next_block] = ir.block_meta[current_block.next_block] || 0;
-                    ir.block_meta[current_block.next_block] |= BlockMetaFlagBits.BLOCK_META_SELECTION_MERGE_BIT;
+                    ir.block_meta[current_block.next_block] |= BlockMetaFlagBits.SELECTION_MERGE_BIT;
                     if (length >= 2) {
-                        if (ops[1] & SelectionControlMask.SelectionControlFlattenMask)
-                            current_block.hint = SPIRBlockHints.HintFlatten;
-                        else if (ops[1] & SelectionControlMask.SelectionControlDontFlattenMask)
-                            current_block.hint = SPIRBlockHints.HintDontFlatten;
+                        if (ops[1] & SelectionControlMask.Flatten)
+                            current_block.hint = SPIRBlockHints.Flatten;
+                        else if (ops[1] & SelectionControlMask.DontFlatten)
+                            current_block.hint = SPIRBlockHints.DontFlatten;
                     }
                     break;
                 }
-            case Op.OpLoopMerge:
+            case Op.LoopMerge:
                 {
                     var current_block = this.current_block;
                     if (!current_block)
                         throw new Error("Trying to modify a non-existing block.");
                     current_block.merge_block = ops[0];
                     current_block.continue_block = ops[1];
-                    current_block.merge = SPIRBlockMerge.MergeLoop;
+                    current_block.merge = SPIRBlockMerge.Loop;
                     ir.block_meta[current_block.self] = ir.block_meta[current_block.self] || 0;
-                    ir.block_meta[current_block.self] |= BlockMetaFlagBits.BLOCK_META_LOOP_HEADER_BIT;
+                    ir.block_meta[current_block.self] |= BlockMetaFlagBits.LOOP_HEADER_BIT;
                     ir.block_meta[current_block.merge_block] = ir.block_meta[current_block.merge_block] || 0;
-                    ir.block_meta[current_block.merge_block] |= BlockMetaFlagBits.BLOCK_META_LOOP_MERGE_BIT;
+                    ir.block_meta[current_block.merge_block] |= BlockMetaFlagBits.LOOP_MERGE_BIT;
                     ir.continue_block_to_loop_header[current_block.continue_block] = current_block.self;
                     // Don't add loop headers to continue blocks,
                     // which would make it impossible branch into the loop header since
                     // they are treated as continues.
                     if (current_block.continue_block !== current_block.self) {
                         ir.block_meta[current_block.continue_block] = ir.block_meta[current_block.continue_block] || 0;
-                        ir.block_meta[current_block.continue_block] |= BlockMetaFlagBits.BLOCK_META_CONTINUE_BIT;
+                        ir.block_meta[current_block.continue_block] |= BlockMetaFlagBits.CONTINUE_BIT;
                     }
                     if (length >= 3) {
-                        if (ops[2] & LoopControlMask.LoopControlUnrollMask)
-                            current_block.hint = SPIRBlockHints.HintUnroll;
-                        else if (ops[2] & LoopControlMask.LoopControlDontUnrollMask)
-                            current_block.hint = SPIRBlockHints.HintDontUnroll;
+                        if (ops[2] & LoopControlMask.Unroll)
+                            current_block.hint = SPIRBlockHints.Unroll;
+                        else if (ops[2] & LoopControlMask.DontUnroll)
+                            current_block.hint = SPIRBlockHints.DontUnroll;
                     }
                     break;
                 }
-            case Op.OpSpecConstantOp:
+            case Op.SpecConstantOp:
                 {
                     if (length < 3)
                         throw new Error("OpSpecConstantOp not enough arguments.");
@@ -4336,7 +4338,7 @@ var Parser = /** @class */ (function () {
                     this.set(SPIRConstantOp, id, result_type, spec_op, ops.slice(3));
                     break;
                 }
-            case Op.OpLine:
+            case Op.Line:
                 {
                     var current_block = this.current_block;
                     // OpLine might come at global scope, but we don't care about those since they will not be declared in any
@@ -4357,7 +4359,7 @@ var Parser = /** @class */ (function () {
                     }
                     break;
                 }
-            case Op.OpNoLine:
+            case Op.NoLine:
                 {
                     // OpNoLine might come at global scope.
                     if (this.current_block)
@@ -4415,7 +4417,7 @@ var Parser = /** @class */ (function () {
             return false;
         if (!equals(a.array, b.array))
             return false;
-        if (a.basetype === SPIRTypeBaseType.Image || a.basetype === SPIRTypeBaseType.SampledImage) {
+        if (a.basetype === SPIRBaseType.Image || a.basetype === SPIRBaseType.SampledImage) {
             if (!a.image.equals(b.image))
                 return false;
         }
@@ -4463,7 +4465,7 @@ function extract_string(spirv, offset) {
 }
 function decoration_is_string(decoration) {
     switch (decoration) {
-        case Decoration.DecorationHlslSemanticGOOGLE:
+        case Decoration.HlslSemanticGOOGLE:
             return true;
         default:
             return false;
@@ -4472,13 +4474,13 @@ function decoration_is_string(decoration) {
 function to_signed_basetype$1(width) {
     switch (width) {
         case 8:
-            return SPIRTypeBaseType.SByte;
+            return SPIRBaseType.SByte;
         case 16:
-            return SPIRTypeBaseType.Short;
+            return SPIRBaseType.Short;
         case 32:
-            return SPIRTypeBaseType.Int;
+            return SPIRBaseType.Int;
         case 64:
-            return SPIRTypeBaseType.Int64;
+            return SPIRBaseType.Int64;
         default:
             throw new Error("Invalid bit width.");
     }
@@ -4486,13 +4488,13 @@ function to_signed_basetype$1(width) {
 function to_unsigned_basetype$1(width) {
     switch (width) {
         case 8:
-            return SPIRTypeBaseType.UByte;
+            return SPIRBaseType.UByte;
         case 16:
-            return SPIRTypeBaseType.UShort;
+            return SPIRBaseType.UShort;
         case 32:
-            return SPIRTypeBaseType.UInt;
+            return SPIRBaseType.UInt;
         case 64:
-            return SPIRTypeBaseType.UInt64;
+            return SPIRBaseType.UInt64;
         default:
             throw new Error("Invalid bit width.");
     }
@@ -4536,11 +4538,11 @@ var Dim;
     Dim[Dim["Dim1D"] = 0] = "Dim1D";
     Dim[Dim["Dim2D"] = 1] = "Dim2D";
     Dim[Dim["Dim3D"] = 2] = "Dim3D";
-    Dim[Dim["DimCube"] = 3] = "DimCube";
-    Dim[Dim["DimRect"] = 4] = "DimRect";
-    Dim[Dim["DimBuffer"] = 5] = "DimBuffer";
-    Dim[Dim["DimSubpassData"] = 6] = "DimSubpassData";
-    Dim[Dim["DimMax"] = 2147483647] = "DimMax";
+    Dim[Dim["Cube"] = 3] = "Cube";
+    Dim[Dim["Rect"] = 4] = "Rect";
+    Dim[Dim["Buffer"] = 5] = "Buffer";
+    Dim[Dim["SubpassData"] = 6] = "SubpassData";
+    Dim[Dim["Max"] = 2147483647] = "Max";
 })(Dim || (Dim = {}));
 
 var DummySamplerForCombinedImageHandler = /** @class */ (function (_super) {
@@ -4558,13 +4560,13 @@ var DummySamplerForCombinedImageHandler = /** @class */ (function (_super) {
         }
         var compiler = this.compiler;
         switch (opcode) {
-            case Op.OpLoad:
+            case Op.Load:
                 {
                     if (length < 3)
                         return false;
                     var result_type = args[0];
                     var type = compiler.get(SPIRType, result_type);
-                    var separate_image = type.basetype === SPIRTypeBaseType.Image && type.image.sampled === 1 && type.image.dim !== Dim.DimBuffer;
+                    var separate_image = type.basetype === SPIRBaseType.Image && type.image.sampled === 1 && type.image.dim !== Dim.Buffer;
                     // If not separate image, don't bother.
                     if (!separate_image)
                         return true;
@@ -4574,30 +4576,30 @@ var DummySamplerForCombinedImageHandler = /** @class */ (function (_super) {
                     compiler.register_read(id, ptr, true);
                     break;
                 }
-            case Op.OpImageFetch:
-            case Op.OpImageQuerySizeLod:
-            case Op.OpImageQuerySize:
-            case Op.OpImageQueryLevels:
-            case Op.OpImageQuerySamples:
+            case Op.ImageFetch:
+            case Op.ImageQuerySizeLod:
+            case Op.ImageQuerySize:
+            case Op.ImageQueryLevels:
+            case Op.ImageQuerySamples:
                 {
                     // If we are fetching or querying LOD from a plain OpTypeImage, we must pre-combine with our dummy sampler.
                     var var_ = compiler.maybe_get_backing_variable(args[2]);
                     if (var_) {
                         var type = compiler.get(SPIRType, var_.basetype);
-                        if (type.basetype === SPIRTypeBaseType.Image && type.image.sampled === 1 && type.image.dim !== Dim.DimBuffer)
+                        if (type.basetype === SPIRBaseType.Image && type.image.sampled === 1 && type.image.dim !== Dim.Buffer)
                             this.need_dummy_sampler = true;
                     }
                     break;
                 }
-            case Op.OpInBoundsAccessChain:
-            case Op.OpAccessChain:
-            case Op.OpPtrAccessChain:
+            case Op.InBoundsAccessChain:
+            case Op.AccessChain:
+            case Op.PtrAccessChain:
                 {
                     if (length < 3)
                         return false;
                     var result_type = args[0];
                     var type = compiler.get(SPIRType, result_type);
-                    var separate_image = type.basetype === SPIRTypeBaseType.Image && type.image.sampled === 1 && type.image.dim !== Dim.DimBuffer;
+                    var separate_image = type.basetype === SPIRBaseType.Image && type.image.sampled === 1 && type.image.dim !== Dim.Buffer;
                     if (!separate_image)
                         return true;
                     var id = args[1];
@@ -4616,105 +4618,105 @@ var DummySamplerForCombinedImageHandler = /** @class */ (function (_super) {
 
 var GLSLstd450;
 (function (GLSLstd450) {
-    GLSLstd450[GLSLstd450["GLSLstd450Bad"] = 0] = "GLSLstd450Bad";
-    GLSLstd450[GLSLstd450["GLSLstd450Round"] = 1] = "GLSLstd450Round";
-    GLSLstd450[GLSLstd450["GLSLstd450RoundEven"] = 2] = "GLSLstd450RoundEven";
-    GLSLstd450[GLSLstd450["GLSLstd450Trunc"] = 3] = "GLSLstd450Trunc";
-    GLSLstd450[GLSLstd450["GLSLstd450FAbs"] = 4] = "GLSLstd450FAbs";
-    GLSLstd450[GLSLstd450["GLSLstd450SAbs"] = 5] = "GLSLstd450SAbs";
-    GLSLstd450[GLSLstd450["GLSLstd450FSign"] = 6] = "GLSLstd450FSign";
-    GLSLstd450[GLSLstd450["GLSLstd450SSign"] = 7] = "GLSLstd450SSign";
-    GLSLstd450[GLSLstd450["GLSLstd450Floor"] = 8] = "GLSLstd450Floor";
-    GLSLstd450[GLSLstd450["GLSLstd450Ceil"] = 9] = "GLSLstd450Ceil";
-    GLSLstd450[GLSLstd450["GLSLstd450Fract"] = 10] = "GLSLstd450Fract";
-    GLSLstd450[GLSLstd450["GLSLstd450Radians"] = 11] = "GLSLstd450Radians";
-    GLSLstd450[GLSLstd450["GLSLstd450Degrees"] = 12] = "GLSLstd450Degrees";
-    GLSLstd450[GLSLstd450["GLSLstd450Sin"] = 13] = "GLSLstd450Sin";
-    GLSLstd450[GLSLstd450["GLSLstd450Cos"] = 14] = "GLSLstd450Cos";
-    GLSLstd450[GLSLstd450["GLSLstd450Tan"] = 15] = "GLSLstd450Tan";
-    GLSLstd450[GLSLstd450["GLSLstd450Asin"] = 16] = "GLSLstd450Asin";
-    GLSLstd450[GLSLstd450["GLSLstd450Acos"] = 17] = "GLSLstd450Acos";
-    GLSLstd450[GLSLstd450["GLSLstd450Atan"] = 18] = "GLSLstd450Atan";
-    GLSLstd450[GLSLstd450["GLSLstd450Sinh"] = 19] = "GLSLstd450Sinh";
-    GLSLstd450[GLSLstd450["GLSLstd450Cosh"] = 20] = "GLSLstd450Cosh";
-    GLSLstd450[GLSLstd450["GLSLstd450Tanh"] = 21] = "GLSLstd450Tanh";
-    GLSLstd450[GLSLstd450["GLSLstd450Asinh"] = 22] = "GLSLstd450Asinh";
-    GLSLstd450[GLSLstd450["GLSLstd450Acosh"] = 23] = "GLSLstd450Acosh";
-    GLSLstd450[GLSLstd450["GLSLstd450Atanh"] = 24] = "GLSLstd450Atanh";
-    GLSLstd450[GLSLstd450["GLSLstd450Atan2"] = 25] = "GLSLstd450Atan2";
-    GLSLstd450[GLSLstd450["GLSLstd450Pow"] = 26] = "GLSLstd450Pow";
-    GLSLstd450[GLSLstd450["GLSLstd450Exp"] = 27] = "GLSLstd450Exp";
-    GLSLstd450[GLSLstd450["GLSLstd450Log"] = 28] = "GLSLstd450Log";
-    GLSLstd450[GLSLstd450["GLSLstd450Exp2"] = 29] = "GLSLstd450Exp2";
-    GLSLstd450[GLSLstd450["GLSLstd450Log2"] = 30] = "GLSLstd450Log2";
-    GLSLstd450[GLSLstd450["GLSLstd450Sqrt"] = 31] = "GLSLstd450Sqrt";
-    GLSLstd450[GLSLstd450["GLSLstd450InverseSqrt"] = 32] = "GLSLstd450InverseSqrt";
-    GLSLstd450[GLSLstd450["GLSLstd450Determinant"] = 33] = "GLSLstd450Determinant";
-    GLSLstd450[GLSLstd450["GLSLstd450MatrixInverse"] = 34] = "GLSLstd450MatrixInverse";
-    GLSLstd450[GLSLstd450["GLSLstd450Modf"] = 35] = "GLSLstd450Modf";
-    GLSLstd450[GLSLstd450["GLSLstd450ModfStruct"] = 36] = "GLSLstd450ModfStruct";
-    GLSLstd450[GLSLstd450["GLSLstd450FMin"] = 37] = "GLSLstd450FMin";
-    GLSLstd450[GLSLstd450["GLSLstd450UMin"] = 38] = "GLSLstd450UMin";
-    GLSLstd450[GLSLstd450["GLSLstd450SMin"] = 39] = "GLSLstd450SMin";
-    GLSLstd450[GLSLstd450["GLSLstd450FMax"] = 40] = "GLSLstd450FMax";
-    GLSLstd450[GLSLstd450["GLSLstd450UMax"] = 41] = "GLSLstd450UMax";
-    GLSLstd450[GLSLstd450["GLSLstd450SMax"] = 42] = "GLSLstd450SMax";
-    GLSLstd450[GLSLstd450["GLSLstd450FClamp"] = 43] = "GLSLstd450FClamp";
-    GLSLstd450[GLSLstd450["GLSLstd450UClamp"] = 44] = "GLSLstd450UClamp";
-    GLSLstd450[GLSLstd450["GLSLstd450SClamp"] = 45] = "GLSLstd450SClamp";
-    GLSLstd450[GLSLstd450["GLSLstd450FMix"] = 46] = "GLSLstd450FMix";
-    GLSLstd450[GLSLstd450["GLSLstd450IMix"] = 47] = "GLSLstd450IMix";
-    GLSLstd450[GLSLstd450["GLSLstd450Step"] = 48] = "GLSLstd450Step";
-    GLSLstd450[GLSLstd450["GLSLstd450SmoothStep"] = 49] = "GLSLstd450SmoothStep";
-    GLSLstd450[GLSLstd450["GLSLstd450Fma"] = 50] = "GLSLstd450Fma";
-    GLSLstd450[GLSLstd450["GLSLstd450Frexp"] = 51] = "GLSLstd450Frexp";
-    GLSLstd450[GLSLstd450["GLSLstd450FrexpStruct"] = 52] = "GLSLstd450FrexpStruct";
-    GLSLstd450[GLSLstd450["GLSLstd450Ldexp"] = 53] = "GLSLstd450Ldexp";
-    GLSLstd450[GLSLstd450["GLSLstd450PackSnorm4x8"] = 54] = "GLSLstd450PackSnorm4x8";
-    GLSLstd450[GLSLstd450["GLSLstd450PackUnorm4x8"] = 55] = "GLSLstd450PackUnorm4x8";
-    GLSLstd450[GLSLstd450["GLSLstd450PackSnorm2x16"] = 56] = "GLSLstd450PackSnorm2x16";
-    GLSLstd450[GLSLstd450["GLSLstd450PackUnorm2x16"] = 57] = "GLSLstd450PackUnorm2x16";
-    GLSLstd450[GLSLstd450["GLSLstd450PackHalf2x16"] = 58] = "GLSLstd450PackHalf2x16";
-    GLSLstd450[GLSLstd450["GLSLstd450PackDouble2x32"] = 59] = "GLSLstd450PackDouble2x32";
-    GLSLstd450[GLSLstd450["GLSLstd450UnpackSnorm2x16"] = 60] = "GLSLstd450UnpackSnorm2x16";
-    GLSLstd450[GLSLstd450["GLSLstd450UnpackUnorm2x16"] = 61] = "GLSLstd450UnpackUnorm2x16";
-    GLSLstd450[GLSLstd450["GLSLstd450UnpackHalf2x16"] = 62] = "GLSLstd450UnpackHalf2x16";
-    GLSLstd450[GLSLstd450["GLSLstd450UnpackSnorm4x8"] = 63] = "GLSLstd450UnpackSnorm4x8";
-    GLSLstd450[GLSLstd450["GLSLstd450UnpackUnorm4x8"] = 64] = "GLSLstd450UnpackUnorm4x8";
-    GLSLstd450[GLSLstd450["GLSLstd450UnpackDouble2x32"] = 65] = "GLSLstd450UnpackDouble2x32";
-    GLSLstd450[GLSLstd450["GLSLstd450Length"] = 66] = "GLSLstd450Length";
-    GLSLstd450[GLSLstd450["GLSLstd450Distance"] = 67] = "GLSLstd450Distance";
-    GLSLstd450[GLSLstd450["GLSLstd450Cross"] = 68] = "GLSLstd450Cross";
-    GLSLstd450[GLSLstd450["GLSLstd450Normalize"] = 69] = "GLSLstd450Normalize";
-    GLSLstd450[GLSLstd450["GLSLstd450FaceForward"] = 70] = "GLSLstd450FaceForward";
-    GLSLstd450[GLSLstd450["GLSLstd450Reflect"] = 71] = "GLSLstd450Reflect";
-    GLSLstd450[GLSLstd450["GLSLstd450Refract"] = 72] = "GLSLstd450Refract";
-    GLSLstd450[GLSLstd450["GLSLstd450FindILsb"] = 73] = "GLSLstd450FindILsb";
-    GLSLstd450[GLSLstd450["GLSLstd450FindSMsb"] = 74] = "GLSLstd450FindSMsb";
-    GLSLstd450[GLSLstd450["GLSLstd450FindUMsb"] = 75] = "GLSLstd450FindUMsb";
-    GLSLstd450[GLSLstd450["GLSLstd450InterpolateAtCentroid"] = 76] = "GLSLstd450InterpolateAtCentroid";
-    GLSLstd450[GLSLstd450["GLSLstd450InterpolateAtSample"] = 77] = "GLSLstd450InterpolateAtSample";
-    GLSLstd450[GLSLstd450["GLSLstd450InterpolateAtOffset"] = 78] = "GLSLstd450InterpolateAtOffset";
-    GLSLstd450[GLSLstd450["GLSLstd450NMin"] = 79] = "GLSLstd450NMin";
-    GLSLstd450[GLSLstd450["GLSLstd450NMax"] = 80] = "GLSLstd450NMax";
-    GLSLstd450[GLSLstd450["GLSLstd450NClamp"] = 81] = "GLSLstd450NClamp";
-    GLSLstd450[GLSLstd450["GLSLstd450Count"] = 82] = "GLSLstd450Count";
+    GLSLstd450[GLSLstd450["Bad"] = 0] = "Bad";
+    GLSLstd450[GLSLstd450["Round"] = 1] = "Round";
+    GLSLstd450[GLSLstd450["RoundEven"] = 2] = "RoundEven";
+    GLSLstd450[GLSLstd450["Trunc"] = 3] = "Trunc";
+    GLSLstd450[GLSLstd450["FAbs"] = 4] = "FAbs";
+    GLSLstd450[GLSLstd450["SAbs"] = 5] = "SAbs";
+    GLSLstd450[GLSLstd450["FSign"] = 6] = "FSign";
+    GLSLstd450[GLSLstd450["SSign"] = 7] = "SSign";
+    GLSLstd450[GLSLstd450["Floor"] = 8] = "Floor";
+    GLSLstd450[GLSLstd450["Ceil"] = 9] = "Ceil";
+    GLSLstd450[GLSLstd450["Fract"] = 10] = "Fract";
+    GLSLstd450[GLSLstd450["Radians"] = 11] = "Radians";
+    GLSLstd450[GLSLstd450["Degrees"] = 12] = "Degrees";
+    GLSLstd450[GLSLstd450["Sin"] = 13] = "Sin";
+    GLSLstd450[GLSLstd450["Cos"] = 14] = "Cos";
+    GLSLstd450[GLSLstd450["Tan"] = 15] = "Tan";
+    GLSLstd450[GLSLstd450["Asin"] = 16] = "Asin";
+    GLSLstd450[GLSLstd450["Acos"] = 17] = "Acos";
+    GLSLstd450[GLSLstd450["Atan"] = 18] = "Atan";
+    GLSLstd450[GLSLstd450["Sinh"] = 19] = "Sinh";
+    GLSLstd450[GLSLstd450["Cosh"] = 20] = "Cosh";
+    GLSLstd450[GLSLstd450["Tanh"] = 21] = "Tanh";
+    GLSLstd450[GLSLstd450["Asinh"] = 22] = "Asinh";
+    GLSLstd450[GLSLstd450["Acosh"] = 23] = "Acosh";
+    GLSLstd450[GLSLstd450["Atanh"] = 24] = "Atanh";
+    GLSLstd450[GLSLstd450["Atan2"] = 25] = "Atan2";
+    GLSLstd450[GLSLstd450["Pow"] = 26] = "Pow";
+    GLSLstd450[GLSLstd450["Exp"] = 27] = "Exp";
+    GLSLstd450[GLSLstd450["Log"] = 28] = "Log";
+    GLSLstd450[GLSLstd450["Exp2"] = 29] = "Exp2";
+    GLSLstd450[GLSLstd450["Log2"] = 30] = "Log2";
+    GLSLstd450[GLSLstd450["Sqrt"] = 31] = "Sqrt";
+    GLSLstd450[GLSLstd450["InverseSqrt"] = 32] = "InverseSqrt";
+    GLSLstd450[GLSLstd450["Determinant"] = 33] = "Determinant";
+    GLSLstd450[GLSLstd450["MatrixInverse"] = 34] = "MatrixInverse";
+    GLSLstd450[GLSLstd450["Modf"] = 35] = "Modf";
+    GLSLstd450[GLSLstd450["ModfStruct"] = 36] = "ModfStruct";
+    GLSLstd450[GLSLstd450["FMin"] = 37] = "FMin";
+    GLSLstd450[GLSLstd450["UMin"] = 38] = "UMin";
+    GLSLstd450[GLSLstd450["SMin"] = 39] = "SMin";
+    GLSLstd450[GLSLstd450["FMax"] = 40] = "FMax";
+    GLSLstd450[GLSLstd450["UMax"] = 41] = "UMax";
+    GLSLstd450[GLSLstd450["SMax"] = 42] = "SMax";
+    GLSLstd450[GLSLstd450["FClamp"] = 43] = "FClamp";
+    GLSLstd450[GLSLstd450["UClamp"] = 44] = "UClamp";
+    GLSLstd450[GLSLstd450["SClamp"] = 45] = "SClamp";
+    GLSLstd450[GLSLstd450["FMix"] = 46] = "FMix";
+    GLSLstd450[GLSLstd450["IMix"] = 47] = "IMix";
+    GLSLstd450[GLSLstd450["Step"] = 48] = "Step";
+    GLSLstd450[GLSLstd450["SmoothStep"] = 49] = "SmoothStep";
+    GLSLstd450[GLSLstd450["Fma"] = 50] = "Fma";
+    GLSLstd450[GLSLstd450["Frexp"] = 51] = "Frexp";
+    GLSLstd450[GLSLstd450["FrexpStruct"] = 52] = "FrexpStruct";
+    GLSLstd450[GLSLstd450["Ldexp"] = 53] = "Ldexp";
+    GLSLstd450[GLSLstd450["PackSnorm4x8"] = 54] = "PackSnorm4x8";
+    GLSLstd450[GLSLstd450["PackUnorm4x8"] = 55] = "PackUnorm4x8";
+    GLSLstd450[GLSLstd450["PackSnorm2x16"] = 56] = "PackSnorm2x16";
+    GLSLstd450[GLSLstd450["PackUnorm2x16"] = 57] = "PackUnorm2x16";
+    GLSLstd450[GLSLstd450["PackHalf2x16"] = 58] = "PackHalf2x16";
+    GLSLstd450[GLSLstd450["PackDouble2x32"] = 59] = "PackDouble2x32";
+    GLSLstd450[GLSLstd450["UnpackSnorm2x16"] = 60] = "UnpackSnorm2x16";
+    GLSLstd450[GLSLstd450["UnpackUnorm2x16"] = 61] = "UnpackUnorm2x16";
+    GLSLstd450[GLSLstd450["UnpackHalf2x16"] = 62] = "UnpackHalf2x16";
+    GLSLstd450[GLSLstd450["UnpackSnorm4x8"] = 63] = "UnpackSnorm4x8";
+    GLSLstd450[GLSLstd450["UnpackUnorm4x8"] = 64] = "UnpackUnorm4x8";
+    GLSLstd450[GLSLstd450["UnpackDouble2x32"] = 65] = "UnpackDouble2x32";
+    GLSLstd450[GLSLstd450["Length"] = 66] = "Length";
+    GLSLstd450[GLSLstd450["Distance"] = 67] = "Distance";
+    GLSLstd450[GLSLstd450["Cross"] = 68] = "Cross";
+    GLSLstd450[GLSLstd450["Normalize"] = 69] = "Normalize";
+    GLSLstd450[GLSLstd450["FaceForward"] = 70] = "FaceForward";
+    GLSLstd450[GLSLstd450["Reflect"] = 71] = "Reflect";
+    GLSLstd450[GLSLstd450["Refract"] = 72] = "Refract";
+    GLSLstd450[GLSLstd450["FindILsb"] = 73] = "FindILsb";
+    GLSLstd450[GLSLstd450["FindSMsb"] = 74] = "FindSMsb";
+    GLSLstd450[GLSLstd450["FindUMsb"] = 75] = "FindUMsb";
+    GLSLstd450[GLSLstd450["InterpolateAtCentroid"] = 76] = "InterpolateAtCentroid";
+    GLSLstd450[GLSLstd450["InterpolateAtSample"] = 77] = "InterpolateAtSample";
+    GLSLstd450[GLSLstd450["InterpolateAtOffset"] = 78] = "InterpolateAtOffset";
+    GLSLstd450[GLSLstd450["NMin"] = 79] = "NMin";
+    GLSLstd450[GLSLstd450["NMax"] = 80] = "NMax";
+    GLSLstd450[GLSLstd450["NClamp"] = 81] = "NClamp";
+    GLSLstd450[GLSLstd450["Count"] = 82] = "Count";
 })(GLSLstd450 || (GLSLstd450 = {}));
 var PlsFormat;
 (function (PlsFormat) {
-    PlsFormat[PlsFormat["PlsNone"] = 0] = "PlsNone";
-    PlsFormat[PlsFormat["PlsR11FG11FB10F"] = 1] = "PlsR11FG11FB10F";
-    PlsFormat[PlsFormat["PlsR32F"] = 2] = "PlsR32F";
-    PlsFormat[PlsFormat["PlsRG16F"] = 3] = "PlsRG16F";
-    PlsFormat[PlsFormat["PlsRGB10A2"] = 4] = "PlsRGB10A2";
-    PlsFormat[PlsFormat["PlsRGBA8"] = 5] = "PlsRGBA8";
-    PlsFormat[PlsFormat["PlsRG16"] = 6] = "PlsRG16";
-    PlsFormat[PlsFormat["PlsRGBA8I"] = 7] = "PlsRGBA8I";
-    PlsFormat[PlsFormat["PlsRG16I"] = 8] = "PlsRG16I";
-    PlsFormat[PlsFormat["PlsRGB10A2UI"] = 9] = "PlsRGB10A2UI";
-    PlsFormat[PlsFormat["PlsRGBA8UI"] = 10] = "PlsRGBA8UI";
-    PlsFormat[PlsFormat["PlsRG16UI"] = 11] = "PlsRG16UI";
-    PlsFormat[PlsFormat["PlsR32UI"] = 12] = "PlsR32UI";
+    PlsFormat[PlsFormat["None"] = 0] = "None";
+    PlsFormat[PlsFormat["R11FG11FB10F"] = 1] = "R11FG11FB10F";
+    PlsFormat[PlsFormat["R32F"] = 2] = "R32F";
+    PlsFormat[PlsFormat["RG16F"] = 3] = "RG16F";
+    PlsFormat[PlsFormat["RGB10A2"] = 4] = "RGB10A2";
+    PlsFormat[PlsFormat["RGBA8"] = 5] = "RGBA8";
+    PlsFormat[PlsFormat["RG16"] = 6] = "RG16";
+    PlsFormat[PlsFormat["RGBA8I"] = 7] = "RGBA8I";
+    PlsFormat[PlsFormat["RG16I"] = 8] = "RG16I";
+    PlsFormat[PlsFormat["RGB10A2UI"] = 9] = "RGB10A2UI";
+    PlsFormat[PlsFormat["RGBA8UI"] = 10] = "RGBA8UI";
+    PlsFormat[PlsFormat["RG16UI"] = 11] = "RG16UI";
+    PlsFormat[PlsFormat["R32UI"] = 12] = "R32UI";
 })(PlsFormat || (PlsFormat = {}));
 // Can be overriden by subclass backends for trivial things which
 // shouldn't need polymorphism.
@@ -4787,7 +4789,7 @@ var InterfaceVariableAccessHandler = /** @class */ (function (_super) {
             // Need this first, otherwise, GCC complains about unhandled switch statements.
             default:
                 break;
-            case Op.OpFunctionCall:
+            case Op.FunctionCall:
                 {
                     // Invalid SPIR-V.
                     if (length < 3)
@@ -4801,7 +4803,7 @@ var InterfaceVariableAccessHandler = /** @class */ (function (_super) {
                     }
                     break;
                 }
-            case Op.OpSelect:
+            case Op.Select:
                 {
                     // Invalid SPIR-V.
                     if (length < 5)
@@ -4815,7 +4817,7 @@ var InterfaceVariableAccessHandler = /** @class */ (function (_super) {
                     }
                     break;
                 }
-            case Op.OpPhi:
+            case Op.Phi:
                 {
                     // Invalid SPIR-V.
                     if (length < 2)
@@ -4829,14 +4831,14 @@ var InterfaceVariableAccessHandler = /** @class */ (function (_super) {
                     }
                     break;
                 }
-            case Op.OpAtomicStore:
-            case Op.OpStore:
+            case Op.AtomicStore:
+            case Op.Store:
                 // Invalid SPIR-V.
                 if (length < 1)
                     return false;
                 variable = args[offset];
                 break;
-            case Op.OpCopyMemory:
+            case Op.CopyMemory:
                 {
                     if (length < 2)
                         return false;
@@ -4848,7 +4850,7 @@ var InterfaceVariableAccessHandler = /** @class */ (function (_super) {
                         variables.add(args[offset + 1]);
                     break;
                 }
-            case Op.OpExtInst:
+            case Op.ExtInst:
                 {
                     if (length < 5)
                         return false;
@@ -4858,17 +4860,17 @@ var InterfaceVariableAccessHandler = /** @class */ (function (_super) {
                             {
                                 var op = (args[offset + 3]);
                                 switch (op) {
-                                    case GLSLstd450.GLSLstd450InterpolateAtCentroid:
-                                    case GLSLstd450.GLSLstd450InterpolateAtSample:
-                                    case GLSLstd450.GLSLstd450InterpolateAtOffset:
+                                    case GLSLstd450.InterpolateAtCentroid:
+                                    case GLSLstd450.InterpolateAtSample:
+                                    case GLSLstd450.InterpolateAtOffset:
                                         {
                                             var var_ = compiler.maybe_get(SPIRVariable, args[offset + 4]);
                                             if (var_ && storage_class_is_interface$1(var_.storage))
                                                 variables.add(args[offset + 4]);
                                             break;
                                         }
-                                    case GLSLstd450.GLSLstd450Modf:
-                                    case GLSLstd450.GLSLstd450Fract:
+                                    case GLSLstd450.Modf:
+                                    case GLSLstd450.Fract:
                                         {
                                             var var_ = compiler.maybe_get(SPIRVariable, args[offset + 5]);
                                             if (var_ && storage_class_is_interface$1(var_.storage))
@@ -4896,28 +4898,28 @@ var InterfaceVariableAccessHandler = /** @class */ (function (_super) {
                     }
                     break;
                 }
-            case Op.OpAccessChain:
-            case Op.OpInBoundsAccessChain:
-            case Op.OpPtrAccessChain:
-            case Op.OpLoad:
-            case Op.OpCopyObject:
-            case Op.OpImageTexelPointer:
-            case Op.OpAtomicLoad:
-            case Op.OpAtomicExchange:
-            case Op.OpAtomicCompareExchange:
-            case Op.OpAtomicCompareExchangeWeak:
-            case Op.OpAtomicIIncrement:
-            case Op.OpAtomicIDecrement:
-            case Op.OpAtomicIAdd:
-            case Op.OpAtomicISub:
-            case Op.OpAtomicSMin:
-            case Op.OpAtomicUMin:
-            case Op.OpAtomicSMax:
-            case Op.OpAtomicUMax:
-            case Op.OpAtomicAnd:
-            case Op.OpAtomicOr:
-            case Op.OpAtomicXor:
-            case Op.OpArrayLength:
+            case Op.AccessChain:
+            case Op.InBoundsAccessChain:
+            case Op.PtrAccessChain:
+            case Op.Load:
+            case Op.CopyObject:
+            case Op.ImageTexelPointer:
+            case Op.AtomicLoad:
+            case Op.AtomicExchange:
+            case Op.AtomicCompareExchange:
+            case Op.AtomicCompareExchangeWeak:
+            case Op.AtomicIIncrement:
+            case Op.AtomicIDecrement:
+            case Op.AtomicIAdd:
+            case Op.AtomicISub:
+            case Op.AtomicSMin:
+            case Op.AtomicUMin:
+            case Op.AtomicSMax:
+            case Op.AtomicUMax:
+            case Op.AtomicAnd:
+            case Op.AtomicOr:
+            case Op.AtomicXor:
+            case Op.ArrayLength:
                 // Invalid SPIR-V.
                 if (length < 3)
                     return false;
@@ -4935,13 +4937,13 @@ var InterfaceVariableAccessHandler = /** @class */ (function (_super) {
 }(OpcodeHandler));
 function storage_class_is_interface$1(storage) {
     switch (storage) {
-        case StorageClass.StorageClassInput:
-        case StorageClass.StorageClassOutput:
-        case StorageClass.StorageClassUniform:
-        case StorageClass.StorageClassUniformConstant:
-        case StorageClass.StorageClassAtomicCounter:
-        case StorageClass.StorageClassPushConstant:
-        case StorageClass.StorageClassStorageBuffer:
+        case StorageClass.Input:
+        case StorageClass.Output:
+        case StorageClass.Uniform:
+        case StorageClass.UniformConstant:
+        case StorageClass.AtomicCounter:
+        case StorageClass.PushConstant:
+        case StorageClass.StorageBuffer:
             return true;
         default:
             return false;
@@ -5021,13 +5023,13 @@ var CombinedImageSamplerHandler = /** @class */ (function (_super) {
         // We need to figure out where samplers and images are loaded from, so do only the bare bones compilation we need.
         var is_fetch = false;
         switch (opcode) {
-            case Op.OpLoad: {
+            case Op.Load: {
                 if (length < 3)
                     return false;
                 var result_type = args[0];
                 var type = compiler.get(SPIRType, result_type);
-                var separate_image = type.basetype === SPIRTypeBaseType.Image && type.image.sampled === 1;
-                var separate_sampler = type.basetype === SPIRTypeBaseType.Sampler;
+                var separate_image = type.basetype === SPIRBaseType.Image && type.image.sampled === 1;
+                var separate_sampler = type.basetype === SPIRBaseType.Sampler;
                 // If not separate image or sampler, don't bother.
                 if (!separate_image && !separate_sampler)
                     return true;
@@ -5037,9 +5039,9 @@ var CombinedImageSamplerHandler = /** @class */ (function (_super) {
                 compiler.register_read(id, ptr, true);
                 return true;
             }
-            case Op.OpInBoundsAccessChain:
-            case Op.OpAccessChain:
-            case Op.OpPtrAccessChain: {
+            case Op.InBoundsAccessChain:
+            case Op.AccessChain:
+            case Op.PtrAccessChain: {
                 if (length < 3)
                     return false;
                 // Technically, it is possible to have arrays of textures and arrays of samplers and combine them, but this becomes essentially
@@ -5049,8 +5051,8 @@ var CombinedImageSamplerHandler = /** @class */ (function (_super) {
                 // Checking access chains like this assumes we don't have samplers or textures inside uniform structs, but this makes no sense.
                 var result_type = args[0];
                 var type = compiler.get(SPIRType, result_type);
-                var separate_image = type.basetype === SPIRTypeBaseType.Image && type.image.sampled === 1;
-                var separate_sampler = type.basetype === SPIRTypeBaseType.Sampler;
+                var separate_image = type.basetype === SPIRBaseType.Image && type.image.sampled === 1;
+                var separate_sampler = type.basetype === SPIRBaseType.Sampler;
                 if (separate_sampler)
                     throw new Error("Attempting to use arrays or structs of separate samplers. This is not possible" +
                         " to statically remap to plain GLSL.");
@@ -5062,17 +5064,17 @@ var CombinedImageSamplerHandler = /** @class */ (function (_super) {
                 }
                 return true;
             }
-            case Op.OpImageFetch:
-            case Op.OpImageQuerySizeLod:
-            case Op.OpImageQuerySize:
-            case Op.OpImageQueryLevels:
-            case Op.OpImageQuerySamples: {
+            case Op.ImageFetch:
+            case Op.ImageQuerySizeLod:
+            case Op.ImageQuerySize:
+            case Op.ImageQueryLevels:
+            case Op.ImageQuerySamples: {
                 // If we are fetching from a plain OpTypeImage or querying LOD, we must pre-combine with our dummy sampler.
                 var var_ = compiler.maybe_get_backing_variable(args[2]);
                 if (!var_)
                     return true;
                 var type = compiler.get(SPIRType, var_.basetype);
-                if (type.basetype === SPIRTypeBaseType.Image && type.image.sampled === 1 && type.image.dim !== Dim.DimBuffer) {
+                if (type.basetype === SPIRBaseType.Image && type.image.sampled === 1 && type.image.dim !== Dim.Buffer) {
                     if (compiler.dummy_sampler_id === 0)
                         throw new Error("texelFetch without sampler was found, but no dummy sampler has been created" +
                             " with build_dummy_sampler_for_combined_images().");
@@ -5082,7 +5084,7 @@ var CombinedImageSamplerHandler = /** @class */ (function (_super) {
                 }
                 return true;
             }
-            case Op.OpSampledImage:
+            case Op.SampledImage:
                 // Do it outside.
                 break;
             default:
@@ -5124,7 +5126,7 @@ var CombinedImageSamplerHandler = /** @class */ (function (_super) {
                 var type_1 = compiler.set(SPIRType, sampled_type);
                 defaultCopy(compiler.expression_type(args[2]), type_1);
                 type_1.self = sampled_type;
-                type_1.basetype = SPIRTypeBaseType.SampledImage;
+                type_1.basetype = SPIRBaseType.SampledImage;
                 type_1.image.depth = false;
                 combined_module_id = 0;
             }
@@ -5141,17 +5143,17 @@ var CombinedImageSamplerHandler = /** @class */ (function (_super) {
             var base = compiler.get(SPIRType, sampled_type);
             defaultCopy(base, type);
             type.pointer = true;
-            type.storage = StorageClass.StorageClassUniformConstant;
+            type.storage = StorageClass.UniformConstant;
             type.parent_type = type_id;
             // Build new variable.
-            compiler.set(SPIRVariable, combined_id, type_id, StorageClass.StorageClassUniformConstant, 0);
+            compiler.set(SPIRVariable, combined_id, type_id, StorageClass.UniformConstant, 0);
             // Inherit RelaxedPrecision (and potentially other useful flags if deemed relevant).
             // If any of OpSampledImage, underlying image or sampler are marked, inherit the decoration.
-            var relaxed_precision = (sampler_id && compiler.has_decoration(sampler_id, Decoration.DecorationRelaxedPrecision)) ||
-                (image_id && compiler.has_decoration(image_id, Decoration.DecorationRelaxedPrecision)) ||
-                (combined_module_id && compiler.has_decoration(combined_module_id, Decoration.DecorationRelaxedPrecision));
+            var relaxed_precision = (sampler_id && compiler.has_decoration(sampler_id, Decoration.RelaxedPrecision)) ||
+                (image_id && compiler.has_decoration(image_id, Decoration.RelaxedPrecision)) ||
+                (combined_module_id && compiler.has_decoration(combined_module_id, Decoration.RelaxedPrecision));
             if (relaxed_precision)
-                compiler.set_decoration(combined_id, Decoration.DecorationRelaxedPrecision);
+                compiler.set_decoration(combined_id, Decoration.RelaxedPrecision);
             // Propagate the array type for the original image as well.
             var var_ = compiler.maybe_get_backing_variable(image_id);
             if (var_) {
@@ -5267,23 +5269,23 @@ var CombinedImageSamplerHandler = /** @class */ (function (_super) {
             var ptr_type = compiler.set(SPIRType, ptr_type_id);
             defaultCopy(base, type);
             type.self = type_id;
-            type.basetype = SPIRTypeBaseType.SampledImage;
+            type.basetype = SPIRBaseType.SampledImage;
             type.pointer = false;
-            type.storage = StorageClass.StorageClassGeneric;
+            type.storage = StorageClass.Generic;
             type.image.depth = depth;
             defaultCopy(type, ptr_type);
             ptr_type.pointer = true;
-            ptr_type.storage = StorageClass.StorageClassUniformConstant;
+            ptr_type.storage = StorageClass.UniformConstant;
             ptr_type.parent_type = type_id;
             // Build new variable.
-            compiler.set(SPIRVariable, combined_id, ptr_type_id, StorageClass.StorageClassFunction, 0);
+            compiler.set(SPIRVariable, combined_id, ptr_type_id, StorageClass.Function, 0);
             // Inherit RelaxedPrecision.
             // If any of OpSampledImage, underlying image or sampler are marked, inherit the decoration.
-            var relaxed_precision = compiler.has_decoration(sampler_id, Decoration.DecorationRelaxedPrecision) ||
-                compiler.has_decoration(image_id, Decoration.DecorationRelaxedPrecision) ||
-                (combined_module_id && compiler.has_decoration(combined_module_id, Decoration.DecorationRelaxedPrecision));
+            var relaxed_precision = compiler.has_decoration(sampler_id, Decoration.RelaxedPrecision) ||
+                compiler.has_decoration(image_id, Decoration.RelaxedPrecision) ||
+                (combined_module_id && compiler.has_decoration(combined_module_id, Decoration.RelaxedPrecision));
             if (relaxed_precision)
-                compiler.set_decoration(combined_id, Decoration.DecorationRelaxedPrecision);
+                compiler.set_decoration(combined_id, Decoration.RelaxedPrecision);
             param.id = combined_id;
             compiler.set_name(combined_id, "SPIRV_Cross_Combined" + compiler.to_name(image_id) + compiler.to_name(sampler_id));
             caller.combined_parameters.push(param);
@@ -5456,12 +5458,12 @@ var CFG = /** @class */ (function () {
             for (var _i = 0, itr_second_1 = itr_second; _i < itr_second_1.length; _i++) {
                 var pred = itr_second_1[_i];
                 var pred_block = this.compiler.get(SPIRBlock, pred);
-                if (pred_block.merge === SPIRBlockMerge.MergeLoop && pred_block.merge_block === (block_id)) {
+                if (pred_block.merge === SPIRBlockMerge.Loop && pred_block.merge_block === (block_id)) {
                     pred_block_id = pred;
                     ignore_loop_header = true;
                     break;
                 }
-                else if (pred_block.merge === SPIRBlockMerge.MergeSelection && pred_block.next_block === (block_id)) {
+                else if (pred_block.merge === SPIRBlockMerge.Selection && pred_block.next_block === (block_id)) {
                     pred_block_id = pred;
                     break;
                 }
@@ -5473,7 +5475,7 @@ var CFG = /** @class */ (function () {
             block_id = pred_block_id;
             if (!ignore_loop_header && block_id) {
                 var block = this.compiler.get(SPIRBlock, block_id);
-                if (block.merge === SPIRBlockMerge.MergeLoop)
+                if (block.merge === SPIRBlockMerge.Loop)
                     return block_id;
             }
         }
@@ -5486,7 +5488,7 @@ var CFG = /** @class */ (function () {
         var compiler = this.compiler;
         var from_block = compiler.get(SPIRBlock, from);
         var ignore_block_id = 0;
-        if (from_block.merge === SPIRBlockMerge.MergeLoop)
+        if (from_block.merge === SPIRBlockMerge.Loop)
             ignore_block_id = from_block.merge_block;
         while (to !== from) {
             var pred_itr_second = this.preceding_edges[to];
@@ -5510,8 +5512,8 @@ var CFG = /** @class */ (function () {
                 true_path_ignore = compiler.execution_is_branchless(true_block, ignore_block);
                 false_path_ignore = compiler.execution_is_branchless(false_block, ignore_block);
             }
-            if ((dom.merge === SPIRBlockMerge.MergeSelection && dom.next_block === to) ||
-                (dom.merge === SPIRBlockMerge.MergeLoop && dom.merge_block === to) ||
+            if ((dom.merge === SPIRBlockMerge.Selection && dom.next_block === to) ||
+                (dom.merge === SPIRBlockMerge.Loop && dom.merge_block === to) ||
                 (dom.terminator === SPIRBlockTerminator.Direct && dom.next_block === to) ||
                 (dom.terminator === SPIRBlockTerminator.Select && dom.true_block === to && false_path_ignore) ||
                 (dom.terminator === SPIRBlockTerminator.Select && dom.false_block === to && true_path_ignore)) {
@@ -5580,7 +5582,7 @@ var CFG = /** @class */ (function () {
         // is lower than inside the loop, which is going to be key for some traversal algorithms like post-dominance analysis.
         // For selection constructs true/false blocks will end up visiting the merge block directly and it works out fine,
         // but for loops, only the header might end up actually branching to merge block.
-        if (block.merge === SPIRBlockMerge.MergeLoop && this.post_order_visit(block.merge_block))
+        if (block.merge === SPIRBlockMerge.Loop && this.post_order_visit(block.merge_block))
             this.add_branch(block_id, block.merge_block);
         // First visit our branch targets.
         switch (block.terminator) {
@@ -5614,7 +5616,7 @@ var CFG = /** @class */ (function () {
         // We can use the variable without a Phi since there is only one possible parent here.
         // However, in this case, we need to hoist out the inner variable to outside the branch.
         // Use same strategy as loops.
-        if (block.merge === SPIRBlockMerge.MergeSelection && this.post_order_visit(block.next_block)) {
+        if (block.merge === SPIRBlockMerge.Selection && this.post_order_visit(block.next_block)) {
             // If there is only one preceding edge to the merge block and it's not ourselves, we need a fixup.
             // Add a fake branch so any dominator in either the if (), or else () block, or a lone case statement
             // will be hoisted out to outside the selection merge.
@@ -5776,7 +5778,7 @@ var AnalyzeVariableScopeAccessHandler = /** @class */ (function (_super) {
         if (id >= this.compiler.get_current_id_bound())
             return false;
         // Temporaries are not created before we start emitting code.
-        return this.compiler.ir.ids[id].empty() || (this.compiler.ir.ids[id].get_type() === Types.TypeExpression);
+        return this.compiler.ir.ids[id].empty() || (this.compiler.ir.ids[id].get_type() === Types.Expression);
     };
     AnalyzeVariableScopeAccessHandler.prototype.handle = function (op, args, length) {
         var compiler = this.compiler;
@@ -5785,7 +5787,7 @@ var AnalyzeVariableScopeAccessHandler = /** @class */ (function (_super) {
         if (result)
             this.result_id_to_type[result.result_id] = result.result_type;
         switch (op) {
-            case Op.OpStore: {
+            case Op.Store: {
                 if (length < 2)
                     return false;
                 var ptr = args[0];
@@ -5804,9 +5806,9 @@ var AnalyzeVariableScopeAccessHandler = /** @class */ (function (_super) {
                 this.notify_variable_access(args[1], this.current_block.self);
                 break;
             }
-            case Op.OpAccessChain:
-            case Op.OpInBoundsAccessChain:
-            case Op.OpPtrAccessChain: {
+            case Op.AccessChain:
+            case Op.InBoundsAccessChain:
+            case Op.PtrAccessChain: {
                 if (length < 3)
                     return false;
                 // Access chains used in multiple blocks mean hoisting all the variables used to construct the access chain as not all backends can use pointers.
@@ -5835,7 +5837,7 @@ var AnalyzeVariableScopeAccessHandler = /** @class */ (function (_super) {
                 this.access_chain_expressions.add(args[1]);
                 break;
             }
-            case Op.OpCopyMemory: {
+            case Op.CopyMemory: {
                 if (length < 2)
                     return false;
                 var lhs = args[0];
@@ -5857,7 +5859,7 @@ var AnalyzeVariableScopeAccessHandler = /** @class */ (function (_super) {
                     maplike_get(Set, this.accessed_variables_to_block, var_.self).add(this.current_block.self);
                 break;
             }
-            case Op.OpCopyObject: {
+            case Op.CopyObject: {
                 if (length < 3)
                     return false;
                 var var_ = compiler.maybe_get_backing_variable(args[2]);
@@ -5871,7 +5873,7 @@ var AnalyzeVariableScopeAccessHandler = /** @class */ (function (_super) {
                 this.notify_variable_access(args[2], this.current_block.self);
                 break;
             }
-            case Op.OpLoad: {
+            case Op.Load: {
                 if (length < 3)
                     return false;
                 var ptr = args[2];
@@ -5884,11 +5886,11 @@ var AnalyzeVariableScopeAccessHandler = /** @class */ (function (_super) {
                 this.notify_variable_access(args[2], this.current_block.self);
                 break;
             }
-            case Op.OpFunctionCall: {
+            case Op.FunctionCall: {
                 if (length < 3)
                     return false;
                 // Return value may be a temporary.
-                if (compiler.get_type(args[0]).basetype !== SPIRTypeBaseType.Void)
+                if (compiler.get_type(args[0]).basetype !== SPIRBaseType.Void)
                     this.notify_variable_access(args[1], this.current_block.self);
                 length -= 3;
                 args = args.slice(3);
@@ -5907,7 +5909,7 @@ var AnalyzeVariableScopeAccessHandler = /** @class */ (function (_super) {
                 }
                 break;
             }
-            case Op.OpSelect: {
+            case Op.Select: {
                 // In case of variable pointers, we might access a variable here.
                 // We cannot prove anything about these accesses however.
                 for (var i = 1; i < length; i++) {
@@ -5924,7 +5926,7 @@ var AnalyzeVariableScopeAccessHandler = /** @class */ (function (_super) {
                 }
                 break;
             }
-            case Op.OpExtInst: {
+            case Op.ExtInst: {
                 for (var i = 4; i < length; i++)
                     this.notify_variable_access(args[i], this.current_block.self);
                 this.notify_variable_access(args[1], this.current_block.self);
@@ -5932,8 +5934,8 @@ var AnalyzeVariableScopeAccessHandler = /** @class */ (function (_super) {
                 if (compiler.get(SPIRExtension, extension_set).ext === SPIRExtensionExtension.GLSL) {
                     var op_450 = (args[3]);
                     switch (op_450) {
-                        case GLSLstd450.GLSLstd450Modf:
-                        case GLSLstd450.GLSLstd450Frexp: {
+                        case GLSLstd450.Modf:
+                        case GLSLstd450.Frexp: {
                             var ptr = args[5];
                             var var_ = compiler.maybe_get_backing_variable(ptr);
                             if (var_) {
@@ -5949,64 +5951,64 @@ var AnalyzeVariableScopeAccessHandler = /** @class */ (function (_super) {
                 }
                 break;
             }
-            case Op.OpArrayLength:
+            case Op.ArrayLength:
                 // Only result is a temporary.
                 this.notify_variable_access(args[1], this.current_block.self);
                 break;
-            case Op.OpLine:
-            case Op.OpNoLine:
+            case Op.Line:
+            case Op.NoLine:
                 // Uses literals, but cannot be a phi variable or temporary, so ignore.
                 break;
             // Atomics shouldn't be able to access function-local variables.
             // Some GLSL builtins access a pointer.
-            case Op.OpCompositeInsert:
-            case Op.OpVectorShuffle:
+            case Op.CompositeInsert:
+            case Op.VectorShuffle:
                 // Specialize for opcode which contains literals.
                 for (var i = 1; i < 4; i++)
                     this.notify_variable_access(args[i], this.current_block.self);
                 break;
-            case Op.OpCompositeExtract:
+            case Op.CompositeExtract:
                 // Specialize for opcode which contains literals.
                 for (var i = 1; i < 3; i++)
                     this.notify_variable_access(args[i], this.current_block.self);
                 break;
-            case Op.OpImageWrite:
+            case Op.ImageWrite:
                 for (var i = 0; i < length; i++) {
                     // Argument 3 is a literal.
                     if (i !== 3)
                         this.notify_variable_access(args[i], this.current_block.self);
                 }
                 break;
-            case Op.OpImageSampleImplicitLod:
-            case Op.OpImageSampleExplicitLod:
-            case Op.OpImageSparseSampleImplicitLod:
-            case Op.OpImageSparseSampleExplicitLod:
-            case Op.OpImageSampleProjImplicitLod:
-            case Op.OpImageSampleProjExplicitLod:
-            case Op.OpImageSparseSampleProjImplicitLod:
-            case Op.OpImageSparseSampleProjExplicitLod:
-            case Op.OpImageFetch:
-            case Op.OpImageSparseFetch:
-            case Op.OpImageRead:
-            case Op.OpImageSparseRead:
+            case Op.ImageSampleImplicitLod:
+            case Op.ImageSampleExplicitLod:
+            case Op.ImageSparseSampleImplicitLod:
+            case Op.ImageSparseSampleExplicitLod:
+            case Op.ImageSampleProjImplicitLod:
+            case Op.ImageSampleProjExplicitLod:
+            case Op.ImageSparseSampleProjImplicitLod:
+            case Op.ImageSparseSampleProjExplicitLod:
+            case Op.ImageFetch:
+            case Op.ImageSparseFetch:
+            case Op.ImageRead:
+            case Op.ImageSparseRead:
                 for (var i = 1; i < length; i++) {
                     // Argument 4 is a literal.
                     if (i !== 4)
                         this.notify_variable_access(args[i], this.current_block.self);
                 }
                 break;
-            case Op.OpImageSampleDrefImplicitLod:
-            case Op.OpImageSampleDrefExplicitLod:
-            case Op.OpImageSparseSampleDrefImplicitLod:
-            case Op.OpImageSparseSampleDrefExplicitLod:
-            case Op.OpImageSampleProjDrefImplicitLod:
-            case Op.OpImageSampleProjDrefExplicitLod:
-            case Op.OpImageSparseSampleProjDrefImplicitLod:
-            case Op.OpImageSparseSampleProjDrefExplicitLod:
-            case Op.OpImageGather:
-            case Op.OpImageSparseGather:
-            case Op.OpImageDrefGather:
-            case Op.OpImageSparseDrefGather:
+            case Op.ImageSampleDrefImplicitLod:
+            case Op.ImageSampleDrefExplicitLod:
+            case Op.ImageSparseSampleDrefImplicitLod:
+            case Op.ImageSparseSampleDrefExplicitLod:
+            case Op.ImageSampleProjDrefImplicitLod:
+            case Op.ImageSampleProjDrefExplicitLod:
+            case Op.ImageSparseSampleProjDrefImplicitLod:
+            case Op.ImageSparseSampleProjDrefExplicitLod:
+            case Op.ImageGather:
+            case Op.ImageSparseGather:
+            case Op.ImageDrefGather:
+            case Op.ImageSparseDrefGather:
                 for (var i = 1; i < length; i++) {
                     // Argument 5 is a literal.
                     if (i !== 5)
@@ -6057,7 +6059,7 @@ var StaticExpressionAccessHandler = /** @class */ (function (_super) {
     };
     StaticExpressionAccessHandler.prototype.handle = function (opcode, args, length) {
         switch (opcode) {
-            case Op.OpStore:
+            case Op.Store:
                 if (length < 2)
                     return false;
                 if (args[0] === this.variable_id) {
@@ -6065,16 +6067,16 @@ var StaticExpressionAccessHandler = /** @class */ (function (_super) {
                     this.write_count++;
                 }
                 break;
-            case Op.OpLoad:
+            case Op.Load:
                 if (length < 3)
                     return false;
                 if (args[2] === this.variable_id && this.static_expression === 0) // Tried to read from variable before it
                     // was initialized.
                     return false;
                 break;
-            case Op.OpAccessChain:
-            case Op.OpInBoundsAccessChain:
-            case Op.OpPtrAccessChain:
+            case Op.AccessChain:
+            case Op.InBoundsAccessChain:
+            case Op.PtrAccessChain:
                 if (length < 3)
                     return false;
                 if (args[2] === this.variable_id) // If we try to access chain our candidate variable before we store to
@@ -6099,7 +6101,7 @@ var ActiveBuiltinHandler = /** @class */ (function (_super) {
     };
     ActiveBuiltinHandler.prototype.handle_builtin = function (type, builtin, decoration_flags) {
         // If used, we will need to explicitly declare a new array size for these builtins.
-        if (builtin === BuiltIn.BuiltInClipDistance) {
+        if (builtin === BuiltIn.ClipDistance) {
             if (!type.array_size_literal[0])
                 throw new Error("Array size for ClipDistance must be a literal.");
             var array_size = type.array[0];
@@ -6107,7 +6109,7 @@ var ActiveBuiltinHandler = /** @class */ (function (_super) {
                 throw new Error("Array size for ClipDistance must not be unsized.");
             this.compiler.clip_distance_count = array_size;
         }
-        else if (builtin === BuiltIn.BuiltInCullDistance) {
+        else if (builtin === BuiltIn.CullDistance) {
             if (!type.array_size_literal[0])
                 throw new Error("Array size for CullDistance must be a literal.");
             var array_size = type.array[0];
@@ -6115,8 +6117,8 @@ var ActiveBuiltinHandler = /** @class */ (function (_super) {
                 throw new Error("Array size for CullDistance must not be unsized.");
             this.compiler.cull_distance_count = array_size;
         }
-        else if (builtin === BuiltIn.BuiltInPosition) {
-            if (decoration_flags.get(Decoration.DecorationInvariant))
+        else if (builtin === BuiltIn.Position) {
+            if (decoration_flags.get(Decoration.Invariant))
                 this.compiler.position_invariant = true;
         }
     };
@@ -6135,18 +6137,18 @@ var ActiveBuiltinHandler = /** @class */ (function (_super) {
         if (var_ && m) {
             var type = compiler.get(SPIRType, var_.basetype);
             var decorations = m.decoration;
-            var flags = type.storage === StorageClass.StorageClassInput ?
+            var flags = type.storage === StorageClass.Input ?
                 compiler.active_input_builtins : compiler.active_output_builtins;
             if (decorations.builtin) {
                 flags.set(decorations.builtin_type);
                 this.handle_builtin(type, decorations.builtin_type, decorations.decoration_flags);
             }
-            else if (allow_blocks && compiler.has_decoration(type.self, Decoration.DecorationBlock)) {
+            else if (allow_blocks && compiler.has_decoration(type.self, Decoration.Block)) {
                 var member_count = type.member_types.length;
                 for (var i = 0; i < member_count; i++) {
-                    if (compiler.has_member_decoration(type.self, i, Decoration.DecorationBuiltIn)) {
+                    if (compiler.has_member_decoration(type.self, i, Decoration.BuiltIn)) {
                         var member_type = compiler.get(SPIRType, type.member_types[i]);
-                        var builtin = (compiler.get_member_decoration(type.self, i, Decoration.DecorationBuiltIn));
+                        var builtin = (compiler.get_member_decoration(type.self, i, Decoration.BuiltIn));
                         flags.set(builtin);
                         this.handle_builtin(member_type, builtin, compiler.get_member_decoration_bitset(type.self, i));
                     }
@@ -6168,16 +6170,16 @@ var CombinedImageSamplerDrefHandler = /** @class */ (function (_super) {
     CombinedImageSamplerDrefHandler.prototype.handle = function (opcode, args, length) {
         // Mark all sampled images which are used with Dref.
         switch (opcode) {
-            case Op.OpImageSampleDrefExplicitLod:
-            case Op.OpImageSampleDrefImplicitLod:
-            case Op.OpImageSampleProjDrefExplicitLod:
-            case Op.OpImageSampleProjDrefImplicitLod:
-            case Op.OpImageSparseSampleProjDrefImplicitLod:
-            case Op.OpImageSparseSampleDrefImplicitLod:
-            case Op.OpImageSparseSampleProjDrefExplicitLod:
-            case Op.OpImageSparseSampleDrefExplicitLod:
-            case Op.OpImageDrefGather:
-            case Op.OpImageSparseDrefGather:
+            case Op.ImageSampleDrefExplicitLod:
+            case Op.ImageSampleDrefImplicitLod:
+            case Op.ImageSampleProjDrefExplicitLod:
+            case Op.ImageSampleProjDrefImplicitLod:
+            case Op.ImageSparseSampleProjDrefImplicitLod:
+            case Op.ImageSparseSampleDrefImplicitLod:
+            case Op.ImageSparseSampleProjDrefExplicitLod:
+            case Op.ImageSparseSampleDrefExplicitLod:
+            case Op.ImageDrefGather:
+            case Op.ImageSparseDrefGather:
                 this.dref_combined_samplers.add(args[2]);
                 return true;
         }
@@ -6213,16 +6215,16 @@ var CombinedImageSamplerUsageHandler = /** @class */ (function (_super) {
     CombinedImageSamplerUsageHandler.prototype.handle = function (opcode, args, length) {
         // Mark all sampled images which are used with Dref.
         switch (opcode) {
-            case Op.OpImageSampleDrefExplicitLod:
-            case Op.OpImageSampleDrefImplicitLod:
-            case Op.OpImageSampleProjDrefExplicitLod:
-            case Op.OpImageSampleProjDrefImplicitLod:
-            case Op.OpImageSparseSampleProjDrefImplicitLod:
-            case Op.OpImageSparseSampleDrefImplicitLod:
-            case Op.OpImageSparseSampleProjDrefExplicitLod:
-            case Op.OpImageSparseSampleDrefExplicitLod:
-            case Op.OpImageDrefGather:
-            case Op.OpImageSparseDrefGather:
+            case Op.ImageSampleDrefExplicitLod:
+            case Op.ImageSampleDrefImplicitLod:
+            case Op.ImageSampleProjDrefExplicitLod:
+            case Op.ImageSampleProjDrefImplicitLod:
+            case Op.ImageSparseSampleProjDrefImplicitLod:
+            case Op.ImageSparseSampleDrefImplicitLod:
+            case Op.ImageSparseSampleProjDrefExplicitLod:
+            case Op.ImageSparseSampleDrefExplicitLod:
+            case Op.ImageDrefGather:
+            case Op.ImageSparseDrefGather:
                 this.dref_combined_samplers.add(args[2]);
                 return true;
         }
@@ -6270,7 +6272,7 @@ var InterlockedResourceAccessPrepassHandler = /** @class */ (function (_super) {
         return true;
     };
     InterlockedResourceAccessPrepassHandler.prototype.handle = function (op, args, length) {
-        if (op === Op.OpBeginInvocationInterlockEXT || op === Op.OpEndInvocationInterlockEXT) {
+        if (op === Op.BeginInvocationInterlockEXT || op === Op.EndInvocationInterlockEXT) {
             if (this.interlock_function_id !== 0 && this.interlock_function_id !== this.call_stack[this.call_stack.length - 1]) {
                 // Most complex case, we have no sensible way of dealing with this
                 // other than taking the 100% conservative approach, exit early.
@@ -6311,11 +6313,11 @@ var InterlockedResourceAccessHandler = /** @class */ (function (_super) {
     InterlockedResourceAccessHandler.prototype.handle = function (opcode, args, length) {
         // Only care about critical section analysis if we have simple case.
         if (this.use_critical_section) {
-            if (opcode === Op.OpBeginInvocationInterlockEXT) {
+            if (opcode === Op.BeginInvocationInterlockEXT) {
                 this.in_crit_sec = true;
                 return true;
             }
-            if (opcode === Op.OpEndInvocationInterlockEXT) {
+            if (opcode === Op.EndInvocationInterlockEXT) {
                 // End critical section--nothing more to do.
                 return false;
             }
@@ -6323,7 +6325,7 @@ var InterlockedResourceAccessHandler = /** @class */ (function (_super) {
         var compiler = this.compiler;
         // We need to figure out where images and buffers are loaded from, so do only the bare bones compilation we need.
         switch (opcode) {
-            case Op.OpLoad: {
+            case Op.Load: {
                 if (length < 3)
                     return false;
                 var ptr = args[2];
@@ -6334,33 +6336,33 @@ var InterlockedResourceAccessHandler = /** @class */ (function (_super) {
                 switch (var_.storage) {
                     default:
                         break;
-                    case StorageClass.StorageClassUniformConstant: {
+                    case StorageClass.UniformConstant: {
                         var result_type = args[0];
                         var id = args[1];
                         compiler.set(SPIRExpression, id, "", result_type, true);
                         compiler.register_read(id, ptr, true);
                         break;
                     }
-                    case StorageClass.StorageClassUniform:
+                    case StorageClass.Uniform:
                         // Must have BufferBlock; we only care about SSBOs.
-                        if (!compiler.has_decoration(compiler.get(SPIRType, var_.basetype).self, Decoration.DecorationBufferBlock))
+                        if (!compiler.has_decoration(compiler.get(SPIRType, var_.basetype).self, Decoration.BufferBlock))
                             break;
                     // fallthrough
-                    case StorageClass.StorageClassStorageBuffer:
+                    case StorageClass.StorageBuffer:
                         this.access_potential_resource(var_.self);
                         break;
                 }
                 break;
             }
-            case Op.OpInBoundsAccessChain:
-            case Op.OpAccessChain:
-            case Op.OpPtrAccessChain: {
+            case Op.InBoundsAccessChain:
+            case Op.AccessChain:
+            case Op.PtrAccessChain: {
                 if (length < 3)
                     return false;
                 var result_type = args[0];
                 var type = compiler.get(SPIRType, result_type);
-                if (type.storage === StorageClass.StorageClassUniform || type.storage === StorageClass.StorageClassUniformConstant ||
-                    type.storage === StorageClass.StorageClassStorageBuffer) {
+                if (type.storage === StorageClass.Uniform || type.storage === StorageClass.UniformConstant ||
+                    type.storage === StorageClass.StorageBuffer) {
                     var id = args[1];
                     var ptr = args[2];
                     compiler.set(SPIRExpression, id, "", result_type, true);
@@ -6369,7 +6371,7 @@ var InterlockedResourceAccessHandler = /** @class */ (function (_super) {
                 }
                 break;
             }
-            case Op.OpImageTexelPointer: {
+            case Op.ImageTexelPointer: {
                 if (length < 3)
                     return false;
                 var result_type = args[0];
@@ -6381,41 +6383,41 @@ var InterlockedResourceAccessHandler = /** @class */ (function (_super) {
                     e.loaded_from = var_.self;
                 break;
             }
-            case Op.OpStore:
-            case Op.OpImageWrite:
-            case Op.OpAtomicStore: {
+            case Op.Store:
+            case Op.ImageWrite:
+            case Op.AtomicStore: {
                 if (length < 1)
                     return false;
                 var ptr = args[0];
                 var var_ = compiler.maybe_get_backing_variable(ptr);
-                if (var_ && (var_.storage === StorageClass.StorageClassUniform || var_.storage === StorageClass.StorageClassUniformConstant ||
-                    var_.storage === StorageClass.StorageClassStorageBuffer)) {
+                if (var_ && (var_.storage === StorageClass.Uniform || var_.storage === StorageClass.UniformConstant ||
+                    var_.storage === StorageClass.StorageBuffer)) {
                     this.access_potential_resource(var_.self);
                 }
                 break;
             }
-            case Op.OpCopyMemory: {
+            case Op.CopyMemory: {
                 if (length < 2)
                     return false;
                 var dst = args[0];
                 var src = args[1];
                 var dst_var = compiler.maybe_get_backing_variable(dst);
                 var src_var = compiler.maybe_get_backing_variable(src);
-                if (dst_var && (dst_var.storage === StorageClass.StorageClassUniform || dst_var.storage === StorageClass.StorageClassStorageBuffer))
+                if (dst_var && (dst_var.storage === StorageClass.Uniform || dst_var.storage === StorageClass.StorageBuffer))
                     this.access_potential_resource(dst_var.self);
                 if (src_var) {
-                    if (src_var.storage !== StorageClass.StorageClassUniform && src_var.storage !== StorageClass.StorageClassStorageBuffer)
+                    if (src_var.storage !== StorageClass.Uniform && src_var.storage !== StorageClass.StorageBuffer)
                         break;
-                    if (src_var.storage === StorageClass.StorageClassUniform &&
-                        !compiler.has_decoration(compiler.get(SPIRType, src_var.basetype).self, Decoration.DecorationBufferBlock)) {
+                    if (src_var.storage === StorageClass.Uniform &&
+                        !compiler.has_decoration(compiler.get(SPIRType, src_var.basetype).self, Decoration.BufferBlock)) {
                         break;
                     }
                     this.access_potential_resource(src_var.self);
                 }
                 break;
             }
-            case Op.OpImageRead:
-            case Op.OpAtomicLoad: {
+            case Op.ImageRead:
+            case Op.AtomicLoad: {
                 if (length < 3)
                     return false;
                 var ptr = args[2];
@@ -6426,37 +6428,37 @@ var InterlockedResourceAccessHandler = /** @class */ (function (_super) {
                 switch (var_.storage) {
                     default:
                         break;
-                    case StorageClass.StorageClassUniform:
+                    case StorageClass.Uniform:
                         // Must have BufferBlock; we only care about SSBOs.
-                        if (!compiler.has_decoration(compiler.get(SPIRType, var_.basetype).self, Decoration.DecorationBufferBlock))
+                        if (!compiler.has_decoration(compiler.get(SPIRType, var_.basetype).self, Decoration.BufferBlock))
                             break;
                     // fallthrough
-                    case StorageClass.StorageClassUniformConstant:
-                    case StorageClass.StorageClassStorageBuffer:
+                    case StorageClass.UniformConstant:
+                    case StorageClass.StorageBuffer:
                         this.access_potential_resource(var_.self);
                         break;
                 }
                 break;
             }
-            case Op.OpAtomicExchange:
-            case Op.OpAtomicCompareExchange:
-            case Op.OpAtomicIIncrement:
-            case Op.OpAtomicIDecrement:
-            case Op.OpAtomicIAdd:
-            case Op.OpAtomicISub:
-            case Op.OpAtomicSMin:
-            case Op.OpAtomicUMin:
-            case Op.OpAtomicSMax:
-            case Op.OpAtomicUMax:
-            case Op.OpAtomicAnd:
-            case Op.OpAtomicOr:
-            case Op.OpAtomicXor: {
+            case Op.AtomicExchange:
+            case Op.AtomicCompareExchange:
+            case Op.AtomicIIncrement:
+            case Op.AtomicIDecrement:
+            case Op.AtomicIAdd:
+            case Op.AtomicISub:
+            case Op.AtomicSMin:
+            case Op.AtomicUMin:
+            case Op.AtomicSMax:
+            case Op.AtomicUMax:
+            case Op.AtomicAnd:
+            case Op.AtomicOr:
+            case Op.AtomicXor: {
                 if (length < 3)
                     return false;
                 var ptr = args[2];
                 var var_ = compiler.maybe_get_backing_variable(ptr);
-                if (var_ && (var_.storage === StorageClass.StorageClassUniform || var_.storage === StorageClass.StorageClassUniformConstant ||
-                    var_.storage === StorageClass.StorageClassStorageBuffer)) {
+                if (var_ && (var_.storage === StorageClass.Uniform || var_.storage === StorageClass.UniformConstant ||
+                    var_.storage === StorageClass.StorageBuffer)) {
                     this.access_potential_resource(var_.self);
                 }
                 break;
@@ -6496,16 +6498,16 @@ var PhysicalBlockMeta = /** @class */ (function () {
 
 var MemoryAccessMask;
 (function (MemoryAccessMask) {
-    MemoryAccessMask[MemoryAccessMask["MemoryAccessMaskNone"] = 0] = "MemoryAccessMaskNone";
-    MemoryAccessMask[MemoryAccessMask["MemoryAccessVolatileMask"] = 1] = "MemoryAccessVolatileMask";
-    MemoryAccessMask[MemoryAccessMask["MemoryAccessAlignedMask"] = 2] = "MemoryAccessAlignedMask";
-    MemoryAccessMask[MemoryAccessMask["MemoryAccessNontemporalMask"] = 4] = "MemoryAccessNontemporalMask";
-    MemoryAccessMask[MemoryAccessMask["MemoryAccessMakePointerAvailableMask"] = 8] = "MemoryAccessMakePointerAvailableMask";
-    MemoryAccessMask[MemoryAccessMask["MemoryAccessMakePointerAvailableKHRMask"] = 8] = "MemoryAccessMakePointerAvailableKHRMask";
-    MemoryAccessMask[MemoryAccessMask["MemoryAccessMakePointerVisibleMask"] = 16] = "MemoryAccessMakePointerVisibleMask";
-    MemoryAccessMask[MemoryAccessMask["MemoryAccessMakePointerVisibleKHRMask"] = 16] = "MemoryAccessMakePointerVisibleKHRMask";
-    MemoryAccessMask[MemoryAccessMask["MemoryAccessNonPrivatePointerMask"] = 32] = "MemoryAccessNonPrivatePointerMask";
-    MemoryAccessMask[MemoryAccessMask["MemoryAccessNonPrivatePointerKHRMask"] = 32] = "MemoryAccessNonPrivatePointerKHRMask";
+    MemoryAccessMask[MemoryAccessMask["None"] = 0] = "None";
+    MemoryAccessMask[MemoryAccessMask["Volatile"] = 1] = "Volatile";
+    MemoryAccessMask[MemoryAccessMask["Aligned"] = 2] = "Aligned";
+    MemoryAccessMask[MemoryAccessMask["Nontemporal"] = 4] = "Nontemporal";
+    MemoryAccessMask[MemoryAccessMask["MakePointerAvailable"] = 8] = "MakePointerAvailable";
+    MemoryAccessMask[MemoryAccessMask["MakePointerAvailableKHR"] = 8] = "MakePointerAvailableKHR";
+    MemoryAccessMask[MemoryAccessMask["MakePointerVisible"] = 16] = "MakePointerVisible";
+    MemoryAccessMask[MemoryAccessMask["MakePointerVisibleKHR"] = 16] = "MakePointerVisibleKHR";
+    MemoryAccessMask[MemoryAccessMask["NonPrivatePointer"] = 32] = "NonPrivatePointer";
+    MemoryAccessMask[MemoryAccessMask["NonPrivatePointerKHR"] = 32] = "NonPrivatePointerKHR";
 })(MemoryAccessMask || (MemoryAccessMask = {}));
 
 var PhysicalStorageBufferPointerHandler = /** @class */ (function (_super) {
@@ -6523,31 +6525,31 @@ var PhysicalStorageBufferPointerHandler = /** @class */ (function (_super) {
         // For every load and store, we'll need to be able to look up the type ID being accessed and mark any alignment
         // requirements.
         switch (op) {
-            case Op.OpConvertUToPtr:
-            case Op.OpBitcast:
-            case Op.OpCompositeExtract:
+            case Op.ConvertUToPtr:
+            case Op.Bitcast:
+            case Op.CompositeExtract:
                 // Extract can begin a new chain if we had a struct or array of pointers as input.
                 // We don't begin chains before we have a pure scalar pointer.
                 this.setup_meta_chain(args[0], args[1]);
                 break;
-            case Op.OpAccessChain:
-            case Op.OpInBoundsAccessChain:
-            case Op.OpPtrAccessChain:
-            case Op.OpCopyObject:
+            case Op.AccessChain:
+            case Op.InBoundsAccessChain:
+            case Op.PtrAccessChain:
+            case Op.CopyObject:
                 {
                     var itr_second = this.access_chain_to_physical_block[args[2]];
                     if (itr_second)
                         this.access_chain_to_physical_block[args[1]] = itr_second;
                     break;
                 }
-            case Op.OpLoad:
+            case Op.Load:
                 {
                     this.setup_meta_chain(args[0], args[1]);
                     if (length >= 4)
                         this.mark_aligned_access(args[2], args.slice(3), length - 3);
                     break;
                 }
-            case Op.OpStore:
+            case Op.Store:
                 {
                     if (length >= 3)
                         this.mark_aligned_access(args[0], args.slice(3), length - 2);
@@ -6560,11 +6562,11 @@ var PhysicalStorageBufferPointerHandler = /** @class */ (function (_super) {
         var mask = args[0];
         var offset = 0;
         length--;
-        if (length && (mask & MemoryAccessMask.MemoryAccessVolatileMask) !== 0) {
+        if (length && (mask & MemoryAccessMask.Volatile) !== 0) {
             offset++;
             length--;
         }
-        if (length && (mask & MemoryAccessMask.MemoryAccessAlignedMask) !== 0) {
+        if (length && (mask & MemoryAccessMask.Aligned) !== 0) {
             var alignment = args[offset];
             var meta = this.find_block_meta(id);
             // This makes the assumption that the application does not rely on insane edge cases like:
@@ -6584,7 +6586,7 @@ var PhysicalStorageBufferPointerHandler = /** @class */ (function (_super) {
     };
     PhysicalStorageBufferPointerHandler.prototype.type_is_bda_block_entry = function (type_id) {
         var type = this.compiler.get(SPIRType, type_id);
-        return type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT && type.pointer &&
+        return type.storage === StorageClass.PhysicalStorageBufferEXT && type.pointer &&
             type.pointer_depth === 1 && !this.compiler.type_is_array_of_pointers(type);
     };
     PhysicalStorageBufferPointerHandler.prototype.setup_meta_chain = function (type_id, var_id) {
@@ -6592,16 +6594,16 @@ var PhysicalStorageBufferPointerHandler = /** @class */ (function (_super) {
             var meta = maplike_get(PhysicalBlockMeta, this.physical_block_type_meta, type_id);
             this.access_chain_to_physical_block[var_id] = meta;
             var type = this.compiler.get(SPIRType, type_id);
-            if (type.basetype !== SPIRTypeBaseType.Struct)
+            if (type.basetype !== SPIRBaseType.Struct)
                 this.non_block_types.add(type_id);
             if (meta.alignment === 0)
                 meta.alignment = this.get_minimum_scalar_alignment(this.compiler.get_pointee_type(type));
         }
     };
     PhysicalStorageBufferPointerHandler.prototype.get_minimum_scalar_alignment = function (type) {
-        if (type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT)
+        if (type.storage === StorageClass.PhysicalStorageBufferEXT)
             return 8;
-        else if (type.basetype === SPIRTypeBaseType.Struct) {
+        else if (type.basetype === SPIRBaseType.Struct) {
             var alignment = 0;
             for (var _i = 0, _a = type.member_types; _i < _a.length; _i++) {
                 var member_type = _a[_i];
@@ -6618,18 +6620,18 @@ var PhysicalStorageBufferPointerHandler = /** @class */ (function (_super) {
         for (var _i = 0, _a = type.member_types; _i < _a.length; _i++) {
             var member = _a[_i];
             var subtype = this.compiler.get(SPIRType, member);
-            if (subtype.basetype !== SPIRTypeBaseType.Struct && subtype.pointer &&
-                subtype.storage === StorageClass.StorageClassPhysicalStorageBufferEXT) {
+            if (subtype.basetype !== SPIRBaseType.Struct && subtype.pointer &&
+                subtype.storage === StorageClass.PhysicalStorageBufferEXT) {
                 this.non_block_types.add(this.get_base_non_block_type_id(member));
             }
-            else if (subtype.basetype === SPIRTypeBaseType.Struct && !subtype.pointer)
+            else if (subtype.basetype === SPIRBaseType.Struct && !subtype.pointer)
                 this.analyze_non_block_types_from_block(subtype);
         }
     };
     PhysicalStorageBufferPointerHandler.prototype.get_base_non_block_type_id = function (type_id) {
         var type = this.compiler.get(SPIRType, type_id);
         while (type.pointer &&
-            type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT &&
+            type.storage === StorageClass.PhysicalStorageBufferEXT &&
             !this.type_is_bda_block_entry(type_id)) {
             type_id = type.parent_type;
             type = this.compiler.get(SPIRType, type_id);
@@ -6642,49 +6644,49 @@ var PhysicalStorageBufferPointerHandler = /** @class */ (function (_super) {
 
 var ImageFormat;
 (function (ImageFormat) {
-    ImageFormat[ImageFormat["ImageFormatUnknown"] = 0] = "ImageFormatUnknown";
-    ImageFormat[ImageFormat["ImageFormatRgba32f"] = 1] = "ImageFormatRgba32f";
-    ImageFormat[ImageFormat["ImageFormatRgba16f"] = 2] = "ImageFormatRgba16f";
-    ImageFormat[ImageFormat["ImageFormatR32f"] = 3] = "ImageFormatR32f";
-    ImageFormat[ImageFormat["ImageFormatRgba8"] = 4] = "ImageFormatRgba8";
-    ImageFormat[ImageFormat["ImageFormatRgba8Snorm"] = 5] = "ImageFormatRgba8Snorm";
-    ImageFormat[ImageFormat["ImageFormatRg32f"] = 6] = "ImageFormatRg32f";
-    ImageFormat[ImageFormat["ImageFormatRg16f"] = 7] = "ImageFormatRg16f";
-    ImageFormat[ImageFormat["ImageFormatR11fG11fB10f"] = 8] = "ImageFormatR11fG11fB10f";
-    ImageFormat[ImageFormat["ImageFormatR16f"] = 9] = "ImageFormatR16f";
-    ImageFormat[ImageFormat["ImageFormatRgba16"] = 10] = "ImageFormatRgba16";
-    ImageFormat[ImageFormat["ImageFormatRgb10A2"] = 11] = "ImageFormatRgb10A2";
-    ImageFormat[ImageFormat["ImageFormatRg16"] = 12] = "ImageFormatRg16";
-    ImageFormat[ImageFormat["ImageFormatRg8"] = 13] = "ImageFormatRg8";
-    ImageFormat[ImageFormat["ImageFormatR16"] = 14] = "ImageFormatR16";
-    ImageFormat[ImageFormat["ImageFormatR8"] = 15] = "ImageFormatR8";
-    ImageFormat[ImageFormat["ImageFormatRgba16Snorm"] = 16] = "ImageFormatRgba16Snorm";
-    ImageFormat[ImageFormat["ImageFormatRg16Snorm"] = 17] = "ImageFormatRg16Snorm";
-    ImageFormat[ImageFormat["ImageFormatRg8Snorm"] = 18] = "ImageFormatRg8Snorm";
-    ImageFormat[ImageFormat["ImageFormatR16Snorm"] = 19] = "ImageFormatR16Snorm";
-    ImageFormat[ImageFormat["ImageFormatR8Snorm"] = 20] = "ImageFormatR8Snorm";
-    ImageFormat[ImageFormat["ImageFormatRgba32i"] = 21] = "ImageFormatRgba32i";
-    ImageFormat[ImageFormat["ImageFormatRgba16i"] = 22] = "ImageFormatRgba16i";
-    ImageFormat[ImageFormat["ImageFormatRgba8i"] = 23] = "ImageFormatRgba8i";
-    ImageFormat[ImageFormat["ImageFormatR32i"] = 24] = "ImageFormatR32i";
-    ImageFormat[ImageFormat["ImageFormatRg32i"] = 25] = "ImageFormatRg32i";
-    ImageFormat[ImageFormat["ImageFormatRg16i"] = 26] = "ImageFormatRg16i";
-    ImageFormat[ImageFormat["ImageFormatRg8i"] = 27] = "ImageFormatRg8i";
-    ImageFormat[ImageFormat["ImageFormatR16i"] = 28] = "ImageFormatR16i";
-    ImageFormat[ImageFormat["ImageFormatR8i"] = 29] = "ImageFormatR8i";
-    ImageFormat[ImageFormat["ImageFormatRgba32ui"] = 30] = "ImageFormatRgba32ui";
-    ImageFormat[ImageFormat["ImageFormatRgba16ui"] = 31] = "ImageFormatRgba16ui";
-    ImageFormat[ImageFormat["ImageFormatRgba8ui"] = 32] = "ImageFormatRgba8ui";
-    ImageFormat[ImageFormat["ImageFormatR32ui"] = 33] = "ImageFormatR32ui";
-    ImageFormat[ImageFormat["ImageFormatRgb10a2ui"] = 34] = "ImageFormatRgb10a2ui";
-    ImageFormat[ImageFormat["ImageFormatRg32ui"] = 35] = "ImageFormatRg32ui";
-    ImageFormat[ImageFormat["ImageFormatRg16ui"] = 36] = "ImageFormatRg16ui";
-    ImageFormat[ImageFormat["ImageFormatRg8ui"] = 37] = "ImageFormatRg8ui";
-    ImageFormat[ImageFormat["ImageFormatR16ui"] = 38] = "ImageFormatR16ui";
-    ImageFormat[ImageFormat["ImageFormatR8ui"] = 39] = "ImageFormatR8ui";
-    ImageFormat[ImageFormat["ImageFormatR64ui"] = 40] = "ImageFormatR64ui";
-    ImageFormat[ImageFormat["ImageFormatR64i"] = 41] = "ImageFormatR64i";
-    ImageFormat[ImageFormat["ImageFormatMax"] = 2147483647] = "ImageFormatMax";
+    ImageFormat[ImageFormat["Unknown"] = 0] = "Unknown";
+    ImageFormat[ImageFormat["Rgba32f"] = 1] = "Rgba32f";
+    ImageFormat[ImageFormat["Rgba16f"] = 2] = "Rgba16f";
+    ImageFormat[ImageFormat["R32f"] = 3] = "R32f";
+    ImageFormat[ImageFormat["Rgba8"] = 4] = "Rgba8";
+    ImageFormat[ImageFormat["Rgba8Snorm"] = 5] = "Rgba8Snorm";
+    ImageFormat[ImageFormat["Rg32f"] = 6] = "Rg32f";
+    ImageFormat[ImageFormat["Rg16f"] = 7] = "Rg16f";
+    ImageFormat[ImageFormat["R11fG11fB10f"] = 8] = "R11fG11fB10f";
+    ImageFormat[ImageFormat["R16f"] = 9] = "R16f";
+    ImageFormat[ImageFormat["Rgba16"] = 10] = "Rgba16";
+    ImageFormat[ImageFormat["Rgb10A2"] = 11] = "Rgb10A2";
+    ImageFormat[ImageFormat["Rg16"] = 12] = "Rg16";
+    ImageFormat[ImageFormat["Rg8"] = 13] = "Rg8";
+    ImageFormat[ImageFormat["R16"] = 14] = "R16";
+    ImageFormat[ImageFormat["R8"] = 15] = "R8";
+    ImageFormat[ImageFormat["Rgba16Snorm"] = 16] = "Rgba16Snorm";
+    ImageFormat[ImageFormat["Rg16Snorm"] = 17] = "Rg16Snorm";
+    ImageFormat[ImageFormat["Rg8Snorm"] = 18] = "Rg8Snorm";
+    ImageFormat[ImageFormat["R16Snorm"] = 19] = "R16Snorm";
+    ImageFormat[ImageFormat["R8Snorm"] = 20] = "R8Snorm";
+    ImageFormat[ImageFormat["Rgba32i"] = 21] = "Rgba32i";
+    ImageFormat[ImageFormat["Rgba16i"] = 22] = "Rgba16i";
+    ImageFormat[ImageFormat["Rgba8i"] = 23] = "Rgba8i";
+    ImageFormat[ImageFormat["R32i"] = 24] = "R32i";
+    ImageFormat[ImageFormat["Rg32i"] = 25] = "Rg32i";
+    ImageFormat[ImageFormat["Rg16i"] = 26] = "Rg16i";
+    ImageFormat[ImageFormat["Rg8i"] = 27] = "Rg8i";
+    ImageFormat[ImageFormat["R16i"] = 28] = "R16i";
+    ImageFormat[ImageFormat["R8i"] = 29] = "R8i";
+    ImageFormat[ImageFormat["Rgba32ui"] = 30] = "Rgba32ui";
+    ImageFormat[ImageFormat["Rgba16ui"] = 31] = "Rgba16ui";
+    ImageFormat[ImageFormat["Rgba8ui"] = 32] = "Rgba8ui";
+    ImageFormat[ImageFormat["R32ui"] = 33] = "R32ui";
+    ImageFormat[ImageFormat["Rgb10a2ui"] = 34] = "Rgb10a2ui";
+    ImageFormat[ImageFormat["Rg32ui"] = 35] = "Rg32ui";
+    ImageFormat[ImageFormat["Rg16ui"] = 36] = "Rg16ui";
+    ImageFormat[ImageFormat["Rg8ui"] = 37] = "Rg8ui";
+    ImageFormat[ImageFormat["R16ui"] = 38] = "R16ui";
+    ImageFormat[ImageFormat["R8ui"] = 39] = "R8ui";
+    ImageFormat[ImageFormat["R64ui"] = 40] = "R64ui";
+    ImageFormat[ImageFormat["R64i"] = 41] = "R64i";
+    ImageFormat[ImageFormat["Max"] = 2147483647] = "Max";
 })(ImageFormat || (ImageFormat = {}));
 
 var Compiler = /** @class */ (function () {
@@ -6754,16 +6756,16 @@ var Compiler = /** @class */ (function () {
         var flags = this.get_member_decoration_bitset(struct_type.self, index);
         var type = this.get(SPIRType, struct_type.member_types[index]);
         switch (type.basetype) {
-            case SPIRTypeBaseType.Unknown:
-            case SPIRTypeBaseType.Void:
-            case SPIRTypeBaseType.Boolean: // Bools are purely logical, and cannot be used for externally visible types.
-            case SPIRTypeBaseType.AtomicCounter:
-            case SPIRTypeBaseType.Image:
-            case SPIRTypeBaseType.SampledImage:
-            case SPIRTypeBaseType.Sampler:
+            case SPIRBaseType.Unknown:
+            case SPIRBaseType.Void:
+            case SPIRBaseType.Boolean: // Bools are purely logical, and cannot be used for externally visible types.
+            case SPIRBaseType.AtomicCounter:
+            case SPIRBaseType.Image:
+            case SPIRBaseType.SampledImage:
+            case SPIRBaseType.Sampler:
                 throw new Error("Querying size for object with opaque size.");
         }
-        if (type.pointer && type.storage === StorageClass.StorageClassPhysicalStorageBuffer) {
+        if (type.pointer && type.storage === StorageClass.PhysicalStorageBuffer) {
             // Check if this is a top-level pointer type, and not an array of pointers.
             if (type.pointer_depth > this.get(SPIRType, type.parent_type).pointer_depth)
                 return 8;
@@ -6774,7 +6776,7 @@ var Compiler = /** @class */ (function () {
             var array_size = array_size_literal ? type.array[type.array.length - 1] : this.evaluate_constant_u32(type.array[type.array.length - 1]);
             return this.type_struct_member_array_stride(struct_type, index) * array_size;
         }
-        else if (type.basetype === SPIRTypeBaseType.Struct) {
+        else if (type.basetype === SPIRBaseType.Struct) {
             return this.get_declared_struct_size(type);
         }
         else {
@@ -6788,9 +6790,9 @@ var Compiler = /** @class */ (function () {
             else {
                 var matrix_stride = this.type_struct_member_matrix_stride(struct_type, index);
                 // Per SPIR-V spec, matrices must be tightly packed and aligned up for vec3 accesses.
-                if (flags.get(Decoration.DecorationRowMajor))
+                if (flags.get(Decoration.RowMajor))
                     return matrix_stride * vecsize;
-                else if (flags.get(Decoration.DecorationColMajor))
+                else if (flags.get(Decoration.ColMajor))
                     return matrix_stride * columns;
                 else
                     throw new Error("Either row-major or column-major must be declared for matrices.");
@@ -6813,7 +6815,7 @@ var Compiler = /** @class */ (function () {
         var handler = new InterfaceVariableAccessHandler(this, variables);
         this.traverse_all_reachable_opcodes(this.get(SPIRFunction, ir.default_entry_point), handler);
         ir.for_each_typed_id(SPIRVariable, function (_, var_) {
-            if (var_.storage !== StorageClass.StorageClassOutput)
+            if (var_.storage !== StorageClass.Output)
                 return;
             if (!_this.interface_variable_exists_in_entry_point(var_.self))
                 return;
@@ -6821,7 +6823,7 @@ var Compiler = /** @class */ (function () {
             // so we should force-enable these outputs,
             // since compilation will fail if a subsequent stage attempts to read from the variable in question.
             // Also, make sure we preserve output variables which are only initialized, but never accessed by any code.
-            if (var_.initializer !== 0 || _this.get_execution_model() !== ExecutionModel.ExecutionModelFragment)
+            if (var_.initializer !== 0 || _this.get_execution_model() !== ExecutionModel.Fragment)
                 variables.add(var_.self);
         });
         // If we needed to create one, we'll need it.
@@ -6845,7 +6847,7 @@ var Compiler = /** @class */ (function () {
             var type = _this.get(SPIRType, var_.basetype);
             // It is possible for uniform storage classes to be passed as function parameters, so detect
             // that. To detect function parameters, check of StorageClass of variable is function scope.
-            if (var_.storage === StorageClass.StorageClassFunction || !type.pointer)
+            if (var_.storage === StorageClass.Function || !type.pointer)
                 return;
             if (active_variables && !active_variables.has(var_.self))
                 return;
@@ -6853,7 +6855,7 @@ var Compiler = /** @class */ (function () {
             // not just IO variables.
             var active_in_entry_point = true;
             if (ir.get_spirv_version() < 0x10400) {
-                if (var_.storage === StorageClass.StorageClassInput || var_.storage === StorageClass.StorageClassOutput)
+                if (var_.storage === StorageClass.Input || var_.storage === StorageClass.Output)
                     active_in_entry_point = _this.interface_variable_exists_in_entry_point(var_.self);
             }
             else
@@ -6862,109 +6864,109 @@ var Compiler = /** @class */ (function () {
                 return;
             var is_builtin = _this.is_builtin_variable(var_);
             if (is_builtin) {
-                if (var_.storage !== StorageClass.StorageClassInput && var_.storage !== StorageClass.StorageClassOutput)
+                if (var_.storage !== StorageClass.Input && var_.storage !== StorageClass.Output)
                     return;
-                var list = var_.storage === StorageClass.StorageClassInput ? res.builtin_inputs : res.builtin_outputs;
+                var list = var_.storage === StorageClass.Input ? res.builtin_inputs : res.builtin_outputs;
                 var resource = new BuiltInResource();
-                if (_this.has_decoration(type.self, Decoration.DecorationBlock)) {
+                if (_this.has_decoration(type.self, Decoration.Block)) {
                     resource.resource = new Resource(var_.self, var_.basetype, type.self, _this.get_remapped_declared_block_name(var_.self, false));
                     for (var i = 0; i < type.member_types.length; i++) {
                         resource.value_type_id = type.member_types[i];
-                        resource.builtin = _this.get_member_decoration(type.self, i, Decoration.DecorationBuiltIn);
+                        resource.builtin = _this.get_member_decoration(type.self, i, Decoration.BuiltIn);
                         list.push(resource);
                     }
                 }
                 else {
-                    var strip_array = !_this.has_decoration(var_.self, Decoration.DecorationPatch) && (_this.get_execution_model() === ExecutionModel.ExecutionModelTessellationControl ||
-                        (_this.get_execution_model() === ExecutionModel.ExecutionModelTessellationEvaluation &&
-                            var_.storage === StorageClass.StorageClassInput));
+                    var strip_array = !_this.has_decoration(var_.self, Decoration.Patch) && (_this.get_execution_model() === ExecutionModel.TessellationControl ||
+                        (_this.get_execution_model() === ExecutionModel.TessellationEvaluation &&
+                            var_.storage === StorageClass.Input));
                     resource.resource = new Resource(var_.self, var_.basetype, type.self, _this.get_name(var_.self));
                     if (strip_array && type.array.length > 0)
                         resource.value_type_id = _this.get_variable_data_type(var_).parent_type;
                     else
                         resource.value_type_id = _this.get_variable_data_type_id(var_);
                     console.assert(resource.value_type_id);
-                    resource.builtin = _this.get_decoration(var_.self, Decoration.DecorationBuiltIn);
+                    resource.builtin = _this.get_decoration(var_.self, Decoration.BuiltIn);
                     list.push(resource);
                 }
                 return;
             }
             // Input
-            if (var_.storage === StorageClass.StorageClassInput) {
-                if (_this.has_decoration(type.self, Decoration.DecorationBlock)) {
+            if (var_.storage === StorageClass.Input) {
+                if (_this.has_decoration(type.self, Decoration.Block)) {
                     res.stage_inputs.push(new Resource(var_.self, var_.basetype, type.self, _this.get_remapped_declared_block_name(var_.self, false)));
                 }
                 else
                     res.stage_inputs.push(new Resource(var_.self, var_.basetype, type.self, _this.get_name(var_.self)));
             }
             // Subpass inputs
-            else if (var_.storage === StorageClass.StorageClassUniformConstant && type.image.dim === Dim.DimSubpassData) {
+            else if (var_.storage === StorageClass.UniformConstant && type.image.dim === Dim.SubpassData) {
                 res.subpass_inputs.push(new Resource(var_.self, var_.basetype, type.self, _this.get_name(var_.self)));
             }
             // Outputs
-            else if (var_.storage === StorageClass.StorageClassOutput) {
-                if (_this.has_decoration(type.self, Decoration.DecorationBlock)) {
+            else if (var_.storage === StorageClass.Output) {
+                if (_this.has_decoration(type.self, Decoration.Block)) {
                     res.stage_outputs.push(new Resource(var_.self, var_.basetype, type.self, _this.get_remapped_declared_block_name(var_.self, false)));
                 }
                 else
                     res.stage_outputs.push(new Resource(var_.self, var_.basetype, type.self, _this.get_name(var_.self)));
             }
             // UBOs
-            else if (type.storage === StorageClass.StorageClassUniform && _this.has_decoration(type.self, Decoration.DecorationBlock)) {
+            else if (type.storage === StorageClass.Uniform && _this.has_decoration(type.self, Decoration.Block)) {
                 res.uniform_buffers.push(new Resource(var_.self, var_.basetype, type.self, _this.get_remapped_declared_block_name(var_.self, false)));
             }
             // Old way to declare SSBOs.
-            else if (type.storage === StorageClass.StorageClassUniform && _this.has_decoration(type.self, Decoration.DecorationBufferBlock)) {
+            else if (type.storage === StorageClass.Uniform && _this.has_decoration(type.self, Decoration.BufferBlock)) {
                 res.storage_buffers.push(new Resource(var_.self, var_.basetype, type.self, _this.get_remapped_declared_block_name(var_.self, ssbo_instance_name)));
             }
             // Modern way to declare SSBOs.
-            else if (type.storage === StorageClass.StorageClassStorageBuffer) {
+            else if (type.storage === StorageClass.StorageBuffer) {
                 res.storage_buffers.push(new Resource(var_.self, var_.basetype, type.self, _this.get_remapped_declared_block_name(var_.self, ssbo_instance_name)));
             }
             // Push constant blocks
-            else if (type.storage === StorageClass.StorageClassPushConstant) {
+            else if (type.storage === StorageClass.PushConstant) {
                 // There can only be one push constant block, but keep the vector in case this restriction is lifted
                 // in the future.
                 res.push_constant_buffers.push(new Resource(var_.self, var_.basetype, type.self, _this.get_name(var_.self)));
             }
             // Images
-            else if (type.storage === StorageClass.StorageClassUniformConstant && type.basetype === SPIRTypeBaseType.Image &&
+            else if (type.storage === StorageClass.UniformConstant && type.basetype === SPIRBaseType.Image &&
                 type.image.sampled === 2) {
                 res.storage_images.push(new Resource(var_.self, var_.basetype, type.self, _this.get_name(var_.self)));
             }
             // Separate images
-            else if (type.storage === StorageClass.StorageClassUniformConstant && type.basetype === SPIRTypeBaseType.Image &&
+            else if (type.storage === StorageClass.UniformConstant && type.basetype === SPIRBaseType.Image &&
                 type.image.sampled === 1) {
                 res.separate_images.push(new Resource(var_.self, var_.basetype, type.self, _this.get_name(var_.self)));
             }
             // Separate samplers
-            else if (type.storage === StorageClass.StorageClassUniformConstant && type.basetype === SPIRTypeBaseType.Sampler) {
+            else if (type.storage === StorageClass.UniformConstant && type.basetype === SPIRBaseType.Sampler) {
                 res.separate_samplers.push(new Resource(var_.self, var_.basetype, type.self, _this.get_name(var_.self)));
             }
             // Textures
-            else if (type.storage === StorageClass.StorageClassUniformConstant && type.basetype === SPIRTypeBaseType.SampledImage) {
+            else if (type.storage === StorageClass.UniformConstant && type.basetype === SPIRBaseType.SampledImage) {
                 res.sampled_images.push(new Resource(var_.self, var_.basetype, type.self, _this.get_name(var_.self)));
             }
             // Atomic counters
-            else if (type.storage === StorageClass.StorageClassAtomicCounter) {
+            else if (type.storage === StorageClass.AtomicCounter) {
                 res.atomic_counters.push(new Resource(var_.self, var_.basetype, type.self, _this.get_name(var_.self)));
             }
             // Acceleration structures
-            else if (type.storage === StorageClass.StorageClassUniformConstant && type.basetype === SPIRTypeBaseType.AccelerationStructure) {
+            else if (type.storage === StorageClass.UniformConstant && type.basetype === SPIRBaseType.AccelerationStructure) {
                 res.acceleration_structures.push(new Resource(var_.self, var_.basetype, type.self, _this.get_name(var_.self)));
             }
         });
         return res;
     };
     Compiler.prototype.get_common_basic_type = function (type) {
-        if (type.basetype === SPIRTypeBaseType.Struct) {
-            var base_type = SPIRTypeBaseType.Unknown;
+        if (type.basetype === SPIRBaseType.Struct) {
+            var base_type = SPIRBaseType.Unknown;
             for (var _i = 0, _a = type.member_types; _i < _a.length; _i++) {
                 var member_type = _a[_i];
                 var member_base = this.get_common_basic_type(this.get(SPIRType, member_type));
                 if (member_base === undefined)
                     return undefined;
-                if (base_type === SPIRTypeBaseType.Unknown)
+                if (base_type === SPIRBaseType.Unknown)
                     base_type = member_base;
                 else if (base_type !== member_base)
                     return undefined;
@@ -7056,7 +7058,7 @@ var Compiler = /** @class */ (function () {
         var handler = new ActiveBuiltinHandler(this);
         this.traverse_all_reachable_opcodes(this.get(SPIRFunction, ir.default_entry_point), handler);
         ir.for_each_typed_id(SPIRVariable, function (_, var_) {
-            if (var_.storage !== StorageClass.StorageClassOutput)
+            if (var_.storage !== StorageClass.Output)
                 return;
             if (!_this.interface_variable_exists_in_entry_point(var_.self))
                 return;
@@ -7068,10 +7070,10 @@ var Compiler = /** @class */ (function () {
     Compiler.prototype.has_active_builtin = function (builtin, storage) {
         var flags;
         switch (storage) {
-            case StorageClass.StorageClassInput:
+            case StorageClass.Input:
                 flags = this.active_input_builtins;
                 break;
-            case StorageClass.StorageClassOutput:
+            case StorageClass.Output:
                 flags = this.active_output_builtins;
                 break;
             default:
@@ -7109,32 +7111,32 @@ var Compiler = /** @class */ (function () {
             var c = this.get(SPIRConstant, execution.workgroup_size.constant);
             if (c.m.c[0].id[0] !== 0) {
                 x.id = c.m.c[0].id[0];
-                x.constant_id = this.get_decoration(c.m.c[0].id[0], Decoration.DecorationSpecId);
+                x.constant_id = this.get_decoration(c.m.c[0].id[0], Decoration.SpecId);
             }
             if (c.m.c[0].id[1] !== 0) {
                 y.id = c.m.c[0].id[1];
-                y.constant_id = this.get_decoration(c.m.c[0].id[1], Decoration.DecorationSpecId);
+                y.constant_id = this.get_decoration(c.m.c[0].id[1], Decoration.SpecId);
             }
             if (c.m.c[0].id[2] !== 0) {
                 z.id = c.m.c[0].id[2];
-                z.constant_id = this.get_decoration(c.m.c[0].id[2], Decoration.DecorationSpecId);
+                z.constant_id = this.get_decoration(c.m.c[0].id[2], Decoration.SpecId);
             }
         }
-        else if (execution.flags.get(ExecutionMode.ExecutionModeLocalSizeId)) {
+        else if (execution.flags.get(ExecutionMode.LocalSizeId)) {
             var cx = this.get(SPIRConstant, execution.workgroup_size.id_x);
             if (cx.specialization) {
                 x.id = execution.workgroup_size.id_x;
-                x.constant_id = this.get_decoration(execution.workgroup_size.id_x, Decoration.DecorationSpecId);
+                x.constant_id = this.get_decoration(execution.workgroup_size.id_x, Decoration.SpecId);
             }
             var cy = this.get(SPIRConstant, execution.workgroup_size.id_y);
             if (cy.specialization) {
                 y.id = execution.workgroup_size.id_y;
-                y.constant_id = this.get_decoration(execution.workgroup_size.id_y, Decoration.DecorationSpecId);
+                y.constant_id = this.get_decoration(execution.workgroup_size.id_y, Decoration.SpecId);
             }
             var cz = this.get(SPIRConstant, execution.workgroup_size.id_z);
             if (cz.specialization) {
                 z.id = execution.workgroup_size.id_z;
-                z.constant_id = this.get_decoration(execution.workgroup_size.id_z, Decoration.DecorationSpecId);
+                z.constant_id = this.get_decoration(execution.workgroup_size.id_z, Decoration.SpecId);
             }
         }
         return execution.workgroup_size.constant;
@@ -7164,14 +7166,14 @@ var Compiler = /** @class */ (function () {
             var var_id = offset + 2;
             // let sampler_type: SPIRType;
             var sampler = this.set(SPIRType, type_id);
-            sampler.basetype = SPIRTypeBaseType.Sampler;
+            sampler.basetype = SPIRBaseType.Sampler;
             var ptr_sampler = this.set(SPIRType, ptr_type_id);
             defaultCopy(sampler, ptr_sampler);
             ptr_sampler.self = type_id;
-            ptr_sampler.storage = StorageClass.StorageClassUniformConstant;
+            ptr_sampler.storage = StorageClass.UniformConstant;
             ptr_sampler.pointer = true;
             ptr_sampler.parent_type = type_id;
-            this.set(SPIRVariable, var_id, ptr_type_id, StorageClass.StorageClassUniformConstant, 0);
+            this.set(SPIRVariable, var_id, ptr_type_id, StorageClass.UniformConstant, 0);
             this.set_name(var_id, "SPIRV_Cross_DummySampler");
             this.dummy_sampler_id = var_id;
             return var_id;
@@ -7248,26 +7250,26 @@ var Compiler = /** @class */ (function () {
         for (;;) {
             if (start.self === to.self)
                 return true;
-            if (start.terminator === SPIRBlockTerminator.Direct && start.merge === SPIRBlockMerge.MergeNone)
+            if (start.terminator === SPIRBlockTerminator.Direct && start.merge === SPIRBlockMerge.None)
                 start = this.get(SPIRBlock, start.next_block);
             else
                 return false;
         }
     };
     Compiler.prototype.execution_is_direct_branch = function (from, to) {
-        return from.terminator === SPIRBlockTerminator.Direct && from.merge === SPIRBlockMerge.MergeNone && from.next_block === to.self;
+        return from.terminator === SPIRBlockTerminator.Direct && from.merge === SPIRBlockMerge.None && from.next_block === to.self;
     };
     Compiler.prototype.is_break = function (next) {
         this.ir.block_meta[next] = this.ir.block_meta[next] || 0;
-        return (this.ir.block_meta[next] & (BlockMetaFlagBits.BLOCK_META_LOOP_MERGE_BIT | BlockMetaFlagBits.BLOCK_META_MULTISELECT_MERGE_BIT)) !== 0;
+        return (this.ir.block_meta[next] & (BlockMetaFlagBits.LOOP_MERGE_BIT | BlockMetaFlagBits.MULTISELECT_MERGE_BIT)) !== 0;
     };
     Compiler.prototype.is_loop_break = function (next) {
         this.ir.block_meta[next] = this.ir.block_meta[next] || 0;
-        return (this.ir.block_meta[next] & BlockMetaFlagBits.BLOCK_META_LOOP_MERGE_BIT) !== 0;
+        return (this.ir.block_meta[next] & BlockMetaFlagBits.LOOP_MERGE_BIT) !== 0;
     };
     Compiler.prototype.is_conditional = function (next) {
         this.ir.block_meta[next] = this.ir.block_meta[next] || 0;
-        return (this.ir.block_meta[next] & (BlockMetaFlagBits.BLOCK_META_SELECTION_MERGE_BIT | BlockMetaFlagBits.BLOCK_META_MULTISELECT_MERGE_BIT)) !== 0;
+        return (this.ir.block_meta[next] & (BlockMetaFlagBits.SELECTION_MERGE_BIT | BlockMetaFlagBits.MULTISELECT_MERGE_BIT)) !== 0;
     };
     Compiler.prototype.flush_dependees = function (var_) {
         for (var _i = 0, _a = var_.dependees; _i < _a.length; _i++) {
@@ -7321,21 +7323,21 @@ var Compiler = /** @class */ (function () {
             var ops = this.stream(i);
             var op = (i.op);
             switch (op) {
-                case Op.OpFunctionCall:
+                case Op.FunctionCall:
                     {
                         var func_1 = ops[2];
                         this.register_global_read_dependencies(this.get(SPIRFunction, func_1), id);
                         break;
                     }
-                case Op.OpLoad:
-                case Op.OpImageRead:
+                case Op.Load:
+                case Op.ImageRead:
                     {
                         // If we're in a storage class which does not get invalidated, adding dependencies here is no big deal.
                         var var_ = this.maybe_get_backing_variable(ops[2]);
-                        if (var_ && var_.storage !== StorageClass.StorageClassFunction) {
+                        if (var_ && var_.storage !== StorageClass.Function) {
                             var type = this.get(SPIRType, var_.basetype);
                             // InputTargets are immutable.
-                            if (type.basetype !== SPIRTypeBaseType.Image && type.image.dim !== Dim.DimSubpassData)
+                            if (type.basetype !== SPIRBaseType.Image && type.image.dim !== Dim.SubpassData)
                                 var_.dependees.push(id);
                         }
                         break;
@@ -7414,22 +7416,22 @@ var Compiler = /** @class */ (function () {
             var ops = this.stream(i);
             var op = (i.op);
             switch (op) {
-                case Op.OpFunctionCall:
+                case Op.FunctionCall:
                     {
                         var func = ops[2];
                         if (!this.function_is_pure(this.get(SPIRFunction, func)))
                             return false;
                         break;
                     }
-                case Op.OpCopyMemory:
-                case Op.OpStore:
+                case Op.CopyMemory:
+                case Op.Store:
                     {
                         var type = this.expression_type(ops[0]);
-                        if (type.storage !== StorageClass.StorageClassFunction)
+                        if (type.storage !== StorageClass.Function)
                             return false;
                         break;
                     }
-                case Op.OpImageWrite:
+                case Op.ImageWrite:
                     return false;
                 // Atomics are impure.
                 /*case OpAtomicLoad:
@@ -7456,8 +7458,8 @@ var Compiler = /** @class */ (function () {
                 case OpEmitVertex:
                     return false;*/
                 // Barriers disallow any reordering, so we should treat blocks with barrier as writing.
-                case Op.OpControlBarrier:
-                case Op.OpMemoryBarrier:
+                case Op.ControlBarrier:
+                case Op.MemoryBarrier:
                     return false;
                 // Ray tracing builtins are impure.
                 /*case OpReportIntersectionKHR:
@@ -7475,20 +7477,20 @@ var Compiler = /** @class */ (function () {
                     // There are various getters in ray query, but they are considered pure.
                     return false;*/
                 // OpExtInst is potentially impure depending on extension, but GLSL builtins are at least pure.
-                case Op.OpDemoteToHelperInvocationEXT:
+                case Op.DemoteToHelperInvocationEXT:
                     // This is a global side effect of the function.
                     return false;
-                case Op.OpExtInst:
+                case Op.ExtInst:
                     {
                         var extension_set = ops[2];
                         if (this.get(SPIRExtension, extension_set).ext === SPIRExtensionExtension.GLSL) {
                             var op_450 = (ops[3]);
                             switch (op_450) {
-                                case GLSLstd450.GLSLstd450Modf:
-                                case GLSLstd450.GLSLstd450Frexp:
+                                case GLSLstd450.Modf:
+                                case GLSLstd450.Frexp:
                                     {
                                         var type = this.expression_type(ops[5]);
-                                        if (type.storage !== StorageClass.StorageClassFunction)
+                                        if (type.storage !== StorageClass.Function)
                                             return false;
                                         break;
                                     }
@@ -7525,7 +7527,7 @@ var Compiler = /** @class */ (function () {
             return SPIRBlockContinueBlockType.ComplexLoop;
         // In older glslang output continue block can be equal to the loop header.
         // In this case, execution is clearly branchless, so just assume a while loop header here.
-        if (block.merge === SPIRBlockMerge.MergeLoop)
+        if (block.merge === SPIRBlockMerge.Loop)
             return SPIRBlockContinueBlockType.WhileLoop;
         if (block.loop_dominator === SPIRBlock.NoDominator) {
             // Continue block is never reached from CFG.
@@ -7551,7 +7553,7 @@ var Compiler = /** @class */ (function () {
             var negative_do_while = block.false_block === dominator.self &&
                 (block.true_block === dominator.merge_block ||
                     (true_block && merge_block && this.execution_is_noop(true_block, merge_block)));
-            if (block.merge === SPIRBlockMerge.MergeNone && block.terminator === SPIRBlockTerminator.Select &&
+            if (block.merge === SPIRBlockMerge.None && block.terminator === SPIRBlockTerminator.Select &&
                 (positive_do_while || negative_do_while)) {
                 return SPIRBlockContinueBlockType.DoWhileLoop;
             }
@@ -7583,7 +7585,7 @@ var Compiler = /** @class */ (function () {
                 (true_block && merge_block && this.execution_is_noop(true_block, merge_block));
             var positive_candidate = block.true_block !== block.merge_block && block.true_block !== block.self && false_block_is_merge;
             var negative_candidate = block.false_block !== block.merge_block && block.false_block !== block.self && true_block_is_merge;
-            var ret = block.terminator === SPIRBlockTerminator.Select && block.merge === SPIRBlockMerge.MergeLoop &&
+            var ret = block.terminator === SPIRBlockTerminator.Select && block.merge === SPIRBlockMerge.Loop &&
                 (positive_candidate || negative_candidate);
             if (ret && positive_candidate && method === SPIRBlockMethod.MergeToSelectContinueForLoop)
                 ret = block.true_block === block.continue_block;
@@ -7611,7 +7613,7 @@ var Compiler = /** @class */ (function () {
         else if (method === SPIRBlockMethod.MergeToDirectForLoop) {
             // Empty loop header that just sets up merge target
             // and branches to loop body.
-            var ret = block.terminator === SPIRBlockTerminator.Direct && block.merge === SPIRBlockMerge.MergeLoop && block.ops.length === 0;
+            var ret = block.terminator === SPIRBlockTerminator.Direct && block.merge === SPIRBlockMerge.Loop && block.ops.length === 0;
             if (!ret)
                 return false;
             var child = this.get(SPIRBlock, block.next_block);
@@ -7624,7 +7626,7 @@ var Compiler = /** @class */ (function () {
                 (true_block && merge_block && this.execution_is_noop(true_block, merge_block));
             var positive_candidate = child.true_block !== block.merge_block && child.true_block !== block.self && false_block_is_merge;
             var negative_candidate = child.false_block !== block.merge_block && child.false_block !== block.self && true_block_is_merge;
-            ret = child.terminator === SPIRBlockTerminator.Select && child.merge === SPIRBlockMerge.MergeNone &&
+            ret = child.terminator === SPIRBlockTerminator.Select && child.merge === SPIRBlockMerge.None &&
                 (positive_candidate || negative_candidate);
             // If we have OpPhi which depends on branches which came from our own block,
             // we need to flush phi variables in else block instead of a trivial break,
@@ -7692,9 +7694,9 @@ var Compiler = /** @class */ (function () {
         var var_ = this.get(SPIRVariable, id);
         var ir = this.ir;
         if (ir.get_spirv_version() < 0x10400) {
-            if (var_.storage !== StorageClass.StorageClassInput &&
-                var_.storage !== StorageClass.StorageClassOutput &&
-                var_.storage !== StorageClass.StorageClassUniformConstant)
+            if (var_.storage !== StorageClass.Input &&
+                var_.storage !== StorageClass.Output &&
+                var_.storage !== StorageClass.UniformConstant)
                 throw new Error("Only Input, Output variables and Uniform constants are part of a shader linking" +
                     " interface.");
             // This is to avoid potential problems with very old glslang versions which did
@@ -7723,9 +7725,9 @@ var Compiler = /** @class */ (function () {
         for (var _i = 0, _a = ir.ids_for_constant_or_variable; _i < _a.length; _i++) {
             var id_ = _a[_i];
             var id = ir.ids[id_];
-            if (id.get_type() === Types.TypeConstant) {
+            if (id.get_type() === Types.Constant) {
                 var c = id.get(SPIRConstant);
-                if (ir.get_meta(c.self).decoration.builtin && ir.get_meta(c.self).decoration.builtin_type === BuiltIn.BuiltInWorkgroupSize) {
+                if (ir.get_meta(c.self).decoration.builtin && ir.get_meta(c.self).decoration.builtin_type === BuiltIn.WorkgroupSize) {
                     // In current SPIR-V, there can be just one constant like this.
                     // All entry points will receive the constant value.
                     for (var _b = 0, _c = ir.entry_points; _b < _c.length; _b++) {
@@ -7737,11 +7739,11 @@ var Compiler = /** @class */ (function () {
                     }
                 }
             }
-            else if (id.get_type() === Types.TypeVariable) {
+            else if (id.get_type() === Types.Variable) {
                 var var_ = id.get(SPIRVariable);
-                if (var_.storage === StorageClass.StorageClassPrivate ||
-                    var_.storage === StorageClass.StorageClassWorkgroup ||
-                    var_.storage === StorageClass.StorageClassOutput)
+                if (var_.storage === StorageClass.Private ||
+                    var_.storage === StorageClass.Workgroup ||
+                    var_.storage === StorageClass.Output)
                     this.global_variables.push(var_.self);
                 if (this.variable_storage_is_aliased(var_))
                     this.aliased_variables.push(var_.self);
@@ -7750,16 +7752,16 @@ var Compiler = /** @class */ (function () {
     };
     Compiler.prototype.variable_storage_is_aliased = function (v) {
         var type = this.get(SPIRType, v.basetype);
-        var ssbo = v.storage === StorageClass.StorageClassStorageBuffer ||
-            this.ir.get_meta(type.self).decoration.decoration_flags.get(Decoration.DecorationBufferBlock);
-        var image = type.basetype === SPIRTypeBaseType.Image;
-        var counter = type.basetype === SPIRTypeBaseType.AtomicCounter;
-        var buffer_reference = type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT;
+        var ssbo = v.storage === StorageClass.StorageBuffer ||
+            this.ir.get_meta(type.self).decoration.decoration_flags.get(Decoration.BufferBlock);
+        var image = type.basetype === SPIRBaseType.Image;
+        var counter = type.basetype === SPIRBaseType.AtomicCounter;
+        var buffer_reference = type.storage === StorageClass.PhysicalStorageBufferEXT;
         var is_restrict;
         if (ssbo)
-            is_restrict = this.ir.get_buffer_block_flags(v).get(Decoration.DecorationRestrict);
+            is_restrict = this.ir.get_buffer_block_flags(v).get(Decoration.Restrict);
         else
-            is_restrict = this.has_decoration(v.self, Decoration.DecorationRestrict);
+            is_restrict = this.has_decoration(v.self, Decoration.Restrict);
         return !is_restrict && (ssbo || image || counter || buffer_reference);
     };
     Compiler.prototype.add_loop_level = function () {
@@ -7930,19 +7932,19 @@ var Compiler = /** @class */ (function () {
     };
     Compiler.prototype.is_immutable = function (id) {
         var ir = this.ir;
-        if (ir.ids[id].get_type() === Types.TypeVariable) {
+        if (ir.ids[id].get_type() === Types.Variable) {
             var var_ = this.get(SPIRVariable, id);
             // Anything we load from the UniformConstant address space is guaranteed to be immutable.
-            var pointer_to_const = var_.storage === StorageClass.StorageClassUniformConstant;
+            var pointer_to_const = var_.storage === StorageClass.UniformConstant;
             return pointer_to_const || var_.phi_variable || !this.expression_is_lvalue(id);
         }
-        else if (ir.ids[id].get_type() === Types.TypeAccessChain)
+        else if (ir.ids[id].get_type() === Types.AccessChain)
             return this.get(SPIRAccessChain, id).immutable;
-        else if (ir.ids[id].get_type() === Types.TypeExpression)
+        else if (ir.ids[id].get_type() === Types.Expression)
             return this.get(SPIRExpression, id).immutable;
-        else if (ir.ids[id].get_type() === Types.TypeConstant ||
-            ir.ids[id].get_type() === Types.TypeConstantOp ||
-            ir.ids[id].get_type() === Types.TypeUndef)
+        else if (ir.ids[id].get_type() === Types.Constant ||
+            ir.ids[id].get_type() === Types.ConstantOp ||
+            ir.ids[id].get_type() === Types.Undef)
             return true;
         else
             return false;
@@ -7962,7 +7964,7 @@ var Compiler = /** @class */ (function () {
     Compiler.prototype.to_name = function (id, allow_alias) {
         if (allow_alias === void 0) { allow_alias = true; }
         var ir = this.ir;
-        if (allow_alias && ir.ids[id].get_type() === Types.TypeType) {
+        if (allow_alias && ir.ids[id].get_type() === Types.Type) {
             // If this type is a simple alias, emit the
             // name of the original type instead.
             // We don't want to override the meta alias
@@ -7971,7 +7973,7 @@ var Compiler = /** @class */ (function () {
             if (type.type_alias) {
                 // If the alias master has been specially packed, we will have emitted a clean variant as well,
                 // so skip the name aliasing here.
-                if (!this.has_extended_decoration(type.type_alias, ExtendedDecorations.SPIRVCrossDecorationBufferBlockRepacked))
+                if (!this.has_extended_decoration(type.type_alias, ExtendedDecorations.BufferBlockRepacked))
                     return this.to_name(type.type_alias);
             }
         }
@@ -8010,8 +8012,8 @@ var Compiler = /** @class */ (function () {
         var ir = this.ir;
         // In SPIR-V 1.4 and up we must also use the active variable interface to disable global variables
         // which are not part of the entry point.
-        if (ir.get_spirv_version() >= 0x10400 && var_.storage !== StorageClass.StorageClassGeneric &&
-            var_.storage !== StorageClass.StorageClassFunction && !this.interface_variable_exists_in_entry_point(var_.self)) {
+        if (ir.get_spirv_version() >= 0x10400 && var_.storage !== StorageClass.Generic &&
+            var_.storage !== StorageClass.Function && !this.interface_variable_exists_in_entry_point(var_.self)) {
             return true;
         }
         return this.check_active_interface_variables && storage_class_is_interface(var_.storage) && !this.active_interface_variables.has(var_.self);
@@ -8027,7 +8029,7 @@ var Compiler = /** @class */ (function () {
         return undefined;
     };
     Compiler.prototype.is_scalar = function (type) {
-        return type.basetype !== SPIRTypeBaseType.Struct && type.vecsize === 1 && type.columns === 1;
+        return type.basetype !== SPIRBaseType.Struct && type.vecsize === 1 && type.columns === 1;
     };
     Compiler.prototype.is_vector = function (type) {
         return type.vecsize > 1 && type.columns === 1;
@@ -8040,19 +8042,19 @@ var Compiler = /** @class */ (function () {
     };
     Compiler.prototype.expression_type_id = function (id) {
         switch (this.ir.ids[id].get_type()) {
-            case Types.TypeVariable:
+            case Types.Variable:
                 return this.get(SPIRVariable, id).basetype;
-            case Types.TypeExpression:
+            case Types.Expression:
                 return this.get(SPIRExpression, id).expression_type;
-            case Types.TypeConstant:
+            case Types.Constant:
                 return this.get(SPIRConstant, id).constant_type;
-            case Types.TypeConstantOp:
+            case Types.ConstantOp:
                 return this.get(SPIRConstantOp, id).basetype;
-            case Types.TypeUndef:
+            case Types.Undef:
                 return this.get(SPIRUndef, id).basetype;
-            case Types.TypeCombinedImageSampler:
+            case Types.CombinedImageSampler:
                 return this.get(SPIRCombinedImageSampler, id).combined_type;
-            case Types.TypeAccessChain:
+            case Types.AccessChain:
                 return this.get(SPIRAccessChain, id).basetype;
             default:
                 throw new Error("Cannot resolve expression type.");
@@ -8064,9 +8066,9 @@ var Compiler = /** @class */ (function () {
     Compiler.prototype.expression_is_lvalue = function (id) {
         var type = this.expression_type(id);
         switch (type.basetype) {
-            case SPIRTypeBaseType.SampledImage:
-            case SPIRTypeBaseType.Image:
-            case SPIRTypeBaseType.Sampler:
+            case SPIRBaseType.SampledImage:
+            case SPIRBaseType.Image:
+            case SPIRBaseType.Sampler:
                 return false;
             default:
                 return true;
@@ -8122,7 +8124,7 @@ var Compiler = /** @class */ (function () {
                     check_argument_storage_qualifier = false;
                 }
             }
-            if (type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT || this.variable_storage_is_aliased(var_))
+            if (type.storage === StorageClass.PhysicalStorageBufferEXT || this.variable_storage_is_aliased(var_))
                 this.flush_all_aliased_variables();
             else if (var_)
                 this.flush_dependees(var_);
@@ -8145,11 +8147,11 @@ var Compiler = /** @class */ (function () {
     };
     Compiler.prototype.is_continue = function (next) {
         this.ir.block_meta[next] = this.ir.block_meta[next] || 0;
-        return (this.ir.block_meta[next] & BlockMetaFlagBits.BLOCK_META_CONTINUE_BIT) !== 0;
+        return (this.ir.block_meta[next] & BlockMetaFlagBits.CONTINUE_BIT) !== 0;
     };
     Compiler.prototype.is_single_block_loop = function (next) {
         var block = this.get(SPIRBlock, next);
-        return block.merge === SPIRBlockMerge.MergeLoop && block.continue_block === (next);
+        return block.merge === SPIRBlockMerge.Loop && block.continue_block === (next);
     };
     Compiler.prototype.traverse_all_reachable_opcodes = function (param0, handler) {
         if (param0 instanceof SPIRFunction) {
@@ -8172,7 +8174,7 @@ var Compiler = /** @class */ (function () {
             var op = (i.op);
             if (!handler.handle(op, ops, i.length))
                 return false;
-            if (op === Op.OpFunctionCall) {
+            if (op === Op.FunctionCall) {
                 var func = this.get(SPIRFunction, ops[2]);
                 if (handler.follow_function_call(func)) {
                     if (!handler.begin_function_scope(ops, i.length))
@@ -8271,10 +8273,10 @@ var Compiler = /** @class */ (function () {
             // Opaque argument types are always in
             var potential_preserve = void 0;
             switch (type.basetype) {
-                case SPIRTypeBaseType.Sampler:
-                case SPIRTypeBaseType.Image:
-                case SPIRTypeBaseType.SampledImage:
-                case SPIRTypeBaseType.AtomicCounter:
+                case SPIRBaseType.Sampler:
+                case SPIRBaseType.Image:
+                case SPIRBaseType.SampledImage:
+                case SPIRBaseType.AtomicCounter:
                     potential_preserve = false;
                     break;
                 default:
@@ -8314,7 +8316,7 @@ var Compiler = /** @class */ (function () {
         // physical pointers to POD types which we never used, and thus never added to the list.
         // We'll need to add those pointer types to the set of types we declare.
         ir.for_each_typed_id(SPIRType, function (_, type) {
-            if (_this.has_decoration(type.self, Decoration.DecorationBlock) || _this.has_decoration(type.self, Decoration.DecorationBufferBlock))
+            if (_this.has_decoration(type.self, Decoration.Block) || _this.has_decoration(type.self, Decoration.BufferBlock))
                 handler.analyze_non_block_types_from_block(type);
         });
         handler.non_block_types.forEach(function (type) {
@@ -8373,7 +8375,7 @@ var Compiler = /** @class */ (function () {
                     // so we will have to lift the dominator up to the relevant loop header instead.
                     builder.add_block(maplike_get(0, ir.continue_block_to_loop_header, block));
                     // Arrays or structs cannot be loop variables.
-                    if (type.vecsize === 1 && type.columns === 1 && type.basetype !== SPIRTypeBaseType.Struct && type.array.length === 0) {
+                    if (type.vecsize === 1 && type.columns === 1 && type.basetype !== SPIRBaseType.Struct && type.array.length === 0) {
                         // The variable is used in multiple continue blocks, this is not a loop
                         // candidate, signal that by setting block to -1u.
                         var potential = maplike_get(0, potential_loop_variables, var_first);
@@ -8441,7 +8443,7 @@ var Compiler = /** @class */ (function () {
                     // Any temporary we access in the continue block must be declared before the loop.
                     // This is moot for complex loops however.
                     var loop_header_block = _this.get(SPIRBlock, maplike_get(0, ir.continue_block_to_loop_header, block));
-                    console.assert(loop_header_block.merge === SPIRBlockMerge.MergeLoop);
+                    console.assert(loop_header_block.merge === SPIRBlockMerge.Loop);
                     builder.add_block(loop_header_block.self);
                     used_in_header_hoisted_continue_block = true;
                 }
@@ -8471,7 +8473,7 @@ var Compiler = /** @class */ (function () {
                             // Force a complex for loop to deal with this.
                             // TODO: Out-of-order declaring for loops where continue blocks are emitted last might be another option.
                             var loop_header_block = _this.get(SPIRBlock, dominating_block);
-                            console.assert(loop_header_block.merge === SPIRBlockMerge.MergeLoop);
+                            console.assert(loop_header_block.merge === SPIRBlockMerge.Loop);
                             loop_header_block.complex_continue = true;
                         }
                     }
@@ -8578,7 +8580,7 @@ var Compiler = /** @class */ (function () {
             // Only consider function local variables here.
             // If we only have a single function in our CFG, private storage is also fine,
             // since it behaves like a function local variable.
-            var allow_lut = var_.storage === StorageClass.StorageClassFunction || (single_function && var_.storage === StorageClass.StorageClassPrivate);
+            var allow_lut = var_.storage === StorageClass.Function || (single_function && var_.storage === StorageClass.Private);
             if (!allow_lut)
                 return;
             // We cannot be a phi variable.
@@ -8590,7 +8592,7 @@ var Compiler = /** @class */ (function () {
             // If the variable has an initializer, make sure it is a constant expression.
             var static_constant_expression = 0;
             if (var_.initializer) {
-                if (ir.ids[var_.initializer].get_type() !== Types.TypeConstant)
+                if (ir.ids[var_.initializer].get_type() !== Types.Constant)
                     return;
                 static_constant_expression = var_.initializer;
                 // There can be no stores to this variable, we have now proved we have a LUT.
@@ -8625,7 +8627,7 @@ var Compiler = /** @class */ (function () {
                 if (static_expression_handler.write_count !== 1 || static_expression_handler.static_expression === 0)
                     return;
                 // Is it a constant expression?
-                if (ir.ids[static_expression_handler.static_expression].get_type() !== Types.TypeConstant)
+                if (ir.ids[static_expression_handler.static_expression].get_type() !== Types.Constant)
                     return;
                 // We found a LUT!
                 static_constant_expression = static_expression_handler.static_expression;
@@ -8641,27 +8643,27 @@ var Compiler = /** @class */ (function () {
             var op = _a[_i];
             var ops = this.stream(op);
             switch (op.op) {
-                case Op.OpStore:
-                case Op.OpCopyMemory:
+                case Op.Store:
+                case Op.CopyMemory:
                     if (ops[0] === var_)
                         return false;
                     break;
-                case Op.OpAccessChain:
-                case Op.OpInBoundsAccessChain:
-                case Op.OpPtrAccessChain:
+                case Op.AccessChain:
+                case Op.InBoundsAccessChain:
+                case Op.PtrAccessChain:
                     // Access chains are generally used to partially read and write. It's too hard to analyze
                     // if all constituents are written fully before continuing, so just assume it's preserved.
                     // This is the same as the parameter preservation analysis.
                     if (ops[2] === var_)
                         return true;
                     break;
-                case Op.OpSelect:
+                case Op.Select:
                     // Variable pointers.
                     // We might read before writing.
                     if (ops[3] === var_ || ops[4] === var_)
                         return true;
                     break;
-                case Op.OpPhi: {
+                case Op.Phi: {
                     // Variable pointers.
                     // We might read before writing.
                     if (op.length < 2)
@@ -8672,12 +8674,12 @@ var Compiler = /** @class */ (function () {
                             return true;
                     break;
                 }
-                case Op.OpCopyObject:
-                case Op.OpLoad:
+                case Op.CopyObject:
+                case Op.Load:
                     if (ops[2] === var_)
                         return true;
                     break;
-                case Op.OpFunctionCall: {
+                case Op.FunctionCall: {
                     if (op.length < 3)
                         break;
                     // May read before writing.
@@ -8694,11 +8696,11 @@ var Compiler = /** @class */ (function () {
         return true;
     };
     Compiler.prototype.analyze_interlocked_resource_usage = function () {
-        if (this.get_execution_model() === ExecutionModel.ExecutionModelFragment &&
-            (this.get_entry_point().flags.get(ExecutionMode.ExecutionModePixelInterlockOrderedEXT) ||
-                this.get_entry_point().flags.get(ExecutionMode.ExecutionModePixelInterlockUnorderedEXT) ||
-                this.get_entry_point().flags.get(ExecutionMode.ExecutionModeSampleInterlockOrderedEXT) ||
-                this.get_entry_point().flags.get(ExecutionMode.ExecutionModeSampleInterlockUnorderedEXT))) {
+        if (this.get_execution_model() === ExecutionModel.Fragment &&
+            (this.get_entry_point().flags.get(ExecutionMode.PixelInterlockOrderedEXT) ||
+                this.get_entry_point().flags.get(ExecutionMode.PixelInterlockUnorderedEXT) ||
+                this.get_entry_point().flags.get(ExecutionMode.SampleInterlockOrderedEXT) ||
+                this.get_entry_point().flags.get(ExecutionMode.SampleInterlockUnorderedEXT))) {
             var ir = this.ir;
             var prepass_handler = new InterlockedResourceAccessPrepassHandler(this, ir.default_entry_point);
             this.traverse_all_reachable_opcodes(this.get(SPIRFunction, ir.default_entry_point), prepass_handler);
@@ -8717,27 +8719,27 @@ var Compiler = /** @class */ (function () {
         // Most instructions follow the pattern of <result-type> <result-id> <arguments>.
         // There are some exceptions.
         switch (op) {
-            case Op.OpStore:
-            case Op.OpCopyMemory:
-            case Op.OpCopyMemorySized:
-            case Op.OpImageWrite:
-            case Op.OpAtomicStore:
-            case Op.OpAtomicFlagClear:
-            case Op.OpEmitStreamVertex:
-            case Op.OpEndStreamPrimitive:
-            case Op.OpControlBarrier:
-            case Op.OpMemoryBarrier:
-            case Op.OpGroupWaitEvents:
-            case Op.OpRetainEvent:
-            case Op.OpReleaseEvent:
-            case Op.OpSetUserEventStatus:
-            case Op.OpCaptureEventProfilingInfo:
-            case Op.OpCommitReadPipe:
-            case Op.OpCommitWritePipe:
-            case Op.OpGroupCommitReadPipe:
-            case Op.OpGroupCommitWritePipe:
-            case Op.OpLine:
-            case Op.OpNoLine:
+            case Op.Store:
+            case Op.CopyMemory:
+            case Op.CopyMemorySized:
+            case Op.ImageWrite:
+            case Op.AtomicStore:
+            case Op.AtomicFlagClear:
+            case Op.EmitStreamVertex:
+            case Op.EndStreamPrimitive:
+            case Op.ControlBarrier:
+            case Op.MemoryBarrier:
+            case Op.GroupWaitEvents:
+            case Op.RetainEvent:
+            case Op.ReleaseEvent:
+            case Op.SetUserEventStatus:
+            case Op.CaptureEventProfilingInfo:
+            case Op.CommitReadPipe:
+            case Op.CommitWritePipe:
+            case Op.GroupCommitReadPipe:
+            case Op.GroupCommitWritePipe:
+            case Op.Line:
+            case Op.NoLine:
                 return null;
             default:
                 if (length > 1 && this.maybe_get(SPIRType, args[0]) !== null) {
@@ -8770,26 +8772,26 @@ var Compiler = /** @class */ (function () {
     Compiler.prototype.is_desktop_only_format = function (format) {
         switch (format) {
             // Desktop-only formats
-            case ImageFormat.ImageFormatR11fG11fB10f:
-            case ImageFormat.ImageFormatR16f:
-            case ImageFormat.ImageFormatRgb10A2:
-            case ImageFormat.ImageFormatR8:
-            case ImageFormat.ImageFormatRg8:
-            case ImageFormat.ImageFormatR16:
-            case ImageFormat.ImageFormatRg16:
-            case ImageFormat.ImageFormatRgba16:
-            case ImageFormat.ImageFormatR16Snorm:
-            case ImageFormat.ImageFormatRg16Snorm:
-            case ImageFormat.ImageFormatRgba16Snorm:
-            case ImageFormat.ImageFormatR8Snorm:
-            case ImageFormat.ImageFormatRg8Snorm:
-            case ImageFormat.ImageFormatR8ui:
-            case ImageFormat.ImageFormatRg8ui:
-            case ImageFormat.ImageFormatR16ui:
-            case ImageFormat.ImageFormatRgb10a2ui:
-            case ImageFormat.ImageFormatR8i:
-            case ImageFormat.ImageFormatRg8i:
-            case ImageFormat.ImageFormatR16i:
+            case ImageFormat.R11fG11fB10f:
+            case ImageFormat.R16f:
+            case ImageFormat.Rgb10A2:
+            case ImageFormat.R8:
+            case ImageFormat.Rg8:
+            case ImageFormat.R16:
+            case ImageFormat.Rg16:
+            case ImageFormat.Rgba16:
+            case ImageFormat.R16Snorm:
+            case ImageFormat.Rg16Snorm:
+            case ImageFormat.Rgba16Snorm:
+            case ImageFormat.R8Snorm:
+            case ImageFormat.Rg8Snorm:
+            case ImageFormat.R8ui:
+            case ImageFormat.Rg8ui:
+            case ImageFormat.R16ui:
+            case ImageFormat.Rgb10a2ui:
+            case ImageFormat.R8i:
+            case ImageFormat.Rg8i:
+            case ImageFormat.R16i:
                 return true;
         }
         return false;
@@ -8867,11 +8869,11 @@ var Compiler = /** @class */ (function () {
         return type.pointer_depth === this.get(SPIRType, type.parent_type).pointer_depth;
     };
     Compiler.prototype.type_is_opaque_value = function (type) {
-        return !type.pointer && (type.basetype === SPIRTypeBaseType.SampledImage || type.basetype === SPIRTypeBaseType.Image ||
-            type.basetype === SPIRTypeBaseType.Sampler);
+        return !type.pointer && (type.basetype === SPIRBaseType.SampledImage || type.basetype === SPIRBaseType.Image ||
+            type.basetype === SPIRBaseType.Sampler);
     };
     Compiler.prototype.is_depth_image = function (type, id) {
-        return (type.image.depth && type.image.format === ImageFormat.ImageFormatUnknown) || this.comparison_ids.has(id);
+        return (type.image.depth && type.image.format === ImageFormat.Unknown) || this.comparison_ids.has(id);
     };
     Compiler.prototype.reflection_ssbo_instance_name_is_significant = function () {
         var _this = this;
@@ -8887,10 +8889,10 @@ var Compiler = /** @class */ (function () {
         // If we don't have any OpSource information, we need to perform some shaky heuristics.
         ir.for_each_typed_id(SPIRVariable, function (_, var_) {
             var type = _this.get(SPIRType, var_.basetype);
-            if (!type.pointer || var_.storage === StorageClass.StorageClassFunction)
+            if (!type.pointer || var_.storage === StorageClass.Function)
                 return;
-            var ssbo = var_.storage === StorageClass.StorageClassStorageBuffer ||
-                (var_.storage === StorageClass.StorageClassUniform && _this.has_decoration(type.self, Decoration.DecorationBufferBlock));
+            var ssbo = var_.storage === StorageClass.StorageBuffer ||
+                (var_.storage === StorageClass.Uniform && _this.has_decoration(type.self, Decoration.BufferBlock));
             if (ssbo) {
                 if (ssbo_type_ids.has(type.self))
                     aliased_ssbo_types = true;
@@ -8912,7 +8914,7 @@ var Compiler = /** @class */ (function () {
         if (type_meta) {
             // Decoration must be set in valid SPIR-V, otherwise throw.
             var dec = type_meta.members[index];
-            if (dec.decoration_flags.get(Decoration.DecorationOffset))
+            if (dec.decoration_flags.get(Decoration.Offset))
                 return dec.offset;
             else
                 throw new Error("Struct member does not have Offset set.");
@@ -8926,7 +8928,7 @@ var Compiler = /** @class */ (function () {
             // Decoration must be set in valid SPIR-V, otherwise throw.
             // ArrayStride is part of the array type not OpMemberDecorate.
             var dec = type_meta.decoration;
-            if (dec.decoration_flags.get(Decoration.DecorationArrayStride))
+            if (dec.decoration_flags.get(Decoration.ArrayStride))
                 return dec.array_stride;
             else
                 throw new Error("Struct member does not have ArrayStride set.");
@@ -8940,7 +8942,7 @@ var Compiler = /** @class */ (function () {
             // Decoration must be set in valid SPIR-V, otherwise throw.
             // MatrixStride is part of OpMemberDecorate.
             var dec = type_meta.members[index];
-            if (dec.decoration_flags.get(Decoration.DecorationMatrixStride))
+            if (dec.decoration_flags.get(Decoration.MatrixStride))
                 return dec.matrix_stride;
             else
                 throw new Error("Struct member does not have MatrixStride set.");
@@ -8967,14 +8969,14 @@ var Compiler = /** @class */ (function () {
         }
     };
     Compiler.prototype.type_is_block_like = function (type) {
-        if (type.basetype !== SPIRTypeBaseType.Struct)
+        if (type.basetype !== SPIRBaseType.Struct)
             return false;
-        if (this.has_decoration(type.self, Decoration.DecorationBlock) || this.has_decoration(type.self, Decoration.DecorationBufferBlock)) {
+        if (this.has_decoration(type.self, Decoration.Block) || this.has_decoration(type.self, Decoration.BufferBlock)) {
             return true;
         }
         // Block-like types may have Offset decorations.
         for (var i = 0; i < type.member_types.length; i++)
-            if (this.has_member_decoration(type.self, i, Decoration.DecorationOffset))
+            if (this.has_member_decoration(type.self, i, Decoration.Offset))
                 return true;
         return false;
     };
@@ -8990,8 +8992,8 @@ var Compiler = /** @class */ (function () {
     Compiler.prototype.evaluate_spec_constant_u32 = function (spec) {
         var _this = this;
         var result_type = this.get(SPIRType, spec.basetype);
-        if (result_type.basetype !== SPIRTypeBaseType.UInt && result_type.basetype !== SPIRTypeBaseType.Int &&
-            result_type.basetype !== SPIRTypeBaseType.Boolean) {
+        if (result_type.basetype !== SPIRBaseType.UInt && result_type.basetype !== SPIRBaseType.Int &&
+            result_type.basetype !== SPIRBaseType.Boolean) {
             throw new Error("Only 32-bit integers and booleans are currently supported when evaluating specialization constants.");
         }
         if (!this.is_scalar(result_type))
@@ -8999,7 +9001,7 @@ var Compiler = /** @class */ (function () {
         var value = 0;
         var eval_u32 = function (id) {
             var type = _this.expression_type(id);
-            if (type.basetype !== SPIRTypeBaseType.UInt && type.basetype !== SPIRTypeBaseType.Int && type.basetype !== SPIRTypeBaseType.Boolean) {
+            if (type.basetype !== SPIRBaseType.UInt && type.basetype !== SPIRBaseType.Int && type.basetype !== SPIRBaseType.Boolean) {
                 throw new Error("Only 32-bit integers and booleans are currently supported when evaluating specialization constants.");
             }
             if (!_this.is_scalar(type))
@@ -9012,76 +9014,76 @@ var Compiler = /** @class */ (function () {
         };
         // Support the basic opcodes which are typically used when computing array sizes.
         switch (spec.opcode) {
-            case Op.OpIAdd:
+            case Op.IAdd:
                 value = eval_u32(spec.arguments[0]) + eval_u32(spec.arguments[1]);
                 break;
-            case Op.OpISub:
+            case Op.ISub:
                 value = eval_u32(spec.arguments[0]) - eval_u32(spec.arguments[1]);
                 break;
-            case Op.OpIMul:
+            case Op.IMul:
                 value = eval_u32(spec.arguments[0]) * eval_u32(spec.arguments[1]);
                 break;
-            case Op.OpBitwiseAnd:
+            case Op.BitwiseAnd:
                 value = eval_u32(spec.arguments[0]) & eval_u32(spec.arguments[1]);
                 break;
-            case Op.OpBitwiseOr:
+            case Op.BitwiseOr:
                 value = eval_u32(spec.arguments[0]) | eval_u32(spec.arguments[1]);
                 break;
-            case Op.OpBitwiseXor:
+            case Op.BitwiseXor:
                 value = eval_u32(spec.arguments[0]) ^ eval_u32(spec.arguments[1]);
                 break;
-            case Op.OpLogicalAnd:
+            case Op.LogicalAnd:
                 value = eval_u32(spec.arguments[0]) & eval_u32(spec.arguments[1]);
                 break;
-            case Op.OpLogicalOr:
+            case Op.LogicalOr:
                 value = eval_u32(spec.arguments[0]) | eval_u32(spec.arguments[1]);
                 break;
-            case Op.OpShiftLeftLogical:
+            case Op.ShiftLeftLogical:
                 value = eval_u32(spec.arguments[0]) << eval_u32(spec.arguments[1]);
                 break;
-            case Op.OpShiftRightLogical:
-            case Op.OpShiftRightArithmetic:
+            case Op.ShiftRightLogical:
+            case Op.ShiftRightArithmetic:
                 value = eval_u32(spec.arguments[0]) >> eval_u32(spec.arguments[1]);
                 break;
-            case Op.OpLogicalEqual:
-            case Op.OpIEqual:
+            case Op.LogicalEqual:
+            case Op.IEqual:
                 value = eval_u32(spec.arguments[0]) === eval_u32(spec.arguments[1]) ? 1 : 0;
                 break;
-            case Op.OpLogicalNotEqual:
-            case Op.OpINotEqual:
+            case Op.LogicalNotEqual:
+            case Op.INotEqual:
                 value = eval_u32(spec.arguments[0]) !== eval_u32(spec.arguments[1]) ? 1 : 0;
                 break;
-            case Op.OpULessThan:
-            case Op.OpSLessThan:
+            case Op.ULessThan:
+            case Op.SLessThan:
                 value = eval_u32(spec.arguments[0]) < eval_u32(spec.arguments[1]) ? 1 : 0;
                 break;
-            case Op.OpULessThanEqual:
-            case Op.OpSLessThanEqual:
+            case Op.ULessThanEqual:
+            case Op.SLessThanEqual:
                 value = eval_u32(spec.arguments[0]) <= eval_u32(spec.arguments[1]) ? 1 : 0;
                 break;
-            case Op.OpUGreaterThan:
-            case Op.OpSGreaterThan:
+            case Op.UGreaterThan:
+            case Op.SGreaterThan:
                 value = eval_u32(spec.arguments[0]) > eval_u32(spec.arguments[1]) ? 1 : 0;
                 break;
-            case Op.OpUGreaterThanEqual:
-            case Op.OpSGreaterThanEqual:
+            case Op.UGreaterThanEqual:
+            case Op.SGreaterThanEqual:
                 value = eval_u32(spec.arguments[0]) >= eval_u32(spec.arguments[1]) ? 1 : 0;
                 break;
-            case Op.OpLogicalNot:
+            case Op.LogicalNot:
                 value = eval_u32(spec.arguments[0]) ? 0 : 1;
                 break;
-            case Op.OpNot:
+            case Op.Not:
                 value = ~eval_u32(spec.arguments[0]);
                 break;
-            case Op.OpSNegate:
+            case Op.SNegate:
                 value = -eval_u32(spec.arguments[0]);
                 break;
-            case Op.OpSelect:
+            case Op.Select:
                 value = eval_u32(spec.arguments[0]) ? eval_u32(spec.arguments[1]) : eval_u32(spec.arguments[2]);
                 break;
-            case Op.OpUMod:
-            case Op.OpSMod:
-            case Op.OpSRem: {
+            case Op.UMod:
+            case Op.SMod:
+            case Op.SRem: {
                 var a = eval_u32(spec.arguments[0]);
                 var b = eval_u32(spec.arguments[1]);
                 if (b === 0)
@@ -9089,8 +9091,8 @@ var Compiler = /** @class */ (function () {
                 value = a % b;
                 break;
             }
-            case Op.OpUDiv:
-            case Op.OpSDiv: {
+            case Op.UDiv:
+            case Op.SDiv: {
                 var a = eval_u32(spec.arguments[0]);
                 var b = eval_u32(spec.arguments[1]);
                 if (b === 0)
@@ -9112,8 +9114,8 @@ var Compiler = /** @class */ (function () {
     };
     Compiler.prototype.is_vertex_like_shader = function () {
         var model = this.get_execution_model();
-        return model === ExecutionModel.ExecutionModelVertex || model === ExecutionModel.ExecutionModelGeometry ||
-            model === ExecutionModel.ExecutionModelTessellationControl || model === ExecutionModel.ExecutionModelTessellationEvaluation;
+        return model === ExecutionModel.Vertex || model === ExecutionModel.Geometry ||
+            model === ExecutionModel.TessellationControl || model === ExecutionModel.TessellationEvaluation;
     };
     Compiler.prototype.get_case_list = function (block) {
         var ir = this.ir;
@@ -9175,13 +9177,13 @@ function get_default_extended_decoration(decoration) {
 }
 function storage_class_is_interface(storage) {
     switch (storage) {
-        case StorageClass.StorageClassInput:
-        case StorageClass.StorageClassOutput:
-        case StorageClass.StorageClassUniform:
-        case StorageClass.StorageClassUniformConstant:
-        case StorageClass.StorageClassAtomicCounter:
-        case StorageClass.StorageClassPushConstant:
-        case StorageClass.StorageClassStorageBuffer:
+        case StorageClass.Input:
+        case StorageClass.Output:
+        case StorageClass.Uniform:
+        case StorageClass.UniformConstant:
+        case StorageClass.AtomicCounter:
+        case StorageClass.PushConstant:
+        case StorageClass.StorageBuffer:
             return true;
         default:
             return false;
@@ -9189,25 +9191,25 @@ function storage_class_is_interface(storage) {
 }
 
 function type_is_floating_point(type) {
-    return type.basetype === SPIRTypeBaseType.Half || type.basetype === SPIRTypeBaseType.Float || type.basetype === SPIRTypeBaseType.Double;
+    return type.basetype === SPIRBaseType.Half || type.basetype === SPIRBaseType.Float || type.basetype === SPIRBaseType.Double;
 }
 function type_is_integral(type) {
-    return type.basetype === SPIRTypeBaseType.SByte || type.basetype === SPIRTypeBaseType.UByte || type.basetype === SPIRTypeBaseType.Short ||
-        type.basetype === SPIRTypeBaseType.UShort || type.basetype === SPIRTypeBaseType.Int || type.basetype === SPIRTypeBaseType.UInt ||
-        type.basetype === SPIRTypeBaseType.Int64 || type.basetype === SPIRTypeBaseType.UInt64;
+    return type.basetype === SPIRBaseType.SByte || type.basetype === SPIRBaseType.UByte || type.basetype === SPIRBaseType.Short ||
+        type.basetype === SPIRBaseType.UShort || type.basetype === SPIRBaseType.Int || type.basetype === SPIRBaseType.UInt ||
+        type.basetype === SPIRBaseType.Int64 || type.basetype === SPIRBaseType.UInt64;
 }
 // Returns true if an arithmetic operation does not change behavior depending on signedness.
 function opcode_is_sign_invariant(opcode) {
     switch (opcode) {
-        case Op.OpIEqual:
-        case Op.OpINotEqual:
-        case Op.OpISub:
-        case Op.OpIAdd:
-        case Op.OpIMul:
-        case Op.OpShiftLeftLogical:
-        case Op.OpBitwiseOr:
-        case Op.OpBitwiseXor:
-        case Op.OpBitwiseAnd:
+        case Op.IEqual:
+        case Op.INotEqual:
+        case Op.ISub:
+        case Op.IAdd:
+        case Op.IMul:
+        case Op.ShiftLeftLogical:
+        case Op.BitwiseOr:
+        case Op.BitwiseXor:
+        case Op.BitwiseAnd:
             return true;
         default:
             return false;
@@ -9216,13 +9218,13 @@ function opcode_is_sign_invariant(opcode) {
 function to_signed_basetype(width) {
     switch (width) {
         case 8:
-            return SPIRTypeBaseType.SByte;
+            return SPIRBaseType.SByte;
         case 16:
-            return SPIRTypeBaseType.Short;
+            return SPIRBaseType.Short;
         case 32:
-            return SPIRTypeBaseType.Int;
+            return SPIRBaseType.Int;
         case 64:
-            return SPIRTypeBaseType.Int64;
+            return SPIRBaseType.Int64;
         default:
             throw new Error("Invalid bit width.");
     }
@@ -9230,13 +9232,13 @@ function to_signed_basetype(width) {
 function to_unsigned_basetype(width) {
     switch (width) {
         case 8:
-            return SPIRTypeBaseType.UByte;
+            return SPIRBaseType.UByte;
         case 16:
-            return SPIRTypeBaseType.UShort;
+            return SPIRBaseType.UShort;
         case 32:
-            return SPIRTypeBaseType.UInt;
+            return SPIRBaseType.UInt;
         case 64:
-            return SPIRTypeBaseType.UInt64;
+            return SPIRBaseType.UInt64;
         default:
             throw new Error("Invalid bit width.");
     }
@@ -9377,25 +9379,25 @@ var AccessChainMeta = /** @class */ (function () {
 
 var AccessChainFlagBits;
 (function (AccessChainFlagBits) {
-    AccessChainFlagBits[AccessChainFlagBits["ACCESS_CHAIN_INDEX_IS_LITERAL_BIT"] = 1] = "ACCESS_CHAIN_INDEX_IS_LITERAL_BIT";
-    AccessChainFlagBits[AccessChainFlagBits["ACCESS_CHAIN_CHAIN_ONLY_BIT"] = 2] = "ACCESS_CHAIN_CHAIN_ONLY_BIT";
-    AccessChainFlagBits[AccessChainFlagBits["ACCESS_CHAIN_PTR_CHAIN_BIT"] = 4] = "ACCESS_CHAIN_PTR_CHAIN_BIT";
-    AccessChainFlagBits[AccessChainFlagBits["ACCESS_CHAIN_SKIP_REGISTER_EXPRESSION_READ_BIT"] = 8] = "ACCESS_CHAIN_SKIP_REGISTER_EXPRESSION_READ_BIT";
-    AccessChainFlagBits[AccessChainFlagBits["ACCESS_CHAIN_LITERAL_MSB_FORCE_ID"] = 16] = "ACCESS_CHAIN_LITERAL_MSB_FORCE_ID";
-    AccessChainFlagBits[AccessChainFlagBits["ACCESS_CHAIN_FLATTEN_ALL_MEMBERS_BIT"] = 32] = "ACCESS_CHAIN_FLATTEN_ALL_MEMBERS_BIT";
-    AccessChainFlagBits[AccessChainFlagBits["ACCESS_CHAIN_FORCE_COMPOSITE_BIT"] = 64] = "ACCESS_CHAIN_FORCE_COMPOSITE_BIT";
+    AccessChainFlagBits[AccessChainFlagBits["INDEX_IS_LITERAL_BIT"] = 1] = "INDEX_IS_LITERAL_BIT";
+    AccessChainFlagBits[AccessChainFlagBits["CHAIN_ONLY_BIT"] = 2] = "CHAIN_ONLY_BIT";
+    AccessChainFlagBits[AccessChainFlagBits["PTR_CHAIN_BIT"] = 4] = "PTR_CHAIN_BIT";
+    AccessChainFlagBits[AccessChainFlagBits["SKIP_REGISTER_EXPRESSION_READ_BIT"] = 8] = "SKIP_REGISTER_EXPRESSION_READ_BIT";
+    AccessChainFlagBits[AccessChainFlagBits["LITERAL_MSB_FORCE_ID"] = 16] = "LITERAL_MSB_FORCE_ID";
+    AccessChainFlagBits[AccessChainFlagBits["FLATTEN_ALL_MEMBERS_BIT"] = 32] = "FLATTEN_ALL_MEMBERS_BIT";
+    AccessChainFlagBits[AccessChainFlagBits["FORCE_COMPOSITE_BIT"] = 64] = "FORCE_COMPOSITE_BIT";
 })(AccessChainFlagBits || (AccessChainFlagBits = {}));
 
 var BufferPackingStandard;
 (function (BufferPackingStandard) {
-    BufferPackingStandard[BufferPackingStandard["BufferPackingStd140"] = 0] = "BufferPackingStd140";
-    BufferPackingStandard[BufferPackingStandard["BufferPackingStd430"] = 1] = "BufferPackingStd430";
-    BufferPackingStandard[BufferPackingStandard["BufferPackingStd140EnhancedLayout"] = 2] = "BufferPackingStd140EnhancedLayout";
-    BufferPackingStandard[BufferPackingStandard["BufferPackingStd430EnhancedLayout"] = 3] = "BufferPackingStd430EnhancedLayout";
-    BufferPackingStandard[BufferPackingStandard["_BufferPackingHLSLCbuffer"] = 4] = "_BufferPackingHLSLCbuffer";
-    BufferPackingStandard[BufferPackingStandard["_BufferPackingHLSLCbufferPackOffset"] = 5] = "_BufferPackingHLSLCbufferPackOffset";
-    BufferPackingStandard[BufferPackingStandard["BufferPackingScalar"] = 6] = "BufferPackingScalar";
-    BufferPackingStandard[BufferPackingStandard["BufferPackingScalarEnhancedLayout"] = 7] = "BufferPackingScalarEnhancedLayout";
+    BufferPackingStandard[BufferPackingStandard["Std140"] = 0] = "Std140";
+    BufferPackingStandard[BufferPackingStandard["Std430"] = 1] = "Std430";
+    BufferPackingStandard[BufferPackingStandard["Std140EnhancedLayout"] = 2] = "Std140EnhancedLayout";
+    BufferPackingStandard[BufferPackingStandard["Std430EnhancedLayout"] = 3] = "Std430EnhancedLayout";
+    BufferPackingStandard[BufferPackingStandard["_HLSLCbuffer"] = 4] = "_HLSLCbuffer";
+    BufferPackingStandard[BufferPackingStandard["_HLSLCbufferPackOffset"] = 5] = "_HLSLCbufferPackOffset";
+    BufferPackingStandard[BufferPackingStandard["PackingScalar"] = 6] = "PackingScalar";
+    BufferPackingStandard[BufferPackingStandard["PackingScalarEnhancedLayout"] = 7] = "PackingScalarEnhancedLayout";
 })(BufferPackingStandard || (BufferPackingStandard = {}));
 
 var Hasher = /** @class */ (function () {
@@ -9479,32 +9481,32 @@ var TextureFunctionArguments = /** @class */ (function () {
 
 var ImageOperandsMask;
 (function (ImageOperandsMask) {
-    ImageOperandsMask[ImageOperandsMask["ImageOperandsMaskNone"] = 0] = "ImageOperandsMaskNone";
-    ImageOperandsMask[ImageOperandsMask["ImageOperandsBiasMask"] = 1] = "ImageOperandsBiasMask";
-    ImageOperandsMask[ImageOperandsMask["ImageOperandsLodMask"] = 2] = "ImageOperandsLodMask";
-    ImageOperandsMask[ImageOperandsMask["ImageOperandsGradMask"] = 4] = "ImageOperandsGradMask";
-    ImageOperandsMask[ImageOperandsMask["ImageOperandsConstOffsetMask"] = 8] = "ImageOperandsConstOffsetMask";
-    ImageOperandsMask[ImageOperandsMask["ImageOperandsOffsetMask"] = 16] = "ImageOperandsOffsetMask";
-    ImageOperandsMask[ImageOperandsMask["ImageOperandsConstOffsetsMask"] = 32] = "ImageOperandsConstOffsetsMask";
-    ImageOperandsMask[ImageOperandsMask["ImageOperandsSampleMask"] = 64] = "ImageOperandsSampleMask";
-    ImageOperandsMask[ImageOperandsMask["ImageOperandsMinLodMask"] = 128] = "ImageOperandsMinLodMask";
-    ImageOperandsMask[ImageOperandsMask["ImageOperandsMakeTexelAvailableMask"] = 256] = "ImageOperandsMakeTexelAvailableMask";
-    ImageOperandsMask[ImageOperandsMask["ImageOperandsMakeTexelAvailableKHRMask"] = 256] = "ImageOperandsMakeTexelAvailableKHRMask";
-    ImageOperandsMask[ImageOperandsMask["ImageOperandsMakeTexelVisibleMask"] = 512] = "ImageOperandsMakeTexelVisibleMask";
-    ImageOperandsMask[ImageOperandsMask["ImageOperandsMakeTexelVisibleKHRMask"] = 512] = "ImageOperandsMakeTexelVisibleKHRMask";
-    ImageOperandsMask[ImageOperandsMask["ImageOperandsNonPrivateTexelMask"] = 1024] = "ImageOperandsNonPrivateTexelMask";
-    ImageOperandsMask[ImageOperandsMask["ImageOperandsNonPrivateTexelKHRMask"] = 1024] = "ImageOperandsNonPrivateTexelKHRMask";
-    ImageOperandsMask[ImageOperandsMask["ImageOperandsVolatileTexelMask"] = 2048] = "ImageOperandsVolatileTexelMask";
-    ImageOperandsMask[ImageOperandsMask["ImageOperandsVolatileTexelKHRMask"] = 2048] = "ImageOperandsVolatileTexelKHRMask";
-    ImageOperandsMask[ImageOperandsMask["ImageOperandsSignExtendMask"] = 4096] = "ImageOperandsSignExtendMask";
-    ImageOperandsMask[ImageOperandsMask["ImageOperandsZeroExtendMask"] = 8192] = "ImageOperandsZeroExtendMask";
+    ImageOperandsMask[ImageOperandsMask["None"] = 0] = "None";
+    ImageOperandsMask[ImageOperandsMask["Bias"] = 1] = "Bias";
+    ImageOperandsMask[ImageOperandsMask["Lod"] = 2] = "Lod";
+    ImageOperandsMask[ImageOperandsMask["Grad"] = 4] = "Grad";
+    ImageOperandsMask[ImageOperandsMask["ConstOffset"] = 8] = "ConstOffset";
+    ImageOperandsMask[ImageOperandsMask["Offset"] = 16] = "Offset";
+    ImageOperandsMask[ImageOperandsMask["ConstOffsets"] = 32] = "ConstOffsets";
+    ImageOperandsMask[ImageOperandsMask["Sample"] = 64] = "Sample";
+    ImageOperandsMask[ImageOperandsMask["MinLod"] = 128] = "MinLod";
+    ImageOperandsMask[ImageOperandsMask["MakeTexelAvailable"] = 256] = "MakeTexelAvailable";
+    ImageOperandsMask[ImageOperandsMask["MakeTexelAvailableKHR"] = 256] = "MakeTexelAvailableKHR";
+    ImageOperandsMask[ImageOperandsMask["MakeTexelVisible"] = 512] = "MakeTexelVisible";
+    ImageOperandsMask[ImageOperandsMask["MakeTexelVisibleKHR"] = 512] = "MakeTexelVisibleKHR";
+    ImageOperandsMask[ImageOperandsMask["NonPrivateTexel"] = 1024] = "NonPrivateTexel";
+    ImageOperandsMask[ImageOperandsMask["NonPrivateTexelKHR"] = 1024] = "NonPrivateTexelKHR";
+    ImageOperandsMask[ImageOperandsMask["VolatileTexel"] = 2048] = "VolatileTexel";
+    ImageOperandsMask[ImageOperandsMask["VolatileTexelKHR"] = 2048] = "VolatileTexelKHR";
+    ImageOperandsMask[ImageOperandsMask["SignExtend"] = 4096] = "SignExtend";
+    ImageOperandsMask[ImageOperandsMask["ZeroExtend"] = 8192] = "ZeroExtend";
 })(ImageOperandsMask || (ImageOperandsMask = {}));
 
 var ExtraSubExpressionType;
 (function (ExtraSubExpressionType) {
     // Create masks above any legal ID range to allow multiple address spaces into the extra_sub_expressions map.
-    ExtraSubExpressionType[ExtraSubExpressionType["EXTRA_SUB_EXPRESSION_TYPE_STREAM_OFFSET"] = 268435456] = "EXTRA_SUB_EXPRESSION_TYPE_STREAM_OFFSET";
-    ExtraSubExpressionType[ExtraSubExpressionType["EXTRA_SUB_EXPRESSION_TYPE_AUX"] = 536870912] = "EXTRA_SUB_EXPRESSION_TYPE_AUX";
+    ExtraSubExpressionType[ExtraSubExpressionType["STREAM_OFFSET"] = 268435456] = "STREAM_OFFSET";
+    ExtraSubExpressionType[ExtraSubExpressionType["TYPE_AUX"] = 536870912] = "TYPE_AUX";
 })(ExtraSubExpressionType || (ExtraSubExpressionType = {}));
 
 var SpecializationConstant = /** @class */ (function () {
@@ -9520,36 +9522,36 @@ var swizzle = [
     [""]
 ];
 var ops = [];
-ops[Op.OpSNegate] = "-";
-ops[Op.OpNot] = "~";
-ops[Op.OpIAdd] = "+";
-ops[Op.OpISub] = "-";
-ops[Op.OpIMul] = "*";
-ops[Op.OpSDiv] = "/";
-ops[Op.OpUDiv] = "/";
-ops[Op.OpUMod] = "%";
-ops[Op.OpSMod] = "%";
-ops[Op.OpShiftRightLogical] = ">>";
-ops[Op.OpShiftRightArithmetic] = ">>";
-ops[Op.OpShiftLeftLogical] = ">>";
-ops[Op.OpBitwiseOr] = "|";
-ops[Op.OpBitwiseXor] = "^";
-ops[Op.OpBitwiseAnd] = "&";
-ops[Op.OpLogicalOr] = "||";
-ops[Op.OpLogicalAnd] = "&&";
-ops[Op.OpLogicalNot] = "!";
-ops[Op.OpLogicalEqual] = "==";
-ops[Op.OpLogicalNotEqual] = "!=";
-ops[Op.OpIEqual] = "==";
-ops[Op.OpINotEqual] = "!=";
-ops[Op.OpULessThan] = "<";
-ops[Op.OpSLessThan] = "<";
-ops[Op.OpULessThanEqual] = "<=";
-ops[Op.OpSLessThanEqual] = "<=";
-ops[Op.OpUGreaterThan] = ">";
-ops[Op.OpSGreaterThan] = ">";
-ops[Op.OpSGreaterThanEqual] = ">=";
-ops[Op.OpSGreaterThanEqual] = ">=";
+ops[Op.SNegate] = "-";
+ops[Op.Not] = "~";
+ops[Op.IAdd] = "+";
+ops[Op.ISub] = "-";
+ops[Op.IMul] = "*";
+ops[Op.SDiv] = "/";
+ops[Op.UDiv] = "/";
+ops[Op.UMod] = "%";
+ops[Op.SMod] = "%";
+ops[Op.ShiftRightLogical] = ">>";
+ops[Op.ShiftRightArithmetic] = ">>";
+ops[Op.ShiftLeftLogical] = ">>";
+ops[Op.BitwiseOr] = "|";
+ops[Op.BitwiseXor] = "^";
+ops[Op.BitwiseAnd] = "&";
+ops[Op.LogicalOr] = "||";
+ops[Op.LogicalAnd] = "&&";
+ops[Op.LogicalNot] = "!";
+ops[Op.LogicalEqual] = "==";
+ops[Op.LogicalNotEqual] = "!=";
+ops[Op.IEqual] = "==";
+ops[Op.INotEqual] = "!=";
+ops[Op.ULessThan] = "<";
+ops[Op.SLessThan] = "<";
+ops[Op.ULessThanEqual] = "<=";
+ops[Op.SLessThanEqual] = "<=";
+ops[Op.UGreaterThan] = ">";
+ops[Op.SGreaterThan] = ">";
+ops[Op.SGreaterThanEqual] = ">=";
+ops[Op.SGreaterThanEqual] = ">=";
 var expectedVecComps = ["x", "y", "z", "w"];
 var keywords = new Set([
     "abs", "acos", "acosh", "all", "any", "asin", "asinh", "atan", "atanh",
@@ -9605,8 +9607,8 @@ function swap(arr, a, b) {
     arr[b] = t;
 }
 function is_block_builtin(builtin) {
-    return builtin === BuiltIn.BuiltInPosition || builtin === BuiltIn.BuiltInPointSize || builtin === BuiltIn.BuiltInClipDistance ||
-        builtin === BuiltIn.BuiltInCullDistance;
+    return builtin === BuiltIn.Position || builtin === BuiltIn.PointSize || builtin === BuiltIn.ClipDistance ||
+        builtin === BuiltIn.CullDistance;
 }
 var CompilerGLSL = /** @class */ (function (_super) {
     __extends(CompilerGLSL, _super);
@@ -9692,9 +9694,9 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var flags = maplike_get(Meta, this.ir.meta, type.self).decoration.decoration_flags;
         if (type.array.length > 0)
             throw new Error(name + " is an array of UBOs.");
-        if (type.basetype !== SPIRTypeBaseType.Struct)
+        if (type.basetype !== SPIRBaseType.Struct)
             throw new Error(name + " is not a struct.");
-        if (!flags.get(Decoration.DecorationBlock))
+        if (!flags.get(Decoration.Block))
             throw new Error(name + " is not a block.");
         if (type.member_types.length === 0)
             throw new Error(name + " is an empty struct.");
@@ -9819,7 +9821,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 var i = _c[_b];
                 var ops_1 = this.stream(i);
                 var op = (i.op);
-                if (op === Op.OpFunctionCall) {
+                if (op === Op.FunctionCall) {
                     // Recursively emit functions which are called.
                     var id = ops_1[2];
                     this.emit_function(this.get(SPIRFunction, id), maplike_get(Meta, ir.meta, ops_1[1]).decoration.decoration_flags);
@@ -9845,7 +9847,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             var v = _g[_f];
             var var_ = this.get(SPIRVariable, v);
             var_.deferred_declaration = false;
-            if (this.variable_decl_is_remapped_storage(var_, StorageClass.StorageClassWorkgroup)) {
+            if (this.variable_decl_is_remapped_storage(var_, StorageClass.Workgroup)) {
                 // Special variable type which cannot have initializer,
                 // need to be declared as standalone variables.
                 // Comes from MSL which can push global variables as local variables in main function.
@@ -9853,7 +9855,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 this.statement(this.variable_decl(var_), ";");
                 var_.deferred_declaration = false;
             }
-            else if (var_.storage === StorageClass.StorageClassPrivate) {
+            else if (var_.storage === StorageClass.Private) {
                 // These variables will not have had their CFG usage analyzed, so move it to the entry block.
                 // Comes from MSL which can push global variables as local variables in main function.
                 // We could just declare them right now, but we would miss out on an important initialization case which is
@@ -9872,7 +9874,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     var_.deferred_declaration = true;
                 }
             }
-            else if (var_.storage === StorageClass.StorageClassFunction && var_.remapped_variable && var_.static_expression) {
+            else if (var_.storage === StorageClass.Function && var_.remapped_variable && var_.static_expression) {
                 // No need to declare this variable, it has a static expression.
                 var_.deferred_declaration = false;
             }
@@ -9944,7 +9946,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var _a = this, backend = _a.backend, options = _a.options, ir = _a.ir;
         switch (opcode) {
             // Dealing with memory
-            case Op.OpLoad: {
+            case Op.Load: {
                 var result_type = ops[0];
                 var id = ops[1];
                 var ptr = ops[2];
@@ -9972,8 +9974,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 // don't register the read to access chain here, defer that to when we actually use the expression,
                 // using the add_implied_read_expression mechanism.
                 var expr = void 0;
-                var is_packed = this.has_extended_decoration(ptr, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked);
-                var is_remapped = this.has_extended_decoration(ptr, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID);
+                var is_packed = this.has_extended_decoration(ptr, ExtendedDecorations.PhysicalTypePacked);
+                var is_remapped = this.has_extended_decoration(ptr, ExtendedDecorations.PhysicalTypeID);
                 if (forward || (!is_packed && !is_remapped)) {
                     // For the simple case, we do not need to deal with repacking.
                     expr = this.to_dereferenced_expression(ptr, false);
@@ -9997,7 +9999,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 // Similar workarounds are required for input arrays in tessellation.
                 // Also, loading from gl_SampleMask array needs special unroll.
                 expr = this.unroll_array_from_complex_load(id, ptr, expr);
-                if (!this.type_is_opaque_value(type) && this.has_decoration(ptr, Decoration.DecorationNonUniform)) {
+                if (!this.type_is_opaque_value(type) && this.has_decoration(ptr, Decoration.NonUniform)) {
                     // If we're loading something non-opaque, we need to handle non-uniform descriptor access.
                     expr = this.convert_non_uniform_expression(expr, ptr);
                 }
@@ -10009,14 +10011,14 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 // By default, suppress usage tracking since using same expression multiple times does not imply any extra work.
                 // However, if we try to load a complex, composite object from a flattened buffer,
                 // we should avoid emitting the same code over and over and lower the result to a temporary.
-                var usage_tracking = flattened && (type.basetype === SPIRTypeBaseType.Struct || (type.columns > 1));
+                var usage_tracking = flattened && (type.basetype === SPIRBaseType.Struct || (type.columns > 1));
                 var e = void 0;
                 if (!forward && this.expression_is_non_value_type_array(ptr)) {
                     // Complicated load case where we need to make a copy of ptr, but we cannot, because
                     // it is an array, and our backend does not support arrays as value types.
                     // Emit the temporary, and copy it explicitly.
                     e = this.emit_uninitialized_temporary_expression(result_type, id);
-                    this.emit_array_copy(this.to_expression(id), id, ptr, StorageClass.StorageClassFunction, this.get_expression_effective_storage_class(ptr));
+                    this.emit_array_copy(this.to_expression(id), id, ptr, StorageClass.Function, this.get_expression_effective_storage_class(ptr));
                 }
                 else
                     e = this.emit_op(result_type, id, expr, forward, !usage_tracking);
@@ -10024,32 +10026,32 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 this.register_read(id, ptr, forward);
                 if (forward) {
                     // Pass through whether the result is of a packed type and the physical type ID.
-                    if (this.has_extended_decoration(ptr, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked))
-                        this.set_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked);
-                    if (this.has_extended_decoration(ptr, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID)) {
-                        this.set_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID, this.get_extended_decoration(ptr, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID));
+                    if (this.has_extended_decoration(ptr, ExtendedDecorations.PhysicalTypePacked))
+                        this.set_extended_decoration(id, ExtendedDecorations.PhysicalTypePacked);
+                    if (this.has_extended_decoration(ptr, ExtendedDecorations.PhysicalTypeID)) {
+                        this.set_extended_decoration(id, ExtendedDecorations.PhysicalTypeID, this.get_extended_decoration(ptr, ExtendedDecorations.PhysicalTypeID));
                     }
                 }
                 else {
                     // This might have been set on an earlier compilation iteration, force it to be unset.
-                    this.unset_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked);
-                    this.unset_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID);
+                    this.unset_extended_decoration(id, ExtendedDecorations.PhysicalTypePacked);
+                    this.unset_extended_decoration(id, ExtendedDecorations.PhysicalTypeID);
                 }
                 this.inherit_expression_dependencies(id, ptr);
                 if (forward)
                     this.add_implied_read_expression(e, ptr);
                 break;
             }
-            case Op.OpInBoundsAccessChain:
-            case Op.OpAccessChain:
-            case Op.OpPtrAccessChain: {
+            case Op.InBoundsAccessChain:
+            case Op.AccessChain:
+            case Op.PtrAccessChain: {
                 var var_ = this.maybe_get(SPIRVariable, ops[2]);
                 if (var_)
                     this.flush_variable_declaration(var_.self);
                 // If the base is immutable, the access chain pointer must also be.
                 // If an expression is mutable and forwardable, we speculate that it is immutable.
                 var meta = new AccessChainMeta();
-                var ptr_chain = opcode === Op.OpPtrAccessChain;
+                var ptr_chain = opcode === Op.PtrAccessChain;
                 var e = this.access_chain(ops[2], ops, 3, length - 3, this.get(SPIRType, ops[0]), meta, ptr_chain);
                 var expr = this.set(SPIRExpression, ops[1], e, ops[0], this.should_forward(ops[2]));
                 var backing_variable = this.maybe_get_backing_variable(ops[2]);
@@ -10058,11 +10060,11 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 expr.access_chain = true;
                 // Mark the result as being packed. Some platforms handled packed vectors differently than non-packed.
                 if (meta.storage_is_packed)
-                    this.set_extended_decoration(ops[1], ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked);
+                    this.set_extended_decoration(ops[1], ExtendedDecorations.PhysicalTypePacked);
                 if (meta.storage_physical_type !== 0)
-                    this.set_extended_decoration(ops[1], ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID, meta.storage_physical_type);
+                    this.set_extended_decoration(ops[1], ExtendedDecorations.PhysicalTypeID, meta.storage_physical_type);
                 if (meta.storage_is_invariant)
-                    this.set_decoration(ops[1], Decoration.DecorationInvariant);
+                    this.set_decoration(ops[1], Decoration.Invariant);
                 if (meta.flattened_struct)
                     this.flattened_structs[ops[1]] = true;
                 // If we have some expression dependencies in our access chain, this access chain is technically a forwarded
@@ -10081,7 +10083,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.forwarded_temporaries.delete(ops[1]);
                 break;
             }
-            case Op.OpStore: {
+            case Op.Store: {
                 var var_ = this.maybe_get(SPIRVariable, ops[0]);
                 if (var_ && var_.statically_assigned)
                     var_.static_expression = ops[1];
@@ -10101,17 +10103,17 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.register_write(ops[1]);
                 break;
             }
-            case Op.OpArrayLength: {
+            case Op.ArrayLength: {
                 var result_type = ops[0];
                 var id = ops[1];
-                var e = this.access_chain_internal(ops[2], ops, 3, length - 3, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, null);
-                if (this.has_decoration(ops[2], Decoration.DecorationNonUniform))
+                var e = this.access_chain_internal(ops[2], ops, 3, length - 3, AccessChainFlagBits.INDEX_IS_LITERAL_BIT, null);
+                if (this.has_decoration(ops[2], Decoration.NonUniform))
                     e = this.convert_non_uniform_expression(e, ops[2]);
                 this.set(SPIRExpression, id, this.type_to_glsl(this.get(SPIRType, result_type)), "(" + e + ".length())", result_type, true);
                 break;
             }
             // Function calls
-            case Op.OpFunctionCall: {
+            case Op.FunctionCall: {
                 var result_type = ops[0];
                 var id = ops[1];
                 var func = ops[2];
@@ -10160,7 +10162,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 funexpr += ")";
                 // Check for function call constraints.
                 this.check_function_call_constraints(ops, 3, length);
-                if (return_type.basetype !== SPIRTypeBaseType.Void) {
+                if (return_type.basetype !== SPIRBaseType.Void) {
                     // If the function actually writes to an out variable,
                     // take the conservative route and do not forward.
                     // The problem is that we might not read the function
@@ -10190,7 +10192,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 break;
             }
             // Composite munging
-            case Op.OpCompositeConstruct: {
+            case Op.CompositeConstruct: {
                 var result_type = ops[0];
                 var id = ops[1];
                 // const elems = ops.slice(2);
@@ -10202,13 +10204,13 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 var in_type = length > 0 ? this.expression_type(ops[2]) : null;
                 // Only splat if we have vector constructors.
                 // Arrays and structs must be initialized properly in full.
-                var composite = out_type.array.length > 0 || out_type.basetype === SPIRTypeBaseType.Struct;
+                var composite = out_type.array.length > 0 || out_type.basetype === SPIRBaseType.Struct;
                 var splat = false;
                 var swizzle_splat = false;
                 if (in_type) {
                     splat = in_type.vecsize === 1 && in_type.columns === 1 && !composite && backend.use_constructor_splatting;
                     swizzle_splat = in_type.vecsize === 1 && in_type.columns === 1 && backend.can_swizzle_scalar;
-                    if (ir.ids[ops[2]].get_type() === Types.TypeConstant && !type_is_floating_point(in_type)) {
+                    if (ir.ids[ops[2]].get_type() === Types.Constant && !type_is_floating_point(in_type)) {
                         // Cannot swizzle literal integers as a special case.
                         swizzle_splat = false;
                     }
@@ -10222,7 +10224,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                         }
                     }
                 }
-                if (out_type.basetype === SPIRTypeBaseType.Struct && !backend.can_declare_struct_inline)
+                if (out_type.basetype === SPIRBaseType.Struct && !backend.can_declare_struct_inline)
                     forward = false;
                 if (out_type.array.length > 0 && !backend.can_declare_arrays_inline)
                     forward = false;
@@ -10233,7 +10235,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     var needs_trailing_tracket = false;
                     // Only use this path if we are building composites.
                     // This path cannot be used for arithmetic.
-                    if (backend.use_typed_initializer_list && out_type.basetype === SPIRTypeBaseType.Struct && out_type.array.length === 0)
+                    if (backend.use_typed_initializer_list && out_type.basetype === SPIRBaseType.Struct && out_type.array.length === 0)
                         constructor_op += this.type_to_glsl_constructor(this.get(SPIRType, result_type));
                     else if (backend.use_typed_initializer_list && backend.array_is_value_type && out_type.array.length > 0) {
                         // MSL path. Array constructor is baked into type here, do not use _constructor variant.
@@ -10271,7 +10273,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 }
                 break;
             }
-            case Op.OpVectorInsertDynamic: {
+            case Op.VectorInsertDynamic: {
                 var result_type = ops[0];
                 var id = ops[1];
                 var vec = ops[2];
@@ -10284,7 +10286,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 this.statement(chain, " = ", this.to_unpacked_expression(comp), ";");
                 break;
             }
-            case Op.OpVectorExtractDynamic: {
+            case Op.VectorExtractDynamic: {
                 var result_type = ops[0];
                 var id = ops[1];
                 var expr = this.access_chain_internal(ops[2], ops, 3, 1, 0, null);
@@ -10293,7 +10295,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 this.inherit_expression_dependencies(id, ops[3]);
                 break;
             }
-            case Op.OpCompositeExtract: {
+            case Op.CompositeExtract: {
                 var result_type = ops[0];
                 var id = ops[1];
                 length -= 3;
@@ -10302,12 +10304,12 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 var allow_base_expression = !this.forced_temporaries.has(id);
                 // Do not allow base expression for struct members. We risk doing "swizzle" optimizations in this case.
                 var composite_type = this.expression_type(ops[2]);
-                var composite_type_is_complex = composite_type.basetype === SPIRTypeBaseType.Struct || composite_type.array.length > 0;
+                var composite_type_is_complex = composite_type.basetype === SPIRBaseType.Struct || composite_type.array.length > 0;
                 if (composite_type_is_complex)
                     allow_base_expression = false;
                 // Packed expressions or physical ID mapped expressions cannot be split up.
-                if (this.has_extended_decoration(ops[2], ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked) ||
-                    this.has_extended_decoration(ops[2], ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID))
+                if (this.has_extended_decoration(ops[2], ExtendedDecorations.PhysicalTypePacked) ||
+                    this.has_extended_decoration(ops[2], ExtendedDecorations.PhysicalTypeID))
                     allow_base_expression = false;
                 // Cannot use base expression for row-major matrix row-extraction since we need to interleave access pattern
                 // into the base expression.
@@ -10334,14 +10336,14 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     //
                     // Including the base will prevent this and would trigger multiple reads
                     // from expression causing it to be forced to an actual temporary in GLSL.
-                    var expr = this.access_chain_internal(ops[2], ops, 3, length, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT | AccessChainFlagBits.ACCESS_CHAIN_CHAIN_ONLY_BIT |
-                        AccessChainFlagBits.ACCESS_CHAIN_FORCE_COMPOSITE_BIT, meta);
+                    var expr = this.access_chain_internal(ops[2], ops, 3, length, AccessChainFlagBits.INDEX_IS_LITERAL_BIT | AccessChainFlagBits.CHAIN_ONLY_BIT |
+                        AccessChainFlagBits.FORCE_COMPOSITE_BIT, meta);
                     e = this.emit_op(result_type, id, expr, true, this.should_suppress_usage_tracking(ops[2]));
                     this.inherit_expression_dependencies(id, ops[2]);
                     e.base_expression = ops[2];
                 }
                 else {
-                    var expr = this.access_chain_internal(ops[2], ops, 3, length, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT | AccessChainFlagBits.ACCESS_CHAIN_FORCE_COMPOSITE_BIT, meta);
+                    var expr = this.access_chain_internal(ops[2], ops, 3, length, AccessChainFlagBits.INDEX_IS_LITERAL_BIT | AccessChainFlagBits.FORCE_COMPOSITE_BIT, meta);
                     e = this.emit_op(result_type, id, expr, this.should_forward(ops[2]), this.should_suppress_usage_tracking(ops[2]));
                     this.inherit_expression_dependencies(id, ops[2]);
                 }
@@ -10350,14 +10352,14 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 // instead of loading everything through an access chain.
                 e.need_transpose = meta.need_transpose;
                 if (meta.storage_is_packed)
-                    this.set_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked);
+                    this.set_extended_decoration(id, ExtendedDecorations.PhysicalTypePacked);
                 if (meta.storage_physical_type !== 0)
-                    this.set_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID, meta.storage_physical_type);
+                    this.set_extended_decoration(id, ExtendedDecorations.PhysicalTypeID, meta.storage_physical_type);
                 if (meta.storage_is_invariant)
-                    this.set_decoration(id, Decoration.DecorationInvariant);
+                    this.set_decoration(id, Decoration.Invariant);
                 break;
             }
-            case Op.OpCompositeInsert: {
+            case Op.CompositeInsert: {
                 var result_type = ops[0];
                 var id = ops[1];
                 var obj = ops[2];
@@ -10367,26 +10369,26 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 // Make a copy, then use access chain to store the variable.
                 this.statement(this.declare_temporary(result_type, id), this.to_expression(composite), ";");
                 this.set(SPIRExpression, id, this.to_name(id), result_type, true);
-                var chain = this.access_chain_internal(id, ops, 4, length, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, null);
+                var chain = this.access_chain_internal(id, ops, 4, length, AccessChainFlagBits.INDEX_IS_LITERAL_BIT, null);
                 this.statement(chain, " = ", this.to_unpacked_expression(obj), ";");
                 break;
             }
-            case Op.OpCopyMemory: {
+            case Op.CopyMemory: {
                 var lhs = ops[0];
                 var rhs = ops[1];
                 if (lhs !== rhs) {
-                    var tmp_id = maplike_get(0, this.extra_sub_expressions, instruction.offset | ExtraSubExpressionType.EXTRA_SUB_EXPRESSION_TYPE_STREAM_OFFSET);
+                    var tmp_id = maplike_get(0, this.extra_sub_expressions, instruction.offset | ExtraSubExpressionType.STREAM_OFFSET);
                     if (!tmp_id)
                         tmp_id = ir.increase_bound_by(1);
                     var tmp_type_id = this.expression_type(rhs).parent_type;
                     var fake_load = new EmbeddedInstruction();
                     var fake_store = new EmbeddedInstruction();
-                    fake_load.op = Op.OpLoad;
+                    fake_load.op = Op.Load;
                     fake_load.length = 3;
                     fake_load.ops.push(tmp_type_id);
                     fake_load.ops.push(tmp_id);
                     fake_load.ops.push(rhs);
-                    fake_store.op = Op.OpStore;
+                    fake_store.op = Op.Store;
                     fake_store.length = 2;
                     fake_store.ops.push(lhs);
                     fake_store.ops.push(tmp_id);
@@ -10397,7 +10399,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 }
                 break;
             }
-            case Op.OpCopyLogical: {
+            case Op.CopyLogical: {
                 // This is used for copying object of different types, arrays and structs.
                 // We need to unroll the copy, element-by-element.
                 var result_type = ops[0];
@@ -10407,7 +10409,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 this.emit_copy_logical_type(id, result_type, rhs, this.expression_type_id(rhs), []);
                 break;
             }
-            case Op.OpCopyObject: {
+            case Op.CopyObject: {
                 var result_type = ops[0];
                 var id = ops[1];
                 var rhs = ops[2];
@@ -10451,7 +10453,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 }
                 break;
             }
-            case Op.OpVectorShuffle: {
+            case Op.VectorShuffle: {
                 var result_type = ops[0];
                 var id = ops[1];
                 var vec0 = ops[2];
@@ -10466,7 +10468,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     if (ops[i + 4] >= type0.vecsize || ops[i + 4] === 0xffffffff)
                         shuffle = true;
                 // Cannot use swizzles with packed expressions, force shuffle path.
-                if (!shuffle && this.has_extended_decoration(vec0, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked))
+                if (!shuffle && this.has_extended_decoration(vec0, ExtendedDecorations.PhysicalTypePacked))
                     shuffle = true;
                 var expr = "";
                 var should_fwd = false;
@@ -10516,46 +10518,46 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 break;
             }
             // ALU
-            case Op.OpIsNan:
+            case Op.IsNan:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "isnan");
                 break;
-            case Op.OpIsInf:
+            case Op.IsInf:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "isnan");
                 break;
-            case Op.OpSNegate:
-            case Op.OpFNegate:
+            case Op.SNegate:
+            case Op.FNegate:
                 this.emit_unary_op(ops[0], ops[1], ops[2], "-");
                 break;
-            case Op.OpIAdd: {
+            case Op.IAdd: {
                 // For simple arith ops, prefer the output type if there's a mismatch to avoid extra bitcasts.
                 var type = this.get(SPIRType, ops[0]).basetype;
                 this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "+", type, opcode_is_sign_invariant(opcode));
                 break;
             }
-            case Op.OpFAdd:
+            case Op.FAdd:
                 this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "+");
                 break;
-            case Op.OpISub: {
+            case Op.ISub: {
                 var type = this.get(SPIRType, ops[0]).basetype;
                 this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "-", type, opcode_is_sign_invariant(opcode));
                 break;
             }
-            case Op.OpFSub:
+            case Op.FSub:
                 this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "-");
                 break;
-            case Op.OpIMul: {
+            case Op.IMul: {
                 var type = this.get(SPIRType, ops[0]).basetype;
                 this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "*", type, opcode_is_sign_invariant(opcode));
                 break;
             }
-            case Op.OpVectorTimesMatrix:
-            case Op.OpMatrixTimesVector: {
+            case Op.VectorTimesMatrix:
+            case Op.MatrixTimesVector: {
                 // If the matrix needs transpose, just flip the multiply order.
-                var e = this.maybe_get(SPIRExpression, ops[opcode === Op.OpMatrixTimesVector ? 2 : 3]);
+                var e = this.maybe_get(SPIRExpression, ops[opcode === Op.MatrixTimesVector ? 2 : 3]);
                 if (e && e.need_transpose) {
                     e.need_transpose = false;
                     var expr = "";
-                    if (opcode === Op.OpMatrixTimesVector)
+                    if (opcode === Op.MatrixTimesVector)
                         expr = this.to_enclosed_unpacked_expression(ops[3]) + " * " + this.enclose_expression(this.to_unpacked_row_major_matrix_expression(ops[2]));
                     else
                         expr = this.enclose_expression(this.to_unpacked_row_major_matrix_expression(ops[3])) + " * " +
@@ -10570,7 +10572,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "*");
                 break;
             }
-            case Op.OpMatrixTimesMatrix: {
+            case Op.MatrixTimesMatrix: {
                 var a = this.maybe_get(SPIRExpression, ops[2]);
                 var b = this.maybe_get(SPIRExpression, ops[3]);
                 // If both matrices need transpose, we can multiply in flipped order and tag the expression as transposed.
@@ -10592,18 +10594,18 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "*");
                 break;
             }
-            case Op.OpFMul:
-            case Op.OpMatrixTimesScalar:
-            case Op.OpVectorTimesScalar:
+            case Op.FMul:
+            case Op.MatrixTimesScalar:
+            case Op.VectorTimesScalar:
                 this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "*");
                 break;
-            case Op.OpOuterProduct:
+            case Op.OuterProduct:
                 this.emit_binary_func_op(ops[0], ops[1], ops[2], ops[3], "outerProduct");
                 break;
-            case Op.OpDot:
+            case Op.Dot:
                 this.emit_binary_func_op(ops[0], ops[1], ops[2], ops[3], "dot");
                 break;
-            case Op.OpTranspose:
+            case Op.Transpose:
                 if (options.version < 120) // Matches GLSL 1.10 / ESSL 1.00
                  {
                     // transpose() is not available, so instead, flip need_transpose,
@@ -10631,7 +10633,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 else
                     this.emit_unary_func_op(ops[0], ops[1], ops[2], "transpose");
                 break;
-            case Op.OpSRem: {
+            case Op.SRem: {
                 var result_type = ops[0];
                 var result_id = ops[1];
                 var op0 = ops[2];
@@ -10645,14 +10647,14 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 this.inherit_expression_dependencies(result_id, op1);
                 break;
             }
-            case Op.OpSDiv:
+            case Op.SDiv:
                 this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "/", int_type, opcode_is_sign_invariant(opcode));
                 break;
-            case Op.OpUDiv:
+            case Op.UDiv:
                 this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "/", uint_type, opcode_is_sign_invariant(opcode));
                 break;
-            case Op.OpIAddCarry:
-            case Op.OpISubBorrow: {
+            case Op.IAddCarry:
+            case Op.ISubBorrow: {
                 if (options.es && options.version < 310)
                     throw new Error("Extended arithmetic is only available from ESSL 310.");
                 else if (!options.es && options.version < 400)
@@ -10663,12 +10665,12 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 var op1 = ops[3];
                 var type = this.get(SPIRType, result_type);
                 this.emit_uninitialized_temporary_expression(result_type, result_id);
-                var op = opcode === Op.OpIAddCarry ? "uaddCarry" : "usubBorrow";
+                var op = opcode === Op.IAddCarry ? "uaddCarry" : "usubBorrow";
                 this.statement(this.to_expression(result_id), ".", this.to_member_name(type, 0), " = ", op, "(", this.to_expression(op0), ", ", this.to_expression(op1), ", ", this.to_expression(result_id), ".", this.to_member_name(type, 1), ");");
                 break;
             }
-            case Op.OpUMulExtended:
-            case Op.OpSMulExtended: {
+            case Op.UMulExtended:
+            case Op.SMulExtended: {
                 if (options.es && options.version < 310)
                     throw new Error("Extended arithmetic is only available from ESSL 310.");
                 else if (!options.es && options.version < 400)
@@ -10679,52 +10681,52 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 var op1 = ops[3];
                 var type = this.get(SPIRType, result_type);
                 this.emit_uninitialized_temporary_expression(result_type, result_id);
-                var op = opcode === Op.OpUMulExtended ? "umulExtended" : "imulExtended";
+                var op = opcode === Op.UMulExtended ? "umulExtended" : "imulExtended";
                 this.statement(op, "(", this.to_expression(op0), ", ", this.to_expression(op1), ", ", this.to_expression(result_id), ".", this.to_member_name(type, 1), ", ", this.to_expression(result_id), ".", this.to_member_name(type, 0), ");");
                 break;
             }
-            case Op.OpFDiv:
+            case Op.FDiv:
                 this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "/");
                 break;
-            case Op.OpShiftRightLogical:
+            case Op.ShiftRightLogical:
                 this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], ">>", uint_type, opcode_is_sign_invariant(opcode));
                 break;
-            case Op.OpShiftRightArithmetic:
+            case Op.ShiftRightArithmetic:
                 this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "+", int_type, opcode_is_sign_invariant(opcode));
                 break;
-            case Op.OpShiftLeftLogical: {
+            case Op.ShiftLeftLogical: {
                 var type = this.get(SPIRType, ops[0]).basetype;
                 this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "<<", type, opcode_is_sign_invariant(opcode));
                 break;
             }
-            case Op.OpBitwiseOr: {
+            case Op.BitwiseOr: {
                 var type = this.get(SPIRType, ops[0]).basetype;
                 this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "|", type, opcode_is_sign_invariant(opcode));
                 break;
             }
-            case Op.OpBitwiseXor: {
+            case Op.BitwiseXor: {
                 var type = this.get(SPIRType, ops[0]).basetype;
                 this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "^", type, opcode_is_sign_invariant(opcode));
                 break;
             }
-            case Op.OpBitwiseAnd: {
+            case Op.BitwiseAnd: {
                 var type = this.get(SPIRType, ops[0]).basetype;
                 this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "&", type, opcode_is_sign_invariant(opcode));
                 break;
             }
-            case Op.OpNot:
+            case Op.Not:
                 this.emit_unary_op(ops[0], ops[1], ops[2], "~");
                 break;
-            case Op.OpUMod:
+            case Op.UMod:
                 this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "%", uint_type, opcode_is_sign_invariant(opcode));
                 break;
-            case Op.OpSMod:
+            case Op.SMod:
                 this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "%", int_type, opcode_is_sign_invariant(opcode));
                 break;
-            case Op.OpFMod:
+            case Op.FMod:
                 this.emit_binary_func_op(ops[0], ops[1], ops[2], ops[3], "mod");
                 break;
-            case Op.OpFRem: {
+            case Op.FRem: {
                 if (this.is_legacy())
                     throw new Error("OpFRem requires trunc() and is only supported on non-legacy targets. A" +
                         " workaround is needed for legacy.");
@@ -10742,38 +10744,38 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 break;
             }
             // Relational
-            case Op.OpAny:
+            case Op.Any:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "any");
                 break;
-            case Op.OpAll:
+            case Op.All:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "all");
                 break;
-            case Op.OpSelect:
+            case Op.Select:
                 this.emit_mix_op(ops[0], ops[1], ops[4], ops[3], ops[2]);
                 break;
-            case Op.OpLogicalOr: {
+            case Op.LogicalOr: {
                 // No vector variant in GLSL for logical OR.
                 var result_type = ops[0];
                 var id = ops[1];
                 var type = this.get(SPIRType, result_type);
                 if (type.vecsize > 1)
-                    this.emit_unrolled_binary_op(result_type, id, ops[2], ops[3], "||", false, SPIRTypeBaseType.Unknown);
+                    this.emit_unrolled_binary_op(result_type, id, ops[2], ops[3], "||", false, SPIRBaseType.Unknown);
                 else
                     this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "||");
                 break;
             }
-            case Op.OpLogicalAnd: {
+            case Op.LogicalAnd: {
                 // No vector variant in GLSL for logical AND.
                 var result_type = ops[0];
                 var id = ops[1];
                 var type = this.get(SPIRType, result_type);
                 if (type.vecsize > 1)
-                    this.emit_unrolled_binary_op(result_type, id, ops[2], ops[3], "&&", false, SPIRTypeBaseType.Unknown);
+                    this.emit_unrolled_binary_op(result_type, id, ops[2], ops[3], "&&", false, SPIRBaseType.Unknown);
                 else
                     this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "&&");
                 break;
             }
-            case Op.OpLogicalNot: {
+            case Op.LogicalNot: {
                 var type = this.get(SPIRType, ops[0]);
                 if (type.vecsize > 1)
                     this.emit_unary_func_op(ops[0], ops[1], ops[2], "not ");
@@ -10781,94 +10783,94 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.emit_unary_op(ops[0], ops[1], ops[2], "!");
                 break;
             }
-            case Op.OpIEqual: {
+            case Op.IEqual: {
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op_cast(ops[0], ops[1], ops[2], ops[3], "equal", int_type, opcode_is_sign_invariant(opcode));
                 else
                     this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "==", int_type, opcode_is_sign_invariant(opcode));
                 break;
             }
-            case Op.OpLogicalEqual:
-            case Op.OpFOrdEqual: {
+            case Op.LogicalEqual:
+            case Op.FOrdEqual: {
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op(ops[0], ops[1], ops[2], ops[3], "equal");
                 else
                     this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "==");
                 break;
             }
-            case Op.OpINotEqual: {
+            case Op.INotEqual: {
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op_cast(ops[0], ops[1], ops[2], ops[3], "notEqual", int_type, opcode_is_sign_invariant(opcode));
                 else
                     this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "!=", int_type, opcode_is_sign_invariant(opcode));
                 break;
             }
-            case Op.OpLogicalNotEqual:
-            case Op.OpFOrdNotEqual: {
+            case Op.LogicalNotEqual:
+            case Op.FOrdNotEqual: {
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op(ops[0], ops[1], ops[2], ops[3], "notEqual");
                 else
                     this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "!=");
                 break;
             }
-            case Op.OpUGreaterThan:
-            case Op.OpSGreaterThan: {
-                var type = opcode === Op.OpUGreaterThan ? uint_type : int_type;
+            case Op.UGreaterThan:
+            case Op.SGreaterThan: {
+                var type = opcode === Op.UGreaterThan ? uint_type : int_type;
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op_cast(ops[0], ops[1], ops[2], ops[3], "greaterThan", type, opcode_is_sign_invariant(opcode));
                 else
                     this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], ">", type, opcode_is_sign_invariant(opcode));
                 break;
             }
-            case Op.OpFOrdGreaterThan: {
+            case Op.FOrdGreaterThan: {
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op(ops[0], ops[1], ops[2], ops[3], "greaterThan");
                 else
                     this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], ">");
                 break;
             }
-            case Op.OpUGreaterThanEqual:
-            case Op.OpSGreaterThanEqual: {
-                var type = opcode === Op.OpUGreaterThanEqual ? uint_type : int_type;
+            case Op.UGreaterThanEqual:
+            case Op.SGreaterThanEqual: {
+                var type = opcode === Op.UGreaterThanEqual ? uint_type : int_type;
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op_cast(ops[0], ops[1], ops[2], ops[3], "greaterThanEqual", type, opcode_is_sign_invariant(opcode));
                 else
                     this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], ">=", type, opcode_is_sign_invariant(opcode));
                 break;
             }
-            case Op.OpFOrdGreaterThanEqual: {
+            case Op.FOrdGreaterThanEqual: {
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op(ops[0], ops[1], ops[2], ops[3], "greaterThanEqual");
                 else
                     this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], ">=");
                 break;
             }
-            case Op.OpULessThan:
-            case Op.OpSLessThan: {
-                var type = opcode === Op.OpULessThan ? uint_type : int_type;
+            case Op.ULessThan:
+            case Op.SLessThan: {
+                var type = opcode === Op.ULessThan ? uint_type : int_type;
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op_cast(ops[0], ops[1], ops[2], ops[3], "lessThan", type, opcode_is_sign_invariant(opcode));
                 else
                     this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "<", type, opcode_is_sign_invariant(opcode));
                 break;
             }
-            case Op.OpFOrdLessThan: {
+            case Op.FOrdLessThan: {
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op(ops[0], ops[1], ops[2], ops[3], "lessThan");
                 else
                     this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "<");
                 break;
             }
-            case Op.OpULessThanEqual:
-            case Op.OpSLessThanEqual: {
-                var type = opcode === Op.OpULessThanEqual ? uint_type : int_type;
+            case Op.ULessThanEqual:
+            case Op.SLessThanEqual: {
+                var type = opcode === Op.ULessThanEqual ? uint_type : int_type;
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op_cast(ops[0], ops[1], ops[2], ops[3], "lessThanEqual", type, opcode_is_sign_invariant(opcode));
                 else
                     this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "<=", type, opcode_is_sign_invariant(opcode));
                 break;
             }
-            case Op.OpFOrdLessThanEqual: {
+            case Op.FOrdLessThanEqual: {
                 if (this.expression_type(ops[2]).vecsize > 1)
                     this.emit_binary_func_op(ops[0], ops[1], ops[2], ops[3], "lessThanEqual");
                 else
@@ -10876,11 +10878,11 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 break;
             }
             // Conversion
-            case Op.OpSConvert:
-            case Op.OpConvertSToF:
-            case Op.OpUConvert:
-            case Op.OpConvertUToF: {
-                var input_type = opcode === Op.OpSConvert || opcode === Op.OpConvertSToF ? int_type : uint_type;
+            case Op.SConvert:
+            case Op.ConvertSToF:
+            case Op.UConvert:
+            case Op.ConvertUToF: {
+                var input_type = opcode === Op.SConvert || opcode === Op.ConvertSToF ? int_type : uint_type;
                 var result_type = ops[0];
                 var id = ops[1];
                 var type = this.get(SPIRType, result_type);
@@ -10892,27 +10894,27 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.emit_unary_func_op(result_type, id, ops[2], func);
                 break;
             }
-            case Op.OpConvertFToU:
-            case Op.OpConvertFToS: {
+            case Op.ConvertFToU:
+            case Op.ConvertFToS: {
                 // Cast to expected arithmetic type, then potentially bitcast away to desired signedness.
                 var result_type = ops[0];
                 var id = ops[1];
                 var type = this.get(SPIRType, result_type);
                 var expected_type = defaultClone(SPIRType, type);
                 var float_type = this.expression_type(ops[2]);
-                expected_type.basetype = opcode === Op.OpConvertFToS ? to_signed_basetype(type.width) : to_unsigned_basetype(type.width);
+                expected_type.basetype = opcode === Op.ConvertFToS ? to_signed_basetype(type.width) : to_unsigned_basetype(type.width);
                 var func = this.type_to_glsl_constructor(expected_type);
                 this.emit_unary_func_op_cast(result_type, id, ops[2], func, float_type.basetype, expected_type.basetype);
                 break;
             }
-            case Op.OpFConvert: {
+            case Op.FConvert: {
                 var result_type = ops[0];
                 var id = ops[1];
                 var func = this.type_to_glsl_constructor(this.get(SPIRType, result_type));
                 this.emit_unary_func_op(result_type, id, ops[2], func);
                 break;
             }
-            case Op.OpBitcast: {
+            case Op.Bitcast: {
                 var result_type = ops[0];
                 var id = ops[1];
                 var arg = ops[2];
@@ -10922,7 +10924,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 }
                 break;
             }
-            case Op.OpQuantizeToF16: {
+            case Op.QuantizeToF16: {
                 var result_type = ops[0];
                 var id = ops[1];
                 var arg = ops[2];
@@ -10955,19 +10957,19 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 break;
             }
             // Derivatives
-            case Op.OpDPdx:
+            case Op.DPdx:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "dFdx");
                 if (this.is_legacy_es())
                     this.require_extension_internal("GL_OES_standard_derivatives");
                 this.register_control_dependent_expression(ops[1]);
                 break;
-            case Op.OpDPdy:
+            case Op.DPdy:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "dFdy");
                 if (this.is_legacy_es())
                     this.require_extension_internal("GL_OES_standard_derivatives");
                 this.register_control_dependent_expression(ops[1]);
                 break;
-            case Op.OpDPdxFine:
+            case Op.DPdxFine:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "dFdxFine");
                 if (options.es) {
                     throw new Error("GL_ARB_derivative_control is unavailable in OpenGL ES.");
@@ -10976,7 +10978,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.require_extension_internal("GL_ARB_derivative_control");
                 this.register_control_dependent_expression(ops[1]);
                 break;
-            case Op.OpDPdyFine:
+            case Op.DPdyFine:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "dFdyFine");
                 if (options.es) {
                     throw new Error("GL_ARB_derivative_control is unavailable in OpenGL ES.");
@@ -10985,7 +10987,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.require_extension_internal("GL_ARB_derivative_control");
                 this.register_control_dependent_expression(ops[1]);
                 break;
-            case Op.OpDPdxCoarse:
+            case Op.DPdxCoarse:
                 if (options.es) {
                     throw new Error("GL_ARB_derivative_control is unavailable in OpenGL ES.");
                 }
@@ -10994,7 +10996,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.require_extension_internal("GL_ARB_derivative_control");
                 this.register_control_dependent_expression(ops[1]);
                 break;
-            case Op.OpDPdyCoarse:
+            case Op.DPdyCoarse:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "dFdyCoarse");
                 if (options.es) {
                     throw new Error("GL_ARB_derivative_control is unavailable in OpenGL ES.");
@@ -11003,13 +11005,13 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.require_extension_internal("GL_ARB_derivative_control");
                 this.register_control_dependent_expression(ops[1]);
                 break;
-            case Op.OpFwidth:
+            case Op.Fwidth:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "fwidth");
                 if (this.is_legacy_es())
                     this.require_extension_internal("GL_OES_standard_derivatives");
                 this.register_control_dependent_expression(ops[1]);
                 break;
-            case Op.OpFwidthCoarse:
+            case Op.FwidthCoarse:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "fwidthCoarse");
                 if (options.es) {
                     throw new Error("GL_ARB_derivative_control is unavailable in OpenGL ES.");
@@ -11018,7 +11020,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.require_extension_internal("GL_ARB_derivative_control");
                 this.register_control_dependent_expression(ops[1]);
                 break;
-            case Op.OpFwidthFine:
+            case Op.FwidthFine:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "fwidthFine");
                 if (options.es) {
                     throw new Error("GL_ARB_derivative_control is unavailable in OpenGL ES.");
@@ -11028,29 +11030,29 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 this.register_control_dependent_expression(ops[1]);
                 break;
             // Bitfield
-            case Op.OpBitFieldInsert: {
-                this.emit_bitfield_insert_op(ops[0], ops[1], ops[2], ops[3], ops[4], ops[5], "bitfieldInsert", SPIRTypeBaseType.Int);
+            case Op.BitFieldInsert: {
+                this.emit_bitfield_insert_op(ops[0], ops[1], ops[2], ops[3], ops[4], ops[5], "bitfieldInsert", SPIRBaseType.Int);
                 break;
             }
-            case Op.OpBitFieldSExtract: {
-                this.emit_trinary_func_op_bitextract(ops[0], ops[1], ops[2], ops[3], ops[4], "bitfieldExtract", int_type, int_type, SPIRTypeBaseType.Int, SPIRTypeBaseType.Int);
+            case Op.BitFieldSExtract: {
+                this.emit_trinary_func_op_bitextract(ops[0], ops[1], ops[2], ops[3], ops[4], "bitfieldExtract", int_type, int_type, SPIRBaseType.Int, SPIRBaseType.Int);
                 break;
             }
-            case Op.OpBitFieldUExtract: {
-                this.emit_trinary_func_op_bitextract(ops[0], ops[1], ops[2], ops[3], ops[4], "bitfieldExtract", uint_type, uint_type, SPIRTypeBaseType.Int, SPIRTypeBaseType.Int);
+            case Op.BitFieldUExtract: {
+                this.emit_trinary_func_op_bitextract(ops[0], ops[1], ops[2], ops[3], ops[4], "bitfieldExtract", uint_type, uint_type, SPIRBaseType.Int, SPIRBaseType.Int);
                 break;
             }
-            case Op.OpBitReverse:
+            case Op.BitReverse:
                 // BitReverse does not have issues with sign since result type must match input type.
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "bitfieldReverse");
                 break;
-            case Op.OpBitCount: {
+            case Op.BitCount: {
                 var basetype = this.expression_type(ops[2]).basetype;
                 this.emit_unary_func_op_cast(ops[0], ops[1], ops[2], "bitCount", basetype, int_type);
                 break;
             }
             // Atomics
-            /*case Op.OpAtomicExchange:
+            /*case Op.AtomicExchange:
             {
                 uint32_t result_type = ops[0];
                 uint32_t id = ops[1];
@@ -11063,7 +11065,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 break;
             }
 
-            case Op.OpAtomicCompareExchange:
+            case Op.AtomicCompareExchange:
             {
                 uint32_t result_type = ops[0];
                 uint32_t id = ops[1];
@@ -11076,15 +11078,15 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 break;
             }
 
-            case Op.OpAtomicLoad:
+            case Op.AtomicLoad:
             {
                 // In plain GLSL, we have no atomic loads, so emulate this by fetch adding by 0 and hope compiler figures it out.
                 // Alternatively, we could rely on KHR_memory_model, but that's not very helpful for GL.
                 auto &type = expression_type(ops[2]);
                 forced_temporaries.insert(ops[1]);
                 bool atomic_image = check_atomic_image(ops[2]);
-                bool unsigned_type = (type.basetype === SPIRTypeBaseType.UInt) ||
-                (atomic_image && get<SPIRType>(type.image.type).basetype === SPIRTypeBaseType.UInt);
+                bool unsigned_type = (type.basetype === SPIRBaseType.UInt) ||
+                (atomic_image && get<SPIRType>(type.image.type).basetype === SPIRBaseType.UInt);
                 const char *op = atomic_image ? "imageAtomicAdd" : "atomicAdd";
                 const char *increment = unsigned_type ? "0u" : "0";
                 emit_op(ops[0], ops[1],
@@ -11094,7 +11096,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 break;
             }
 
-            case Op.OpAtomicStore:
+            case Op.AtomicStore:
             {
                 // In plain GLSL, we have no atomic stores, so emulate this with an atomic exchange where we don't consume the result.
                 // Alternatively, we could rely on KHR_memory_model, but that's not very helpful for GL.
@@ -11107,15 +11109,15 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 break;
             }
 
-            case Op.OpAtomicIIncrement:
-                case Op.OpAtomicIDecrement:
+            case Op.AtomicIIncrement:
+                case Op.AtomicIDecrement:
             {
                 forced_temporaries.insert(ops[1]);
                 auto &type = expression_type(ops[2]);
                 if (type.storage === StorageClassAtomicCounter)
                 {
                     // Legacy GLSL stuff, not sure if this is relevant to support.
-                    if (opcode === Op.OpAtomicIIncrement)
+                    if (opcode === Op.AtomicIIncrement)
                         this.emit_unary_func_op(ops[0], ops[1], ops[2], "atomicCounterIncrement");
                     else
                         this.emit_unary_func_op(ops[0], ops[1], ops[2], "atomicCounterDecrement");
@@ -11123,8 +11125,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 else
                 {
                     bool atomic_image = check_atomic_image(ops[2]);
-                    bool unsigned_type = (type.basetype === SPIRTypeBaseType.UInt) ||
-                    (atomic_image && get<SPIRType>(type.image.type).basetype === SPIRTypeBaseType.UInt);
+                    bool unsigned_type = (type.basetype === SPIRBaseType.UInt) ||
+                    (atomic_image && get<SPIRType>(type.image.type).basetype === SPIRBaseType.UInt);
                     const char *op = atomic_image ? "imageAtomicAdd" : "atomicAdd";
 
                     const char *increment = nullptr;
@@ -11145,14 +11147,14 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 break;
             }
 
-            case Op.OpAtomicIAdd:
+            case Op.AtomicIAdd:
             {
                 const char *op = check_atomic_image(ops[2]) ? "imageAtomicAdd" : "atomicAdd";
                 emit_atomic_func_op(ops[0], ops[1], ops[2], ops[5], op);
                 break;
             }
 
-            case Op.OpAtomicISub:
+            case Op.AtomicISub:
             {
                 const char *op = check_atomic_image(ops[2]) ? "imageAtomicAdd" : "atomicAdd";
                 forced_temporaries.insert(ops[1]);
@@ -11162,37 +11164,37 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 break;
             }
 
-            case Op.OpAtomicSMin:
-                case Op.OpAtomicUMin:
+            case Op.AtomicSMin:
+                case Op.AtomicUMin:
             {
                 const char *op = check_atomic_image(ops[2]) ? "imageAtomicMin" : "atomicMin";
                 emit_atomic_func_op(ops[0], ops[1], ops[2], ops[5], op);
                 break;
             }
 
-            case Op.OpAtomicSMax:
-                case Op.OpAtomicUMax:
+            case Op.AtomicSMax:
+                case Op.AtomicUMax:
             {
                 const char *op = check_atomic_image(ops[2]) ? "imageAtomicMax" : "atomicMax";
                 emit_atomic_func_op(ops[0], ops[1], ops[2], ops[5], op);
                 break;
             }
 
-            case Op.OpAtomicAnd:
+            case Op.AtomicAnd:
             {
                 const char *op = check_atomic_image(ops[2]) ? "imageAtomicAnd" : "atomicAnd";
                 emit_atomic_func_op(ops[0], ops[1], ops[2], ops[5], op);
                 break;
             }
 
-            case Op.OpAtomicOr:
+            case Op.AtomicOr:
             {
                 const char *op = check_atomic_image(ops[2]) ? "imageAtomicOr" : "atomicOr";
                 emit_atomic_func_op(ops[0], ops[1], ops[2], ops[5], op);
                 break;
             }
 
-            case Op.OpAtomicXor:
+            case Op.AtomicXor:
             {
                 const char *op = check_atomic_image(ops[2]) ? "imageAtomicXor" : "atomicXor";
                 emit_atomic_func_op(ops[0], ops[1], ops[2], ops[5], op);
@@ -11200,15 +11202,15 @@ var CompilerGLSL = /** @class */ (function (_super) {
             }
 
                 // Geometry shaders
-            case Op.OpEmitVertex:
+            case Op.EmitVertex:
                 statement("EmitVertex();");
                 break;
 
-            case Op.OpEndPrimitive:
+            case Op.EndPrimitive:
                 statement("EndPrimitive();");
                 break;
 
-            case Op.OpEmitStreamVertex:
+            case Op.EmitStreamVertex:
             {
                 if (options.es)
                     throw new Error("Multi-stream geometry shaders not supported in ES.");
@@ -11216,13 +11218,13 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     throw new Error("Multi-stream geometry shaders only supported in GLSL 400.");
 
                 auto stream_expr = to_expression(ops[0]);
-                if (expression_type(ops[0]).basetype !== SPIRTypeBaseType.Int)
+                if (expression_type(ops[0]).basetype !== SPIRBaseType.Int)
                     stream_expr = join("int(", stream_expr, ")");
                 statement("EmitStreamVertex(", stream_expr, ");");
                 break;
             }
 
-            case Op.OpEndStreamPrimitive:
+            case Op.EndStreamPrimitive:
             {
                 if (options.es)
                     throw new Error("Multi-stream geometry shaders not supported in ES.");
@@ -11230,47 +11232,47 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     throw new Error("Multi-stream geometry shaders only supported in GLSL 400.");
 
                 auto stream_expr = to_expression(ops[0]);
-                if (expression_type(ops[0]).basetype !== SPIRTypeBaseType.Int)
+                if (expression_type(ops[0]).basetype !== SPIRBaseType.Int)
                     stream_expr = join("int(", stream_expr, ")");
                 statement("EndStreamPrimitive(", stream_expr, ");");
                 break;
             }*/
             // Textures
-            case Op.OpImageSampleExplicitLod:
-            case Op.OpImageSampleProjExplicitLod:
-            case Op.OpImageSampleDrefExplicitLod:
-            case Op.OpImageSampleProjDrefExplicitLod:
-            case Op.OpImageSampleImplicitLod:
-            case Op.OpImageSampleProjImplicitLod:
-            case Op.OpImageSampleDrefImplicitLod:
-            case Op.OpImageSampleProjDrefImplicitLod:
-            case Op.OpImageFetch:
-            case Op.OpImageGather:
-            case Op.OpImageDrefGather:
+            case Op.ImageSampleExplicitLod:
+            case Op.ImageSampleProjExplicitLod:
+            case Op.ImageSampleDrefExplicitLod:
+            case Op.ImageSampleProjDrefExplicitLod:
+            case Op.ImageSampleImplicitLod:
+            case Op.ImageSampleProjImplicitLod:
+            case Op.ImageSampleDrefImplicitLod:
+            case Op.ImageSampleProjDrefImplicitLod:
+            case Op.ImageFetch:
+            case Op.ImageGather:
+            case Op.ImageDrefGather:
                 // Gets a bit hairy, so move this to a separate instruction.
                 this.emit_texture_op(instruction, false);
                 break;
-            case Op.OpImageSparseSampleExplicitLod:
-            case Op.OpImageSparseSampleProjExplicitLod:
-            case Op.OpImageSparseSampleDrefExplicitLod:
-            case Op.OpImageSparseSampleProjDrefExplicitLod:
-            case Op.OpImageSparseSampleImplicitLod:
-            case Op.OpImageSparseSampleProjImplicitLod:
-            case Op.OpImageSparseSampleDrefImplicitLod:
-            case Op.OpImageSparseSampleProjDrefImplicitLod:
-            case Op.OpImageSparseFetch:
-            case Op.OpImageSparseGather:
-            case Op.OpImageSparseDrefGather:
+            case Op.ImageSparseSampleExplicitLod:
+            case Op.ImageSparseSampleProjExplicitLod:
+            case Op.ImageSparseSampleDrefExplicitLod:
+            case Op.ImageSparseSampleProjDrefExplicitLod:
+            case Op.ImageSparseSampleImplicitLod:
+            case Op.ImageSparseSampleProjImplicitLod:
+            case Op.ImageSparseSampleDrefImplicitLod:
+            case Op.ImageSparseSampleProjDrefImplicitLod:
+            case Op.ImageSparseFetch:
+            case Op.ImageSparseGather:
+            case Op.ImageSparseDrefGather:
                 // Gets a bit hairy, so move this to a separate instruction.
                 this.emit_texture_op(instruction, true);
                 break;
-            case Op.OpImageSparseTexelsResident:
+            case Op.ImageSparseTexelsResident:
                 if (options.es)
                     throw new Error("Sparse feedback is not supported in GLSL.");
                 this.require_extension_internal("GL_ARB_sparse_texture2");
-                this.emit_unary_func_op_cast(ops[0], ops[1], ops[2], "sparseTexelsResidentARB", int_type, SPIRTypeBaseType.Boolean);
+                this.emit_unary_func_op_cast(ops[0], ops[1], ops[2], "sparseTexelsResidentARB", int_type, SPIRBaseType.Boolean);
                 break;
-            case Op.OpImage: {
+            case Op.Image: {
                 var result_type = ops[0];
                 var id = ops[1];
                 // Suppress usage tracking.
@@ -11280,7 +11282,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 e.loaded_from = var_ ? var_.self : (0);
                 break;
             }
-            case Op.OpImageQueryLod: {
+            case Op.ImageQueryLod: {
                 var op = null;
                 if (!options.es && options.version < 400) {
                     this.require_extension_internal("GL_ARB_texture_query_lod");
@@ -11292,7 +11294,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 else
                     op = "textureQueryLod";
                 var sampler_expr = this.to_expression(ops[2]);
-                if (this.has_decoration(ops[2], Decoration.DecorationNonUniform)) {
+                if (this.has_decoration(ops[2], Decoration.NonUniform)) {
                     if (this.maybe_get_backing_variable(ops[2]))
                         sampler_expr = this.convert_non_uniform_expression(sampler_expr, ops[2]);
                     else if (backend.nonuniform_qualifier !== "\0")
@@ -11305,7 +11307,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 this.register_control_dependent_expression(ops[1]);
                 break;
             }
-            case Op.OpImageQueryLevels: {
+            case Op.ImageQueryLevels: {
                 var result_type = ops[0];
                 var id = ops[1];
                 if (!options.es && options.version < 430)
@@ -11314,11 +11316,11 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     throw new Error("textureQueryLevels not supported in ES profile.");
                 var expr = "textureQueryLevels(" + this.convert_separate_image_to_expression(ops[2]) + ")";
                 var restype = this.get(SPIRType, ops[0]);
-                expr = this.bitcast_expression(restype, SPIRTypeBaseType.Int, expr);
+                expr = this.bitcast_expression(restype, SPIRBaseType.Int, expr);
                 this.emit_op(result_type, id, expr, true);
                 break;
             }
-            case Op.OpImageQuerySamples: {
+            case Op.ImageQuerySamples: {
                 var type = this.expression_type(ops[2]);
                 var result_type = ops[0];
                 var id = ops[1];
@@ -11328,11 +11330,11 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 else
                     expr = "textureSamples(" + this.convert_separate_image_to_expression(ops[2]) + ")";
                 var restype = this.get(SPIRType, ops[0]);
-                expr = this.bitcast_expression(restype, SPIRTypeBaseType.Int, expr);
+                expr = this.bitcast_expression(restype, SPIRBaseType.Int, expr);
                 this.emit_op(result_type, id, expr, true);
                 break;
             }
-            case Op.OpSampledImage: {
+            case Op.SampledImage: {
                 var result_type = ops[0];
                 var id = ops[1];
                 this.emit_sampled_image_op(result_type, id, ops[2], ops[3]);
@@ -11340,7 +11342,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 this.inherit_expression_dependencies(id, ops[3]);
                 break;
             }
-            case Op.OpImageQuerySizeLod: {
+            case Op.ImageQuerySizeLod: {
                 var result_type = ops[0];
                 var id = ops[1];
                 var img = ops[2];
@@ -11352,23 +11354,23 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 }
                 else if (this.is_legacy_es())
                     throw new Error("textureSize is not supported in ESSL 100.");
-                var expr = fname + "(" + this.convert_separate_image_to_expression(img) + ", " + this.bitcast_expression(SPIRTypeBaseType.Int, ops[3]) + ")";
+                var expr = fname + "(" + this.convert_separate_image_to_expression(img) + ", " + this.bitcast_expression(SPIRBaseType.Int, ops[3]) + ")";
                 var restype = this.get(SPIRType, ops[0]);
-                expr = this.bitcast_expression(restype, SPIRTypeBaseType.Int, expr);
+                expr = this.bitcast_expression(restype, SPIRBaseType.Int, expr);
                 this.emit_op(result_type, id, expr, true);
                 break;
             }
             // Image load/store
-            case Op.OpImageRead:
-            case Op.OpImageSparseRead: {
+            case Op.ImageRead:
+            case Op.ImageSparseRead: {
                 // We added Nonreadable speculatively to the OpImage variable due to glslangValidator
                 // not adding the proper qualifiers.
                 // If it turns out we need to read the image after all, remove the qualifier and recompile.
                 var var_1 = this.maybe_get_backing_variable(ops[2]);
                 if (var_1) {
                     var flags = maplike_get(Meta, ir.meta, var_1.self).decoration.decoration_flags;
-                    if (flags.get(Decoration.DecorationNonReadable)) {
-                        flags.clear(Decoration.DecorationNonReadable);
+                    if (flags.get(Decoration.NonReadable)) {
+                        flags.clear(Decoration.NonReadable);
                         this.force_recompile();
                     }
                 }
@@ -11397,7 +11399,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     }
                     pure = true;
                 }
-                else if (type.image.dim === Dim.DimSubpassData) {
+                else if (type.image.dim === Dim.SubpassData) {
                     if (var_1 && this.subpass_input_is_framebuffer_fetch(var_1.self)) {
                         imgexpr = this.to_expression(var_1.self);
                     }
@@ -11407,7 +11409,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                         if (type.image.ms)
                         {
                             uint32_t operands = ops[4];
-                            if (operands !== ImageOperandsSampleMask || length !== 6)
+                            if (operands !== Sample || length !== 6)
                                 throw new Error("Multisampled image used in OpImageRead, but unexpected "
                             "operand mask was used.");
 
@@ -11420,7 +11422,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     else {
                         if (type.image.ms) {
                             var operands = ops[4];
-                            if (operands !== ImageOperandsMask.ImageOperandsSampleMask || length !== 6)
+                            if (operands !== ImageOperandsMask.Sample || length !== 6)
                                 throw new Error("Multisampled image used in OpImageRead, but unexpected operand mask was used.");
                             var samples = ops[5];
                             imgexpr = "texelFetch(" + this.to_non_uniform_aware_expression(ops[2]) + ", ivec2(gl_FragCoord.xy), " +
@@ -11435,20 +11437,20 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     pure = true;
                 }
                 else {
-                    var sparse = opcode === Op.OpImageSparseRead;
+                    var sparse = opcode === Op.ImageSparseRead;
                     var props = void 0;
                     if (sparse)
                         this.emit_sparse_feedback_temporaries(ops[0], ops[1], props);
                     // imageLoad only accepts int coords, not uint.
                     var coord_expr = this.to_expression(ops[3]);
                     var target_coord_type = defaultClone(SPIRType, this.expression_type(ops[3]));
-                    target_coord_type.basetype = SPIRTypeBaseType.Int;
+                    target_coord_type.basetype = SPIRBaseType.Int;
                     coord_expr = this.bitcast_expression(target_coord_type, this.expression_type(ops[3]).basetype, coord_expr);
                     // Plain image load/store.
                     if (sparse) {
                         if (type.image.ms) {
                             var operands = ops[4];
-                            if (operands !== ImageOperandsMask.ImageOperandsSampleMask || length !== 6)
+                            if (operands !== ImageOperandsMask.Sample || length !== 6)
                                 throw new Error("Multisampled image used in OpImageRead, but unexpected operand mask was used.");
                             var samples = ops[5];
                             this.statement(this.to_expression(props.sparse_code_id), " = sparseImageLoadARB(", this.to_non_uniform_aware_expression(ops[2]), ", ", coord_expr, ", ", this.to_expression(samples), ", ", this.to_expression(props.sparse_texel_id), ");");
@@ -11462,7 +11464,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     else {
                         if (type.image.ms) {
                             var operands = ops[4];
-                            if (operands !== ImageOperandsMask.ImageOperandsSampleMask || length !== 6)
+                            if (operands !== ImageOperandsMask.Sample || length !== 6)
                                 throw new Error("Multisampled image used in OpImageRead, but unexpected operand mask was used.");
                             var samples = ops[5];
                             imgexpr = "imageLoad(" + this.to_non_uniform_aware_expression(ops[2]) + ", " + coord_expr + ", " + this.to_expression(samples) + ")";
@@ -11491,13 +11493,13 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.inherit_expression_dependencies(id, ops[5]);
                 break;
             }
-            case Op.OpImageTexelPointer:
+            case Op.ImageTexelPointer:
                 {
                     var result_type = ops[0];
                     var id = ops[1];
                     var coord_expr = this.to_expression(ops[3]);
                     var target_coord_type = defaultClone(SPIRType, this.expression_type(ops[3]));
-                    target_coord_type.basetype = SPIRTypeBaseType.Int;
+                    target_coord_type.basetype = SPIRBaseType.Int;
                     coord_expr = this.bitcast_expression(target_coord_type, this.expression_type(ops[3]).basetype, coord_expr);
                     var expr = this.to_expression(ops[2]) + ", " + coord_expr;
                     var e = this.set(SPIRExpression, id, expr, result_type, true);
@@ -11507,7 +11509,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.inherit_expression_dependencies(id, ops[3]);
                     break;
                 }
-            case Op.OpImageWrite:
+            case Op.ImageWrite:
                 {
                     // We added Nonwritable speculatively to the OpImage variable due to glslangValidator
                     // not adding the proper qualifiers.
@@ -11515,8 +11517,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     var var_ = this.maybe_get_backing_variable(ops[0]);
                     if (var_) {
                         var flags = maplike_get(Meta, ir.meta, var_.self).decoration.decoration_flags;
-                        if (flags.get(Decoration.DecorationNonWritable)) {
-                            flags.clear(Decoration.DecorationNonWritable);
+                        if (flags.get(Decoration.NonWritable)) {
+                            flags.clear(Decoration.NonWritable);
                             this.force_recompile();
                         }
                     }
@@ -11527,11 +11529,11 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     // imageStore only accepts int coords, not uint.
                     var coord_expr = this.to_expression(ops[1]);
                     var target_coord_type = defaultClone(SPIRType, this.expression_type(ops[1]));
-                    target_coord_type.basetype = SPIRTypeBaseType.Int;
+                    target_coord_type.basetype = SPIRBaseType.Int;
                     coord_expr = this.bitcast_expression(target_coord_type, this.expression_type(ops[1]).basetype, coord_expr);
                     if (type.image.ms) {
                         var operands = ops[3];
-                        if (operands !== ImageOperandsMask.ImageOperandsSampleMask || length !== 5)
+                        if (operands !== ImageOperandsMask.Sample || length !== 5)
                             throw new Error("Multisampled image used in OpImageWrite, but unexpected operand mask was used.");
                         var samples = ops[4];
                         this.statement("imageStore(", this.to_non_uniform_aware_expression(ops[0]), ", ", coord_expr, ", ", this.to_expression(samples), ", ", this.remap_swizzle(store_type, value_type.vecsize, this.to_expression(ops[2])), ");");
@@ -11542,12 +11544,12 @@ var CompilerGLSL = /** @class */ (function (_super) {
                         this.flush_all_aliased_variables();
                     break;
                 }
-            case Op.OpImageQuerySize:
+            case Op.ImageQuerySize:
                 {
                     var type = this.expression_type(ops[2]);
                     var result_type = ops[0];
                     var id = ops[1];
-                    if (type.basetype === SPIRTypeBaseType.Image) {
+                    if (type.basetype === SPIRBaseType.Image) {
                         var expr = void 0;
                         if (type.image.sampled === 2) {
                             if (!options.es && options.version < 430)
@@ -11567,7 +11569,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                             expr = fname + "(" + this.convert_separate_image_to_expression(ops[2]) + ")";
                         }
                         var restype = this.get(SPIRType, ops[0]);
-                        expr = this.bitcast_expression(restype, SPIRTypeBaseType.Int, expr);
+                        expr = this.bitcast_expression(restype, SPIRBaseType.Int, expr);
                         this.emit_op(result_type, id, expr, true);
                     }
                     else
@@ -11575,14 +11577,14 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     break;
                 }
             // Compute
-            /*case Op.OpControlBarrier:
-            case Op.OpMemoryBarrier:
+            /*case Op.ControlBarrier:
+            case Op.MemoryBarrier:
             {
                 let execution_scope = 0;
                 let memory = 0;
                 let semantics = 0;
 
-                if (opcode === Op.OpMemoryBarrier)
+                if (opcode === Op.MemoryBarrier)
                 {
                     memory = this.evaluate_constant_u32(ops[0]);
                     semantics = this.evaluate_constant_u32(ops[1]);
@@ -11594,9 +11596,9 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     semantics = this.evaluate_constant_u32(ops[2]);
                 }
 
-                if (execution_scope === ScopeSubgroup || memory === ScopeSubgroup)
+                if (execution_scope === Subgroup || memory === Subgroup)
                 {
-                    // OpControlBarrier with ScopeSubgroup is subgroupBarrier()
+                    // OpControlBarrier with Subgroup is subgroupBarrier()
                     if (opcode !== OpControlBarrier)
                     {
                         request_subgroup_feature(ShaderSubgroupSupportHelper::SubgroupMemBarrier);
@@ -11607,7 +11609,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     }
                 }
 
-                if (execution_scope !== ScopeSubgroup && get_entry_point().model === ExecutionModelTessellationControl)
+                if (execution_scope !== Subgroup && get_entry_point().model === ExecutionModelTessellationControl)
                 {
                     // Control shaders only have barriers, and it implies memory barriers.
                     if (opcode === OpControlBarrier)
@@ -11637,13 +11639,13 @@ var CompilerGLSL = /** @class */ (function (_super) {
                         {
                             // If we only care about workgroup memory, either Device or Workgroup scope is fine,
                             // scope does not have to match.
-                            if ((next_memory === ScopeDevice || next_memory === ScopeWorkgroup) &&
-                                (memory === ScopeDevice || memory === ScopeWorkgroup))
+                            if ((next_memory === Device || next_memory === Workgroup) &&
+                                (memory === Device || memory === Workgroup))
                             {
                                 memory_scope_covered = true;
                             }
                         }
-                        else if (memory === ScopeWorkgroup && next_memory === ScopeDevice)
+                        else if (memory === Workgroup && next_memory === Device)
                         {
                             // The control barrier has device scope, but the memory barrier just has workgroup scope.
                             memory_scope_covered = true;
@@ -11664,19 +11666,19 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     flush_all_active_variables();
                 }
 
-                if (memory === ScopeWorkgroup) // Only need to consider memory within a group
+                if (memory === Workgroup) // Only need to consider memory within a group
                 {
                     if (semantics === MemorySemanticsWorkgroupMemoryMask)
                     {
                         // OpControlBarrier implies a memory barrier for shared memory as well.
-                        bool implies_shared_barrier = opcode === OpControlBarrier && execution_scope === ScopeWorkgroup;
+                        bool implies_shared_barrier = opcode === OpControlBarrier && execution_scope === Workgroup;
                         if (!implies_shared_barrier)
                             statement("memoryBarrierShared();");
                     }
                     else if (semantics !== 0)
                         statement("groupMemoryBarrier();");
                 }
-                else if (memory === ScopeSubgroup)
+                else if (memory === Subgroup)
                 {
                     const uint32_t all_barriers =
                     MemorySemanticsWorkgroupMemoryMask | MemorySemanticsUniformMemoryMask | MemorySemanticsImageMemoryMask;
@@ -11733,14 +11735,14 @@ var CompilerGLSL = /** @class */ (function (_super) {
 
                 if (opcode === OpControlBarrier)
                 {
-                    if (execution_scope === ScopeSubgroup)
+                    if (execution_scope === Subgroup)
                         statement("subgroupBarrier();");
                     else
                         statement("barrier();");
                 }
                 break;
             }*/
-            case Op.OpExtInst:
+            case Op.ExtInst:
                 {
                     var extension_set = ops[2];
                     var ext = this.get(SPIRExtension, extension_set).ext;
@@ -11887,7 +11889,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 uint32_t result_type = ops[0];
                 uint32_t id = ops[1];
 
-                if (type.image.dim === spv::DimSubpassData)
+                if (type.image.dim === spv::SubpassData)
                 {
                     emit_unary_func_op(result_type, id, ops[2], "fragmentMaskFetchAMD");
                 }
@@ -11906,7 +11908,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 uint32_t result_type = ops[0];
                 uint32_t id = ops[1];
 
-                if (type.image.dim === spv::DimSubpassData)
+                if (type.image.dim === spv::SubpassData)
                 {
                     emit_binary_func_op(result_type, id, ops[2], ops[4], "fragmentFetchAMD");
                 }
@@ -11957,12 +11959,12 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 emit_subgroup_op(instruction);
                 break;
             */
-            case Op.OpFUnordEqual:
-            case Op.OpFUnordNotEqual:
-            case Op.OpFUnordLessThan:
-            case Op.OpFUnordGreaterThan:
-            case Op.OpFUnordLessThanEqual:
-            case Op.OpFUnordGreaterThanEqual:
+            case Op.FUnordEqual:
+            case Op.FUnordNotEqual:
+            case Op.FUnordLessThan:
+            case Op.FUnordGreaterThan:
+            case Op.FUnordLessThanEqual:
+            case Op.FUnordGreaterThanEqual:
                 {
                     // GLSL doesn't specify if floating point comparisons are ordered or unordered,
                     // but glslang always emits ordered floating point compares for GLSL.
@@ -11974,22 +11976,22 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     if (this.expression_type(op0).vecsize > 1) {
                         var comp_op = null;
                         switch (opcode) {
-                            case Op.OpFUnordEqual:
+                            case Op.FUnordEqual:
                                 comp_op = "notEqual";
                                 break;
-                            case Op.OpFUnordNotEqual:
+                            case Op.FUnordNotEqual:
                                 comp_op = "equal";
                                 break;
-                            case Op.OpFUnordLessThan:
+                            case Op.FUnordLessThan:
                                 comp_op = "greaterThanEqual";
                                 break;
-                            case Op.OpFUnordLessThanEqual:
+                            case Op.FUnordLessThanEqual:
                                 comp_op = "greaterThan";
                                 break;
-                            case Op.OpFUnordGreaterThan:
+                            case Op.FUnordGreaterThan:
                                 comp_op = "lessThanEqual";
                                 break;
-                            case Op.OpFUnordGreaterThanEqual:
+                            case Op.FUnordGreaterThanEqual:
                                 comp_op = "lessThan";
                                 break;
                             default:
@@ -12001,22 +12003,22 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     else {
                         var comp_op = null;
                         switch (opcode) {
-                            case Op.OpFUnordEqual:
+                            case Op.FUnordEqual:
                                 comp_op = " !== ";
                                 break;
-                            case Op.OpFUnordNotEqual:
+                            case Op.FUnordNotEqual:
                                 comp_op = " === ";
                                 break;
-                            case Op.OpFUnordLessThan:
+                            case Op.FUnordLessThan:
                                 comp_op = " >= ";
                                 break;
-                            case Op.OpFUnordLessThanEqual:
+                            case Op.FUnordLessThanEqual:
                                 comp_op = " > ";
                                 break;
-                            case Op.OpFUnordGreaterThan:
+                            case Op.FUnordGreaterThan:
                                 comp_op = " <= ";
                                 break;
-                            case Op.OpFUnordGreaterThanEqual:
+                            case Op.FUnordGreaterThanEqual:
                                 comp_op = " < ";
                                 break;
                             default:
@@ -12136,10 +12138,10 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 require_extension_internal("GL_EXT_ray_tracing");
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "accelerationStructureEXT");
                 break;*/
-            case Op.OpConvertUToPtr:
+            case Op.ConvertUToPtr:
                 {
                     var type = this.get(SPIRType, ops[0]);
-                    if (type.storage !== StorageClass.StorageClassPhysicalStorageBufferEXT)
+                    if (type.storage !== StorageClass.PhysicalStorageBufferEXT)
                         throw new Error("Only StorageClassPhysicalStorageBufferEXT is supported by OpConvertUToPtr.");
                     var in_type = this.expression_type(ops[2]);
                     if (in_type.vecsize === 2)
@@ -12148,11 +12150,11 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.emit_unary_func_op(ops[0], ops[1], ops[2], op);
                     break;
                 }
-            case Op.OpConvertPtrToU:
+            case Op.ConvertPtrToU:
                 {
                     var type = this.get(SPIRType, ops[0]);
                     var ptr_type = this.expression_type(ops[2]);
-                    if (ptr_type.storage !== StorageClass.StorageClassPhysicalStorageBufferEXT)
+                    if (ptr_type.storage !== StorageClass.PhysicalStorageBufferEXT)
                         throw new Error("Only StorageClassPhysicalStorageBufferEXT is supported by OpConvertPtrToU.");
                     if (type.vecsize === 2)
                         this.require_extension_internal("GL_EXT_buffer_reference_uvec2");
@@ -12160,20 +12162,20 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.emit_unary_func_op(ops[0], ops[1], ops[2], op);
                     break;
                 }
-            case Op.OpUndef:
+            case Op.Undef:
                 // Undefined value has been declared.
                 break;
-            case Op.OpLine:
+            case Op.Line:
                 {
                     this.emit_line_directive(ops[0], ops[1]);
                     break;
                 }
-            case Op.OpNoLine:
+            case Op.NoLine:
                 break;
-            case Op.OpDemoteToHelperInvocationEXT:
+            case Op.DemoteToHelperInvocationEXT:
                 // if (!options.vulkan_semantics)
                 throw new Error("GL_EXT_demote_to_helper_invocation is only supported in Vulkan GLSL.");
-            case Op.OpIsHelperInvocationEXT:
+            case Op.IsHelperInvocationEXT:
                 // if (!options.vulkan_semantics)
                 throw new Error("GL_EXT_demote_to_helper_invocation is only supported in Vulkan GLSL.");
             /*case OpBeginInvocationInterlockEXT:
@@ -12220,7 +12222,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var _a = this, options = _a.options, ir = _a.ir;
         switch (op) {
             // FP fiddling
-            case GLSLstd450.GLSLstd450Round:
+            case GLSLstd450.Round:
                 if (!this.is_legacy())
                     this.emit_unary_func_op(result_type, id, args[arroffs], "round");
                 else {
@@ -12232,7 +12234,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.inherit_expression_dependencies(id, args[arroffs]);
                 }
                 break;
-            case GLSLstd450.GLSLstd450RoundEven:
+            case GLSLstd450.RoundEven:
                 if (!this.is_legacy())
                     this.emit_unary_func_op(result_type, id, args[arroffs], "roundEven");
                 else if (!options.es) {
@@ -12243,37 +12245,37 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 else
                     throw new Error("roundEven supported only in ESSL 300.");
                 break;
-            case GLSLstd450.GLSLstd450Trunc:
+            case GLSLstd450.Trunc:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "trunc");
                 break;
-            case GLSLstd450.GLSLstd450SAbs:
+            case GLSLstd450.SAbs:
                 this.emit_unary_func_op_cast(result_type, id, args[arroffs], "abs", int_type, int_type);
                 break;
-            case GLSLstd450.GLSLstd450FAbs:
+            case GLSLstd450.FAbs:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "abs");
                 break;
-            case GLSLstd450.GLSLstd450SSign:
+            case GLSLstd450.SSign:
                 this.emit_unary_func_op_cast(result_type, id, args[arroffs], "sign", int_type, int_type);
                 break;
-            case GLSLstd450.GLSLstd450FSign:
+            case GLSLstd450.FSign:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "sign");
                 break;
-            case GLSLstd450.GLSLstd450Floor:
+            case GLSLstd450.Floor:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "floor");
                 break;
-            case GLSLstd450.GLSLstd450Ceil:
+            case GLSLstd450.Ceil:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "ceil");
                 break;
-            case GLSLstd450.GLSLstd450Fract:
+            case GLSLstd450.Fract:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "fract");
                 break;
-            case GLSLstd450.GLSLstd450Radians:
+            case GLSLstd450.Radians:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "radians");
                 break;
-            case GLSLstd450.GLSLstd450Degrees:
+            case GLSLstd450.Degrees:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "degrees");
                 break;
-            case GLSLstd450.GLSLstd450Fma:
+            case GLSLstd450.Fma:
                 if ((!options.es && options.version < 400) || (options.es && options.version < 320)) {
                     var expr = this.to_enclosed_expression(args[arroffs]) + " * " + this.to_enclosed_expression(args[arroffs + 1]) + " + " +
                         this.to_enclosed_expression(args[arroffs + 2]);
@@ -12284,12 +12286,12 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 else
                     this.emit_trinary_func_op(result_type, id, args[arroffs], args[arroffs + 1], args[arroffs + 2], "fma");
                 break;
-            case GLSLstd450.GLSLstd450Modf:
+            case GLSLstd450.Modf:
                 this.register_call_out_argument(args[arroffs + 1]);
                 this.forced_temporaries.add(id);
                 this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "modf");
                 break;
-            case GLSLstd450.GLSLstd450ModfStruct:
+            case GLSLstd450.ModfStruct:
                 {
                     var type = this.get(SPIRType, result_type);
                     this.emit_uninitialized_temporary_expression(result_type, id);
@@ -12297,138 +12299,138 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     break;
                 }
             // Minmax
-            case GLSLstd450.GLSLstd450UMin:
+            case GLSLstd450.UMin:
                 this.emit_binary_func_op_cast(result_type, id, args[arroffs], args[arroffs + 1], "min", uint_type, false);
                 break;
-            case GLSLstd450.GLSLstd450SMin:
+            case GLSLstd450.SMin:
                 this.emit_binary_func_op_cast(result_type, id, args[arroffs], args[arroffs + 1], "min", int_type, false);
                 break;
-            case GLSLstd450.GLSLstd450FMin:
+            case GLSLstd450.FMin:
                 this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "min");
                 break;
-            case GLSLstd450.GLSLstd450FMax:
+            case GLSLstd450.FMax:
                 this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "max");
                 break;
-            case GLSLstd450.GLSLstd450UMax:
+            case GLSLstd450.UMax:
                 this.emit_binary_func_op_cast(result_type, id, args[arroffs], args[arroffs + 1], "max", uint_type, false);
                 break;
-            case GLSLstd450.GLSLstd450SMax:
+            case GLSLstd450.SMax:
                 this.emit_binary_func_op_cast(result_type, id, args[arroffs], args[arroffs + 1], "max", int_type, false);
                 break;
-            case GLSLstd450.GLSLstd450FClamp:
+            case GLSLstd450.FClamp:
                 this.emit_trinary_func_op(result_type, id, args[arroffs], args[arroffs + 1], args[arroffs + 2], "clamp");
                 break;
-            case GLSLstd450.GLSLstd450UClamp:
+            case GLSLstd450.UClamp:
                 this.emit_trinary_func_op_cast(result_type, id, args[arroffs], args[arroffs + 1], args[arroffs + 2], "clamp", uint_type);
                 break;
-            case GLSLstd450.GLSLstd450SClamp:
+            case GLSLstd450.SClamp:
                 this.emit_trinary_func_op_cast(result_type, id, args[arroffs], args[arroffs + 1], args[arroffs + 2], "clamp", int_type);
                 break;
             // Trig
-            case GLSLstd450.GLSLstd450Sin:
+            case GLSLstd450.Sin:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "sin");
                 break;
-            case GLSLstd450.GLSLstd450Cos:
+            case GLSLstd450.Cos:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "cos");
                 break;
-            case GLSLstd450.GLSLstd450Tan:
+            case GLSLstd450.Tan:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "tan");
                 break;
-            case GLSLstd450.GLSLstd450Asin:
+            case GLSLstd450.Asin:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "asin");
                 break;
-            case GLSLstd450.GLSLstd450Acos:
+            case GLSLstd450.Acos:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "acos");
                 break;
-            case GLSLstd450.GLSLstd450Atan:
+            case GLSLstd450.Atan:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "atan");
                 break;
-            case GLSLstd450.GLSLstd450Sinh:
+            case GLSLstd450.Sinh:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "sinh");
                 break;
-            case GLSLstd450.GLSLstd450Cosh:
+            case GLSLstd450.Cosh:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "cosh");
                 break;
-            case GLSLstd450.GLSLstd450Tanh:
+            case GLSLstd450.Tanh:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "tanh");
                 break;
-            case GLSLstd450.GLSLstd450Asinh:
+            case GLSLstd450.Asinh:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "asinh");
                 break;
-            case GLSLstd450.GLSLstd450Acosh:
+            case GLSLstd450.Acosh:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "acosh");
                 break;
-            case GLSLstd450.GLSLstd450Atanh:
+            case GLSLstd450.Atanh:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "atanh");
                 break;
-            case GLSLstd450.GLSLstd450Atan2:
+            case GLSLstd450.Atan2:
                 this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "atan");
                 break;
             // Exponentials
-            case GLSLstd450.GLSLstd450Pow:
+            case GLSLstd450.Pow:
                 this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "pow");
                 break;
-            case GLSLstd450.GLSLstd450Exp:
+            case GLSLstd450.Exp:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "exp");
                 break;
-            case GLSLstd450.GLSLstd450Log:
+            case GLSLstd450.Log:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "log");
                 break;
-            case GLSLstd450.GLSLstd450Exp2:
+            case GLSLstd450.Exp2:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "exp2");
                 break;
-            case GLSLstd450.GLSLstd450Log2:
+            case GLSLstd450.Log2:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "log2");
                 break;
-            case GLSLstd450.GLSLstd450Sqrt:
+            case GLSLstd450.Sqrt:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "sqrt");
                 break;
-            case GLSLstd450.GLSLstd450InverseSqrt:
+            case GLSLstd450.InverseSqrt:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "inversesqrt");
                 break;
             // Matrix math
-            case GLSLstd450.GLSLstd450Determinant:
+            case GLSLstd450.Determinant:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "determinant");
                 break;
-            case GLSLstd450.GLSLstd450MatrixInverse:
+            case GLSLstd450.MatrixInverse:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "inverse");
                 break;
             // Lerping
-            case GLSLstd450.GLSLstd450FMix:
-            case GLSLstd450.GLSLstd450IMix:
+            case GLSLstd450.FMix:
+            case GLSLstd450.IMix:
                 {
                     this.emit_mix_op(result_type, id, args[arroffs], args[arroffs + 1], args[arroffs + 2]);
                     break;
                 }
-            case GLSLstd450.GLSLstd450Step:
+            case GLSLstd450.Step:
                 this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "step");
                 break;
-            case GLSLstd450.GLSLstd450SmoothStep:
+            case GLSLstd450.SmoothStep:
                 this.emit_trinary_func_op(result_type, id, args[arroffs], args[arroffs + 1], args[arroffs + 2], "smoothstep");
                 break;
             // Packing
-            case GLSLstd450.GLSLstd450Frexp:
+            case GLSLstd450.Frexp:
                 this.register_call_out_argument(args[arroffs + 1]);
                 this.forced_temporaries.add(id);
                 this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "frexp");
                 break;
-            case GLSLstd450.GLSLstd450FrexpStruct:
+            case GLSLstd450.FrexpStruct:
                 {
                     var type = this.get(SPIRType, result_type);
                     this.emit_uninitialized_temporary_expression(result_type, id);
                     this.statement(this.to_expression(id), ".", this.to_member_name(type, 0), " = ", "frexp(", this.to_expression(args[arroffs]), ", ", this.to_expression(id), ".", this.to_member_name(type, 1), ");");
                     break;
                 }
-            case GLSLstd450.GLSLstd450Ldexp:
+            case GLSLstd450.Ldexp:
                 {
                     var forward = this.should_forward(args[arroffs]) && this.should_forward(args[arroffs + 1]);
                     var op0 = this.to_unpacked_expression(args[arroffs]);
                     var op1 = this.to_unpacked_expression(args[arroffs + 1]);
                     var op1_type = this.expression_type(args[arroffs + 1]);
-                    if (op1_type.basetype !== SPIRTypeBaseType.Int) {
+                    if (op1_type.basetype !== SPIRBaseType.Int) {
                         // Need a value cast here.
                         var target_type = defaultClone(SPIRType, op1_type);
-                        target_type.basetype = SPIRTypeBaseType.Int;
+                        target_type.basetype = SPIRBaseType.Int;
                         op1 = this.type_to_glsl_constructor(target_type) + "(" + op1 + ")";
                     }
                     var expr = "ldexp(" + op0 + ", " + op1 + ")";
@@ -12437,103 +12439,103 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.inherit_expression_dependencies(id, args[arroffs + 1]);
                     break;
                 }
-            case GLSLstd450.GLSLstd450PackSnorm4x8:
+            case GLSLstd450.PackSnorm4x8:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "packSnorm4x8");
                 break;
-            case GLSLstd450.GLSLstd450PackUnorm4x8:
+            case GLSLstd450.PackUnorm4x8:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "packUnorm4x8");
                 break;
-            case GLSLstd450.GLSLstd450PackSnorm2x16:
+            case GLSLstd450.PackSnorm2x16:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "packSnorm2x16");
                 break;
-            case GLSLstd450.GLSLstd450PackUnorm2x16:
+            case GLSLstd450.PackUnorm2x16:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "packUnorm2x16");
                 break;
-            case GLSLstd450.GLSLstd450PackHalf2x16:
+            case GLSLstd450.PackHalf2x16:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "packHalf2x16");
                 break;
-            case GLSLstd450.GLSLstd450UnpackSnorm4x8:
+            case GLSLstd450.UnpackSnorm4x8:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "unpackSnorm4x8");
                 break;
-            case GLSLstd450.GLSLstd450UnpackUnorm4x8:
+            case GLSLstd450.UnpackUnorm4x8:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "unpackUnorm4x8");
                 break;
-            case GLSLstd450.GLSLstd450UnpackSnorm2x16:
+            case GLSLstd450.UnpackSnorm2x16:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "unpackSnorm2x16");
                 break;
-            case GLSLstd450.GLSLstd450UnpackUnorm2x16:
+            case GLSLstd450.UnpackUnorm2x16:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "unpackUnorm2x16");
                 break;
-            case GLSLstd450.GLSLstd450UnpackHalf2x16:
+            case GLSLstd450.UnpackHalf2x16:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "unpackHalf2x16");
                 break;
-            case GLSLstd450.GLSLstd450PackDouble2x32:
+            case GLSLstd450.PackDouble2x32:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "packDouble2x32");
                 break;
-            case GLSLstd450.GLSLstd450UnpackDouble2x32:
+            case GLSLstd450.UnpackDouble2x32:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "unpackDouble2x32");
                 break;
             // Vector math
-            case GLSLstd450.GLSLstd450Length:
+            case GLSLstd450.Length:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "length");
                 break;
-            case GLSLstd450.GLSLstd450Distance:
+            case GLSLstd450.Distance:
                 this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "distance");
                 break;
-            case GLSLstd450.GLSLstd450Cross:
+            case GLSLstd450.Cross:
                 this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "cross");
                 break;
-            case GLSLstd450.GLSLstd450Normalize:
+            case GLSLstd450.Normalize:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "normalize");
                 break;
-            case GLSLstd450.GLSLstd450FaceForward:
+            case GLSLstd450.FaceForward:
                 this.emit_trinary_func_op(result_type, id, args[arroffs], args[arroffs + 1], args[arroffs + 2], "faceforward");
                 break;
-            case GLSLstd450.GLSLstd450Reflect:
+            case GLSLstd450.Reflect:
                 this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "reflect");
                 break;
-            case GLSLstd450.GLSLstd450Refract:
+            case GLSLstd450.Refract:
                 this.emit_trinary_func_op(result_type, id, args[arroffs], args[arroffs + 1], args[arroffs + 2], "refract");
                 break;
             // Bit-fiddling
-            case GLSLstd450.GLSLstd450FindILsb:
+            case GLSLstd450.FindILsb:
                 // findLSB always returns int.
                 this.emit_unary_func_op_cast(result_type, id, args[arroffs], "findLSB", this.expression_type(args[arroffs]).basetype, int_type);
                 break;
-            case GLSLstd450.GLSLstd450FindSMsb:
+            case GLSLstd450.FindSMsb:
                 this.emit_unary_func_op_cast(result_type, id, args[arroffs], "findMSB", int_type, int_type);
                 break;
-            case GLSLstd450.GLSLstd450FindUMsb:
+            case GLSLstd450.FindUMsb:
                 this.emit_unary_func_op_cast(result_type, id, args[arroffs], "findMSB", uint_type, int_type); // findMSB always
                 // returns int.
                 break;
             // Multisampled varying
-            case GLSLstd450.GLSLstd450InterpolateAtCentroid:
+            case GLSLstd450.InterpolateAtCentroid:
                 this.emit_unary_func_op(result_type, id, args[arroffs], "interpolateAtCentroid");
                 break;
-            case GLSLstd450.GLSLstd450InterpolateAtSample:
+            case GLSLstd450.InterpolateAtSample:
                 this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "interpolateAtSample");
                 break;
-            case GLSLstd450.GLSLstd450InterpolateAtOffset:
+            case GLSLstd450.InterpolateAtOffset:
                 this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "interpolateAtOffset");
                 break;
-            case GLSLstd450.GLSLstd450NMin:
-            case GLSLstd450.GLSLstd450NMax:
+            case GLSLstd450.NMin:
+            case GLSLstd450.NMax:
                 {
                     this.emit_nminmax_op(result_type, id, args[arroffs], args[arroffs + 1], op);
                     break;
                 }
-            case GLSLstd450.GLSLstd450NClamp:
+            case GLSLstd450.NClamp:
                 {
                     // Make sure we have a unique ID here to avoid aliasing the extra sub-expressions between clamp and NMin sub-op.
                     // IDs cannot exceed 24 bits, so we can make use of the higher bits for some unique flags.
-                    var max_id = maplike_get(0, this.extra_sub_expressions, id | ExtraSubExpressionType.EXTRA_SUB_EXPRESSION_TYPE_AUX);
+                    var max_id = maplike_get(0, this.extra_sub_expressions, id | ExtraSubExpressionType.TYPE_AUX);
                     if (!max_id)
                         max_id = ir.increase_bound_by(1);
                     // Inherit precision qualifiers.
                     ir.meta[max_id] = defaultClone(Meta, ir.meta[id]);
-                    this.emit_nminmax_op(result_type, max_id, args[arroffs], args[arroffs + 1], GLSLstd450.GLSLstd450NMax);
-                    this.emit_nminmax_op(result_type, id, max_id, args[arroffs + 2], GLSLstd450.GLSLstd450NMin);
+                    this.emit_nminmax_op(result_type, max_id, args[arroffs], args[arroffs + 1], GLSLstd450.NMax);
+                    this.emit_nminmax_op(result_type, id, max_id, args[arroffs + 2], GLSLstd450.NMin);
                     break;
                 }
             default:
@@ -12555,17 +12557,17 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 this.statement("#endif");
             }
             // Needed for: layout(early_fragment_tests) in;
-            if (execution.flags.get(ExecutionMode.ExecutionModeEarlyFragmentTests))
+            if (execution.flags.get(ExecutionMode.EarlyFragmentTests))
                 this.require_extension_internal("GL_ARB_shader_image_load_store");
         }
         // Needed for: layout(post_depth_coverage) in;
-        if (execution.flags.get(ExecutionMode.ExecutionModePostDepthCoverage))
+        if (execution.flags.get(ExecutionMode.PostDepthCoverage))
             this.require_extension_internal("GL_ARB_post_depth_coverage");
         // Needed for: layout({pixel,sample}_interlock_[un]ordered) in;
-        var interlock_used = execution.flags.get(ExecutionMode.ExecutionModePixelInterlockOrderedEXT) ||
-            execution.flags.get(ExecutionMode.ExecutionModePixelInterlockUnorderedEXT) ||
-            execution.flags.get(ExecutionMode.ExecutionModeSampleInterlockOrderedEXT) ||
-            execution.flags.get(ExecutionMode.ExecutionModeSampleInterlockUnorderedEXT);
+        var interlock_used = execution.flags.get(ExecutionMode.PixelInterlockOrderedEXT) ||
+            execution.flags.get(ExecutionMode.PixelInterlockUnorderedEXT) ||
+            execution.flags.get(ExecutionMode.SampleInterlockOrderedEXT) ||
+            execution.flags.get(ExecutionMode.SampleInterlockUnorderedEXT);
         if (interlock_used) {
             if (options.es) {
                 if (options.version < 310)
@@ -12710,7 +12712,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var inputs = [];
         var outputs = [];
         switch (execution.model) {
-            case ExecutionModel.ExecutionModelVertex:
+            case ExecutionModel.Vertex:
                 if (options.ovr_multiview_view_count)
                     inputs.push("num_views = " + options.ovr_multiview_view_count);
                 break;
@@ -12793,7 +12795,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 }
                 break;
             }*/
-            case ExecutionModel.ExecutionModelFragment:
+            case ExecutionModel.Fragment:
                 if (options.es) {
                     switch (options.fragment.default_float_precision) {
                         case GLSLPrecision.Lowp:
@@ -12818,33 +12820,33 @@ var CompilerGLSL = /** @class */ (function (_super) {
                             break;
                     }
                 }
-                if (execution.flags.get(ExecutionMode.ExecutionModeEarlyFragmentTests))
+                if (execution.flags.get(ExecutionMode.EarlyFragmentTests))
                     inputs.push("early_fragment_tests");
-                if (execution.flags.get(ExecutionMode.ExecutionModePostDepthCoverage))
+                if (execution.flags.get(ExecutionMode.PostDepthCoverage))
                     inputs.push("post_depth_coverage");
                 if (interlock_used)
                     this.statement("#if defined(GL_ARB_fragment_shader_interlock)");
-                if (execution.flags.get(ExecutionMode.ExecutionModePixelInterlockOrderedEXT))
+                if (execution.flags.get(ExecutionMode.PixelInterlockOrderedEXT))
                     this.statement("layout(pixel_interlock_ordered) in;");
-                else if (execution.flags.get(ExecutionMode.ExecutionModePixelInterlockUnorderedEXT))
+                else if (execution.flags.get(ExecutionMode.PixelInterlockUnorderedEXT))
                     this.statement("layout(pixel_interlock_unordered) in;");
-                else if (execution.flags.get(ExecutionMode.ExecutionModeSampleInterlockOrderedEXT))
+                else if (execution.flags.get(ExecutionMode.SampleInterlockOrderedEXT))
                     this.statement("layout(sample_interlock_ordered) in;");
-                else if (execution.flags.get(ExecutionMode.ExecutionModeSampleInterlockUnorderedEXT))
+                else if (execution.flags.get(ExecutionMode.SampleInterlockUnorderedEXT))
                     this.statement("layout(sample_interlock_unordered) in;");
                 if (interlock_used) {
                     this.statement("#elif !defined(GL_INTEL_fragment_shader_ordering)");
                     this.statement("#error Fragment Shader Interlock/Ordering extension missing!");
                     this.statement("#endif");
                 }
-                if (!options.es && execution.flags.get(ExecutionMode.ExecutionModeDepthGreater))
+                if (!options.es && execution.flags.get(ExecutionMode.DepthGreater))
                     this.statement("layout(depth_greater) out float gl_FragDepth;");
-                else if (!options.es && execution.flags.get(ExecutionMode.ExecutionModeDepthLess))
+                else if (!options.es && execution.flags.get(ExecutionMode.DepthLess))
                     this.statement("layout(depth_less) out float gl_FragDepth;");
                 break;
         }
         /*for (let cap of ir.declared_capabilities)
-            if (cap === Capability.CapabilityRayTraversalPrimitiveCullingKHR) {
+            if (cap === Capability.RayTraversalPrimitiveCullingKHR) {
                 throw new error("Raytracing not supported");
                 this.statement("layout(primitive_culling);");
             }*/
@@ -12897,10 +12899,10 @@ var CompilerGLSL = /** @class */ (function (_super) {
         }
         // Do not register sparse ops as control dependent as they are always lowered to a temporary.
         switch (op) {
-            case Op.OpImageSampleDrefImplicitLod:
-            case Op.OpImageSampleImplicitLod:
-            case Op.OpImageSampleProjImplicitLod:
-            case Op.OpImageSampleProjDrefImplicitLod:
+            case Op.ImageSampleDrefImplicitLod:
+            case Op.ImageSampleImplicitLod:
+            case Op.ImageSampleProjImplicitLod:
+            case Op.ImageSampleProjDrefImplicitLod:
                 this.register_control_dependent_expression(id);
                 break;
         }
@@ -12922,28 +12924,28 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var result_type = this.get(SPIRType, result_type_id);
         var _a = this, options = _a.options, backend = _a.backend;
         inherited_expressions.push(coord);
-        if (this.has_decoration(img, Decoration.DecorationNonUniform) && !this.maybe_get_backing_variable(img))
+        if (this.has_decoration(img, Decoration.NonUniform) && !this.maybe_get_backing_variable(img))
             nonuniform_expression = true;
         switch (op) {
-            case Op.OpImageSampleDrefImplicitLod:
-            case Op.OpImageSampleDrefExplicitLod:
-            case Op.OpImageSparseSampleDrefImplicitLod:
-            case Op.OpImageSparseSampleDrefExplicitLod:
+            case Op.ImageSampleDrefImplicitLod:
+            case Op.ImageSampleDrefExplicitLod:
+            case Op.ImageSparseSampleDrefImplicitLod:
+            case Op.ImageSparseSampleDrefExplicitLod:
                 dref = ops[4];
                 optOffset = 5;
                 length -= 5;
                 break;
-            case Op.OpImageSampleProjDrefImplicitLod:
-            case Op.OpImageSampleProjDrefExplicitLod:
-            case Op.OpImageSparseSampleProjDrefImplicitLod:
-            case Op.OpImageSparseSampleProjDrefExplicitLod:
+            case Op.ImageSampleProjDrefImplicitLod:
+            case Op.ImageSampleProjDrefExplicitLod:
+            case Op.ImageSparseSampleProjDrefImplicitLod:
+            case Op.ImageSparseSampleProjDrefExplicitLod:
                 dref = ops[4];
                 optOffset = 5;
                 length -= 5;
                 proj = true;
                 break;
-            case Op.OpImageDrefGather:
-            case Op.OpImageSparseDrefGather:
+            case Op.ImageDrefGather:
+            case Op.ImageSparseDrefGather:
                 dref = ops[4];
                 optOffset = 5;
                 length -= 5;
@@ -12953,8 +12955,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 else if (!options.es && options.version < 400)
                     throw new Error("textureGather with depth compare requires GLSL 400.");
                 break;
-            case Op.OpImageGather:
-            case Op.OpImageSparseGather:
+            case Op.ImageGather:
+            case Op.ImageSparseGather:
                 comp = ops[4];
                 optOffset = 5;
                 length -= 5;
@@ -12967,17 +12969,17 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.require_extension_internal("GL_ARB_texture_gather");
                 }
                 break;
-            case Op.OpImageFetch:
-            case Op.OpImageSparseFetch:
-            case Op.OpImageRead: // Reads === fetches in Metal (other langs will not get here)
+            case Op.ImageFetch:
+            case Op.ImageSparseFetch:
+            case Op.ImageRead: // Reads === fetches in Metal (other langs will not get here)
                 optOffset = 4;
                 length -= 4;
                 fetch = true;
                 break;
-            case Op.OpImageSampleProjImplicitLod:
-            case Op.OpImageSampleProjExplicitLod:
-            case Op.OpImageSparseSampleProjImplicitLod:
-            case Op.OpImageSparseSampleProjExplicitLod:
+            case Op.ImageSampleProjImplicitLod:
+            case Op.ImageSampleProjExplicitLod:
+            case Op.ImageSparseSampleProjImplicitLod:
+            case Op.ImageSparseSampleProjExplicitLod:
                 optOffset = 4;
                 length -= 4;
                 proj = true;
@@ -13001,10 +13003,10 @@ var CompilerGLSL = /** @class */ (function (_super) {
             case Dim.Dim3D:
                 coord_components = 3;
                 break;
-            case Dim.DimCube:
+            case Dim.Cube:
                 coord_components = 3;
                 break;
-            case Dim.DimBuffer:
+            case Dim.Buffer:
                 coord_components = 1;
                 break;
             default:
@@ -13038,15 +13040,15 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 length--;
             }
         };
-        test(bias, ImageOperandsMask.ImageOperandsBiasMask);
-        test(lod, ImageOperandsMask.ImageOperandsLodMask);
-        test(grad_x, ImageOperandsMask.ImageOperandsGradMask);
-        test(grad_y, ImageOperandsMask.ImageOperandsGradMask);
-        test(coffset, ImageOperandsMask.ImageOperandsConstOffsetMask);
-        test(offset, ImageOperandsMask.ImageOperandsOffsetMask);
-        test(coffsets, ImageOperandsMask.ImageOperandsConstOffsetsMask);
-        test(sample, ImageOperandsMask.ImageOperandsSampleMask);
-        test(minlod, ImageOperandsMask.ImageOperandsMinLodMask);
+        test(bias, ImageOperandsMask.Bias);
+        test(lod, ImageOperandsMask.Lod);
+        test(grad_x, ImageOperandsMask.Grad);
+        test(grad_y, ImageOperandsMask.Grad);
+        test(coffset, ImageOperandsMask.ConstOffset);
+        test(offset, ImageOperandsMask.Offset);
+        test(coffsets, ImageOperandsMask.ConstOffsets);
+        test(sample, ImageOperandsMask.Sample);
+        test(minlod, ImageOperandsMask.MinLod);
         var base_args = new TextureFunctionBaseArguments();
         base_args.img = img;
         base_args.imgtype = imgtype;
@@ -13114,7 +13116,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             expr = this.type_to_glsl_constructor(result_type) + "(" + expr + ")";
         }
         // Deals with reads from MSL. We might need to downconvert to fewer components.
-        if (op === Op.OpImageRead)
+        if (op === Op.ImageRead)
             expr = this.remap_swizzle(result_type, 4, expr);
         return expr;
     };
@@ -13140,7 +13142,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             memberflags = new Bitset();
         var qualifiers = "";
         var flags = maplike_get(Meta, ir.meta, type.self).decoration.decoration_flags;
-        var is_block = flags.get(Decoration.DecorationBlock) || flags.get(Decoration.DecorationBufferBlock);
+        var is_block = flags.get(Decoration.Block) || flags.get(Decoration.BufferBlock);
         if (is_block)
             qualifiers = this.to_interpolation_qualifiers(memberflags);
         this.statement(this.layout_for_member(type, index), qualifiers, qualifier, this.flags_to_qualifiers_glsl(membertype, memberflags), this.variable_decl(membertype, this.to_member_name(type, index)), ";");
@@ -13163,7 +13165,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // The workaround will assert that the LOD is in fact constant 0, or we cannot emit correct code.
         // This happens for HLSL SampleCmpLevelZero on Texture2DArray and TextureCube.
         var workaround_lod_array_shadow_as_grad = false;
-        if (((imgtype.image.arrayed && imgtype.image.dim === Dim.Dim2D) || imgtype.image.dim === Dim.DimCube) &&
+        if (((imgtype.image.arrayed && imgtype.image.dim === Dim.Dim2D) || imgtype.image.dim === Dim.Cube) &&
             this.is_depth_image(imgtype, tex) && args.lod) {
             if (!this.expression_is_constant_null(args.lod)) {
                 throw new Error("textureLod on sampler2DArrayShadow is not constant 0.0. This cannot be expressed in" +
@@ -13231,17 +13233,17 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var coord_expr = (swizzle_expr === "") ? this.to_expression(args.coord) : (this.to_enclosed_expression(args.coord) + swizzle_expr);
         // texelFetch only takes int, not uint.
         var coord_type = this.expression_type(args.coord);
-        if (coord_type.basetype === SPIRTypeBaseType.UInt) {
+        if (coord_type.basetype === SPIRBaseType.UInt) {
             var expected_type = defaultClone(SPIRType, coord_type);
             expected_type.vecsize = args.coord_components;
-            expected_type.basetype = SPIRTypeBaseType.Int;
+            expected_type.basetype = SPIRBaseType.Int;
             coord_expr = this.bitcast_expression(expected_type, coord_type.basetype, coord_expr);
         }
         // textureLod on sampler2DArrayShadow and samplerCubeShadow does not exist in GLSL for some reason.
         // To emulate this, we will have to use textureGrad with a constant gradient of 0.
         // The workaround will assert that the LOD is in fact constant 0, or we cannot emit correct code.
         // This happens for HLSL SampleCmpLevelZero on Texture2DArray and TextureCube.
-        var workaround_lod_array_shadow_as_grad = ((imgtype.image.arrayed && imgtype.image.dim === Dim.Dim2D) || imgtype.image.dim === Dim.DimCube) &&
+        var workaround_lod_array_shadow_as_grad = ((imgtype.image.arrayed && imgtype.image.dim === Dim.Dim2D) || imgtype.image.dim === Dim.Cube) &&
             this.is_depth_image(imgtype, img) && args.lod !== 0;
         if (args.dref) {
             forward = forward && this.should_forward(args.dref);
@@ -13310,7 +13312,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 // Implementing this as plain texture() is not safe on some implementations.
                 if (imgtype.image.dim === Dim.Dim2D)
                     farg_str += ", vec2(0.0), vec2(0.0)";
-                else if (imgtype.image.dim === Dim.DimCube)
+                else if (imgtype.image.dim === Dim.Cube)
                     farg_str += ", vec3(0.0), vec3(0.0)";
             }
             else {
@@ -13318,8 +13320,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 farg_str += ", ";
                 var lod_expr_type = this.expression_type(args.lod);
                 // Lod expression for TexelFetch in GLSL must be int, and only int.
-                if (args.base.is_fetch && imgtype.image.dim !== Dim.DimBuffer && !imgtype.image.ms &&
-                    lod_expr_type.basetype !== SPIRTypeBaseType.Int) {
+                if (args.base.is_fetch && imgtype.image.dim !== Dim.Buffer && !imgtype.image.ms &&
+                    lod_expr_type.basetype !== SPIRBaseType.Int) {
                     farg_str += "int(" + this.to_expression(args.lod) + ")";
                 }
                 else {
@@ -13327,7 +13329,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 }
             }
         }
-        else if (args.base.is_fetch && imgtype.image.dim !== Dim.DimBuffer && !imgtype.image.ms) {
+        else if (args.base.is_fetch && imgtype.image.dim !== Dim.Buffer && !imgtype.image.ms) {
             // Lod argument is optional in OpImageFetch, but we require a LOD value, pick 0 as the default.
             farg_str += ", 0";
         }
@@ -13363,7 +13365,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             forward = forward && this.should_forward(args.component);
             farg_str += ", ";
             var component_type = this.expression_type(args.component);
-            if (component_type.basetype === SPIRTypeBaseType.Int)
+            if (component_type.basetype === SPIRBaseType.Int)
                 farg_str += this.to_expression(args.component);
             else
                 farg_str += "int(" + this.to_expression(args.component) + ")";
@@ -13384,7 +13386,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         ids.sparse_code_id = temps + 0;
         ids.sparse_texel_id = temps + 1;
         var return_type = this.get(SPIRType, result_type_id);
-        if (return_type.basetype !== SPIRTypeBaseType.Struct || return_type.member_types.length !== 2)
+        if (return_type.basetype !== SPIRBaseType.Struct || return_type.member_types.length !== 2)
             throw new Error("Invalid return type for sparse feedback.");
         this.emit_uninitialized_temporary(return_type.member_types[0], ids.sparse_code_id);
         this.emit_uninitialized_temporary(return_type.member_types[1], ids.sparse_texel_id);
@@ -13394,7 +13396,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
     };
     CompilerGLSL.prototype.emit_buffer_block = function (var_) {
         var type = this.get(SPIRType, var_.basetype);
-        var ubo_block = var_.storage === StorageClass.StorageClassUniform && this.has_decoration(type.self, Decoration.DecorationBlock);
+        var ubo_block = var_.storage === StorageClass.Uniform && this.has_decoration(type.self, Decoration.Block);
         var _a = this, options = _a.options, ir = _a.ir;
         if (this.flattened_buffer_blocks.has(var_.self))
             this.emit_buffer_block_flattened(var_);
@@ -13426,18 +13428,18 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var type = this.get(SPIRType, var_.basetype);
         var ir = this.ir;
         var meta = maplike_get(Meta, ir.meta, type.self);
-        var ssbo = var_.storage === StorageClass.StorageClassStorageBuffer ||
-            meta.decoration.decoration_flags.get(Decoration.DecorationBufferBlock);
+        var ssbo = var_.storage === StorageClass.StorageBuffer ||
+            meta.decoration.decoration_flags.get(Decoration.BufferBlock);
         if (ssbo)
             throw new Error("SSBOs not supported in legacy targets.");
         // We're emitting the push constant block as a regular struct, so disable the block qualifier temporarily.
         // Otherwise, we will end up emitting layout() qualifiers on naked structs which is not allowed.
         var block_flags = meta.decoration.decoration_flags;
-        var block_flag = block_flags.get(Decoration.DecorationBlock);
-        block_flags.clear(Decoration.DecorationBlock);
+        var block_flag = block_flags.get(Decoration.Block);
+        block_flags.clear(Decoration.Block);
         this.emit_struct(type);
         if (block_flag)
-            block_flags.set(Decoration.DecorationBlock);
+            block_flags.set(Decoration.Block);
         this.emit_uniform(var_);
         this.statement("");
     };
@@ -13451,7 +13453,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             var tmp = new SPIRType();
             tmp.basetype = basic_type;
             tmp.vecsize = 4;
-            if (basic_type !== SPIRTypeBaseType.Float && basic_type !== SPIRTypeBaseType.Int && basic_type !== SPIRTypeBaseType.UInt)
+            if (basic_type !== SPIRBaseType.Float && basic_type !== SPIRBaseType.Int && basic_type !== SPIRBaseType.UInt)
                 throw new Error("Basic types in a flattened UBO must be float, int or uint.");
             var flags = this.ir.get_buffer_block_flags(var_);
             this.statement("uniform ", this.flags_to_qualifiers_glsl(tmp, flags), this.type_to_glsl(tmp), " ", buffer_name, "[", buffer_size, "];");
@@ -13470,7 +13472,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var dec = maplike_get(Meta, ir.meta, type.self).decoration;
         var old_flags = dec.decoration_flags.clone();
         // Emit the members as if they are part of a block to get all qualifiers.
-        dec.decoration_flags.set(Decoration.DecorationBlock);
+        dec.decoration_flags.set(Decoration.Block);
         type.member_name_cache.clear();
         var member_indices = [];
         member_indices.push(0);
@@ -13481,7 +13483,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             this.add_member_name(type, i);
             var membertype = this.get(SPIRType, member);
             member_indices[member_indices.length - 1] = i;
-            if (membertype.basetype === SPIRTypeBaseType.Struct)
+            if (membertype.basetype === SPIRBaseType.Struct)
                 this.emit_flattened_io_block_struct(basename, type, qual, member_indices);
             else
                 this.emit_flattened_io_block_member(basename, type, qual, member_indices);
@@ -13499,12 +13501,12 @@ var CompilerGLSL = /** @class */ (function (_super) {
             var index = indices_1[_i];
             member_type = this.get(SPIRType, member_type.member_types[index]);
         }
-        console.assert(member_type.basetype === SPIRTypeBaseType.Struct);
+        console.assert(member_type.basetype === SPIRBaseType.Struct);
         if (member_type.array.length > 0)
             throw new Error("Cannot flatten array of structs in I/O blocks.");
         for (var i = 0; i < member_type.member_types.length; i++) {
             sub_indices[sub_indices.length - 1] = i;
-            if (this.get(SPIRType, member_type.member_types[i]).basetype === SPIRTypeBaseType.Struct)
+            if (this.get(SPIRType, member_type.member_types[i]).basetype === SPIRBaseType.Struct)
                 this.emit_flattened_io_block_struct(basename, type, qual, sub_indices);
             else
                 this.emit_flattened_io_block_member(basename, type, qual, sub_indices);
@@ -13523,7 +13525,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             member_type_id = member_type.member_types[index];
             member_type = this.get(SPIRType, member_type_id);
         }
-        console.assert(member_type.basetype !== SPIRTypeBaseType.Struct);
+        console.assert(member_type.basetype !== SPIRBaseType.Struct);
         // We're overriding struct member names, so ensure we do so on the primary type.
         if (parent_type.type_alias)
             parent_type = this.get(SPIRType, parent_type.type_alias);
@@ -13549,7 +13551,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var force_complex_continue_block = false;
         var loop_level_saver = new ValueSaver(this, "current_loop_level");
         var _a = this, backend = _a.backend, ir = _a.ir;
-        if (block.merge === SPIRBlockMerge.MergeLoop)
+        if (block.merge === SPIRBlockMerge.Loop)
             this.add_loop_level();
         this.emit_hoisted_temporaries(block.declare_temporary);
         var continue_type = SPIRBlockContinueBlockType.ContinueNone;
@@ -13623,7 +13625,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             this.begin_scope();
             this.emit_block_instructions(block);
         }
-        else if (block.merge === SPIRBlockMerge.MergeLoop) {
+        else if (block.merge === SPIRBlockMerge.Loop) {
             this.flush_undeclared_variables(block);
             this.emit_while_loop_initializers(block);
             emitted_loop_header_variables = true;
@@ -13704,24 +13706,24 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 break;
             case SPIRBlockTerminator.MultiSelect: {
                 var type = this.expression_type(block.condition);
-                var unsigned_case = type.basetype === SPIRTypeBaseType.UInt || type.basetype === SPIRTypeBaseType.UShort ||
-                    type.basetype === SPIRTypeBaseType.UByte || type.basetype === SPIRTypeBaseType.UInt64;
-                if (block.merge === SPIRBlockMerge.MergeNone)
+                var unsigned_case = type.basetype === SPIRBaseType.UInt || type.basetype === SPIRBaseType.UShort ||
+                    type.basetype === SPIRBaseType.UByte || type.basetype === SPIRBaseType.UInt64;
+                if (block.merge === SPIRBlockMerge.None)
                     throw new Error("Switch statement is not structured");
-                if (!backend.support_64bit_switch && (type.basetype === SPIRTypeBaseType.UInt64 || type.basetype === SPIRTypeBaseType.Int64)) {
+                if (!backend.support_64bit_switch && (type.basetype === SPIRBaseType.UInt64 || type.basetype === SPIRBaseType.Int64)) {
                     // SPIR-V spec suggests this is allowed, but we cannot support it in higher level languages.
                     throw new Error("Cannot use 64-bit switch selectors.");
                 }
                 var label_suffix = "";
-                if (type.basetype === SPIRTypeBaseType.UInt && backend.uint32_t_literal_suffix)
+                if (type.basetype === SPIRBaseType.UInt && backend.uint32_t_literal_suffix)
                     label_suffix = "u";
-                else if (type.basetype === SPIRTypeBaseType.Int64 && backend.support_64bit_switch)
+                else if (type.basetype === SPIRBaseType.Int64 && backend.support_64bit_switch)
                     label_suffix = "l";
-                else if (type.basetype === SPIRTypeBaseType.UInt64 && backend.support_64bit_switch)
+                else if (type.basetype === SPIRBaseType.UInt64 && backend.support_64bit_switch)
                     label_suffix = "ul";
-                else if (type.basetype === SPIRTypeBaseType.UShort)
+                else if (type.basetype === SPIRBaseType.UShort)
                     label_suffix = backend.uint16_t_literal_suffix;
-                else if (type.basetype === SPIRTypeBaseType.Short)
+                else if (type.basetype === SPIRBaseType.Short)
                     label_suffix = backend.int16_t_literal_suffix;
                 var old_emitting_switch = this.current_emitting_switch;
                 this.current_emitting_switch = block;
@@ -13955,8 +13957,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     if (type.array.length && !backend.can_return_array) {
                         // If we cannot return arrays, we will have a special out argument we can write to instead.
                         // The backend is responsible for setting this up, and redirection the return values as appropriate.
-                        if (ir.ids[block.return_value].get_type() !== Types.TypeUndef) {
-                            this.emit_array_copy("spvReturnValue", 0, block.return_value, StorageClass.StorageClassFunction, this.get_expression_effective_storage_class(block.return_value));
+                        if (ir.ids[block.return_value].get_type() !== Types.Undef) {
+                            this.emit_array_copy("spvReturnValue", 0, block.return_value, StorageClass.Function, this.get_expression_effective_storage_class(block.return_value));
                         }
                         if (!cfg.node_terminates_control_flow_in_sub_graph(this.current_function.entry_block, block.self) ||
                             block.loop_dominator !== (SPIRBlock.NoDominator)) {
@@ -13965,7 +13967,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     }
                     else {
                         // OpReturnValue can return Undef, so don't emit anything for this case.
-                        if (ir.ids[block.return_value].get_type() !== Types.TypeUndef)
+                        if (ir.ids[block.return_value].get_type() !== Types.Undef)
                             this.statement("return ", this.to_unpacked_expression(block.return_value), ";");
                     }
                 }
@@ -14000,7 +14002,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (block.next_block && emit_next_block) {
             // If we hit this case, we're dealing with an unconditional branch, which means we will output
             // that block after this. If we had selection merge, we already flushed phi variables.
-            if (block.merge !== SPIRBlockMerge.MergeSelection) {
+            if (block.merge !== SPIRBlockMerge.Selection) {
                 this.flush_phi(block.self, block.next_block);
                 // For a direct branch, need to remember to invalidate expressions in the next linear block instead.
                 this.get(SPIRBlock, block.next_block).invalidate_expressions = block.invalidate_expressions;
@@ -14012,18 +14014,18 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 // We will need to deal with it here.
                 if (this.is_loop_break(block.next_block)) {
                     // Cannot check for just break, because switch statements will also use break.
-                    console.assert(block.merge === SPIRBlockMerge.MergeSelection);
+                    console.assert(block.merge === SPIRBlockMerge.Selection);
                     this.statement("break;");
                 }
                 else if (this.is_continue(block.next_block)) {
-                    console.assert(block.merge === SPIRBlockMerge.MergeSelection);
+                    console.assert(block.merge === SPIRBlockMerge.Selection);
                     this.branch_to_continue(block.self, block.next_block);
                 }
                 else if ((block.self) !== block.next_block)
                     this.emit_block_chain(this.get(SPIRBlock, block.next_block));
             }
         }
-        if (block.merge === SPIRBlockMerge.MergeLoop) {
+        if (block.merge === SPIRBlockMerge.Loop) {
             if (continue_type === SPIRBlockContinueBlockType.DoWhileLoop) {
                 // Make sure that we run the continue block to get the expressions set, but this
                 // should become an empty string.
@@ -14096,7 +14098,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
     CompilerGLSL.prototype.emit_uniform = function (var_) {
         var type = this.get(SPIRType, var_.basetype);
         var options = this.options;
-        if (type.basetype === SPIRTypeBaseType.Image && type.image.sampled === 2 && type.image.dim !== Dim.DimSubpassData) {
+        if (type.basetype === SPIRBaseType.Image && type.image.sampled === 2 && type.image.dim !== Dim.SubpassData) {
             if (!options.es && options.version < 420)
                 this.require_extension_internal("GL_ARB_shader_image_load_store");
             else if (options.es && options.version < 310)
@@ -14129,7 +14131,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 this.emit_copy_logical_type(lhs_id, lhs_type.parent_type, rhs_id, rhs_type.parent_type, chain);
             }
         }
-        else if (lhs_type.basetype === SPIRTypeBaseType.Struct) {
+        else if (lhs_type.basetype === SPIRBaseType.Struct) {
             chain.push(0);
             var member_count = lhs_type.member_types.length;
             for (var i = 0; i < member_count; i++) {
@@ -14144,8 +14146,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
             // to deal with all the special cases we can encounter.
             var lhs_meta = new AccessChainMeta();
             var rhs_meta = new AccessChainMeta();
-            var lhs = this.access_chain_internal(lhs_id, chain, 0, chain.length, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, lhs_meta);
-            var rhs = this.access_chain_internal(rhs_id, chain, 0, chain.length, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, rhs_meta);
+            var lhs = this.access_chain_internal(lhs_id, chain, 0, chain.length, AccessChainFlagBits.INDEX_IS_LITERAL_BIT, lhs_meta);
+            var rhs = this.access_chain_internal(rhs_id, chain, 0, chain.length, AccessChainFlagBits.INDEX_IS_LITERAL_BIT, rhs_meta);
             var id = this.ir.increase_bound_by(2);
             lhs_id = id;
             rhs_id = id + 1;
@@ -14153,9 +14155,9 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 var lhs_expr = this.set(SPIRExpression, lhs_id, lhs, lhs_type_id, true);
                 lhs_expr.need_transpose = lhs_meta.need_transpose;
                 if (lhs_meta.storage_is_packed)
-                    this.set_extended_decoration(lhs_id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked);
+                    this.set_extended_decoration(lhs_id, ExtendedDecorations.PhysicalTypePacked);
                 if (lhs_meta.storage_physical_type !== 0)
-                    this.set_extended_decoration(lhs_id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID, lhs_meta.storage_physical_type);
+                    this.set_extended_decoration(lhs_id, ExtendedDecorations.PhysicalTypeID, lhs_meta.storage_physical_type);
                 this.forwarded_temporaries.add(lhs_id);
                 this.suppressed_usage_tracking.add(lhs_id);
             }
@@ -14163,9 +14165,9 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 var rhs_expr = this.set(SPIRExpression, rhs_id, rhs, rhs_type_id, true);
                 rhs_expr.need_transpose = rhs_meta.need_transpose;
                 if (rhs_meta.storage_is_packed)
-                    this.set_extended_decoration(rhs_id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked);
+                    this.set_extended_decoration(rhs_id, ExtendedDecorations.PhysicalTypePacked);
                 if (rhs_meta.storage_physical_type !== 0)
-                    this.set_extended_decoration(rhs_id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID, rhs_meta.storage_physical_type);
+                    this.set_extended_decoration(rhs_id, ExtendedDecorations.PhysicalTypeID, rhs_meta.storage_physical_type);
                 this.forwarded_temporaries.add(rhs_id);
                 this.suppressed_usage_tracking.add(rhs_id);
             }
@@ -14189,7 +14191,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
     // depend on a specific object's use of that type.
     CompilerGLSL.prototype.type_to_glsl = function (type, id) {
         if (id === void 0) { id = 0; }
-        if (type.pointer && type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT && type.basetype !== SPIRTypeBaseType.Struct) {
+        if (type.pointer && type.storage === StorageClass.PhysicalStorageBufferEXT && type.basetype !== SPIRBaseType.Struct) {
             // Need to create a magic type name which compacts the entire type information.
             var name_1 = this.type_to_glsl(this.get_pointee_type(type));
             for (var i = 0; i < type.array.length; i++) {
@@ -14203,58 +14205,58 @@ var CompilerGLSL = /** @class */ (function (_super) {
         }
         var backend = this.backend;
         switch (type.basetype) {
-            case SPIRTypeBaseType.Struct:
+            case SPIRBaseType.Struct:
                 // Need OpName lookup here to get a "sensible" name for a struct.
                 if (backend.explicit_struct_type)
                     return "struct " + this.to_name(type.self);
                 else
                     return this.to_name(type.self);
-            case SPIRTypeBaseType.Image:
-            case SPIRTypeBaseType.SampledImage:
+            case SPIRBaseType.Image:
+            case SPIRBaseType.SampledImage:
                 return this.image_type_glsl(type, id);
-            case SPIRTypeBaseType.Sampler:
+            case SPIRBaseType.Sampler:
                 // The depth field is set by calling code based on the variable ID of the sampler, effectively reintroducing
                 // this distinction into the type system.
                 return this.comparison_ids.has(id) ? "samplerShadow" : "sampler";
-            case SPIRTypeBaseType.AccelerationStructure:
+            case SPIRBaseType.AccelerationStructure:
                 // return this.ray_tracing_is_khr ? "accelerationStructureEXT" : "accelerationStructureNV";
                 throw new Error("AccelerationStructure is not supported");
-            case SPIRTypeBaseType.RayQuery:
+            case SPIRBaseType.RayQuery:
                 throw new Error("RayQuery is not supported");
-            case SPIRTypeBaseType.Void:
+            case SPIRBaseType.Void:
                 return "void";
         }
-        if (type.basetype === SPIRTypeBaseType.UInt && this.is_legacy())
+        if (type.basetype === SPIRBaseType.UInt && this.is_legacy())
             throw new Error("Unsigned integers are not supported on legacy targets.");
         // TODO: All below can be simplified using a lookup if we assume correct Spir-V
         if (type.vecsize === 1 && type.columns === 1) // Scalar builtin
          {
             switch (type.basetype) {
-                case SPIRTypeBaseType.Boolean:
+                case SPIRBaseType.Boolean:
                     return "bool";
-                case SPIRTypeBaseType.SByte:
+                case SPIRBaseType.SByte:
                     return backend.basic_int8_type;
-                case SPIRTypeBaseType.UByte:
+                case SPIRBaseType.UByte:
                     return backend.basic_uint8_type;
-                case SPIRTypeBaseType.Short:
+                case SPIRBaseType.Short:
                     return backend.basic_int16_type;
-                case SPIRTypeBaseType.UShort:
+                case SPIRBaseType.UShort:
                     return backend.basic_uint16_type;
-                case SPIRTypeBaseType.Int:
+                case SPIRBaseType.Int:
                     return backend.basic_int_type;
-                case SPIRTypeBaseType.UInt:
+                case SPIRBaseType.UInt:
                     return backend.basic_uint_type;
-                case SPIRTypeBaseType.AtomicCounter:
+                case SPIRBaseType.AtomicCounter:
                     return "atomic_uint";
-                case SPIRTypeBaseType.Half:
+                case SPIRBaseType.Half:
                     return "float16_t";
-                case SPIRTypeBaseType.Float:
+                case SPIRBaseType.Float:
                     return "float";
-                case SPIRTypeBaseType.Double:
+                case SPIRBaseType.Double:
                     return "double";
-                case SPIRTypeBaseType.Int64:
+                case SPIRBaseType.Int64:
                     return "int64_t";
-                case SPIRTypeBaseType.UInt64:
+                case SPIRBaseType.UInt64:
                     return "uint64_t";
                 default:
                     return "???";
@@ -14263,29 +14265,29 @@ var CompilerGLSL = /** @class */ (function (_super) {
         else if (type.vecsize > 1 && type.columns === 1) // Vector builtin
          {
             switch (type.basetype) {
-                case SPIRTypeBaseType.Boolean:
+                case SPIRBaseType.Boolean:
                     return "bvec" + type.vecsize;
-                case SPIRTypeBaseType.SByte:
+                case SPIRBaseType.SByte:
                     return "i8vec" + type.vecsize;
-                case SPIRTypeBaseType.UByte:
+                case SPIRBaseType.UByte:
                     return "u8vec" + type.vecsize;
-                case SPIRTypeBaseType.Short:
+                case SPIRBaseType.Short:
                     return "i16vec" + type.vecsize;
-                case SPIRTypeBaseType.UShort:
+                case SPIRBaseType.UShort:
                     return "u16vec" + type.vecsize;
-                case SPIRTypeBaseType.Int:
+                case SPIRBaseType.Int:
                     return "ivec" + type.vecsize;
-                case SPIRTypeBaseType.UInt:
+                case SPIRBaseType.UInt:
                     return "uvec" + type.vecsize;
-                case SPIRTypeBaseType.Half:
+                case SPIRBaseType.Half:
                     return "f16vec" + type.vecsize;
-                case SPIRTypeBaseType.Float:
+                case SPIRBaseType.Float:
                     return "vec" + type.vecsize;
-                case SPIRTypeBaseType.Double:
+                case SPIRBaseType.Double:
                     return "dvec" + type.vecsize;
-                case SPIRTypeBaseType.Int64:
+                case SPIRBaseType.Int64:
                     return "i64vec" + type.vecsize;
-                case SPIRTypeBaseType.UInt64:
+                case SPIRBaseType.UInt64:
                     return "u64vec" + type.vecsize;
                 default:
                     return "???";
@@ -14294,17 +14296,17 @@ var CompilerGLSL = /** @class */ (function (_super) {
         else if (type.vecsize === type.columns) // Simple Matrix builtin
          {
             switch (type.basetype) {
-                case SPIRTypeBaseType.Boolean:
+                case SPIRBaseType.Boolean:
                     return "bmat" + type.vecsize;
-                case SPIRTypeBaseType.Int:
+                case SPIRBaseType.Int:
                     return "imat" + type.vecsize;
-                case SPIRTypeBaseType.UInt:
+                case SPIRBaseType.UInt:
                     return "umat" + type.vecsize;
-                case SPIRTypeBaseType.Half:
+                case SPIRBaseType.Half:
                     return "f16mat" + type.vecsize;
-                case SPIRTypeBaseType.Float:
+                case SPIRBaseType.Float:
                     return "mat" + type.vecsize;
-                case SPIRTypeBaseType.Double:
+                case SPIRBaseType.Double:
                     return "dmat" + type.vecsize;
                 // Matrix types not supported for int64/uint64.
                 default:
@@ -14313,17 +14315,17 @@ var CompilerGLSL = /** @class */ (function (_super) {
         }
         else {
             switch (type.basetype) {
-                case SPIRTypeBaseType.Boolean:
+                case SPIRBaseType.Boolean:
                     return "bmat".concat(type.columns, "x").concat(type.vecsize);
-                case SPIRTypeBaseType.Int:
+                case SPIRBaseType.Int:
                     return "imat".concat(type.columns, "x").concat(type.vecsize);
-                case SPIRTypeBaseType.UInt:
+                case SPIRBaseType.UInt:
                     return "umat".concat(type.columns, "x").concat(type.vecsize);
-                case SPIRTypeBaseType.Half:
+                case SPIRBaseType.Half:
                     return "f16mat".concat(type.columns, "x").concat(type.vecsize);
-                case SPIRTypeBaseType.Float:
+                case SPIRBaseType.Float:
                     return "mat".concat(type.columns, "x").concat(type.vecsize);
-                case SPIRTypeBaseType.Double:
+                case SPIRBaseType.Double:
                     return "dmat".concat(type.columns, "x").concat(type.vecsize);
                 // Matrix types not supported for int64/uint64.
                 default:
@@ -14334,20 +14336,20 @@ var CompilerGLSL = /** @class */ (function (_super) {
     CompilerGLSL.prototype.builtin_to_glsl = function (builtin, storage) {
         var options = this.options;
         switch (builtin) {
-            case BuiltIn.BuiltInPosition:
+            case BuiltIn.Position:
                 return "gl_Position";
-            case BuiltIn.BuiltInPointSize:
+            case BuiltIn.PointSize:
                 return "gl_PointSize";
-            case BuiltIn.BuiltInClipDistance:
+            case BuiltIn.ClipDistance:
                 return "gl_ClipDistance";
-            case BuiltIn.BuiltInCullDistance:
+            case BuiltIn.CullDistance:
                 return "gl_CullDistance";
-            case BuiltIn.BuiltInVertexId:
+            case BuiltIn.VertexId:
                 // if (options.vulkan_semantics)
                 //     throw new Error("Cannot implement gl_VertexID in Vulkan GLSL. This shader was created "
                 // "with GL semantics.");
                 return "gl_VertexID";
-            case BuiltIn.BuiltInInstanceId:
+            case BuiltIn.InstanceId:
                 /*if (options.vulkan_semantics)
                 {
                     auto model = get_entry_point().model;
@@ -14368,12 +14370,12 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.require_extension_internal("GL_ARB_draw_instanced");
                 }
                 return "gl_InstanceID";
-            case BuiltIn.BuiltInVertexIndex:
+            case BuiltIn.VertexIndex:
                 /*if (options.vulkan_semantics)
                     return "gl_VertexIndex";
                 else*/
                 return "gl_VertexID"; // gl_VertexID already has the base offset applied.
-            case BuiltIn.BuiltInInstanceIndex:
+            case BuiltIn.InstanceIndex:
                 // if (options.vulkan_semantics)
                 //     return "gl_InstanceIndex";
                 if (!options.es && options.version < 140) {
@@ -14389,46 +14391,46 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 }
                 else
                     return "gl_InstanceID";
-            case BuiltIn.BuiltInPrimitiveId:
-                if (storage === StorageClass.StorageClassInput && this.get_entry_point().model === ExecutionModel.ExecutionModelGeometry)
+            case BuiltIn.PrimitiveId:
+                if (storage === StorageClass.Input && this.get_entry_point().model === ExecutionModel.Geometry)
                     return "gl_PrimitiveIDIn";
                 else
                     return "gl_PrimitiveID";
-            case BuiltIn.BuiltInInvocationId:
+            case BuiltIn.InvocationId:
                 return "gl_InvocationID";
-            case BuiltIn.BuiltInLayer:
+            case BuiltIn.Layer:
                 return "gl_Layer";
-            case BuiltIn.BuiltInViewportIndex:
+            case BuiltIn.ViewportIndex:
                 return "gl_ViewportIndex";
-            case BuiltIn.BuiltInTessLevelOuter:
+            case BuiltIn.TessLevelOuter:
                 return "gl_TessLevelOuter";
-            case BuiltIn.BuiltInTessLevelInner:
+            case BuiltIn.TessLevelInner:
                 return "gl_TessLevelInner";
-            case BuiltIn.BuiltInTessCoord:
+            case BuiltIn.TessCoord:
                 return "gl_TessCoord";
-            case BuiltIn.BuiltInFragCoord:
+            case BuiltIn.FragCoord:
                 return "gl_FragCoord";
-            case BuiltIn.BuiltInPointCoord:
+            case BuiltIn.PointCoord:
                 return "gl_PointCoord";
-            case BuiltIn.BuiltInFrontFacing:
+            case BuiltIn.FrontFacing:
                 return "gl_FrontFacing";
-            case BuiltIn.BuiltInFragDepth:
+            case BuiltIn.FragDepth:
                 return "gl_FragDepth";
-            case BuiltIn.BuiltInNumWorkgroups:
+            case BuiltIn.NumWorkgroups:
                 return "gl_NumWorkGroups";
-            case BuiltIn.BuiltInWorkgroupSize:
+            case BuiltIn.WorkgroupSize:
                 return "gl_WorkGroupSize";
-            case BuiltIn.BuiltInWorkgroupId:
+            case BuiltIn.WorkgroupId:
                 return "gl_WorkGroupID";
-            case BuiltIn.BuiltInLocalInvocationId:
+            case BuiltIn.LocalInvocationId:
                 return "gl_LocalInvocationID";
-            case BuiltIn.BuiltInGlobalInvocationId:
+            case BuiltIn.GlobalInvocationId:
                 return "gl_GlobalInvocationID";
-            case BuiltIn.BuiltInLocalInvocationIndex:
+            case BuiltIn.LocalInvocationIndex:
                 return "gl_LocalInvocationIndex";
-            case BuiltIn.BuiltInHelperInvocation:
+            case BuiltIn.HelperInvocation:
                 return "gl_HelperInvocation";
-            case BuiltIn.BuiltInBaseVertex:
+            case BuiltIn.BaseVertex:
                 if (options.es)
                     throw new Error("BaseVertex not supported in ES profile.");
                 /*if (options.vulkan_semantics)
@@ -14443,7 +14445,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 // On regular GL, this is soft-enabled and we emit ifdefs in code.
                 this.require_extension_internal("GL_ARB_shader_draw_parameters");
                 return "SPIRV_Cross_BaseVertex";
-            case BuiltIn.BuiltInBaseInstance:
+            case BuiltIn.BaseInstance:
                 if (options.es)
                     throw new Error("BaseInstance not supported in ES profile.");
                 /*if (options.vulkan_semantics)
@@ -14458,7 +14460,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 // On regular GL, this is soft-enabled and we emit ifdefs in code.
                 this.require_extension_internal("GL_ARB_shader_draw_parameters");
                 return "SPIRV_Cross_BaseInstance";
-            case BuiltIn.BuiltInDrawIndex:
+            case BuiltIn.DrawIndex:
                 if (options.es)
                     throw new Error("DrawIndex not supported in ES profile.");
                 /*if (options.vulkan_semantics)
@@ -14473,91 +14475,91 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 // On regular GL, this is soft-enabled and we emit ifdefs in code.
                 this.require_extension_internal("GL_ARB_shader_draw_parameters");
                 return "gl_DrawIDARB";
-            case BuiltIn.BuiltInSampleId:
+            case BuiltIn.SampleId:
                 if (options.es && options.version < 320)
                     this.require_extension_internal("GL_OES_sample_variables");
                 if (!options.es && options.version < 400)
                     throw new Error("gl_SampleID not supported before GLSL 400.");
                 return "gl_SampleID";
-            case BuiltIn.BuiltInSampleMask:
+            case BuiltIn.SampleMask:
                 if (options.es && options.version < 320)
                     this.require_extension_internal("GL_OES_sample_variables");
                 if (!options.es && options.version < 400)
                     throw new Error("gl_SampleMask/gl_SampleMaskIn not supported before GLSL 400.");
-                if (storage === StorageClass.StorageClassInput)
+                if (storage === StorageClass.Input)
                     return "gl_SampleMaskIn";
                 else
                     return "gl_SampleMask";
-            case BuiltIn.BuiltInSamplePosition:
+            case BuiltIn.SamplePosition:
                 if (options.es && options.version < 320)
                     this.require_extension_internal("GL_OES_sample_variables");
                 if (!options.es && options.version < 400)
                     throw new Error("gl_SamplePosition not supported before GLSL 400.");
                 return "gl_SamplePosition";
-            case BuiltIn.BuiltInViewIndex:
+            case BuiltIn.ViewIndex:
                 /*if (options.vulkan_semantics)
                     return "gl_ViewIndex";
                 else*/
                 return "gl_ViewID_OVR";
-            case BuiltIn.BuiltInNumSubgroups:
+            case BuiltIn.NumSubgroups:
             /*this.request_subgroup_feature(ShaderSubgroupSupportHelper::NumSubgroups);
             return "gl_NumSubgroups";*/
-            case BuiltIn.BuiltInSubgroupId:
+            case BuiltIn.SubgroupId:
             /*this.request_subgroup_feature(ShaderSubgroupSupportHelper::SubgroupID);
             return "gl_SubgroupID";*/
-            case BuiltIn.BuiltInSubgroupSize:
+            case BuiltIn.SubgroupSize:
             /*this.request_subgroup_feature(ShaderSubgroupSupportHelper::SubgroupSize);
             return "gl_SubgroupSize";*/
-            case BuiltIn.BuiltInSubgroupLocalInvocationId:
+            case BuiltIn.SubgroupLocalInvocationId:
             /*this.request_subgroup_feature(ShaderSubgroupSupportHelper::SubgroupInvocationID);
             return "gl_SubgroupInvocationID";*/
-            case BuiltIn.BuiltInSubgroupEqMask:
+            case BuiltIn.SubgroupEqMask:
             /*this.request_subgroup_feature(ShaderSubgroupSupportHelper::SubgroupMask);
             return "gl_SubgroupEqMask";*/
-            case BuiltIn.BuiltInSubgroupGeMask:
+            case BuiltIn.SubgroupGeMask:
             /*request_subgroup_feature(ShaderSubgroupSupportHelper::SubgroupMask);
             return "gl_SubgroupGeMask";*/
-            case BuiltIn.BuiltInSubgroupGtMask:
+            case BuiltIn.SubgroupGtMask:
             /*request_subgroup_feature(ShaderSubgroupSupportHelper::SubgroupMask);
             return "gl_SubgroupGtMask";*/
-            case BuiltIn.BuiltInSubgroupLeMask:
+            case BuiltIn.SubgroupLeMask:
             /*request_subgroup_feature(ShaderSubgroupSupportHelper::SubgroupMask);
             return "gl_SubgroupLeMask";*/
-            case BuiltIn.BuiltInSubgroupLtMask:
+            case BuiltIn.SubgroupLtMask:
                 /*request_subgroup_feature(ShaderSubgroupSupportHelper::SubgroupMask);
                 return "gl_SubgroupLtMask";*/
                 throw new Error("Subgroups not supported");
-            case BuiltIn.BuiltInLaunchIdKHR:
+            case BuiltIn.LaunchIdKHR:
             // return ray_tracing_is_khr ? "gl_LaunchIDEXT" : "gl_LaunchIDNV";
-            case BuiltIn.BuiltInLaunchSizeKHR:
+            case BuiltIn.LaunchSizeKHR:
             // return ray_tracing_is_khr ? "gl_LaunchSizeEXT" : "gl_LaunchSizeNV";
-            case BuiltIn.BuiltInWorldRayOriginKHR:
+            case BuiltIn.WorldRayOriginKHR:
             // return ray_tracing_is_khr ? "gl_WorldRayOriginEXT" : "gl_WorldRayOriginNV";
-            case BuiltIn.BuiltInWorldRayDirectionKHR:
+            case BuiltIn.WorldRayDirectionKHR:
             // return ray_tracing_is_khr ? "gl_WorldRayDirectionEXT" : "gl_WorldRayDirectionNV";
-            case BuiltIn.BuiltInObjectRayOriginKHR:
+            case BuiltIn.ObjectRayOriginKHR:
             // return ray_tracing_is_khr ? "gl_ObjectRayOriginEXT" : "gl_ObjectRayOriginNV";
-            case BuiltIn.BuiltInObjectRayDirectionKHR:
+            case BuiltIn.ObjectRayDirectionKHR:
             // return ray_tracing_is_khr ? "gl_ObjectRayDirectionEXT" : "gl_ObjectRayDirectionNV";
-            case BuiltIn.BuiltInRayTminKHR:
+            case BuiltIn.RayTminKHR:
             // return ray_tracing_is_khr ? "gl_RayTminEXT" : "gl_RayTminNV";
-            case BuiltIn.BuiltInRayTmaxKHR:
+            case BuiltIn.RayTmaxKHR:
             // return ray_tracing_is_khr ? "gl_RayTmaxEXT" : "gl_RayTmaxNV";
-            case BuiltIn.BuiltInInstanceCustomIndexKHR:
+            case BuiltIn.InstanceCustomIndexKHR:
             // return ray_tracing_is_khr ? "gl_InstanceCustomIndexEXT" : "gl_InstanceCustomIndexNV";
-            case BuiltIn.BuiltInObjectToWorldKHR:
+            case BuiltIn.ObjectToWorldKHR:
             // return ray_tracing_is_khr ? "gl_ObjectToWorldEXT" : "gl_ObjectToWorldNV";
-            case BuiltIn.BuiltInWorldToObjectKHR:
+            case BuiltIn.WorldToObjectKHR:
             // return ray_tracing_is_khr ? "gl_WorldToObjectEXT" : "gl_WorldToObjectNV";
-            case BuiltIn.BuiltInHitTNV:
+            case BuiltIn.HitTNV:
             // gl_HitTEXT is an alias of RayTMax in KHR.
             // return "gl_HitTNV";
-            case BuiltIn.BuiltInHitKindKHR:
+            case BuiltIn.HitKindKHR:
             // return ray_tracing_is_khr ? "gl_HitKindEXT" : "gl_HitKindNV";
-            case BuiltIn.BuiltInIncomingRayFlagsKHR:
+            case BuiltIn.IncomingRayFlagsKHR:
                 throw new Error("Raytracing not supported");
             // return ray_tracing_is_khr ? "gl_IncomingRayFlagsEXT" : "gl_IncomingRayFlagsNV";
-            case BuiltIn.BuiltInBaryCoordNV: {
+            case BuiltIn.BaryCoordNV: {
                 if (options.es && options.version < 320)
                     throw new Error("gl_BaryCoordNV requires ESSL 320.");
                 else if (!options.es && options.version < 450)
@@ -14565,7 +14567,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 this.require_extension_internal("GL_NV_fragment_shader_barycentric");
                 return "gl_BaryCoordNV";
             }
-            case BuiltIn.BuiltInBaryCoordNoPerspNV: {
+            case BuiltIn.BaryCoordNoPerspNV: {
                 if (options.es && options.version < 320)
                     throw new Error("gl_BaryCoordNoPerspNV requires ESSL 320.");
                 else if (!options.es && options.version < 450)
@@ -14573,7 +14575,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 this.require_extension_internal("GL_NV_fragment_shader_barycentric");
                 return "gl_BaryCoordNoPerspNV";
             }
-            case BuiltIn.BuiltInFragStencilRefEXT: {
+            case BuiltIn.FragStencilRefEXT: {
                 if (!options.es) {
                     this.require_extension_internal("GL_ARB_shader_stencil_export");
                     return "gl_FragStencilRefARB";
@@ -14581,24 +14583,24 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 else
                     throw new Error("Stencil export not supported in GLES.");
             }
-            case BuiltIn.BuiltInPrimitiveShadingRateKHR: {
+            case BuiltIn.PrimitiveShadingRateKHR: {
                 // if (!options.vulkan_semantics)
                 throw new Error("Can only use PrimitiveShadingRateKHR in Vulkan GLSL.");
                 // require_extension_internal("GL_EXT_fragment_shading_rate");
                 // return "gl_PrimitiveShadingRateEXT";
             }
-            case BuiltIn.BuiltInShadingRateKHR: {
+            case BuiltIn.ShadingRateKHR: {
                 // if (!options.vulkan_semantics)
                 throw new Error("Can only use ShadingRateKHR in Vulkan GLSL.");
                 // require_extension_internal("GL_EXT_fragment_shading_rate");
                 // return "gl_ShadingRateEXT";
             }
-            case BuiltIn.BuiltInDeviceIndex:
+            case BuiltIn.DeviceIndex:
                 // if (!options.vulkan_semantics)
                 throw new Error("Need Vulkan semantics for device group support.");
             // require_extension_internal("GL_EXT_device_group");
             // return "gl_DeviceIndex";
-            case BuiltIn.BuiltInFullyCoveredEXT:
+            case BuiltIn.FullyCoveredEXT:
                 if (!options.es)
                     this.require_extension_internal("GL_NV_conservative_raster_underestimation");
                 else
@@ -14613,24 +14615,24 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var imagetype = this.get(SPIRType, type.image.type);
         var res = "";
         switch (imagetype.basetype) {
-            case SPIRTypeBaseType.Int:
-            case SPIRTypeBaseType.Short:
-            case SPIRTypeBaseType.SByte:
+            case SPIRBaseType.Int:
+            case SPIRBaseType.Short:
+            case SPIRBaseType.SByte:
                 res = "i";
                 break;
-            case SPIRTypeBaseType.UInt:
-            case SPIRTypeBaseType.UShort:
-            case SPIRTypeBaseType.UByte:
+            case SPIRBaseType.UInt:
+            case SPIRBaseType.UShort:
+            case SPIRBaseType.UByte:
                 res = "u";
                 break;
         }
         // For half image types, we will force mediump for the sampler, and cast to f16 after any sampling operation.
         // We cannot express a true half texture type in GLSL. Neither for short integer formats for that matter.
         var options = this.options;
-        /*if (type.basetype === SPIRTypeBaseType.Image && type.image.dim === Dim.DimSubpassData && options.vulkan_semantics)
+        /*if (type.basetype === SPIRBaseType.Image && type.image.dim === Dim.SubpassData && options.vulkan_semantics)
             return res + "subpassInput" + (type.image.ms ? "MS" : "");
         else*/
-        if (type.basetype === SPIRTypeBaseType.Image && type.image.dim === Dim.DimSubpassData &&
+        if (type.basetype === SPIRBaseType.Image && type.image.dim === Dim.SubpassData &&
             this.subpass_input_is_framebuffer_fetch(id)) {
             var sampled_type = defaultClone(SPIRType, this.get(SPIRType, type.image.type));
             sampled_type.vecsize = 4;
@@ -14638,9 +14640,9 @@ var CompilerGLSL = /** @class */ (function (_super) {
         }
         // If we're emulating subpassInput with samplers, force sampler2D
         // so we don't have to specify format.
-        if (type.basetype === SPIRTypeBaseType.Image && type.image.dim !== Dim.DimSubpassData) {
+        if (type.basetype === SPIRBaseType.Image && type.image.dim !== Dim.SubpassData) {
             // Sampler buffers are always declared as samplerBuffer even though they might be separate images in the SPIR-V.
-            if (type.image.dim === Dim.DimBuffer && type.image.sampled === 1)
+            if (type.image.dim === Dim.Buffer && type.image.sampled === 1)
                 res += "sampler";
             else
                 res += type.image.sampled === 2 ? "image" : "texture";
@@ -14657,24 +14659,24 @@ var CompilerGLSL = /** @class */ (function (_super) {
             case Dim.Dim3D:
                 res += "3D";
                 break;
-            case Dim.DimCube:
+            case Dim.Cube:
                 res += "Cube";
                 break;
-            case Dim.DimRect:
+            case Dim.Rect:
                 if (options.es)
                     throw new Error("Rectangle textures are not supported on OpenGL ES.");
                 if (this.is_legacy_desktop())
                     this.require_extension_internal("GL_ARB_texture_rectangle");
                 res += "2DRect";
                 break;
-            case Dim.DimBuffer:
+            case Dim.Buffer:
                 if (options.es && options.version < 320)
                     this.require_extension_internal("GL_EXT_texture_buffer");
                 else if (!options.es && options.version < 300)
                     this.require_extension_internal("GL_EXT_texture_buffer_object");
                 res += "Buffer";
                 break;
-            case Dim.DimSubpassData:
+            case Dim.SubpassData:
                 res += "2D";
                 break;
             default:
@@ -14688,7 +14690,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             res += "Array";
         }
         // "Shadow" state in GLSL only exists for samplers and combined image samplers.
-        if (((type.basetype === SPIRTypeBaseType.SampledImage) || (type.basetype === SPIRTypeBaseType.Sampler)) &&
+        if (((type.basetype === SPIRBaseType.SampledImage) || (type.basetype === SPIRBaseType.Sampler)) &&
             this.is_depth_image(type, id)) {
             res += "Shadow";
         }
@@ -14705,7 +14707,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             var res = void 0;
             // Allow Metal to use the array<T> template to make arrays a value type
             var needs_trailing_tracket = false;
-            if (backend.use_initializer_list && backend.use_typed_initializer_list && type.basetype === SPIRTypeBaseType.Struct &&
+            if (backend.use_initializer_list && backend.use_typed_initializer_list && type.basetype === SPIRBaseType.Struct &&
                 type.array.length === 0) {
                 res = this.type_to_glsl_constructor(type) + "{ ";
             }
@@ -14735,7 +14737,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 res += ")";
             return res;
         }
-        else if (type.basetype === SPIRTypeBaseType.Struct && type.member_types.length === 0) {
+        else if (type.basetype === SPIRBaseType.Struct && type.member_types.length === 0) {
             // Metal tessellation likes empty structs which are then constant expressions.
             if (backend.supports_empty_struct)
                 return "{ }";
@@ -14772,54 +14774,54 @@ var CompilerGLSL = /** @class */ (function (_super) {
             throw new Error("Unsigned integers are not supported on legacy targets.");
         // TODO: Find a clean way to reuse emit_instruction.
         switch (cop.opcode) {
-            case Op.OpSConvert:
-            case Op.OpUConvert:
-            case Op.OpFConvert:
+            case Op.SConvert:
+            case Op.UConvert:
+            case Op.FConvert:
                 op = this.type_to_glsl_constructor(type);
                 break;
-            case Op.OpSNegate:
-            case Op.OpNot:
-            case Op.OpLogicalNot:
+            case Op.SNegate:
+            case Op.Not:
+            case Op.LogicalNot:
                 unary = true;
                 op = ops[cop.opcode];
                 break;
-            case Op.OpIAdd:
-            case Op.OpISub:
-            case Op.OpIMul:
-            case Op.OpSDiv:
-            case Op.OpUDiv:
-            case Op.OpUMod:
-            case Op.OpSMod:
-            case Op.OpShiftRightLogical:
-            case Op.OpShiftRightArithmetic:
-            case Op.OpShiftLeftLogical:
-            case Op.OpBitwiseOr:
-            case Op.OpBitwiseXor:
-            case Op.OpBitwiseAnd:
-            case Op.OpLogicalOr:
-            case Op.OpLogicalAnd:
-            case Op.OpLogicalEqual:
-            case Op.OpLogicalNotEqual:
-            case Op.OpIEqual:
-            case Op.OpINotEqual:
-            case Op.OpULessThan:
-            case Op.OpSLessThan:
-            case Op.OpULessThanEqual:
-            case Op.OpSLessThanEqual:
-            case Op.OpUGreaterThan:
-            case Op.OpSGreaterThan:
-            case Op.OpUGreaterThanEqual:
-            case Op.OpSGreaterThanEqual:
+            case Op.IAdd:
+            case Op.ISub:
+            case Op.IMul:
+            case Op.SDiv:
+            case Op.UDiv:
+            case Op.UMod:
+            case Op.SMod:
+            case Op.ShiftRightLogical:
+            case Op.ShiftRightArithmetic:
+            case Op.ShiftLeftLogical:
+            case Op.BitwiseOr:
+            case Op.BitwiseXor:
+            case Op.BitwiseAnd:
+            case Op.LogicalOr:
+            case Op.LogicalAnd:
+            case Op.LogicalEqual:
+            case Op.LogicalNotEqual:
+            case Op.IEqual:
+            case Op.INotEqual:
+            case Op.ULessThan:
+            case Op.SLessThan:
+            case Op.ULessThanEqual:
+            case Op.SLessThanEqual:
+            case Op.UGreaterThan:
+            case Op.SGreaterThan:
+            case Op.UGreaterThanEqual:
+            case Op.SGreaterThanEqual:
                 binary = true;
                 op = ops[cop.opcode];
                 break;
-            case Op.OpSRem: {
+            case Op.SRem: {
                 var op0 = cop.arguments[0];
                 var op1 = cop.arguments[1];
                 return this.to_enclosed_expression(op0) + " - " + this.to_enclosed_expression(op1) + " * (",
                     this.to_enclosed_expression(op0) + " / " + this.to_enclosed_expression(op1) + ")";
             }
-            case Op.OpSelect: {
+            case Op.Select: {
                 if (cop.arguments.length < 3)
                     throw new Error("Not enough arguments to OpSpecConstantOp.");
                 // This one is pretty annoying. It's triggered from
@@ -14838,7 +14840,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 }
                 break;
             }
-            case Op.OpVectorShuffle: {
+            case Op.VectorShuffle: {
                 var expr = this.type_to_glsl_constructor(type);
                 expr += "(";
                 var left_components = this.expression_type(cop.arguments[0]).vecsize;
@@ -14856,45 +14858,45 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 expr += ")";
                 return expr;
             }
-            case Op.OpCompositeExtract: {
-                var expr = this.access_chain_internal(cop.arguments[0], cop.arguments, 1, cop.arguments.length - 1, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, null);
+            case Op.CompositeExtract: {
+                var expr = this.access_chain_internal(cop.arguments[0], cop.arguments, 1, cop.arguments.length - 1, AccessChainFlagBits.INDEX_IS_LITERAL_BIT, null);
                 return expr;
             }
-            case Op.OpCompositeInsert:
+            case Op.CompositeInsert:
                 throw new Error("OpCompositeInsert spec constant op is not supported.");
             default:
                 // Some opcodes are unimplemented here, these are currently not possible to test from glslang.
                 throw new Error("Unimplemented spec constant op.");
         }
         var bit_width = 0;
-        if (unary || binary || cop.opcode === Op.OpSConvert || cop.opcode === Op.OpUConvert)
+        if (unary || binary || cop.opcode === Op.SConvert || cop.opcode === Op.UConvert)
             bit_width = this.expression_type(cop.arguments[0]).width;
         var input_type;
         var skip_cast_if_equal_type = opcode_is_sign_invariant(cop.opcode);
         switch (cop.opcode) {
-            case Op.OpIEqual:
-            case Op.OpINotEqual:
+            case Op.IEqual:
+            case Op.INotEqual:
                 input_type = to_signed_basetype(bit_width);
                 break;
-            case Op.OpSLessThan:
-            case Op.OpSLessThanEqual:
-            case Op.OpSGreaterThan:
-            case Op.OpSGreaterThanEqual:
-            case Op.OpSMod:
-            case Op.OpSDiv:
-            case Op.OpShiftRightArithmetic:
-            case Op.OpSConvert:
-            case Op.OpSNegate:
+            case Op.SLessThan:
+            case Op.SLessThanEqual:
+            case Op.SGreaterThan:
+            case Op.SGreaterThanEqual:
+            case Op.SMod:
+            case Op.SDiv:
+            case Op.ShiftRightArithmetic:
+            case Op.SConvert:
+            case Op.SNegate:
                 input_type = to_signed_basetype(bit_width);
                 break;
-            case Op.OpULessThan:
-            case Op.OpULessThanEqual:
-            case Op.OpUGreaterThan:
-            case Op.OpUGreaterThanEqual:
-            case Op.OpUMod:
-            case Op.OpUDiv:
-            case Op.OpShiftRightLogical:
-            case Op.OpUConvert:
+            case Op.ULessThan:
+            case Op.ULessThanEqual:
+            case Op.UGreaterThan:
+            case Op.UGreaterThanEqual:
+            case Op.UMod:
+            case Op.UDiv:
+            case Op.ShiftRightLogical:
+            case Op.UConvert:
                 input_type = to_unsigned_basetype(bit_width);
                 break;
             default:
@@ -14907,7 +14909,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             var props = { cast_op0: "", cast_op1: "", input_type: input_type };
             var expected_type = this.binary_op_bitcast_helper(props, cop.arguments[0], cop.arguments[1], skip_cast_if_equal_type);
             input_type = props.input_type;
-            if (type.basetype !== input_type && type.basetype !== SPIRTypeBaseType.Boolean) {
+            if (type.basetype !== input_type && type.basetype !== SPIRBaseType.Boolean) {
                 expected_type.basetype = input_type;
                 var expr = this.bitcast_glsl_op(type, expected_type);
                 expr += "(" + props.cast_op0 + " " + op + " " + props.cast_op1 + ")";
@@ -14923,7 +14925,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             // Works around various casting scenarios in glslang as there is no OpBitcast for specialization constants.
             return "(" + op + this.bitcast_glsl(type, cop.arguments[0]) + ")";
         }
-        else if (cop.opcode === Op.OpSConvert || cop.opcode === Op.OpUConvert) {
+        else if (cop.opcode === Op.SConvert || cop.opcode === Op.UConvert) {
             if (cop.arguments.length < 1)
                 throw new Error("Not enough arguments to OpSpecConstantOp.");
             var arg_type = this.expression_type(cop.arguments[0]);
@@ -14988,7 +14990,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (c.vector_size() > 1 && !swizzle_splat)
             res += this.type_to_glsl(type) + "(";
         switch (type.basetype) {
-            case SPIRTypeBaseType.Half:
+            case SPIRBaseType.Half:
                 if (splat || swizzle_splat) {
                     res += this.convert_half_to_string(c, vector, 0);
                     if (swizzle_splat)
@@ -15005,7 +15007,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     }
                 }
                 break;
-            case SPIRTypeBaseType.Float:
+            case SPIRBaseType.Float:
                 if (splat || swizzle_splat) {
                     res += this.convert_float_to_string(c, vector, 0);
                     if (swizzle_splat)
@@ -15022,7 +15024,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     }
                 }
                 break;
-            case SPIRTypeBaseType.Double:
+            case SPIRBaseType.Double:
                 if (splat || swizzle_splat) {
                     res += this.convert_double_to_string(c, vector, 0);
                     if (swizzle_splat)
@@ -15039,7 +15041,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     }
                 }
                 break;
-            case SPIRTypeBaseType.Int64: {
+            case SPIRBaseType.Int64: {
                 var tmp = type;
                 tmp.vecsize = 1;
                 tmp.columns = 1;
@@ -15059,7 +15061,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 }
                 break;
             }
-            case SPIRTypeBaseType.UInt64:
+            case SPIRBaseType.UInt64:
                 if (splat) {
                     res += convert_to_string(c.scalar_u64(vector, 0));
                     if (backend.long_long_literal_suffix)
@@ -15083,7 +15085,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     }
                 }
                 break;
-            case SPIRTypeBaseType.UInt:
+            case SPIRBaseType.UInt:
                 if (splat) {
                     res += convert_to_string(c.scalar(vector, 0));
                     if (this.is_legacy()) {
@@ -15115,7 +15117,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     }
                 }
                 break;
-            case SPIRTypeBaseType.Int:
+            case SPIRBaseType.Int:
                 if (splat)
                     res += convert_to_string(c.scalar_i32(vector, 0));
                 else {
@@ -15129,7 +15131,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     }
                 }
                 break;
-            case SPIRTypeBaseType.UShort:
+            case SPIRBaseType.UShort:
                 if (splat) {
                     res += convert_to_string(c.scalar(vector, 0));
                 }
@@ -15155,7 +15157,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     }
                 }
                 break;
-            case SPIRTypeBaseType.Short:
+            case SPIRBaseType.Short:
                 if (splat) {
                     res += convert_to_string(c.scalar_i16(vector, 0));
                 }
@@ -15181,7 +15183,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     }
                 }
                 break;
-            case SPIRTypeBaseType.UByte:
+            case SPIRBaseType.UByte:
                 if (splat) {
                     res += convert_to_string(c.scalar_u8(vector, 0));
                 }
@@ -15200,7 +15202,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     }
                 }
                 break;
-            case SPIRTypeBaseType.SByte:
+            case SPIRBaseType.SByte:
                 if (splat) {
                     res += convert_to_string(c.scalar_i8(vector, 0));
                 }
@@ -15219,7 +15221,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     }
                 }
                 break;
-            case SPIRTypeBaseType.Boolean:
+            case SPIRBaseType.Boolean:
                 if (splat)
                     res += c.scalar(vector, 0) ? "true" : "false";
                 else {
@@ -15314,7 +15316,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         }
     };
     CompilerGLSL.prototype.type_to_array_glsl = function (type) {
-        if (type.pointer && type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT && type.basetype !== SPIRTypeBaseType.Struct) {
+        if (type.pointer && type.storage === StorageClass.PhysicalStorageBufferEXT && type.basetype !== SPIRBaseType.Struct) {
             // We are using a wrapped pointer type, and we should not emit any array declarations here.
             return "";
         }
@@ -15364,8 +15366,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 // we pass down to callees, because they may be shuffled around.
                 // Ignore these arguments, to make sure that functions need to differ in some other way
                 // to be considered different overloads.
-                if (type.basetype === SPIRTypeBaseType.SampledImage ||
-                    (type.basetype === SPIRTypeBaseType.Image && type.image.sampled === 1) || type.basetype === SPIRTypeBaseType.Sampler) {
+                if (type.basetype === SPIRBaseType.SampledImage ||
+                    (type.basetype === SPIRBaseType.Image && type.image.sampled === 1) || type.basetype === SPIRBaseType.Sampler) {
                     continue;
                 }
             }
@@ -15453,14 +15455,14 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var res = this.to_qualifiers_glsl(variable.self) + this.variable_decl(type, this.to_name(variable.self), variable.self);
         if (variable.loop_variable && variable.static_expression) {
             var expr = variable.static_expression;
-            if (ir.ids[expr].get_type() !== Types.TypeUndef)
+            if (ir.ids[expr].get_type() !== Types.Undef)
                 res += " = " + this.to_unpacked_expression(variable.static_expression);
             else if (options.force_zero_initialized_variables && this.type_can_zero_initialize(type))
                 res += " = " + this.to_zero_initialized_expression(this.get_variable_data_type_id(variable));
         }
-        else if (variable.initializer && !this.variable_decl_is_remapped_storage(variable, StorageClass.StorageClassWorkgroup)) {
+        else if (variable.initializer && !this.variable_decl_is_remapped_storage(variable, StorageClass.Workgroup)) {
             var expr = variable.initializer;
-            if (ir.ids[expr].get_type() !== Types.TypeUndef)
+            if (ir.ids[expr].get_type() !== Types.Undef)
                 res += " = " + this.to_initializer_expression(variable);
             else if (options.force_zero_initialized_variables && this.type_can_zero_initialize(type))
                 res += " = " + this.to_zero_initialized_expression(this.get_variable_data_type_id(variable));
@@ -15473,7 +15475,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // Some backends will inject custom variables locally in a function
         // with a storage qualifier which is not function-local.
         var old_storage = var_.storage;
-        var_.storage = StorageClass.StorageClassFunction;
+        var_.storage = StorageClass.Function;
         var expr = this.variable_decl(var_);
         var_.storage = old_storage;
         return expr;
@@ -15498,14 +15500,14 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (e)
             return e.need_transpose;
         else
-            return this.has_decoration(id, Decoration.DecorationRowMajor);
+            return this.has_decoration(id, Decoration.RowMajor);
     };
     CompilerGLSL.prototype.member_is_non_native_row_major_matrix = function (type, index) {
         // Natively supported row-major matrices do not need to be converted.
         if (this.backend.native_row_major_matrix && !this.is_legacy())
             return false;
         // Non-matrix or column-major matrix types do not need to be converted.
-        if (!this.has_member_decoration(type.self, index, Decoration.DecorationRowMajor))
+        if (!this.has_member_decoration(type.self, index, Decoration.RowMajor))
             return false;
         // Only square row-major matrices can be converted at this time.
         // Converting non-square matrices will require defining custom GLSL function that
@@ -15516,10 +15518,10 @@ var CompilerGLSL = /** @class */ (function (_super) {
         return true;
     };
     CompilerGLSL.prototype.member_is_remapped_physical_type = function (type, index) {
-        return this.has_extended_member_decoration(type.self, index, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID);
+        return this.has_extended_member_decoration(type.self, index, ExtendedDecorations.PhysicalTypeID);
     };
     CompilerGLSL.prototype.member_is_packed_physical_type = function (type, index) {
-        return this.has_extended_member_decoration(type.self, index, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked);
+        return this.has_extended_member_decoration(type.self, index, ExtendedDecorations.PhysicalTypePacked);
     };
     // Wraps the expression string in a function call that converts the
     // row_major matrix result of the expression to a column_major matrix.
@@ -15594,7 +15596,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // Type-punning with these types is legal, which complicates things
         // when we are storing struct and array types in an SSBO for example.
         // If the type master is packed however, we can no longer assume that the struct declaration will be redundant.
-        if (type.type_alias !== (0) && !this.has_extended_decoration(type.type_alias, ExtendedDecorations.SPIRVCrossDecorationBufferBlockRepacked))
+        if (type.type_alias !== (0) && !this.has_extended_decoration(type.type_alias, ExtendedDecorations.BufferBlockRepacked))
             return;
         this.add_resource_name(type.self);
         var name = this.type_to_glsl(type);
@@ -15616,7 +15618,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             this.statement("int empty_struct_member;");
             emitted = true;
         }
-        if (this.has_extended_decoration(type.self, ExtendedDecorations.SPIRVCrossDecorationPaddingTarget))
+        if (this.has_extended_decoration(type.self, ExtendedDecorations.PaddingTarget))
             this.emit_struct_padding_target(type);
         this.end_scope_decl();
         if (emitted)
@@ -15630,7 +15632,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         this.replace_illegal_names();
         // Legacy GL uses gl_FragData[], redeclare all fragment outputs
         // with builtins.
-        if (execution.model === ExecutionModel.ExecutionModelFragment && this.is_legacy())
+        if (execution.model === ExecutionModel.Fragment && this.is_legacy())
             this.replace_fragment_outputs();
         // Emit PLS blocks if we have such variables.
         if (this.pls_inputs.length > 0 || this.pls_outputs.length > 0)
@@ -15647,7 +15649,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 break;
         }*/
         // Emit custom gl_PerVertex for SSO compatibility.
-        if (options.separate_shader_objects && !options.es && execution.model !== ExecutionModel.ExecutionModelFragment) {
+        if (options.separate_shader_objects && !options.es && execution.model !== ExecutionModel.Fragment) {
             switch (execution.model) {
                 /*case ExecutionModelGeometry:
                 case ExecutionModelTessellationControl:
@@ -15655,23 +15657,23 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     emit_declared_builtin_block(StorageClassInput, execution.model);
                     emit_declared_builtin_block(StorageClassOutput, execution.model);
                     break;*/
-                case ExecutionModel.ExecutionModelVertex:
-                    this.emit_declared_builtin_block(StorageClass.StorageClassOutput, execution.model);
+                case ExecutionModel.Vertex:
+                    this.emit_declared_builtin_block(StorageClass.Output, execution.model);
                     break;
             }
         }
-        else if (this.should_force_emit_builtin_block(StorageClass.StorageClassOutput)) {
-            this.emit_declared_builtin_block(StorageClass.StorageClassOutput, execution.model);
+        else if (this.should_force_emit_builtin_block(StorageClass.Output)) {
+            this.emit_declared_builtin_block(StorageClass.Output, execution.model);
         }
         else if (execution.geometry_passthrough) {
             // Need to declare gl_in with Passthrough.
             // If we're doing passthrough, we cannot emit an output block, so the output block test above will never pass.
-            this.emit_declared_builtin_block(StorageClass.StorageClassInput, execution.model);
+            this.emit_declared_builtin_block(StorageClass.Input, execution.model);
         }
         else {
             // Need to redeclare clip/cull distance with explicit size to use them.
             // SPIR-V mandates these builtins have a size declared.
-            var storage = execution.model === ExecutionModel.ExecutionModelFragment ? "in" : "out";
+            var storage = execution.model === ExecutionModel.Fragment ? "in" : "out";
             if (this.clip_distance_count !== 0)
                 this.statement(storage, " float gl_ClipDistance[", this.clip_distance_count, "];");
             if (this.cull_distance_count !== 0)
@@ -15693,32 +15695,32 @@ var CompilerGLSL = /** @class */ (function (_super) {
             for (var _i = 0, _a = ir.ids_for_constant_or_type; _i < _a.length; _i++) {
                 var id_ = _a[_i];
                 var id = ir.ids[id_];
-                if (id.get_type() === Types.TypeConstant) {
+                if (id.get_type() === Types.Constant) {
                     var c = id.get(SPIRConstant);
                     var needs_declaration = c.specialization || c.is_used_as_lut;
                     if (needs_declaration) {
                         if ( /*!options.vulkan_semantics &&*/c.specialization) {
                             c.specialization_constant_macro_name =
-                                this.constant_value_macro_name(this.get_decoration(c.self, Decoration.DecorationSpecId));
+                                this.constant_value_macro_name(this.get_decoration(c.self, Decoration.SpecId));
                         }
                         this.emit_constant(c);
                         emitted = true;
                     }
                 }
-                else if (id.get_type() === Types.TypeConstantOp) {
+                else if (id.get_type() === Types.ConstantOp) {
                     this.emit_specialization_constant_op(id.get(SPIRConstantOp));
                     emitted = true;
                 }
-                else if (id.get_type() === Types.TypeType) {
+                else if (id.get_type() === Types.Type) {
                     var type = id.get(SPIRType);
-                    var is_natural_struct = type.basetype === SPIRTypeBaseType.Struct && type.array.length === 0 && !type.pointer &&
-                        !this.has_decoration(type.self, Decoration.DecorationBlock) &&
-                        !this.has_decoration(type.self, Decoration.DecorationBufferBlock);
+                    var is_natural_struct = type.basetype === SPIRBaseType.Struct && type.array.length === 0 && !type.pointer &&
+                        !this.has_decoration(type.self, Decoration.Block) &&
+                        !this.has_decoration(type.self, Decoration.BufferBlock);
                     // Special case, ray payload and hit attribute blocks are not really blocks, just regular structs.
-                    /*if (type.basetype === SPIRTypeBaseType.Struct && type.pointer &&
-                        this.has_decoration(type.self, Decoration.DecorationBlock) &&
-                        (type.storage === StorageClass.StorageClassRayPayloadKHR || type.storage === StorageClass.StorageClassIncomingRayPayloadKHR ||
-                        type.storage === StorageClass.StorageClassHitAttributeKHR))
+                    /*if (type.basetype === SPIRBaseType.Struct && type.pointer &&
+                        this.has_decoration(type.self, Decoration.Block) &&
+                        (type.storage === StorageClass.RayPayloadKHR || type.storage === StorageClass.IncomingRayPayloadKHR ||
+                        type.storage === StorageClass.HitAttributeKHR))
                     {
                         type = this.get<SPIRType>(SPIRType, type.parent_type);
                         is_natural_struct = true;
@@ -15753,7 +15755,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             }
         }*/
         emitted = false;
-        if (ir.addressing_model === AddressingModel.AddressingModelPhysicalStorageBuffer64EXT) {
+        if (ir.addressing_model === AddressingModel.PhysicalStorageBuffer64EXT) {
             for (var _b = 0, _c = this.physical_storage_non_block_pointer_types; _b < _c.length; _b++) {
                 var type = _c[_b];
                 this.emit_buffer_reference_block(type, false);
@@ -15763,16 +15765,16 @@ var CompilerGLSL = /** @class */ (function (_super) {
             // and one without. Buffer reference blocks can reference themselves
             // to support things like linked lists.
             ir.for_each_typed_id(SPIRType, function (self, type) {
-                if (type.basetype === SPIRTypeBaseType.Struct && type.pointer &&
+                if (type.basetype === SPIRBaseType.Struct && type.pointer &&
                     type.pointer_depth === 1 && !_this.type_is_array_of_pointers(type) &&
-                    type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT) {
+                    type.storage === StorageClass.PhysicalStorageBufferEXT) {
                     _this.emit_buffer_reference_block(self, true);
                 }
             });
             ir.for_each_typed_id(SPIRType, function (self, type) {
-                if (type.basetype === SPIRTypeBaseType.Struct &&
+                if (type.basetype === SPIRBaseType.Struct &&
                     type.pointer && type.pointer_depth === 1 && !_this.type_is_array_of_pointers(type) &&
-                    type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT) {
+                    type.storage === StorageClass.PhysicalStorageBufferEXT) {
                     _this.emit_buffer_reference_block(self, false);
                 }
             });
@@ -15780,12 +15782,12 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // Output UBOs and SSBOs
         ir.for_each_typed_id(SPIRVariable, function (_, var_) {
             var type = _this.get(SPIRType, var_.basetype);
-            var is_block_storage = type.storage === StorageClass.StorageClassStorageBuffer ||
-                type.storage === StorageClass.StorageClassUniform ||
-                type.storage === StorageClass.StorageClassShaderRecordBufferKHR;
+            var is_block_storage = type.storage === StorageClass.StorageBuffer ||
+                type.storage === StorageClass.Uniform ||
+                type.storage === StorageClass.ShaderRecordBufferKHR;
             var flags = maplike_get(Meta, ir.meta, type.self).decoration.decoration_flags;
-            var has_block_flags = flags.get(Decoration.DecorationBlock) || flags.get(Decoration.DecorationBufferBlock);
-            if (var_.storage !== StorageClass.StorageClassFunction && type.pointer && is_block_storage &&
+            var has_block_flags = flags.get(Decoration.Block) || flags.get(Decoration.BufferBlock);
+            if (var_.storage !== StorageClass.Function && type.pointer && is_block_storage &&
                 !_this.is_hidden_variable(var_) && has_block_flags) {
                 _this.emit_buffer_block(var_);
             }
@@ -15793,8 +15795,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // Output push constant blocks
         ir.for_each_typed_id(SPIRVariable, function (_, var_) {
             var type = _this.get(SPIRType, var_.basetype);
-            if (var_.storage !== StorageClass.StorageClassFunction && type.pointer &&
-                type.storage === StorageClass.StorageClassPushConstant && !_this.is_hidden_variable(var_)) {
+            if (var_.storage !== StorageClass.Function && type.pointer &&
+                type.storage === StorageClass.PushConstant && !_this.is_hidden_variable(var_)) {
                 _this.emit_push_constant_block(var_);
             }
         });
@@ -15804,17 +15806,17 @@ var CompilerGLSL = /** @class */ (function (_super) {
             // If we're remapping separate samplers and images, only emit the combined samplers.
             {
                 // Sampler buffers are always used without a sampler, and they will also work in regular GL.
-                var sampler_buffer = type.basetype === SPIRTypeBaseType.Image && type.image.dim === Dim.DimBuffer;
-                var separate_image = type.basetype === SPIRTypeBaseType.Image && type.image.sampled === 1;
-                var separate_sampler = type.basetype === SPIRTypeBaseType.Sampler;
+                var sampler_buffer = type.basetype === SPIRBaseType.Image && type.image.dim === Dim.Buffer;
+                var separate_image = type.basetype === SPIRBaseType.Image && type.image.sampled === 1;
+                var separate_sampler = type.basetype === SPIRBaseType.Sampler;
                 if (!sampler_buffer && (separate_image || separate_sampler))
                     return;
             }
-            if (var_.storage !== StorageClass.StorageClassFunction && type.pointer &&
-                (type.storage === StorageClass.StorageClassUniformConstant || type.storage === StorageClass.StorageClassAtomicCounter ||
-                    type.storage === StorageClass.StorageClassRayPayloadKHR || type.storage === StorageClass.StorageClassIncomingRayPayloadKHR ||
-                    type.storage === StorageClass.StorageClassCallableDataKHR || type.storage === StorageClass.StorageClassIncomingCallableDataKHR ||
-                    type.storage === StorageClass.StorageClassHitAttributeKHR) && !_this.is_hidden_variable(var_)) {
+            if (var_.storage !== StorageClass.Function && type.pointer &&
+                (type.storage === StorageClass.UniformConstant || type.storage === StorageClass.AtomicCounter ||
+                    type.storage === StorageClass.RayPayloadKHR || type.storage === StorageClass.IncomingRayPayloadKHR ||
+                    type.storage === StorageClass.CallableDataKHR || type.storage === StorageClass.IncomingCallableDataKHR ||
+                    type.storage === StorageClass.HitAttributeKHR) && !_this.is_hidden_variable(var_)) {
                 _this.emit_uniform(var_);
                 emitted = true;
             }
@@ -15828,30 +15830,30 @@ var CompilerGLSL = /** @class */ (function (_super) {
             var type = _this.get(SPIRType, var_.basetype);
             var is_hidden = _this.is_hidden_variable(var_);
             // Unused output I/O variables might still be required to implement framebuffer fetch.
-            if (var_.storage === StorageClass.StorageClassOutput && !_this.is_legacy() &&
-                _this.location_is_framebuffer_fetch(_this.get_decoration(var_.self, Decoration.DecorationLocation)) /* !== 0*/) {
+            if (var_.storage === StorageClass.Output && !_this.is_legacy() &&
+                _this.location_is_framebuffer_fetch(_this.get_decoration(var_.self, Decoration.Location)) /* !== 0*/) {
                 is_hidden = false;
             }
-            if (var_.storage !== StorageClass.StorageClassFunction && type.pointer &&
-                (var_.storage === StorageClass.StorageClassInput || var_.storage === StorageClass.StorageClassOutput) &&
+            if (var_.storage !== StorageClass.Function && type.pointer &&
+                (var_.storage === StorageClass.Input || var_.storage === StorageClass.Output) &&
                 _this.interface_variable_exists_in_entry_point(var_.self) && !is_hidden) {
-                if (options.es && _this.get_execution_model() === ExecutionModel.ExecutionModelVertex &&
-                    var_.storage === StorageClass.StorageClassInput && type.array.length === 1) {
+                if (options.es && _this.get_execution_model() === ExecutionModel.Vertex &&
+                    var_.storage === StorageClass.Input && type.array.length === 1) {
                     throw new Error("OpenGL ES doesn't support array input variables in vertex shader.");
                 }
                 _this.emit_interface_block(var_);
                 emitted = true;
             }
             else if (_this.is_builtin_variable(var_)) {
-                var builtin = (_this.get_decoration(var_.self, Decoration.DecorationBuiltIn));
+                var builtin = (_this.get_decoration(var_.self, Decoration.BuiltIn));
                 // For gl_InstanceIndex emulation on GLES, the API user needs to
                 // supply this uniform.
                 // The draw parameter extension is soft-enabled on GL with some fallbacks.
                 // if (!options.vulkan_semantics)
                 // {
                 if (!emitted_base_instance &&
-                    ((options.vertex.support_nonzero_base_instance && builtin === BuiltIn.BuiltInInstanceIndex) ||
-                        (builtin === BuiltIn.BuiltInBaseInstance))) {
+                    ((options.vertex.support_nonzero_base_instance && builtin === BuiltIn.InstanceIndex) ||
+                        (builtin === BuiltIn.BaseInstance))) {
                     _this.statement("#ifdef GL_ARB_shader_draw_parameters");
                     _this.statement("#define SPIRV_Cross_BaseInstance gl_BaseInstanceARB");
                     _this.statement("#else");
@@ -15861,7 +15863,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     emitted = true;
                     emitted_base_instance = true;
                 }
-                else if (builtin === BuiltIn.BuiltInBaseVertex) {
+                else if (builtin === BuiltIn.BaseVertex) {
                     _this.statement("#ifdef GL_ARB_shader_draw_parameters");
                     _this.statement("#define SPIRV_Cross_BaseVertex gl_BaseVertexARB");
                     _this.statement("#else");
@@ -15869,7 +15871,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     _this.statement("uniform int SPIRV_Cross_BaseVertex;");
                     _this.statement("#endif");
                 }
-                else if (builtin === BuiltIn.BuiltInDrawIndex) {
+                else if (builtin === BuiltIn.DrawIndex) {
                     _this.statement("#ifndef GL_ARB_shader_draw_parameters");
                     // Cannot really be worked around.
                     _this.statement("#error GL_ARB_shader_draw_parameters is not supported.");
@@ -15884,11 +15886,11 @@ var CompilerGLSL = /** @class */ (function (_super) {
             var var_ = this.get(SPIRVariable, global_1);
             if (this.is_hidden_variable(var_, true))
                 continue;
-            if (var_.storage !== StorageClass.StorageClassOutput) {
+            if (var_.storage !== StorageClass.Output) {
                 if (!this.variable_is_lut(var_)) {
                     this.add_resource_name(var_.self);
                     var initializer = "";
-                    if (options.force_zero_initialized_variables && var_.storage === StorageClass.StorageClassPrivate &&
+                    if (options.force_zero_initialized_variables && var_.storage === StorageClass.Private &&
                         !var_.initializer && !var_.static_expression && this.type_can_zero_initialize(this.get_variable_data_type(var_))) {
                         initializer = " = " + this.to_zero_initialized_expression(this.get_variable_data_type_id(var_));
                     }
@@ -16338,8 +16340,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var type = this.get(SPIRType, var_.basetype);
         var ir = this.ir;
         var meta = maplike_get(Meta, ir.meta, type.self);
-        var ssbo = var_.storage === StorageClass.StorageClassStorageBuffer ||
-            meta.decoration.decoration_flags.get(Decoration.DecorationBufferBlock);
+        var ssbo = var_.storage === StorageClass.StorageBuffer ||
+            meta.decoration.decoration_flags.get(Decoration.BufferBlock);
         if (ssbo)
             throw new Error("SSBOs not supported in legacy targets.");
         var i = 0;
@@ -16356,12 +16358,12 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var ir = this.ir;
         var flags = ir.get_buffer_block_flags(var_);
         var dec = maplike_get(Meta, ir.meta, type.self).decoration;
-        var ssbo = var_.storage === StorageClass.StorageClassStorageBuffer || var_.storage === StorageClass.StorageClassShaderRecordBufferKHR ||
-            dec.decoration_flags.get(Decoration.DecorationBufferBlock);
-        var is_restrict = ssbo && flags.get(Decoration.DecorationRestrict);
-        var is_writeonly = ssbo && flags.get(Decoration.DecorationNonReadable);
-        var is_readonly = ssbo && flags.get(Decoration.DecorationNonWritable);
-        var is_coherent = ssbo && flags.get(Decoration.DecorationCoherent);
+        var ssbo = var_.storage === StorageClass.StorageBuffer || var_.storage === StorageClass.ShaderRecordBufferKHR ||
+            dec.decoration_flags.get(Decoration.BufferBlock);
+        var is_restrict = ssbo && flags.get(Decoration.Restrict);
+        var is_writeonly = ssbo && flags.get(Decoration.NonReadable);
+        var is_readonly = ssbo && flags.get(Decoration.NonWritable);
+        var is_coherent = ssbo && flags.get(Decoration.Coherent);
         // Block names should never alias, but from HLSL input they kind of can because block types are reused for UAVs ...
         var buffer_name = this.to_name(type.self, false);
         var block_namespace = ssbo ? this.block_ssbo_names : this.block_ubo_names;
@@ -16431,7 +16433,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             // Ensure we emit the correct name when emitting non-forward pointer type.
             maplike_get(Meta, ir.meta, type.self).decoration.alias = buffer_name;
         }
-        else if (type.basetype !== SPIRTypeBaseType.Struct)
+        else if (type.basetype !== SPIRBaseType.Struct)
             buffer_name = this.type_to_glsl(type);
         else
             buffer_name = this.to_name(type.self, false);
@@ -16440,20 +16442,20 @@ var CompilerGLSL = /** @class */ (function (_super) {
             var alignment = 0;
             if (itr_second)
                 alignment = itr_second.alignment;
-            if (type.basetype === SPIRTypeBaseType.Struct) {
+            if (type.basetype === SPIRBaseType.Struct) {
                 var attributes = ["buffer_reference"];
                 if (alignment)
                     attributes.push("buffer_reference_align = " + alignment);
                 attributes.push(this.buffer_to_packing_standard(type, true));
                 var flags = ir.get_buffer_block_type_flags(type);
                 var decorations = "";
-                if (flags.get(Decoration.DecorationRestrict))
+                if (flags.get(Decoration.Restrict))
                     decorations += " restrict";
-                if (flags.get(Decoration.DecorationCoherent))
+                if (flags.get(Decoration.Coherent))
                     decorations += " coherent";
-                if (flags.get(Decoration.DecorationNonReadable))
+                if (flags.get(Decoration.NonReadable))
                     decorations += " writeonly";
-                if (flags.get(Decoration.DecorationNonWritable))
+                if (flags.get(Decoration.NonWritable))
                     decorations += " readonly";
                 this.statement("layout(", attributes.join(", "), ")", decorations, " buffer ", buffer_name);
             }
@@ -16462,7 +16464,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             else
                 this.statement("layout(buffer_reference) buffer ", buffer_name);
             this.begin_scope();
-            if (type.basetype === SPIRTypeBaseType.Struct) {
+            if (type.basetype === SPIRBaseType.Struct) {
                 type.member_name_cache.clear();
                 var i = 0;
                 for (var _i = 0, _a = type.member_types; _i < _a.length; _i++) {
@@ -16501,7 +16503,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var _a = this, ir = _a.ir, options = _a.options;
         ir.for_each_typed_id(SPIRVariable, function (_, var_) {
             var type = _this.get(SPIRType, var_.basetype);
-            var block = _this.has_decoration(type.self, Decoration.DecorationBlock);
+            var block = _this.has_decoration(type.self, Decoration.Block);
             var builtins = new Bitset();
             if (var_.storage === storage && block && _this.is_builtin_variable(var_)) {
                 var index = 0;
@@ -16509,15 +16511,15 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     var m = _a[_i];
                     if (m.builtin) {
                         builtins.set(m.builtin_type);
-                        if (m.builtin_type === BuiltIn.BuiltInCullDistance)
+                        if (m.builtin_type === BuiltIn.CullDistance)
                             cull_distance_size = _this.to_array_size_literal(_this.get(SPIRType, type.member_types[index]));
-                        else if (m.builtin_type === BuiltIn.BuiltInClipDistance)
+                        else if (m.builtin_type === BuiltIn.ClipDistance)
                             clip_distance_size = _this.to_array_size_literal(_this.get(SPIRType, type.member_types[index]));
-                        if (is_block_builtin(m.builtin_type) && m.decoration_flags.get(Decoration.DecorationOffset)) {
+                        if (is_block_builtin(m.builtin_type) && m.decoration_flags.get(Decoration.Offset)) {
                             have_any_xfb_offset = true;
                             builtin_xfb_offsets[m.builtin_type] = m.offset;
                         }
-                        if (is_block_builtin(m.builtin_type) && m.decoration_flags.get(Decoration.DecorationStream)) {
+                        if (is_block_builtin(m.builtin_type) && m.decoration_flags.get(Decoration.Stream)) {
                             var stream = m.stream;
                             if (have_geom_stream && geom_stream !== stream)
                                 throw new Error("IO block member Stream mismatch.");
@@ -16527,10 +16529,10 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     }
                     index++;
                 }
-                if (storage === StorageClass.StorageClassOutput && _this.has_decoration(var_.self, Decoration.DecorationXfbBuffer) &&
-                    _this.has_decoration(var_.self, Decoration.DecorationXfbStride)) {
-                    var buffer_index = _this.get_decoration(var_.self, Decoration.DecorationXfbBuffer);
-                    var stride = _this.get_decoration(var_.self, Decoration.DecorationXfbStride);
+                if (storage === StorageClass.Output && _this.has_decoration(var_.self, Decoration.XfbBuffer) &&
+                    _this.has_decoration(var_.self, Decoration.XfbStride)) {
+                    var buffer_index = _this.get_decoration(var_.self, Decoration.XfbBuffer);
+                    var stride = _this.get_decoration(var_.self, Decoration.XfbStride);
                     if (have_xfb_buffer_stride && buffer_index !== xfb_buffer)
                         throw new Error("IO block member XfbBuffer mismatch.");
                     if (have_xfb_buffer_stride && stride !== xfb_stride)
@@ -16539,8 +16541,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     xfb_buffer = buffer_index;
                     xfb_stride = stride;
                 }
-                if (storage === StorageClass.StorageClassOutput && _this.has_decoration(var_.self, Decoration.DecorationStream)) {
-                    var stream = _this.get_decoration(var_.self, Decoration.DecorationStream);
+                if (storage === StorageClass.Output && _this.has_decoration(var_.self, Decoration.Stream)) {
+                    var stream = _this.get_decoration(var_.self, Decoration.Stream);
                     if (have_geom_stream && geom_stream !== stream)
                         throw new Error("IO block member Stream mismatch.");
                     have_geom_stream = true;
@@ -16552,12 +16554,12 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 var m = maplike_get(Meta, ir.meta, var_.self).decoration;
                 if (m.builtin) {
                     global_builtins.set(m.builtin_type);
-                    if (m.builtin_type === BuiltIn.BuiltInCullDistance)
+                    if (m.builtin_type === BuiltIn.CullDistance)
                         cull_distance_size = _this.to_array_size_literal(type);
-                    else if (m.builtin_type === BuiltIn.BuiltInClipDistance)
+                    else if (m.builtin_type === BuiltIn.ClipDistance)
                         clip_distance_size = _this.to_array_size_literal(type);
-                    if (is_block_builtin(m.builtin_type) && m.decoration_flags.get(Decoration.DecorationXfbStride) &&
-                        m.decoration_flags.get(Decoration.DecorationXfbBuffer) && m.decoration_flags.get(Decoration.DecorationOffset)) {
+                    if (is_block_builtin(m.builtin_type) && m.decoration_flags.get(Decoration.XfbStride) &&
+                        m.decoration_flags.get(Decoration.XfbBuffer) && m.decoration_flags.get(Decoration.Offset)) {
                         have_any_xfb_offset = true;
                         builtin_xfb_offsets[m.builtin_type] = m.offset;
                         var buffer_index = m.xfb_buffer;
@@ -16570,8 +16572,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
                         xfb_buffer = buffer_index;
                         xfb_stride = stride;
                     }
-                    if (is_block_builtin(m.builtin_type) && m.decoration_flags.get(Decoration.DecorationStream)) {
-                        var stream = _this.get_decoration(var_.self, Decoration.DecorationStream);
+                    if (is_block_builtin(m.builtin_type) && m.decoration_flags.get(Decoration.Stream)) {
+                        var stream = _this.get_decoration(var_.self, Decoration.Stream);
                         if (have_geom_stream && geom_stream !== stream)
                             throw new Error("IO block member Stream mismatch.");
                         have_geom_stream = true;
@@ -16588,17 +16590,17 @@ var CompilerGLSL = /** @class */ (function (_super) {
             builtin_array = type.array.length > 0;
         });
         global_builtins = new Bitset(global_builtins.get_lower());
-        global_builtins.set(BuiltIn.BuiltInPosition);
-        global_builtins.set(BuiltIn.BuiltInPointSize);
-        global_builtins.set(BuiltIn.BuiltInClipDistance);
-        global_builtins.set(BuiltIn.BuiltInCullDistance);
+        global_builtins.set(BuiltIn.Position);
+        global_builtins.set(BuiltIn.PointSize);
+        global_builtins.set(BuiltIn.ClipDistance);
+        global_builtins.set(BuiltIn.CullDistance);
         // Try to collect all other declared builtins.
         if (!emitted_block)
             emitted_builtins = global_builtins;
         // Can't declare an empty interface block.
         if (emitted_builtins.empty())
             return;
-        if (storage === StorageClass.StorageClassOutput) {
+        if (storage === StorageClass.Output) {
             var attr = [];
             if (have_xfb_buffer_stride && have_any_xfb_offset) {
                 if (!options.es) {
@@ -16614,7 +16616,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 attr.push("xfb_buffer = ".concat(xfb_buffer, ", xfb_stride = ").concat(xfb_stride));
             }
             if (have_geom_stream) {
-                if (this.get_execution_model() !== ExecutionModel.ExecutionModelGeometry)
+                if (this.get_execution_model() !== ExecutionModel.Geometry)
                     throw new Error("Geometry streams can only be used in geometry shaders.");
                 if (options.es)
                     throw new Error("Multiple geometry streams not supported in ESSL.");
@@ -16635,29 +16637,29 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 this.statement("in gl_PerVertex");
         }
         this.begin_scope();
-        if (emitted_builtins.get(BuiltIn.BuiltInPosition)) {
-            var itr_second = builtin_xfb_offsets[BuiltIn.BuiltInPosition];
+        if (emitted_builtins.get(BuiltIn.Position)) {
+            var itr_second = builtin_xfb_offsets[BuiltIn.Position];
             if (itr_second)
                 this.statement("layout(xfb_offset = ", itr_second, ") vec4 gl_Position;");
             else
                 this.statement("vec4 gl_Position;");
         }
-        if (emitted_builtins.get(BuiltIn.BuiltInPointSize)) {
-            var itr_second = builtin_xfb_offsets.find[BuiltIn.BuiltInPointSize];
+        if (emitted_builtins.get(BuiltIn.PointSize)) {
+            var itr_second = builtin_xfb_offsets.find[BuiltIn.PointSize];
             if (itr_second)
                 this.statement("layout(xfb_offset = ", itr_second, ") float gl_PointSize;");
             else
                 this.statement("float gl_PointSize;");
         }
-        if (emitted_builtins.get(BuiltIn.BuiltInClipDistance)) {
-            var itr_second = builtin_xfb_offsets[BuiltIn.BuiltInClipDistance];
+        if (emitted_builtins.get(BuiltIn.ClipDistance)) {
+            var itr_second = builtin_xfb_offsets[BuiltIn.ClipDistance];
             if (itr_second)
                 this.statement("layout(xfb_offset = ", itr_second, ") float gl_ClipDistance[", clip_distance_size, "];");
             else
                 this.statement("float gl_ClipDistance[", clip_distance_size, "];");
         }
-        if (emitted_builtins.get(BuiltIn.BuiltInCullDistance)) {
-            var itr_second = builtin_xfb_offsets[BuiltIn.BuiltInCullDistance];
+        if (emitted_builtins.get(BuiltIn.CullDistance)) {
+            var itr_second = builtin_xfb_offsets[BuiltIn.CullDistance];
             if (itr_second)
                 this.statement("layout(xfb_offset = ", itr_second, ") float gl_CullDistance[", cull_distance_size, "];");
             else
@@ -16671,7 +16673,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
     CompilerGLSL.prototype.should_force_emit_builtin_block = function (storage) {
         // If the builtin block uses XFB, we need to force explicit redeclaration of the builtin block.
         var _this = this;
-        if (storage !== StorageClass.StorageClassOutput)
+        if (storage !== StorageClass.Output)
             return false;
         var should_force = false;
         var ir = this.ir;
@@ -16679,26 +16681,26 @@ var CompilerGLSL = /** @class */ (function (_super) {
             if (should_force)
                 return;
             var type = _this.get(SPIRType, var_.basetype);
-            var block = _this.has_decoration(type.self, Decoration.DecorationBlock);
+            var block = _this.has_decoration(type.self, Decoration.Block);
             if (var_.storage === storage && block && _this.is_builtin_variable(var_)) {
                 var member_count = type.member_types.length;
                 for (var i = 0; i < member_count; i++) {
-                    if (_this.has_member_decoration(type.self, i, Decoration.DecorationBuiltIn) &&
-                        is_block_builtin((_this.get_member_decoration(type.self, i, Decoration.DecorationBuiltIn))) &&
-                        _this.has_member_decoration(type.self, i, Decoration.DecorationOffset)) {
+                    if (_this.has_member_decoration(type.self, i, Decoration.BuiltIn) &&
+                        is_block_builtin((_this.get_member_decoration(type.self, i, Decoration.BuiltIn))) &&
+                        _this.has_member_decoration(type.self, i, Decoration.Offset)) {
                         should_force = true;
                     }
                 }
             }
             else if (var_.storage === storage && !block && _this.is_builtin_variable(var_)) {
-                if (is_block_builtin((_this.get_decoration(type.self, Decoration.DecorationBuiltIn))) &&
-                    _this.has_decoration(var_.self, Decoration.DecorationOffset)) {
+                if (is_block_builtin((_this.get_decoration(type.self, Decoration.BuiltIn))) &&
+                    _this.has_decoration(var_.self, Decoration.Offset)) {
                     should_force = true;
                 }
             }
         });
         // If we're declaring clip/cull planes with control points we need to force block declaration.
-        /*if (this.get_execution_model() === ExecutionModel.ExecutionModelTessellationControl &&
+        /*if (this.get_execution_model() === ExecutionModel.TessellationControl &&
             (clip_distance_count || cull_distance_count))
         {
             should_force = true;
@@ -16710,8 +16712,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // OpenGL has no concept of push constant blocks, implement it as a uniform struct.
         var type = this.get(SPIRType, var_.basetype);
         var flags = maplike_get(Meta, ir.meta, var_.self).decoration.decoration_flags;
-        flags.clear(Decoration.DecorationBinding);
-        flags.clear(Decoration.DecorationDescriptorSet);
+        flags.clear(Decoration.Binding);
+        flags.clear(Decoration.DescriptorSet);
         /*#if 0
         if (flags & ((1ull << DecorationBinding) | (1ull << DecorationDescriptorSet)))
         throw new Error("Push constant blocks cannot be compiled to GLSL with Binding or Set syntax. "
@@ -16721,23 +16723,23 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // We're emitting the push constant block as a regular struct, so disable the block qualifier temporarily.
         // Otherwise, we will end up emitting layout() qualifiers on naked structs which is not allowed.
         var block_flags = maplike_get(Meta, ir.meta, type.self).decoration.decoration_flags;
-        var block_flag = block_flags.get(Decoration.DecorationBlock);
-        block_flags.clear(Decoration.DecorationBlock);
+        var block_flag = block_flags.get(Decoration.Block);
+        block_flags.clear(Decoration.Block);
         this.emit_struct(type);
         if (block_flag)
-            block_flags.set(Decoration.DecorationBlock);
+            block_flags.set(Decoration.Block);
         this.emit_uniform(var_);
         this.statement("");
     };
     CompilerGLSL.prototype.emit_interface_block = function (var_) {
         var type = this.get(SPIRType, var_.basetype);
         var _a = this, ir = _a.ir, options = _a.options;
-        if (var_.storage === StorageClass.StorageClassInput && type.basetype === SPIRTypeBaseType.Double &&
+        if (var_.storage === StorageClass.Input && type.basetype === SPIRBaseType.Double &&
             !options.es && options.version < 410) {
             this.require_extension_internal("GL_ARB_vertex_attrib_64bit");
         }
         // Either make it plain in/out or in/out blocks depending on what shader is doing ...
-        var block = maplike_get(Meta, ir.meta, type.self).decoration.decoration_flags.get(Decoration.DecorationBlock);
+        var block = maplike_get(Meta, ir.meta, type.self).decoration.decoration_flags.get(Decoration.Block);
         var qual = this.to_storage_qualifiers_glsl(var_);
         if (block) {
             // ESSL earlier than 310 and GLSL earlier than 150 did not support
@@ -16760,7 +16762,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 // Block names should never alias.
                 var block_name = this.to_name(type.self, false);
                 // The namespace for I/O blocks is separate from other variables in GLSL.
-                var block_namespace = type.storage === StorageClass.StorageClassInput ? this.block_input_names : this.block_output_names;
+                var block_namespace = type.storage === StorageClass.Input ? this.block_input_names : this.block_output_names;
                 // Shaders never use the block by interface name, so we don't
                 // have to track this other than updating name caches.
                 if (block_name.length === 0 || block_namespace.has(block_name))
@@ -16773,7 +16775,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     block_name = "_" + this.get(SPIRType, var_.basetype).self + "_" + var_.self;
                 // Instance names cannot alias block names.
                 this.resource_names.add(block_name);
-                var is_patch = this.has_decoration(var_.self, Decoration.DecorationPatch);
+                var is_patch = this.has_decoration(var_.self, Decoration.Patch);
                 this.statement(this.layout_for_variable(var_), (is_patch ? "patch " : ""), qual, block_name);
                 this.begin_scope();
                 type.member_name_cache.clear();
@@ -16793,7 +16795,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             // ESSL earlier than 310 and GLSL earlier than 150 did not support
             // I/O variables which are struct types.
             // To support this, flatten the struct into separate varyings instead.
-            if (type.basetype === SPIRTypeBaseType.Struct &&
+            if (type.basetype === SPIRBaseType.Struct &&
                 (options.force_flattened_io_blocks || (options.es && options.version < 310) ||
                     (!options.es && options.version < 150))) {
                 this.emit_flattened_io_block(var_, qual);
@@ -16802,10 +16804,10 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 this.add_resource_name(var_.self);
                 // Tessellation control and evaluation shaders must have either gl_MaxPatchVertices or unsized arrays for input arrays.
                 // Opt for unsized as it's the more "correct" variant to use.
-                /*const control_point_input_array = type.storage === StorageClass.StorageClassInput && type.array.length > 0 &&
-                    !this.has_decoration(var_.self, Decoration.DecorationPatch) &&
-                    (this.get_entry_point().model === ExecutionModel.ExecutionModelTessellationControl ||
-                    this.get_entry_point().model === ExecutionModel.ExecutionModelTessellationEvaluation);*/
+                /*const control_point_input_array = type.storage === StorageClass.Input && type.array.length > 0 &&
+                    !this.has_decoration(var_.self, Decoration.Patch) &&
+                    (this.get_entry_point().model === ExecutionModel.TessellationControl ||
+                    this.get_entry_point().model === ExecutionModel.TessellationEvaluation);*/
                 /*let old_array_size = 0;
                 let old_array_size_literal = true;
 
@@ -16831,7 +16833,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var index = -1;
         // Need to redirect specialization constants which are used as WorkGroupSize to the builtin,
         // since the spec constant declarations are never explicitly declared.
-        if (entry_point.workgroup_size.constant === 0 && entry_point.flags.get(ExecutionMode.ExecutionModeLocalSizeId)) {
+        if (entry_point.workgroup_size.constant === 0 && entry_point.flags.get(ExecutionMode.LocalSizeId)) {
             if (c.self === entry_point.workgroup_size.id_x)
                 index = 0;
             else if (c.self === entry_point.workgroup_size.id_y)
@@ -16862,12 +16864,12 @@ var CompilerGLSL = /** @class */ (function (_super) {
             return;
         }
         else*/ if ( /*!options.vulkan_semantics &&*/is_workgroup_size_constant &&
-            !this.has_decoration(constant.self, Decoration.DecorationSpecId)) {
+            !this.has_decoration(constant.self, Decoration.SpecId)) {
             // Only bother declaring a workgroup size if it is actually a specialization constant, because we need macros.
             return;
         }
         // Only scalars have constant IDs.
-        if (this.has_decoration(constant.self, Decoration.DecorationSpecId)) {
+        if (this.has_decoration(constant.self, Decoration.SpecId)) {
             /*if (options.vulkan_semantics)
             {
                 statement("layout(constant_id = ", get_decoration(constant.self, DecorationSpecId), ") const ",
@@ -16903,7 +16905,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         this.redirect_statement = statements;
         var ir = this.ir;
         // Stamp out all blocks one after each other.
-        while ((maplike_get(0, ir.block_meta, block.self) & BlockMetaFlagBits.BLOCK_META_LOOP_HEADER_BIT) === 0) {
+        while ((maplike_get(0, ir.block_meta, block.self) & BlockMetaFlagBits.LOOP_HEADER_BIT) === 0) {
             // Write out all instructions we have in this block.
             this.emit_block_instructions(block);
             // For plain branchless for/while continue blocks.
@@ -17110,7 +17112,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var to_is_continue = this.is_continue(to);
         var ir = this.ir;
         // This is only a continue if we branch to our loop dominator.
-        if ((ir.block_meta[to] & BlockMetaFlagBits.BLOCK_META_LOOP_HEADER_BIT) !== 0 && this.get(SPIRBlock, from).loop_dominator === to) {
+        if ((ir.block_meta[to] & BlockMetaFlagBits.LOOP_HEADER_BIT) !== 0 && this.get(SPIRBlock, from).loop_dominator === to) {
             // This can happen if we had a complex continue block which was emitted.
             // Once the continue block tries to branch to the loop header, just emit continue;
             // and end the chain here.
@@ -17149,8 +17151,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
             //       - each header block must strictly dominate its merge block, unless the merge block is unreachable in the CFG
             // If we are branching to a merge block, we must be inside a construct which dominates the merge block.
             var block_meta = maplike_get(0, ir.block_meta, to);
-            var branching_to_merge = (block_meta & (BlockMetaFlagBits.BLOCK_META_SELECTION_MERGE_BIT | BlockMetaFlagBits.BLOCK_META_MULTISELECT_MERGE_BIT |
-                BlockMetaFlagBits.BLOCK_META_LOOP_MERGE_BIT)) !== 0;
+            var branching_to_merge = (block_meta & (BlockMetaFlagBits.SELECTION_MERGE_BIT | BlockMetaFlagBits.MULTISELECT_MERGE_BIT |
+                BlockMetaFlagBits.LOOP_MERGE_BIT)) !== 0;
             if (!to_is_continue || !branching_to_merge)
                 this.branch_to_continue(from, to);
         }
@@ -17163,7 +17165,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
     };
     CompilerGLSL.prototype._branchTrueFalse = function (from, cond, true_block, false_block) {
         var from_block = this.get(SPIRBlock, from);
-        var merge_block = from_block.merge === SPIRBlockMerge.MergeSelection ? from_block.next_block : (0);
+        var merge_block = from_block.merge === SPIRBlockMerge.Selection ? from_block.next_block : (0);
         // If we branch directly to our selection merge target, we don't need a code path.
         var true_block_needs_code = true_block !== merge_block || this.flush_phi_required(from, true_block);
         var false_block_needs_code = false_block !== merge_block || this.flush_phi_required(from, false_block);
@@ -17171,7 +17173,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             return;
         // We might have a loop merge here. Only consider selection flattening constructs.
         // Loop hints are handled explicitly elsewhere.
-        if (from_block.hint === SPIRBlockHints.HintFlatten || from_block.hint === SPIRBlockHints.HintDontFlatten)
+        if (from_block.hint === SPIRBlockHints.Flatten || from_block.hint === SPIRBlockHints.DontFlatten)
             this.emit_block_hints(from_block);
         if (true_block_needs_code) {
             this.statement("if (", this.to_expression(cond), ")");
@@ -17251,8 +17253,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (var_ && var_.deferred_declaration) {
             var initializer = "";
             if (options.force_zero_initialized_variables &&
-                (var_.storage === StorageClass.StorageClassFunction || var_.storage === StorageClass.StorageClassGeneric ||
-                    var_.storage === StorageClass.StorageClassPrivate) &&
+                (var_.storage === StorageClass.Function || var_.storage === StorageClass.Generic ||
+                    var_.storage === StorageClass.Private) &&
                 !var_.initializer && this.type_can_zero_initialize(this.get_variable_data_type(var_))) {
                 initializer = " = " + this.to_zero_initialized_expression(this.get_variable_data_type_id(var_));
             }
@@ -17338,7 +17340,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (trivial_mix) {
             this.emit_unary_func_op(result_type, id, lerp, mix_op);
         }
-        else if (!has_boolean_mix && lerptype.basetype === SPIRTypeBaseType.Boolean) {
+        else if (!has_boolean_mix && lerptype.basetype === SPIRBaseType.Boolean) {
             // Boolean mix not supported on desktop without extension.
             // Was added in OpenGL 4.5 with ES 3.1 compat.
             //
@@ -17351,7 +17353,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             this.inherit_expression_dependencies(id, right);
             this.inherit_expression_dependencies(id, lerp);
         }
-        else if (lerptype.basetype === SPIRTypeBaseType.Boolean)
+        else if (lerptype.basetype === SPIRBaseType.Boolean)
             this.emit_trinary_func_op(result_type, id, left, right, lerp, backend.boolean_mix_function);
         else
             this.emit_trinary_func_op(result_type, id, left, right, lerp, "mix");
@@ -17363,7 +17365,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (!ids) {
             ids = ir.increase_bound_by(5);
             var btype = defaultClone(SPIRType, this.get(SPIRType, result_type));
-            btype.basetype = SPIRTypeBaseType.Boolean;
+            btype.basetype = SPIRBaseType.Boolean;
             this.set(SPIRType, ids, btype);
         }
         var btype_id = ids + 0;
@@ -17376,7 +17378,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         ir.meta[mixed_first_id] = defaultClone(Meta, ir.meta[id]);
         this.emit_unary_func_op(btype_id, left_nan_id, op0, "isnan");
         this.emit_unary_func_op(btype_id, right_nan_id, op1, "isnan");
-        this.emit_binary_func_op(result_type, tmp_id, op0, op1, op === GLSLstd450.GLSLstd450NMin ? "min" : "max");
+        this.emit_binary_func_op(result_type, tmp_id, op0, op1, op === GLSLstd450.NMin ? "min" : "max");
         this.emit_mix_op(result_type, mixed_first_id, tmp_id, op1, left_nan_id);
         this.emit_mix_op(result_type, id, mixed_first_id, op0, right_nan_id);
     };
@@ -17392,9 +17394,9 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (cleft.specialization || cright.specialization)
             return undefined;
         var value_type = this.get(SPIRType, cleft.constant_type);
-        if (lerptype.basetype !== SPIRTypeBaseType.Boolean)
+        if (lerptype.basetype !== SPIRBaseType.Boolean)
             return undefined;
-        if (value_type.basetype === SPIRTypeBaseType.Struct || this.is_array(value_type))
+        if (value_type.basetype === SPIRBaseType.Struct || this.is_array(value_type))
             return undefined;
         if (!backend.use_constructor_splatting && value_type.vecsize !== lerptype.vecsize)
             return undefined;
@@ -17407,25 +17409,25 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var ret = true;
         for (var row = 0; ret && row < value_type.vecsize; row++) {
             switch (type.basetype) {
-                case SPIRTypeBaseType.Short:
-                case SPIRTypeBaseType.UShort:
+                case SPIRBaseType.Short:
+                case SPIRBaseType.UShort:
                     ret = cleft.scalar_u16(0, row) === 0 && cright.scalar_u16(0, row) === 1;
                     break;
-                case SPIRTypeBaseType.Int:
-                case SPIRTypeBaseType.UInt:
+                case SPIRBaseType.Int:
+                case SPIRBaseType.UInt:
                     ret = cleft.scalar(0, row) === 0 && cright.scalar(0, row) === 1;
                     break;
-                case SPIRTypeBaseType.Half:
+                case SPIRBaseType.Half:
                     ret = cleft.scalar_f16(0, row) === 0.0 && cright.scalar_f16(0, row) === 1.0;
                     break;
-                case SPIRTypeBaseType.Float:
+                case SPIRBaseType.Float:
                     ret = cleft.scalar_f32(0, row) === 0.0 && cright.scalar_f32(0, row) === 1.0;
                     break;
-                case SPIRTypeBaseType.Double:
+                case SPIRBaseType.Double:
                     ret = cleft.scalar_f64(0, row) === 0.0 && cright.scalar_f64(0, row) === 1.0;
                     break;
-                case SPIRTypeBaseType.Int64:
-                case SPIRTypeBaseType.UInt64:
+                case SPIRBaseType.Int64:
+                case SPIRBaseType.UInt64:
                     ret = cleft.scalar_u64(0, row) === BigInt(0) && cright.scalar_u64(0, row) === BigInt(1);
                     break;
                 default:
@@ -17517,7 +17519,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
     CompilerGLSL.prototype.emit_binary_op = function (result_type, result_id, op0, op1, op) {
         // Various FP arithmetic opcodes such as add, sub, mul will hit this.
         var force_temporary_precise = this.backend.support_precise_qualifier &&
-            this.has_decoration(result_id, Decoration.DecorationNoContraction) &&
+            this.has_decoration(result_id, Decoration.NoContraction) &&
             type_is_floating_point(this.get(SPIRType, result_type));
         var forward = this.should_forward(op0) && this.should_forward(op1) && !force_temporary_precise;
         this.emit_op(result_type, result_id, this.to_enclosed_unpacked_expression(op0) + " " + op + " " + this.to_enclosed_unpacked_expression(op1), forward);
@@ -17541,12 +17543,12 @@ var CompilerGLSL = /** @class */ (function (_super) {
             // that these expressions are properly flushed to temporaries if needed.
             if (negate)
                 expr += "!(";
-            if (expected_type !== SPIRTypeBaseType.Unknown && type0.basetype !== expected_type)
+            if (expected_type !== SPIRBaseType.Unknown && type0.basetype !== expected_type)
                 expr += this.bitcast_expression(target_type0, type0.basetype, this.to_extract_component_expression(op0, i));
             else
                 expr += this.to_extract_component_expression(op0, i);
             expr += " " + op + " ";
-            if (expected_type !== SPIRTypeBaseType.Unknown && type1.basetype !== expected_type)
+            if (expected_type !== SPIRBaseType.Unknown && type1.basetype !== expected_type)
                 expr += this.bitcast_expression(target_type1, type1.basetype, this.to_extract_component_expression(op1, i));
             else
                 expr += this.to_extract_component_expression(op1, i);
@@ -17569,7 +17571,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         expected_type.width = expr_type.width;
         var cast_op = "";
         if (expr_type.basetype !== input_type) {
-            if (expr_type.basetype === SPIRTypeBaseType.Boolean)
+            if (expr_type.basetype === SPIRBaseType.Boolean)
                 cast_op = this.type_to_glsl(expected_type) + "(" + this.to_unpacked_expression(op0) + ")";
             else
                 cast_op = this.bitcast_glsl(expected_type, op0);
@@ -17580,7 +17582,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (out_type.basetype !== expected_result_type) {
             expected_type.basetype = expected_result_type;
             expected_type.width = out_type.width;
-            if (out_type.basetype === SPIRTypeBaseType.Boolean)
+            if (out_type.basetype === SPIRBaseType.Boolean)
                 expr = this.type_to_glsl(out_type);
             else
                 expr = this.bitcast_glsl_op(out_type, expected_type);
@@ -17598,7 +17600,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var out_type = this.get(SPIRType, result_type);
         // Special case boolean outputs since relational opcodes output booleans instead of int/uint.
         var expr = "";
-        if (out_type.basetype !== input_type && out_type.basetype !== SPIRTypeBaseType.Boolean) {
+        if (out_type.basetype !== input_type && out_type.basetype !== SPIRBaseType.Boolean) {
             expected_type.basetype = input_type;
             expr = this.bitcast_glsl_op(out_type, expected_type);
             expr += "(" + op + "(" + props.cast_op0 + ", " + props.cast_op1 + "))";
@@ -17638,7 +17640,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // For example, arithmetic right shift with uint inputs.
         // Special case boolean outputs since relational opcodes output booleans instead of int/uint.
         var expr = "";
-        if (out_type.basetype !== props.input_type && out_type.basetype !== SPIRTypeBaseType.Boolean) {
+        if (out_type.basetype !== props.input_type && out_type.basetype !== SPIRBaseType.Boolean) {
             expected_type.basetype = input_type;
             expr = this.bitcast_glsl_op(out_type, expected_type);
             expr += "(" + props.cast_op0 + " " + op + " " + props.cast_op1 + ")";
@@ -17681,9 +17683,9 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var output_type = this.get(SPIRType, result_type);
         var input_type = this.expression_type(op0);
         var expr;
-        if (output_type.basetype === SPIRTypeBaseType.Half && input_type.basetype === SPIRTypeBaseType.Float && input_type.vecsize === 1)
+        if (output_type.basetype === SPIRBaseType.Half && input_type.basetype === SPIRBaseType.Float && input_type.vecsize === 1)
             expr = "unpackFloat2x16(floatBitsToUint(" + this.to_unpacked_expression(op0) + "))";
-        else if (output_type.basetype === SPIRTypeBaseType.Float && input_type.basetype === SPIRTypeBaseType.Half &&
+        else if (output_type.basetype === SPIRBaseType.Float && input_type.basetype === SPIRBaseType.Half &&
             input_type.vecsize === 2)
             expr = "uintBitsToFloat(packFloat2x16(" + this.to_unpacked_expression(op0) + "))";
         else
@@ -17752,8 +17754,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
         }
     };
     CompilerGLSL.prototype.access_chain_internal_append_index = function (expr, base, type, flags, access_chain_is_arrayed, index) {
-        var index_is_literal = (flags & AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT) !== 0;
-        var register_expression_read = (flags & AccessChainFlagBits.ACCESS_CHAIN_SKIP_REGISTER_EXPRESSION_READ_BIT) === 0;
+        var index_is_literal = (flags & AccessChainFlagBits.INDEX_IS_LITERAL_BIT) !== 0;
+        var register_expression_read = (flags & AccessChainFlagBits.SKIP_REGISTER_EXPRESSION_READ_BIT) === 0;
         expr += "[";
         if (index_is_literal)
             expr += convert_to_string(index);
@@ -17766,12 +17768,12 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var _this = this;
         var expr = "";
         var _a = this, backend = _a.backend, options = _a.options, ir = _a.ir;
-        var index_is_literal = (flags & AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT) !== 0;
-        var msb_is_id = (flags & AccessChainFlagBits.ACCESS_CHAIN_LITERAL_MSB_FORCE_ID) !== 0;
-        var chain_only = (flags & AccessChainFlagBits.ACCESS_CHAIN_CHAIN_ONLY_BIT) !== 0;
-        var ptr_chain = (flags & AccessChainFlagBits.ACCESS_CHAIN_PTR_CHAIN_BIT) !== 0;
-        var register_expression_read = (flags & AccessChainFlagBits.ACCESS_CHAIN_SKIP_REGISTER_EXPRESSION_READ_BIT) === 0;
-        var flatten_member_reference = (flags & AccessChainFlagBits.ACCESS_CHAIN_FLATTEN_ALL_MEMBERS_BIT) !== 0;
+        var index_is_literal = (flags & AccessChainFlagBits.INDEX_IS_LITERAL_BIT) !== 0;
+        var msb_is_id = (flags & AccessChainFlagBits.LITERAL_MSB_FORCE_ID) !== 0;
+        var chain_only = (flags & AccessChainFlagBits.CHAIN_ONLY_BIT) !== 0;
+        var ptr_chain = (flags & AccessChainFlagBits.PTR_CHAIN_BIT) !== 0;
+        var register_expression_read = (flags & AccessChainFlagBits.SKIP_REGISTER_EXPRESSION_READ_BIT) === 0;
+        var flatten_member_reference = (flags & AccessChainFlagBits.FLATTEN_ALL_MEMBERS_BIT) !== 0;
         if (!chain_only) {
             // We handle transpose explicitly, so don't resolve that here.
             var e = this.maybe_get(SPIRExpression, base);
@@ -17798,15 +17800,15 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var type = this.get_pointee_type(type_id);
         var access_chain_is_arrayed = expr.indexOf("[") >= 0;
         var row_major_matrix_needs_conversion = this.is_non_native_row_major_matrix(base);
-        var is_packed = this.has_extended_decoration(base, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked);
-        var physical_type = this.get_extended_decoration(base, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID);
-        var is_invariant = this.has_decoration(base, Decoration.DecorationInvariant);
+        var is_packed = this.has_extended_decoration(base, ExtendedDecorations.PhysicalTypePacked);
+        var physical_type = this.get_extended_decoration(base, ExtendedDecorations.PhysicalTypeID);
+        var is_invariant = this.has_decoration(base, Decoration.Invariant);
         var pending_array_enclose = false;
         var dimension_flatten = false;
         var append_index = function (index, is_literal) {
             var mod_flags = flags;
             if (!is_literal)
-                mod_flags &= ~AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT;
+                mod_flags &= ~AccessChainFlagBits.INDEX_IS_LITERAL_BIT;
             expr = _this.access_chain_internal_append_index(expr, base, type, mod_flags, access_chain_is_arrayed, index);
         };
         for (var i = 0; i < count; i++) {
@@ -17846,7 +17848,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 else {
                     append_index(index, is_literal);
                 }
-                if (type.basetype === SPIRTypeBaseType.ControlPointArray) {
+                if (type.basetype === SPIRBaseType.ControlPointArray) {
                     type_id = type.parent_type;
                     type = this.get(SPIRType, type_id);
                 }
@@ -17865,7 +17867,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 console.assert(type.parent_type);
                 var var_ = this.maybe_get(SPIRVariable, base);
                 if (backend.force_gl_in_out_block && i === 0 && var_ && this.is_builtin_variable(var_) &&
-                    !this.has_decoration(type.self, Decoration.DecorationBlock)) {
+                    !this.has_decoration(type.self, Decoration.Block)) {
                     // This deals with scenarios for tesc/geom where arrays of gl_Position[] are declared.
                     // Normally, these variables live in blocks when compiled from GLSL,
                     // but HLSL seems to just emit straight arrays here.
@@ -17875,11 +17877,11 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     switch (builtin) {
                         // case BuiltInCullDistance: // These are already arrays, need to figure out rules for these in tess/geom.
                         // case BuiltInClipDistance:
-                        case BuiltIn.BuiltInPosition:
-                        case BuiltIn.BuiltInPointSize:
-                            if (var_.storage === StorageClass.StorageClassInput)
+                        case BuiltIn.Position:
+                        case BuiltIn.PointSize:
+                            if (var_.storage === StorageClass.Input)
                                 expr = "gl_in[" + this.to_expression(index, register_expression_read);
-                            else if (var_.storage === StorageClass.StorageClassOutput)
+                            else if (var_.storage === StorageClass.Output)
                                 expr = "gl_out[" + this.to_expression(index, register_expression_read);
                             else
                                 append_index(index, is_literal);
@@ -17909,7 +17911,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 }
                 // Some builtins are arrays in SPIR-V but not in other languages, e.g. gl_SampleMask[] is an array in SPIR-V but not in Metal.
                 // By throwing away the index, we imply the index was 0, which it must be for gl_SampleMask.
-                else if (!this.builtin_translates_to_nonarray((this.get_decoration(base, Decoration.DecorationBuiltIn)))) {
+                else if (!this.builtin_translates_to_nonarray((this.get_decoration(base, Decoration.BuiltIn)))) {
                     append_index(index, is_literal);
                 }
                 type_id = type.parent_type;
@@ -17918,7 +17920,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             }
             // For structs, the index refers to a constant, which indexes into the members, possibly through a redirection mapping.
             // We also check if this member is a builtin, since we then replace the entire expression with the builtin one.
-            else if (type.basetype === SPIRTypeBaseType.Struct) {
+            else if (type.basetype === SPIRBaseType.Struct) {
                 if (!is_literal)
                     index = this.evaluate_constant_u32(index);
                 if (index < type.member_type_index_redirection.length)
@@ -17944,11 +17946,11 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     else
                         expr += this.to_member_reference(base, type, index, ptr_chain);
                 }
-                if (this.has_member_decoration(type.self, index, Decoration.DecorationInvariant))
+                if (this.has_member_decoration(type.self, index, Decoration.Invariant))
                     is_invariant = true;
                 is_packed = this.member_is_packed_physical_type(type, index);
                 if (this.member_is_remapped_physical_type(type, index))
-                    physical_type = this.get_extended_member_decoration(type.self, index, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID);
+                    physical_type = this.get_extended_member_decoration(type.self, index, ExtendedDecorations.PhysicalTypeID);
                 else
                     physical_type = 0;
                 row_major_matrix_needs_conversion = this.member_is_non_native_row_major_matrix(type, index);
@@ -17981,9 +17983,9 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 }
                 // Internally, access chain implementation can also be used on composites,
                 // ignore scalar access workarounds in this case.
-                var effective_storage = StorageClass.StorageClassGeneric;
+                var effective_storage = StorageClass.Generic;
                 var ignore_potential_sliced_writes = false;
-                if ((flags & AccessChainFlagBits.ACCESS_CHAIN_FORCE_COMPOSITE_BIT) === 0) {
+                if ((flags & AccessChainFlagBits.FORCE_COMPOSITE_BIT) === 0) {
                     if (this.expression_type(base).pointer)
                         effective_storage = this.get_expression_effective_storage_class(base);
                     // Special consideration for control points.
@@ -17992,7 +17994,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     // Cleans up some cases where it's very painful to determine the accurate storage class
                     // since blocks can be partially masked ...
                     /*const var_ = maybe_get_backing_variable(base);
-                    if (var_ && var_.storage === StorageClass.StorageClassOutput &&
+                    if (var_ && var_.storage === StorageClass.Output &&
                         get_execution_model() === ExecutionModelTessellationControl &&
                         !has_decoration(var_.self, DecorationPatch))
                     {
@@ -18018,7 +18020,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                         expr += "[" + (out_of_bounds ? 0 : index) + "]";
                     }
                 }
-                else if (ir.ids[index].get_type() === Types.TypeConstant && !is_packed && !row_major_matrix_needs_conversion) {
+                else if (ir.ids[index].get_type() === Types.Constant && !is_packed && !row_major_matrix_needs_conversion) {
                     var c = this.get(SPIRConstant, index);
                     var out_of_bounds = (c.scalar() >= type.vecsize);
                     if (c.specialization) {
@@ -18065,16 +18067,16 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // An access chain or forwarded OpLoads from such access chains
         // will generally have the storage class of the underlying variable, but if the load was not forwarded
         // we have lost any address space qualifiers.
-        var forced_temporary = this.ir.ids[ptr].get_type() === Types.TypeExpression && !this.get(SPIRExpression, ptr).access_chain &&
+        var forced_temporary = this.ir.ids[ptr].get_type() === Types.Expression && !this.get(SPIRExpression, ptr).access_chain &&
             (this.forced_temporaries.has(ptr) || !this.forwarded_temporaries.has(ptr));
         if (var_ && !forced_temporary) {
-            if (this.variable_decl_is_remapped_storage(var_, StorageClass.StorageClassWorkgroup))
-                return StorageClass.StorageClassWorkgroup;
-            if (this.variable_decl_is_remapped_storage(var_, StorageClass.StorageClassStorageBuffer))
-                return StorageClass.StorageClassStorageBuffer;
+            if (this.variable_decl_is_remapped_storage(var_, StorageClass.Workgroup))
+                return StorageClass.Workgroup;
+            if (this.variable_decl_is_remapped_storage(var_, StorageClass.StorageBuffer))
+                return StorageClass.StorageBuffer;
             // Normalize SSBOs to StorageBuffer here.
-            if (var_.storage === StorageClass.StorageClassUniform && this.has_decoration(this.get(SPIRType, var_.basetype).self, Decoration.DecorationBufferBlock))
-                return StorageClass.StorageClassStorageBuffer;
+            if (var_.storage === StorageClass.Uniform && this.has_decoration(this.get(SPIRType, var_.basetype).self, Decoration.BufferBlock))
+                return StorageClass.StorageBuffer;
             else
                 return var_.storage;
         }
@@ -18105,13 +18107,13 @@ var CompilerGLSL = /** @class */ (function (_super) {
             return this.flattened_access_chain(base, indices, arroffset, count, target_type, 0, props.matrix_stride, props.array_stride, props.need_transpose);
         }
         else if (this.flattened_structs.hasOwnProperty(base) && count > 0) {
-            var flags = AccessChainFlagBits.ACCESS_CHAIN_CHAIN_ONLY_BIT | AccessChainFlagBits.ACCESS_CHAIN_SKIP_REGISTER_EXPRESSION_READ_BIT;
+            var flags = AccessChainFlagBits.CHAIN_ONLY_BIT | AccessChainFlagBits.SKIP_REGISTER_EXPRESSION_READ_BIT;
             if (ptr_chain)
-                flags |= AccessChainFlagBits.ACCESS_CHAIN_PTR_CHAIN_BIT;
+                flags |= AccessChainFlagBits.PTR_CHAIN_BIT;
             if (this.flattened_structs[base]) {
-                flags |= AccessChainFlagBits.ACCESS_CHAIN_FLATTEN_ALL_MEMBERS_BIT;
+                flags |= AccessChainFlagBits.FLATTEN_ALL_MEMBERS_BIT;
                 if (meta)
-                    meta.flattened_struct = target_type.basetype === SPIRTypeBaseType.Struct;
+                    meta.flattened_struct = target_type.basetype === SPIRBaseType.Struct;
             }
             var chain = this.access_chain_internal(base, indices, arroffset, count, flags, null).substring(1);
             if (meta) {
@@ -18123,16 +18125,16 @@ var CompilerGLSL = /** @class */ (function (_super) {
             return ParsedIR.sanitize_underscores(ret);
         }
         else {
-            var flags = AccessChainFlagBits.ACCESS_CHAIN_SKIP_REGISTER_EXPRESSION_READ_BIT;
+            var flags = AccessChainFlagBits.SKIP_REGISTER_EXPRESSION_READ_BIT;
             if (ptr_chain)
-                flags |= AccessChainFlagBits.ACCESS_CHAIN_PTR_CHAIN_BIT;
+                flags |= AccessChainFlagBits.PTR_CHAIN_BIT;
             return this.access_chain_internal(base, indices, arroffset, count, flags, meta);
         }
     };
     CompilerGLSL.prototype.flattened_access_chain = function (base, indices, arroffset, count, target_type, offset, matrix_stride, _array_stride, need_transpose) {
         if (target_type.array.length > 0)
             throw new Error("Access chains that result in an array can not be flattened");
-        else if (target_type.basetype === SPIRTypeBaseType.Struct)
+        else if (target_type.basetype === SPIRBaseType.Struct)
             return this.flattened_access_chain_struct(base, indices, arroffset, count, target_type, offset);
         else if (target_type.columns > 1)
             return this.flattened_access_chain_matrix(base, indices, arroffset, count, target_type, offset, matrix_stride, need_transpose);
@@ -18151,7 +18153,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             var need_transpose = false;
             var matrix_stride = 0;
             if (member_type.columns > 1) {
-                need_transpose = this.combined_decoration_for_member(target_type, i).get(Decoration.DecorationRowMajor);
+                need_transpose = this.combined_decoration_for_member(target_type, i).get(Decoration.RowMajor);
                 matrix_stride = this.type_struct_member_matrix_stride(target_type, i);
             }
             var tmp = this.flattened_access_chain(base, indices, arroffset, count, member_type, offset + member_offset, matrix_stride, 0 /* array_stride */, need_transpose);
@@ -18236,7 +18238,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             // Pointers
             if (ptr_chain && i === 0) {
                 // Here, the pointer type will be decorated with an array stride.
-                array_stride = this.get_decoration(basetype.self, Decoration.DecorationArrayStride);
+                array_stride = this.get_decoration(basetype.self, Decoration.ArrayStride);
                 if (!array_stride)
                     throw new Error("SPIR-V does not define ArrayStride for buffer block.");
                 var constant = this.maybe_get(SPIRConstant, index);
@@ -18275,11 +18277,11 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 var parent_type = type.parent_type;
                 type = this.get(SPIRType, parent_type);
                 if (type.array.length > 0)
-                    array_stride = this.get_decoration(parent_type, Decoration.DecorationArrayStride);
+                    array_stride = this.get_decoration(parent_type, Decoration.ArrayStride);
             }
             // For structs, the index refers to a constant, which indexes into the members.
             // We also check if this member is a builtin, since we then replace the entire expression with the builtin one.
-            else if (type.basetype === SPIRTypeBaseType.Struct) {
+            else if (type.basetype === SPIRBaseType.Struct) {
                 index = this.evaluate_constant_u32(index);
                 if (index >= type.member_types.length)
                     throw new Error("Member index is out of bounds!");
@@ -18289,7 +18291,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 if (type.columns > 1) {
                     matrix_stride = this.type_struct_member_matrix_stride(struct_type, index);
                     row_major_matrix_needs_conversion =
-                        this.combined_decoration_for_member(struct_type, index).get(Decoration.DecorationRowMajor);
+                        this.combined_decoration_for_member(struct_type, index).get(Decoration.RowMajor);
                 }
                 else
                     row_major_matrix_needs_conversion = false;
@@ -18444,7 +18446,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
     };
     CompilerGLSL.prototype.to_non_uniform_aware_expression = function (id) {
         var expr = this.to_expression(id);
-        if (this.has_decoration(id, Decoration.DecorationNonUniform))
+        if (this.has_decoration(id, Decoration.NonUniform))
             expr = this.convert_non_uniform_expression(expr, id);
         return expr;
     };
@@ -18453,7 +18455,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (this.invalid_expressions.hasOwnProperty(id))
             this.handle_invalid_expression(id);
         var ir = this.ir;
-        if (ir.ids[id].get_type() === Types.TypeExpression) {
+        if (ir.ids[id].get_type() === Types.Expression) {
             // We might have a more complex chain of dependencies.
             // A possible scenario is that we
             //
@@ -18475,15 +18477,15 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (register_expression_read)
             this.track_expression_read(id);
         switch (ir.ids[id].get_type()) {
-            case Types.TypeExpression: {
+            case Types.Expression: {
                 var e = this.get(SPIRExpression, id);
                 if (e.base_expression)
                     return this.to_enclosed_expression(e.base_expression) + e.expression;
                 else if (e.need_transpose) {
                     // This should not be reached for access chains, since we always deal explicitly with transpose state
                     // when consuming an access chain expression.
-                    var physical_type_id = this.get_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID);
-                    var is_packed = this.has_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked);
+                    var physical_type_id = this.get_extended_decoration(id, ExtendedDecorations.PhysicalTypeID);
+                    var is_packed = this.has_extended_decoration(id, ExtendedDecorations.PhysicalTypePacked);
                     return this.convert_row_major_matrix(e.expression, this.get(SPIRType, e.expression_type), physical_type_id, is_packed);
                 }
                 else if (this.flattened_structs.hasOwnProperty(id)) {
@@ -18500,19 +18502,19 @@ var CompilerGLSL = /** @class */ (function (_super) {
                         return e.expression;
                 }
             }
-            case Types.TypeConstant: {
+            case Types.Constant: {
                 var c = this.get(SPIRConstant, id);
                 var type = this.get(SPIRType, c.constant_type);
                 // WorkGroupSize may be a constant.
-                if (this.has_decoration(c.self, Decoration.DecorationBuiltIn))
-                    return this.builtin_to_glsl(this.get_decoration(c.self, Decoration.DecorationBuiltIn), StorageClass.StorageClassGeneric);
+                if (this.has_decoration(c.self, Decoration.BuiltIn))
+                    return this.builtin_to_glsl(this.get_decoration(c.self, Decoration.BuiltIn), StorageClass.Generic);
                 else if (c.specialization) {
                     if (this.backend.workgroup_size_is_hidden) {
                         var wg_index = this.get_constant_mapping_to_workgroup_component(c);
                         if (wg_index >= 0) {
-                            var wg_size = this.builtin_to_glsl(BuiltIn.BuiltInWorkgroupSize, StorageClass.StorageClassInput) + this.vector_swizzle(1, wg_index);
-                            if (type.basetype !== SPIRTypeBaseType.UInt)
-                                wg_size = this.bitcast_expression(type, SPIRTypeBaseType.UInt, wg_size);
+                            var wg_size = this.builtin_to_glsl(BuiltIn.WorkgroupSize, StorageClass.Input) + this.vector_swizzle(1, wg_index);
+                            if (type.basetype !== SPIRBaseType.UInt)
+                                wg_size = this.bitcast_expression(type, SPIRBaseType.UInt, wg_size);
                             return wg_size;
                         }
                     }
@@ -18520,16 +18522,16 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 }
                 else if (c.is_used_as_lut)
                     return this.to_name(id);
-                else if (type.basetype === SPIRTypeBaseType.Struct && !this.backend.can_declare_struct_inline)
+                else if (type.basetype === SPIRBaseType.Struct && !this.backend.can_declare_struct_inline)
                     return this.to_name(id);
                 else if (type.array.length > 0 && !this.backend.can_declare_arrays_inline)
                     return this.to_name(id);
                 else
                     return this.constant_expression(c);
             }
-            case Types.TypeConstantOp:
+            case Types.ConstantOp:
                 return this.to_name(id);
-            case Types.TypeVariable: {
+            case Types.Variable: {
                 var var_ = this.get(SPIRVariable, id);
                 // If we try to use a loop variable before the loop header, we have to redirect it to the static expression,
                 // the variable has not been declared yet.
@@ -18550,14 +18552,14 @@ var CompilerGLSL = /** @class */ (function (_super) {
                         return this.to_name(id);
                 }
             }
-            case Types.TypeCombinedImageSampler:
+            case Types.CombinedImageSampler:
                 // This type should never be taken the expression of directly.
                 // The intention is that texture sampling functions will extract the image and samplers
                 // separately and take their expressions as needed.
                 // GLSL does not use this type because OpSampledImage immediately creates a combined image sampler
                 // expression ala sampler2D(texture, sampler).
                 throw new Error("Combined image samplers have no default expression representation.");
-            case Types.TypeAccessChain:
+            case Types.AccessChain:
                 // We cannot express this type. They only have meaning in other OpAccessChains, OpStore or OpLoad.
                 throw new Error("Access chains have no default expression representation.");
             default:
@@ -18609,16 +18611,16 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // If we need to transpose, it will also take care of unpacking rules.
         var e = this.maybe_get(SPIRExpression, id);
         var need_transpose = !!e && e.need_transpose;
-        var is_remapped = this.has_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID);
-        var is_packed = this.has_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked);
+        var is_remapped = this.has_extended_decoration(id, ExtendedDecorations.PhysicalTypeID);
+        var is_packed = this.has_extended_decoration(id, ExtendedDecorations.PhysicalTypePacked);
         if (!need_transpose && (is_remapped || is_packed)) {
-            return this.unpack_expression_type(this.to_expression(id, register_expression_read), this.get_pointee_type(this.expression_type_id(id)), this.get_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID), this.has_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked), false);
+            return this.unpack_expression_type(this.to_expression(id, register_expression_read), this.get_pointee_type(this.expression_type_id(id)), this.get_extended_decoration(id, ExtendedDecorations.PhysicalTypeID), this.has_extended_decoration(id, ExtendedDecorations.PhysicalTypePacked), false);
         }
         else
             return this.to_expression(id, register_expression_read);
     };
     CompilerGLSL.prototype.to_unpacked_row_major_matrix_expression = function (id) {
-        return this.unpack_expression_type(this.to_expression(id), this.expression_type(id), this.get_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypeID), this.has_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked), true);
+        return this.unpack_expression_type(this.to_expression(id), this.expression_type(id), this.get_extended_decoration(id, ExtendedDecorations.PhysicalTypeID), this.has_extended_decoration(id, ExtendedDecorations.PhysicalTypePacked), true);
     };
     CompilerGLSL.prototype.to_enclosed_unpacked_expression = function (id, register_expression_read) {
         if (register_expression_read === void 0) { register_expression_read = true; }
@@ -18650,7 +18652,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
     };
     CompilerGLSL.prototype.to_extract_component_expression = function (id, index) {
         var expr = this.to_enclosed_expression(id);
-        if (this.has_extended_decoration(id, ExtendedDecorations.SPIRVCrossDecorationPhysicalTypePacked))
+        if (this.has_extended_decoration(id, ExtendedDecorations.PhysicalTypePacked))
             return expr + "[" + index + "]";
         else
             return expr + "." + this.index_to_swizzle(index);
@@ -18661,7 +18663,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var tmp = new SPIRConstant();
         tmp.constant_type = result_type;
         var composite_type = this.get(SPIRType, c.constant_type);
-        console.assert(composite_type.basetype !== SPIRTypeBaseType.Struct && composite_type.array.length === 0);
+        console.assert(composite_type.basetype !== SPIRBaseType.Struct && composite_type.array.length === 0);
         console.assert(!c.specialization);
         if (this.is_matrix(composite_type)) {
             if (length === 2) {
@@ -18727,7 +18729,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             return expr.substring(1);
         else if (this.backend.native_pointers)
             return "*" + expr;
-        else if (expr_type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT && expr_type.basetype !== SPIRTypeBaseType.Struct &&
+        else if (expr_type.storage === StorageClass.PhysicalStorageBufferEXT && expr_type.basetype !== SPIRBaseType.Struct &&
             expr_type.pointer_depth === 1) {
             return this.enclose_expression(expr) + ".value";
         }
@@ -18774,7 +18776,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
     };
     CompilerGLSL.prototype.to_member_name = function (type, index) {
         if (type.type_alias !== (0) &&
-            !this.has_extended_decoration(type.type_alias, ExtendedDecorations.SPIRVCrossDecorationBufferBlockRepacked)) {
+            !this.has_extended_decoration(type.type_alias, ExtendedDecorations.BufferBlockRepacked)) {
             return this.to_member_name(this.get(SPIRType, type.type_alias), index);
         }
         var memb = maplike_get(Meta, this.ir.meta, type.self).members;
@@ -18832,21 +18834,21 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var flags = maplike_get(Meta, ir.meta, id).decoration.decoration_flags;
         var res = "";
         var var_ = this.maybe_get(SPIRVariable, id);
-        if (var_ && var_.storage === StorageClass.StorageClassWorkgroup && !backend.shared_is_implied)
+        if (var_ && var_.storage === StorageClass.Workgroup && !backend.shared_is_implied)
             res += "shared ";
         res += this.to_interpolation_qualifiers(flags);
         if (var_)
             res += this.to_storage_qualifiers_glsl(var_);
         var type = this.expression_type(id);
-        if (type.image.dim !== Dim.DimSubpassData && type.image.sampled === 2) {
-            if (flags.get(Decoration.DecorationCoherent))
+        if (type.image.dim !== Dim.SubpassData && type.image.sampled === 2) {
+            if (flags.get(Decoration.Coherent))
                 res += "coherent ";
-            if (flags.get(Decoration.DecorationRestrict))
+            if (flags.get(Decoration.Restrict))
                 res += "restrict ";
-            if (flags.get(Decoration.DecorationNonWritable))
+            if (flags.get(Decoration.NonWritable))
                 res += "readonly ";
-            var formatted_load = type.image.format === ImageFormat.ImageFormatUnknown;
-            if (flags.get(Decoration.DecorationNonReadable)) {
+            var formatted_load = type.image.format === ImageFormat.Unknown;
+            if (flags.get(Decoration.NonReadable)) {
                 res += "writeonly ";
                 formatted_load = false;
             }
@@ -18866,17 +18868,17 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // To make glslang not complain when we compile again, we have to transform this back to a case where
         // the variable itself has Patch decoration, and not members.
         var type = this.get(SPIRType, var_.basetype);
-        if (this.has_decoration(type.self, Decoration.DecorationBlock)) {
+        if (this.has_decoration(type.self, Decoration.Block)) {
             var member_count = type.member_types.length;
             for (var i = 0; i < member_count; i++) {
-                if (this.has_member_decoration(type.self, i, Decoration.DecorationPatch)) {
-                    this.set_decoration(var_.self, Decoration.DecorationPatch);
+                if (this.has_member_decoration(type.self, i, Decoration.Patch)) {
+                    this.set_decoration(var_.self, Decoration.Patch);
                     break;
                 }
             }
-            if (this.has_decoration(var_.self, Decoration.DecorationPatch))
+            if (this.has_decoration(var_.self, Decoration.Patch))
                 for (var i = 0; i < member_count; i++)
-                    this.unset_member_decoration(type.self, i, Decoration.DecorationPatch);
+                    this.unset_member_decoration(type.self, i, Decoration.Patch);
         }
     };
     CompilerGLSL.prototype.emit_output_variable_initializer = function (var_) {
@@ -18885,9 +18887,9 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // If a StorageClassOutput variable has an initializer, we need to initialize it in main().
         var entry_func = this.get(SPIRFunction, ir.default_entry_point);
         var type = this.get(SPIRType, var_.basetype);
-        var is_patch = this.has_decoration(var_.self, Decoration.DecorationPatch);
-        var is_block = this.has_decoration(type.self, Decoration.DecorationBlock);
-        var is_control_point = this.get_execution_model() === ExecutionModel.ExecutionModelTessellationControl && !is_patch;
+        var is_patch = this.has_decoration(var_.self, Decoration.Patch);
+        var is_block = this.has_decoration(type.self, Decoration.Block);
+        var is_control_point = this.get_execution_model() === ExecutionModel.TessellationControl && !is_patch;
         if (is_block) {
             var member_count = type.member_types.length;
             var type_is_array_1 = type.array.length === 1;
@@ -18897,11 +18899,11 @@ var CompilerGLSL = /** @class */ (function (_super) {
             var iteration_count = is_control_point ? 1 : array_size;
             var _loop_1 = function (i) {
                 // These outputs might not have been properly declared, so don't initialize them in that case.
-                if (this_1.has_member_decoration(type.self, i, Decoration.DecorationBuiltIn)) {
-                    if (this_1.get_member_decoration(type.self, i, Decoration.DecorationBuiltIn) === BuiltIn.BuiltInCullDistance &&
+                if (this_1.has_member_decoration(type.self, i, Decoration.BuiltIn)) {
+                    if (this_1.get_member_decoration(type.self, i, Decoration.BuiltIn) === BuiltIn.CullDistance &&
                         !this_1.cull_distance_count)
                         return "continue";
-                    if (this_1.get_member_decoration(type.self, i, Decoration.DecorationBuiltIn) === BuiltIn.BuiltInClipDistance &&
+                    if (this_1.get_member_decoration(type.self, i, Decoration.BuiltIn) === BuiltIn.ClipDistance &&
                         !this_1.clip_distance_count)
                         return "continue";
                 }
@@ -18932,10 +18934,10 @@ var CompilerGLSL = /** @class */ (function (_super) {
                         if (is_control_point) {
                             var ids = ir.increase_bound_by(3);
                             var uint_type = new SPIRType();
-                            uint_type.basetype = SPIRTypeBaseType.UInt;
+                            uint_type.basetype = SPIRBaseType.UInt;
                             uint_type.width = 32;
                             _this.set(SPIRType, ids, uint_type);
-                            _this.set(SPIRExpression, ids + 1, _this.builtin_to_glsl(BuiltIn.BuiltInInvocationId, StorageClass.StorageClassInput), ids, true);
+                            _this.set(SPIRExpression, ids + 1, _this.builtin_to_glsl(BuiltIn.InvocationId, StorageClass.Input), ids, true);
                             _this.set(SPIRConstant, ids + 2, ids, i, false);
                             invocation_id = ids + 1;
                             member_index_id = ids + 2;
@@ -18946,16 +18948,16 @@ var CompilerGLSL = /** @class */ (function (_super) {
                         }
                         if (type_is_array_1 && !is_control_point) {
                             var indices = [j, i];
-                            var chain = _this.access_chain_internal(var_.self, indices, 0, 2, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, meta);
+                            var chain = _this.access_chain_internal(var_.self, indices, 0, 2, AccessChainFlagBits.INDEX_IS_LITERAL_BIT, meta);
                             _this.statement(chain, " = ", lut_name, "[", j, "];");
                         }
                         else if (is_control_point) {
                             var indices = [invocation_id, member_index_id];
                             var chain = _this.access_chain_internal(var_.self, indices, 0, 2, 0, meta);
-                            _this.statement(chain, " = ", lut_name, "[", _this.builtin_to_glsl(BuiltIn.BuiltInInvocationId, StorageClass.StorageClassInput), "];");
+                            _this.statement(chain, " = ", lut_name, "[", _this.builtin_to_glsl(BuiltIn.InvocationId, StorageClass.Input), "];");
                         }
                         else {
-                            var chain = _this.access_chain_internal(var_.self, [i], 0, 1, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, meta);
+                            var chain = _this.access_chain_internal(var_.self, [i], 0, 1, AccessChainFlagBits.INDEX_IS_LITERAL_BIT, meta);
                             _this.statement(chain, " = ", _this.to_expression(c.subconstants[i]), ";");
                         }
                         if (is_patch)
@@ -18979,8 +18981,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 _this.statement(_this.to_expression(var_.self), "[gl_InvocationID] = ", lut_name_1, "[gl_InvocationID];");
             });
         }
-        else if (this.has_decoration(var_.self, Decoration.DecorationBuiltIn) &&
-            this.get_decoration(var_.self, Decoration.DecorationBuiltIn) === BuiltIn.BuiltInSampleMask) {
+        else if (this.has_decoration(var_.self, Decoration.BuiltIn) &&
+            this.get_decoration(var_.self, Decoration.BuiltIn) === BuiltIn.SampleMask) {
             // We cannot copy the array since gl_SampleMask is unsized in GLSL. Unroll time! <_<
             entry_func.fixup_hooks_in.push(function () {
                 var c = _this.get(SPIRConstant, var_.initializer);
@@ -19008,7 +19010,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
     CompilerGLSL.prototype.to_precision_qualifiers_glsl = function (id) {
         var type = this.expression_type(id);
         var use_precision_qualifiers = this.backend.allow_precision_qualifiers;
-        if (use_precision_qualifiers && (type.basetype === SPIRTypeBaseType.Image || type.basetype === SPIRTypeBaseType.SampledImage)) {
+        if (use_precision_qualifiers && (type.basetype === SPIRBaseType.Image || type.basetype === SPIRBaseType.SampledImage)) {
             // Force mediump for the sampler type. We cannot declare 16-bit or smaller image types.
             var result_type = this.get(SPIRType, type.image.type);
             if (result_type.width < 32)
@@ -19020,13 +19022,13 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var execution = this.get_entry_point();
         if (this.subpass_input_is_framebuffer_fetch(var_.self))
             return "";
-        if (var_.storage === StorageClass.StorageClassInput || var_.storage === StorageClass.StorageClassOutput) {
-            if (this.is_legacy() && execution.model === ExecutionModel.ExecutionModelVertex)
-                return var_.storage === StorageClass.StorageClassInput ? "attribute " : "varying ";
-            else if (this.is_legacy() && execution.model === ExecutionModel.ExecutionModelFragment)
+        if (var_.storage === StorageClass.Input || var_.storage === StorageClass.Output) {
+            if (this.is_legacy() && execution.model === ExecutionModel.Vertex)
+                return var_.storage === StorageClass.Input ? "attribute " : "varying ";
+            else if (this.is_legacy() && execution.model === ExecutionModel.Fragment)
                 return "varying "; // Fragment outputs are renamed so they never hit this case.
-            else if (execution.model === ExecutionModel.ExecutionModelFragment && var_.storage === StorageClass.StorageClassOutput) {
-                var loc = this.get_decoration(var_.self, Decoration.DecorationLocation);
+            else if (execution.model === ExecutionModel.Fragment && var_.storage === StorageClass.Output) {
+                var loc = this.get_decoration(var_.self, Decoration.Location);
                 var is_inout = this.location_is_framebuffer_fetch(loc);
                 if (is_inout)
                     return "inout ";
@@ -19034,29 +19036,29 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     return "out ";
             }
             else
-                return var_.storage === StorageClass.StorageClassInput ? "in " : "out ";
+                return var_.storage === StorageClass.Input ? "in " : "out ";
         }
-        else if (var_.storage === StorageClass.StorageClassUniformConstant || var_.storage === StorageClass.StorageClassUniform ||
-            var_.storage === StorageClass.StorageClassPushConstant) {
+        else if (var_.storage === StorageClass.UniformConstant || var_.storage === StorageClass.Uniform ||
+            var_.storage === StorageClass.PushConstant) {
             return "uniform ";
         }
-        else if (var_.storage === StorageClass.StorageClassRayPayloadKHR) {
+        else if (var_.storage === StorageClass.RayPayloadKHR) {
             throw new Error("Raytracing not supported");
             // return ray_tracing_is_khr ? "rayPayloadEXT " : "rayPayloadNV ";
         }
-        else if (var_.storage === StorageClass.StorageClassIncomingRayPayloadKHR) {
+        else if (var_.storage === StorageClass.IncomingRayPayloadKHR) {
             throw new Error("Raytracing not supported");
             // return ray_tracing_is_khr ? "rayPayloadInEXT " : "rayPayloadInNV ";
         }
-        else if (var_.storage === StorageClass.StorageClassHitAttributeKHR) {
+        else if (var_.storage === StorageClass.HitAttributeKHR) {
             throw new Error("Raytracing not supported");
             // return ray_tracing_is_khr ? "hitAttributeEXT " : "hitAttributeNV ";
         }
-        else if (var_.storage === StorageClass.StorageClassCallableDataKHR) {
+        else if (var_.storage === StorageClass.CallableDataKHR) {
             throw new Error("Raytracing not supported");
             // return ray_tracing_is_khr ? "callableDataEXT " : "callableDataNV ";
         }
-        else if (var_.storage === StorageClass.StorageClassIncomingCallableDataKHR) {
+        else if (var_.storage === StorageClass.IncomingCallableDataKHR) {
             throw new Error("Raytracing not supported");
             // return ray_tracing_is_khr ? "callableDataInEXT " : "callableDataInNV ";
         }
@@ -19064,45 +19066,45 @@ var CompilerGLSL = /** @class */ (function (_super) {
     };
     CompilerGLSL.prototype.flags_to_qualifiers_glsl = function (type, flags) {
         // GL_EXT_buffer_reference variables can be marked as restrict.
-        if (flags.get(Decoration.DecorationRestrictPointerEXT))
+        if (flags.get(Decoration.RestrictPointerEXT))
             return "restrict ";
         var backend = this.backend;
         var options = this.options;
         var qual = "";
-        if (type_is_floating_point(type) && flags.get(Decoration.DecorationNoContraction) && backend.support_precise_qualifier)
+        if (type_is_floating_point(type) && flags.get(Decoration.NoContraction) && backend.support_precise_qualifier)
             qual = "precise ";
         // Structs do not have precision qualifiers, neither do doubles (desktop only anyways, so no mediump/highp).
-        var type_supports_precision = type.basetype === SPIRTypeBaseType.Float || type.basetype === SPIRTypeBaseType.Int || type.basetype === SPIRTypeBaseType.UInt ||
-            type.basetype === SPIRTypeBaseType.Image || type.basetype === SPIRTypeBaseType.SampledImage ||
-            type.basetype === SPIRTypeBaseType.Sampler;
+        var type_supports_precision = type.basetype === SPIRBaseType.Float || type.basetype === SPIRBaseType.Int || type.basetype === SPIRBaseType.UInt ||
+            type.basetype === SPIRBaseType.Image || type.basetype === SPIRBaseType.SampledImage ||
+            type.basetype === SPIRBaseType.Sampler;
         if (!type_supports_precision)
             return qual;
         if (options.es) {
             var execution = this.get_entry_point();
-            if (flags.get(Decoration.DecorationRelaxedPrecision)) {
-                var implied_fmediump = type.basetype === SPIRTypeBaseType.Float &&
+            if (flags.get(Decoration.RelaxedPrecision)) {
+                var implied_fmediump = type.basetype === SPIRBaseType.Float &&
                     options.fragment.default_float_precision === GLSLPrecision.Mediump &&
-                    execution.model === ExecutionModel.ExecutionModelFragment;
-                var implied_imediump = (type.basetype === SPIRTypeBaseType.Int || type.basetype === SPIRTypeBaseType.UInt) &&
+                    execution.model === ExecutionModel.Fragment;
+                var implied_imediump = (type.basetype === SPIRBaseType.Int || type.basetype === SPIRBaseType.UInt) &&
                     options.fragment.default_int_precision === GLSLPrecision.Mediump &&
-                    execution.model === ExecutionModel.ExecutionModelFragment;
+                    execution.model === ExecutionModel.Fragment;
                 qual += (implied_fmediump || implied_imediump) ? "" : "mediump ";
             }
             else {
-                var implied_fhighp = type.basetype === SPIRTypeBaseType.Float && ((options.fragment.default_float_precision === GLSLPrecision.Highp &&
-                    execution.model === ExecutionModel.ExecutionModelFragment) ||
-                    (execution.model !== ExecutionModel.ExecutionModelFragment));
-                var implied_ihighp = (type.basetype === SPIRTypeBaseType.Int || type.basetype === SPIRTypeBaseType.UInt) &&
+                var implied_fhighp = type.basetype === SPIRBaseType.Float && ((options.fragment.default_float_precision === GLSLPrecision.Highp &&
+                    execution.model === ExecutionModel.Fragment) ||
+                    (execution.model !== ExecutionModel.Fragment));
+                var implied_ihighp = (type.basetype === SPIRBaseType.Int || type.basetype === SPIRBaseType.UInt) &&
                     ((options.fragment.default_int_precision === GLSLPrecision.Highp &&
-                        execution.model === ExecutionModel.ExecutionModelFragment) ||
-                        (execution.model !== ExecutionModel.ExecutionModelFragment));
+                        execution.model === ExecutionModel.Fragment) ||
+                        (execution.model !== ExecutionModel.Fragment));
                 qual += (implied_fhighp || implied_ihighp) ? "" : "highp ";
             }
         }
         else if (backend.allow_precision_qualifiers) {
             // Vulkan GLSL supports precision qualifiers, even in desktop profiles, which is convenient.
             // The default is highp however, so only emit mediump in the rare case that a shader has these.
-            if (flags.get(Decoration.DecorationRelaxedPrecision))
+            if (flags.get(Decoration.RelaxedPrecision))
                 qual += "mediump ";
         }
         return qual;
@@ -19111,93 +19113,93 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (this.options.es && this.is_desktop_only_format(format))
             throw new Error("Attempting to use image format not supported in ES profile.");
         switch (format) {
-            case ImageFormat.ImageFormatRgba32f:
+            case ImageFormat.Rgba32f:
                 return "rgba32f";
-            case ImageFormat.ImageFormatRgba16f:
+            case ImageFormat.Rgba16f:
                 return "rgba16f";
-            case ImageFormat.ImageFormatR32f:
+            case ImageFormat.R32f:
                 return "r32f";
-            case ImageFormat.ImageFormatRgba8:
+            case ImageFormat.Rgba8:
                 return "rgba8";
-            case ImageFormat.ImageFormatRgba8Snorm:
+            case ImageFormat.Rgba8Snorm:
                 return "rgba8_snorm";
-            case ImageFormat.ImageFormatRg32f:
+            case ImageFormat.Rg32f:
                 return "rg32f";
-            case ImageFormat.ImageFormatRg16f:
+            case ImageFormat.Rg16f:
                 return "rg16f";
-            case ImageFormat.ImageFormatRgba32i:
+            case ImageFormat.Rgba32i:
                 return "rgba32i";
-            case ImageFormat.ImageFormatRgba16i:
+            case ImageFormat.Rgba16i:
                 return "rgba16i";
-            case ImageFormat.ImageFormatR32i:
+            case ImageFormat.R32i:
                 return "r32i";
-            case ImageFormat.ImageFormatRgba8i:
+            case ImageFormat.Rgba8i:
                 return "rgba8i";
-            case ImageFormat.ImageFormatRg32i:
+            case ImageFormat.Rg32i:
                 return "rg32i";
-            case ImageFormat.ImageFormatRg16i:
+            case ImageFormat.Rg16i:
                 return "rg16i";
-            case ImageFormat.ImageFormatRgba32ui:
+            case ImageFormat.Rgba32ui:
                 return "rgba32ui";
-            case ImageFormat.ImageFormatRgba16ui:
+            case ImageFormat.Rgba16ui:
                 return "rgba16ui";
-            case ImageFormat.ImageFormatR32ui:
+            case ImageFormat.R32ui:
                 return "r32ui";
-            case ImageFormat.ImageFormatRgba8ui:
+            case ImageFormat.Rgba8ui:
                 return "rgba8ui";
-            case ImageFormat.ImageFormatRg32ui:
+            case ImageFormat.Rg32ui:
                 return "rg32ui";
-            case ImageFormat.ImageFormatRg16ui:
+            case ImageFormat.Rg16ui:
                 return "rg16ui";
-            case ImageFormat.ImageFormatR11fG11fB10f:
+            case ImageFormat.R11fG11fB10f:
                 return "r11f_g11f_b10f";
-            case ImageFormat.ImageFormatR16f:
+            case ImageFormat.R16f:
                 return "r16f";
-            case ImageFormat.ImageFormatRgb10A2:
+            case ImageFormat.Rgb10A2:
                 return "rgb10_a2";
-            case ImageFormat.ImageFormatR8:
+            case ImageFormat.R8:
                 return "r8";
-            case ImageFormat.ImageFormatRg8:
+            case ImageFormat.Rg8:
                 return "rg8";
-            case ImageFormat.ImageFormatR16:
+            case ImageFormat.R16:
                 return "r16";
-            case ImageFormat.ImageFormatRg16:
+            case ImageFormat.Rg16:
                 return "rg16";
-            case ImageFormat.ImageFormatRgba16:
+            case ImageFormat.Rgba16:
                 return "rgba16";
-            case ImageFormat.ImageFormatR16Snorm:
+            case ImageFormat.R16Snorm:
                 return "r16_snorm";
-            case ImageFormat.ImageFormatRg16Snorm:
+            case ImageFormat.Rg16Snorm:
                 return "rg16_snorm";
-            case ImageFormat.ImageFormatRgba16Snorm:
+            case ImageFormat.Rgba16Snorm:
                 return "rgba16_snorm";
-            case ImageFormat.ImageFormatR8Snorm:
+            case ImageFormat.R8Snorm:
                 return "r8_snorm";
-            case ImageFormat.ImageFormatRg8Snorm:
+            case ImageFormat.Rg8Snorm:
                 return "rg8_snorm";
-            case ImageFormat.ImageFormatR8ui:
+            case ImageFormat.R8ui:
                 return "r8ui";
-            case ImageFormat.ImageFormatRg8ui:
+            case ImageFormat.Rg8ui:
                 return "rg8ui";
-            case ImageFormat.ImageFormatR16ui:
+            case ImageFormat.R16ui:
                 return "r16ui";
-            case ImageFormat.ImageFormatRgb10a2ui:
+            case ImageFormat.Rgb10a2ui:
                 return "rgb10_a2ui";
-            case ImageFormat.ImageFormatR8i:
+            case ImageFormat.R8i:
                 return "r8i";
-            case ImageFormat.ImageFormatRg8i:
+            case ImageFormat.Rg8i:
                 return "rg8i";
-            case ImageFormat.ImageFormatR16i:
+            case ImageFormat.R16i:
                 return "r16i";
             default:
-                // case ImageFormat.ImageFormatUnknown:
+                // case ImageFormat.Unknown:
                 return null;
         }
     };
     CompilerGLSL.prototype.layout_for_member = function (type, index) {
         if (this.is_legacy())
             return "";
-        var is_block = this.has_decoration(type.self, Decoration.DecorationBlock) || this.has_decoration(type.self, Decoration.DecorationBufferBlock);
+        var is_block = this.has_decoration(type.self, Decoration.Block) || this.has_decoration(type.self, Decoration.BufferBlock);
         if (!is_block)
             return "";
         var _a = this, ir = _a.ir, options = _a.options;
@@ -19206,7 +19208,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             return "";
         var dec = memb[index];
         var attr = [];
-        if (this.has_member_decoration(type.self, index, Decoration.DecorationPassthroughNV))
+        if (this.has_member_decoration(type.self, index, Decoration.PassthroughNV))
             attr.push("passthrough");
         // We can only apply layouts on members in block interfaces.
         // This is a bit problematic because in SPIR-V decorations are applied on the struct types directly.
@@ -19223,15 +19225,15 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // struct Foo { mat4 matrix; }; // GLSL doesn't support any layout shenanigans in raw struct declarations.
         // buffer UBO { layout(row_major) Foo foo; }; // Apply the layout on top-level.
         var flags = this.combined_decoration_for_member(type, index);
-        if (flags.get(Decoration.DecorationRowMajor))
+        if (flags.get(Decoration.RowMajor))
             attr.push("row_major");
         // We don't emit any global layouts, so column_major is default.
         //if (flags & (1ull << DecorationColMajor))
         //    attr.push("column_major");
-        if (dec.decoration_flags.get(Decoration.DecorationLocation) && this.can_use_io_location(type.storage, true))
+        if (dec.decoration_flags.get(Decoration.Location) && this.can_use_io_location(type.storage, true))
             attr.push("location = " + dec.location);
         // Can only declare component if we can declare location.
-        if (dec.decoration_flags.get(Decoration.DecorationComponent) && this.can_use_io_location(type.storage, true)) {
+        if (dec.decoration_flags.get(Decoration.Component) && this.can_use_io_location(type.storage, true)) {
             if (!options.es) {
                 if (options.version < 440 && options.version >= 140)
                     this.require_extension_internal("GL_ARB_enhanced_layouts");
@@ -19242,13 +19244,13 @@ var CompilerGLSL = /** @class */ (function (_super) {
             else
                 throw new Error("Component decoration is not supported in ES targets.");
         }
-        // SPIRVCrossDecorationPacked is set by layout_for_variable earlier to mark that we need to emit offset qualifiers.
+        // Packed is set by layout_for_variable earlier to mark that we need to emit offset qualifiers.
         // This is only done selectively in GLSL as needed.
-        if (this.has_extended_decoration(type.self, ExtendedDecorations.SPIRVCrossDecorationExplicitOffset) &&
-            dec.decoration_flags.get(Decoration.DecorationOffset)) {
+        if (this.has_extended_decoration(type.self, ExtendedDecorations.ExplicitOffset) &&
+            dec.decoration_flags.get(Decoration.Offset)) {
             attr.push("offset = " + dec.offset);
         }
-        else if (type.storage === StorageClass.StorageClassOutput && dec.decoration_flags.get(Decoration.DecorationOffset))
+        else if (type.storage === StorageClass.Output && dec.decoration_flags.get(Decoration.Offset))
             attr.push("xfb_offset = " + dec.offset);
         if (attr.length === 0)
             return "";
@@ -19261,23 +19263,23 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var res = "";
         //if (flags & (1ull << DecorationSmooth))
         //    res += "smooth ";
-        if (flags.get(Decoration.DecorationFlat))
+        if (flags.get(Decoration.Flat))
             res += "flat ";
-        if (flags.get(Decoration.DecorationNoPerspective))
+        if (flags.get(Decoration.NoPerspective))
             res += "noperspective ";
-        if (flags.get(Decoration.DecorationCentroid))
+        if (flags.get(Decoration.Centroid))
             res += "centroid ";
-        if (flags.get(Decoration.DecorationPatch))
+        if (flags.get(Decoration.Patch))
             res += "patch ";
-        if (flags.get(Decoration.DecorationSample))
+        if (flags.get(Decoration.Sample))
             res += "sample ";
-        if (flags.get(Decoration.DecorationInvariant))
+        if (flags.get(Decoration.Invariant))
             res += "invariant ";
-        if (flags.get(Decoration.DecorationExplicitInterpAMD)) {
+        if (flags.get(Decoration.ExplicitInterpAMD)) {
             this.require_extension_internal("GL_AMD_shader_explicit_vertex_parameter");
             res += "__explicitInterpAMD ";
         }
-        if (flags.get(Decoration.DecorationPerVertexNV)) {
+        if (flags.get(Decoration.PerVertexNV)) {
             var options = this.options;
             if (options.es && options.version < 320)
                 throw new Error("pervertexNV requires ESSL 320.");
@@ -19302,39 +19304,39 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var type = this.get(SPIRType, var_.basetype);
         var flags = this.get_decoration_bitset(var_.self);
         var typeflags = this.get_decoration_bitset(type.self);
-        if (flags.get(Decoration.DecorationPassthroughNV))
+        if (flags.get(Decoration.PassthroughNV))
             attr.push("passthrough");
-        /*if (options.vulkan_semantics && var_.storage === StorageClass.StorageClassPushConstant)
+        /*if (options.vulkan_semantics && var_.storage === StorageClass.PushConstant)
             attr.push("push_constant");
-        else if (var_.storage === StorageClass.StorageClassShaderRecordBufferKHR)
+        else if (var_.storage === StorageClass.ShaderRecordBufferKHR)
             attr.push(ray_tracing_is_khr ? "shaderRecordEXT" : "shaderRecordNV");*/
-        if (flags.get(Decoration.DecorationRowMajor))
+        if (flags.get(Decoration.RowMajor))
             attr.push("row_major");
-        if (flags.get(Decoration.DecorationColMajor))
+        if (flags.get(Decoration.ColMajor))
             attr.push("column_major");
         /*if (options.vulkan_semantics)
         {
-            if (flags.get(Decoration.DecorationInputAttachmentIndex))
+            if (flags.get(Decoration.InputAttachmentIndex))
                 attr.push("input_attachment_index = " + this.get_decoration(var_.self, DecorationInputAttachmentIndex));
         }*/
-        var is_block = this.has_decoration(type.self, Decoration.DecorationBlock);
-        if (flags.get(Decoration.DecorationLocation) && this.can_use_io_location(var_.storage, is_block)) {
+        var is_block = this.has_decoration(type.self, Decoration.Block);
+        if (flags.get(Decoration.Location) && this.can_use_io_location(var_.storage, is_block)) {
             var combined_decoration = new Bitset();
             var members = maplike_get(Meta, ir.meta, type.self).members;
             for (var i = 0; i < members.length; i++)
                 combined_decoration.merge_or(this.combined_decoration_for_member(type, i));
             // If our members have location decorations, we don't need to
             // emit location decorations at the top as well (looks weird).
-            if (!combined_decoration.get(Decoration.DecorationLocation))
-                attr.push("location = " + this.get_decoration(var_.self, Decoration.DecorationLocation));
+            if (!combined_decoration.get(Decoration.Location))
+                attr.push("location = " + this.get_decoration(var_.self, Decoration.Location));
         }
-        if (this.get_execution_model() === ExecutionModel.ExecutionModelFragment && var_.storage === StorageClass.StorageClassOutput &&
-            this.location_is_non_coherent_framebuffer_fetch(this.get_decoration(var_.self, Decoration.DecorationLocation))) {
+        if (this.get_execution_model() === ExecutionModel.Fragment && var_.storage === StorageClass.Output &&
+            this.location_is_non_coherent_framebuffer_fetch(this.get_decoration(var_.self, Decoration.Location))) {
             attr.push("noncoherent");
         }
         // Transform feedback
         var uses_enhanced_layouts = false;
-        if (is_block && var_.storage === StorageClass.StorageClassOutput) {
+        if (is_block && var_.storage === StorageClass.Output) {
             // For blocks, there is a restriction where xfb_stride/xfb_buffer must only be declared on the block itself,
             // since all members must match the same xfb_buffer. The only thing we will declare for members of the block
             // is the xfb_offset.
@@ -19343,37 +19345,37 @@ var CompilerGLSL = /** @class */ (function (_super) {
             var have_any_xfb_offset = false;
             var have_geom_stream = false;
             var xfb_stride = 0, xfb_buffer = 0, geom_stream = 0;
-            if (flags.get(Decoration.DecorationXfbBuffer) && flags.get(Decoration.DecorationXfbStride)) {
+            if (flags.get(Decoration.XfbBuffer) && flags.get(Decoration.XfbStride)) {
                 have_xfb_buffer_stride = true;
-                xfb_buffer = this.get_decoration(var_.self, Decoration.DecorationXfbBuffer);
-                xfb_stride = this.get_decoration(var_.self, Decoration.DecorationXfbStride);
+                xfb_buffer = this.get_decoration(var_.self, Decoration.XfbBuffer);
+                xfb_stride = this.get_decoration(var_.self, Decoration.XfbStride);
             }
-            if (flags.get(Decoration.DecorationStream)) {
+            if (flags.get(Decoration.Stream)) {
                 have_geom_stream = true;
-                geom_stream = this.get_decoration(var_.self, Decoration.DecorationStream);
+                geom_stream = this.get_decoration(var_.self, Decoration.Stream);
             }
             // Verify that none of the members violate our assumption.
             for (var i = 0; i < member_count; i++) {
-                if (this.has_member_decoration(type.self, i, Decoration.DecorationStream)) {
-                    var member_geom_stream = this.get_member_decoration(type.self, i, Decoration.DecorationStream);
+                if (this.has_member_decoration(type.self, i, Decoration.Stream)) {
+                    var member_geom_stream = this.get_member_decoration(type.self, i, Decoration.Stream);
                     if (have_geom_stream && member_geom_stream !== geom_stream)
                         throw new Error("IO block member Stream mismatch.");
                     have_geom_stream = true;
                     geom_stream = member_geom_stream;
                 }
                 // Only members with an Offset decoration participate in XFB.
-                if (!this.has_member_decoration(type.self, i, Decoration.DecorationOffset))
+                if (!this.has_member_decoration(type.self, i, Decoration.Offset))
                     continue;
                 have_any_xfb_offset = true;
-                if (this.has_member_decoration(type.self, i, Decoration.DecorationXfbBuffer)) {
-                    var buffer_index = this.get_member_decoration(type.self, i, Decoration.DecorationXfbBuffer);
+                if (this.has_member_decoration(type.self, i, Decoration.XfbBuffer)) {
+                    var buffer_index = this.get_member_decoration(type.self, i, Decoration.XfbBuffer);
                     if (have_xfb_buffer_stride && buffer_index !== xfb_buffer)
                         throw new Error("IO block member XfbBuffer mismatch.");
                     have_xfb_buffer_stride = true;
                     xfb_buffer = buffer_index;
                 }
-                if (this.has_member_decoration(type.self, i, Decoration.DecorationXfbStride)) {
-                    var stride = this.get_member_decoration(type.self, i, Decoration.DecorationXfbStride);
+                if (this.has_member_decoration(type.self, i, Decoration.XfbStride)) {
+                    var stride = this.get_member_decoration(type.self, i, Decoration.XfbStride);
                     if (have_xfb_buffer_stride && stride !== xfb_stride)
                         throw new Error("IO block member XfbStride mismatch.");
                     have_xfb_buffer_stride = true;
@@ -19386,37 +19388,37 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 uses_enhanced_layouts = true;
             }
             if (have_geom_stream) {
-                if (this.get_execution_model() !== ExecutionModel.ExecutionModelGeometry)
+                if (this.get_execution_model() !== ExecutionModel.Geometry)
                     throw new Error("Geometry streams can only be used in geometry shaders.");
                 if (options.es)
                     throw new Error("Multiple geometry streams not supported in ESSL.");
                 if (options.version < 400)
                     this.require_extension_internal("GL_ARB_transform_feedback3");
-                attr.push("stream = " + this.get_decoration(var_.self, Decoration.DecorationStream));
+                attr.push("stream = " + this.get_decoration(var_.self, Decoration.Stream));
             }
         }
-        else if (var_.storage === StorageClass.StorageClassOutput) {
-            if (flags.get(Decoration.DecorationXfbBuffer) && flags.get(Decoration.DecorationXfbStride) && flags.get(Decoration.DecorationOffset)) {
+        else if (var_.storage === StorageClass.Output) {
+            if (flags.get(Decoration.XfbBuffer) && flags.get(Decoration.XfbStride) && flags.get(Decoration.Offset)) {
                 // XFB for standalone variables, we can emit all decorations.
-                attr.push("xfb_buffer = " + this.get_decoration(var_.self, Decoration.DecorationXfbBuffer));
-                attr.push("xfb_stride = " + this.get_decoration(var_.self, Decoration.DecorationXfbStride));
-                attr.push("xfb_offset = " + this.get_decoration(var_.self, Decoration.DecorationOffset));
+                attr.push("xfb_buffer = " + this.get_decoration(var_.self, Decoration.XfbBuffer));
+                attr.push("xfb_stride = " + this.get_decoration(var_.self, Decoration.XfbStride));
+                attr.push("xfb_offset = " + this.get_decoration(var_.self, Decoration.Offset));
                 uses_enhanced_layouts = true;
             }
-            if (flags.get(Decoration.DecorationStream)) {
-                if (this.get_execution_model() !== ExecutionModel.ExecutionModelGeometry)
+            if (flags.get(Decoration.Stream)) {
+                if (this.get_execution_model() !== ExecutionModel.Geometry)
                     throw new Error("Geometry streams can only be used in geometry shaders.");
                 if (options.es)
                     throw new Error("Multiple geometry streams not supported in ESSL.");
                 if (options.version < 400)
                     this.require_extension_internal("GL_ARB_transform_feedback3");
-                attr.push("stream = " + this.get_decoration(var_.self, Decoration.DecorationStream));
+                attr.push("stream = " + this.get_decoration(var_.self, Decoration.Stream));
             }
         }
         // Can only declare Component if we can declare location.
-        if (flags.get(Decoration.DecorationComponent) && this.can_use_io_location(var_.storage, is_block)) {
+        if (flags.get(Decoration.Component) && this.can_use_io_location(var_.storage, is_block)) {
             uses_enhanced_layouts = true;
-            attr.push("component = " + this.get_decoration(var_.self, Decoration.DecorationComponent));
+            attr.push("component = " + this.get_decoration(var_.self, Decoration.Component));
         }
         if (uses_enhanced_layouts) {
             if (!options.es) {
@@ -19430,12 +19432,12 @@ var CompilerGLSL = /** @class */ (function (_super) {
             else if (options.es)
                 throw new Error("GL_ARB_enhanced_layouts is not supported in ESSL.");
         }
-        if (flags.get(Decoration.DecorationIndex))
-            attr.push("index = " + this.get_decoration(var_.self, Decoration.DecorationIndex));
-        var ssbo_block = var_.storage === StorageClass.StorageClassStorageBuffer || var_.storage === StorageClass.StorageClassShaderRecordBufferKHR ||
-            (var_.storage === StorageClass.StorageClassUniform && typeflags.get(Decoration.DecorationBufferBlock));
-        var emulated_ubo = var_.storage === StorageClass.StorageClassPushConstant && options.emit_push_constant_as_uniform_buffer;
-        var ubo_block = var_.storage === StorageClass.StorageClassUniform && typeflags.get(Decoration.DecorationBlock);
+        if (flags.get(Decoration.Index))
+            attr.push("index = " + this.get_decoration(var_.self, Decoration.Index));
+        var ssbo_block = var_.storage === StorageClass.StorageBuffer || var_.storage === StorageClass.ShaderRecordBufferKHR ||
+            (var_.storage === StorageClass.Uniform && typeflags.get(Decoration.BufferBlock));
+        var emulated_ubo = var_.storage === StorageClass.PushConstant && options.emit_push_constant_as_uniform_buffer;
+        var ubo_block = var_.storage === StorageClass.Uniform && typeflags.get(Decoration.Block);
         // GL 3.0/GLSL 1.30 is not considered legacy, but it doesn't have UBOs ...
         var can_use_buffer_blocks = (options.es && options.version >= 300) || (!options.es && options.version >= 140);
         // pretend no UBOs when options say so
@@ -19447,14 +19449,14 @@ var CompilerGLSL = /** @class */ (function (_super) {
         else
             can_use_binding = options.enable_420pack_extension || (options.version >= 420);
         // Make sure we don't emit binding layout for a classic uniform on GLSL 1.30.
-        if (!can_use_buffer_blocks && var_.storage === StorageClass.StorageClassUniform)
+        if (!can_use_buffer_blocks && var_.storage === StorageClass.Uniform)
             can_use_binding = false;
-        if (var_.storage === StorageClass.StorageClassShaderRecordBufferKHR)
+        if (var_.storage === StorageClass.ShaderRecordBufferKHR)
             can_use_binding = false;
-        if (can_use_binding && flags.get(Decoration.DecorationBinding))
-            attr.push("binding = " + this.get_decoration(var_.self, Decoration.DecorationBinding));
-        if (var_.storage !== StorageClass.StorageClassOutput && flags.get(Decoration.DecorationOffset)) {
-            attr.push("offset = " + this.get_decoration(var_.self, Decoration.DecorationOffset));
+        if (can_use_binding && flags.get(Decoration.Binding))
+            attr.push("binding = " + this.get_decoration(var_.self, Decoration.Binding));
+        if (var_.storage !== StorageClass.Output && flags.get(Decoration.Offset)) {
+            attr.push("offset = " + this.get_decoration(var_.self, Decoration.Offset));
         }
         // Instead of adding explicit offsets for every element here, just assume we're using std140 or std430.
         // If SPIR-V does not comply with either layout, we cannot really work around it.
@@ -19466,7 +19468,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         }
         // For images, the type itself adds a layout qualifer.
         // Only emit the format for storage images.
-        if (type.basetype === SPIRTypeBaseType.Image && type.image.sampled === 2) {
+        if (type.basetype === SPIRBaseType.Image && type.image.sampled === 2) {
             var fmt = this.format_to_glsl(type.image.format);
             if (fmt)
                 attr.push(fmt);
@@ -19523,7 +19525,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // if (!combined_image_samplers.empty() || !options.vulkan_semantics)
         // {
         var type = this.expression_type(id);
-        if (type.basetype === SPIRTypeBaseType.Sampler || (type.basetype === SPIRTypeBaseType.Image && type.image.sampled === 1))
+        if (type.basetype === SPIRBaseType.Sampler || (type.basetype === SPIRBaseType.Image && type.image.sampled === 1))
             return true;
         // }
         return false;
@@ -19536,19 +19538,19 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if ((options.es && options.version < 310) || (!options.es && options.version < 140))
             return;
         switch (block.hint) {
-            case SPIRBlockHints.HintFlatten:
+            case SPIRBlockHints.Flatten:
                 this.require_extension_internal("GL_EXT_control_flow_attributes");
                 this.statement("SPIRV_CROSS_FLATTEN");
                 break;
-            case SPIRBlockHints.HintDontFlatten:
+            case SPIRBlockHints.DontFlatten:
                 this.require_extension_internal("GL_EXT_control_flow_attributes");
                 this.statement("SPIRV_CROSS_BRANCH");
                 break;
-            case SPIRBlockHints.HintUnroll:
+            case SPIRBlockHints.Unroll:
                 this.require_extension_internal("GL_EXT_control_flow_attributes");
                 this.statement("SPIRV_CROSS_UNROLL");
                 break;
-            case SPIRBlockHints.HintDontUnroll:
+            case SPIRBlockHints.DontUnroll:
                 this.require_extension_internal("GL_EXT_control_flow_attributes");
                 this.statement("SPIRV_CROSS_LOOP");
                 break;
@@ -19603,7 +19605,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (end_offset === void 0) { end_offset = undefined; }
         var offset = 0;
         var pad_alignment = 1;
-        var is_top_level_block = this.has_decoration(type.self, Decoration.DecorationBlock) || this.has_decoration(type.self, Decoration.DecorationBufferBlock);
+        var is_top_level_block = this.has_decoration(type.self, Decoration.Block) || this.has_decoration(type.self, Decoration.BufferBlock);
         var ir = this.ir;
         for (var i = 0; i < type.member_types.length; i++) {
             var memb_type = this.get(SPIRType, type.member_types[i]);
@@ -19642,7 +19644,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             offset = (offset + alignment - 1) & ~(alignment - 1);
             // The next member following a struct member is aligned to the base alignment of the struct that came before.
             // GL 4.5 spec, 7.6.2.2.
-            if (memb_type.basetype === SPIRTypeBaseType.Struct && !memb_type.pointer)
+            if (memb_type.basetype === SPIRBaseType.Struct && !memb_type.pointer)
                 pad_alignment = packed_alignment;
             else
                 pad_alignment = 1;
@@ -19688,25 +19690,25 @@ var CompilerGLSL = /** @class */ (function (_super) {
     };
     CompilerGLSL.prototype.buffer_to_packing_standard = function (type, support_std430_without_scalar_layout) {
         var options = this.options;
-        if (support_std430_without_scalar_layout && this.buffer_is_packing_standard(type, BufferPackingStandard.BufferPackingStd430))
+        if (support_std430_without_scalar_layout && this.buffer_is_packing_standard(type, BufferPackingStandard.Std430))
             return "std430";
-        else if (this.buffer_is_packing_standard(type, BufferPackingStandard.BufferPackingStd140))
+        else if (this.buffer_is_packing_standard(type, BufferPackingStandard.Std140))
             return "std140";
-        /*else if (options.vulkan_semantics && buffer_is_packing_standard(type, BufferPackingScalar))
+        /*else if (options.vulkan_semantics && buffer_is_packing_standard(type, PackingScalar))
         {
             require_extension_internal("GL_EXT_scalar_block_layout");
             return "scalar";
         }*/
         else if (support_std430_without_scalar_layout &&
-            this.buffer_is_packing_standard(type, BufferPackingStandard.BufferPackingStd430EnhancedLayout)) {
+            this.buffer_is_packing_standard(type, BufferPackingStandard.Std430EnhancedLayout)) {
             if (options.es /* && !options.vulkan_semantics*/)
                 throw new Error("Push constant block cannot be expressed as neither std430 nor std140. ES-targets do not support GL_ARB_enhanced_layouts.");
             /*if (!options.es && !options.vulkan_semantics && options.version < 440)
                 this.require_extension_internal("GL_ARB_enhanced_layouts");*/
-            this.set_extended_decoration(type.self, ExtendedDecorations.SPIRVCrossDecorationExplicitOffset);
+            this.set_extended_decoration(type.self, ExtendedDecorations.ExplicitOffset);
             return "std430";
         }
-        else if (this.buffer_is_packing_standard(type, BufferPackingStandard.BufferPackingStd140EnhancedLayout)) {
+        else if (this.buffer_is_packing_standard(type, BufferPackingStandard.Std140EnhancedLayout)) {
             // Fallback time. We might be able to use the ARB_enhanced_layouts to deal with this difference,
             // however, we can only use layout(offset) on the block itself, not any substructs, so the substructs better be the appropriate layout.
             // Enhanced layouts seem to always work in Vulkan GLSL, so no need for extensions there.
@@ -19714,27 +19716,27 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 throw new Error("Push constant block cannot be expressed as neither std430 nor std140. ES-targets do not support GL_ARB_enhanced_layouts.");
             if (!options.es && /*!options.vulkan_semantics &&*/ options.version < 440)
                 this.require_extension_internal("GL_ARB_enhanced_layouts");
-            this.set_extended_decoration(type.self, ExtendedDecorations.SPIRVCrossDecorationExplicitOffset);
+            this.set_extended_decoration(type.self, ExtendedDecorations.ExplicitOffset);
             return "std140";
         }
-        /*else if (options.vulkan_semantics && buffer_is_packing_standard(type, BufferPackingStandard.BufferPackingScalarEnhancedLayout))
+        /*else if (options.vulkan_semantics && buffer_is_packing_standard(type, BufferPackingStandard.PackingScalarEnhancedLayout))
         {
-            set_extended_decoration(type.self, SPIRVCrossDecorationExplicitOffset);
+            set_extended_decoration(type.self, ExplicitOffset);
             require_extension_internal("GL_EXT_scalar_block_layout");
             return "scalar";
         }*/
         /*else if (!support_std430_without_scalar_layout && options.vulkan_semantics &&
-            buffer_is_packing_standard(type, BufferPackingStd430))
+            buffer_is_packing_standard(type, Std430))
         {
             // UBOs can support std430 with GL_EXT_scalar_block_layout.
             require_extension_internal("GL_EXT_scalar_block_layout");
             return "std430";
         }*/
         /*else if (!support_std430_without_scalar_layout && options.vulkan_semantics &&
-            buffer_is_packing_standard(type, BufferPackingStd430EnhancedLayout))
+            buffer_is_packing_standard(type, Std430EnhancedLayout))
         {
             // UBOs can support std430 with GL_EXT_scalar_block_layout.
-            set_extended_decoration(type.self, SPIRVCrossDecorationExplicitOffset);
+            set_extended_decoration(type.self, ExplicitOffset);
             require_extension_internal("GL_EXT_scalar_block_layout");
             return "std430";
         }*/
@@ -19744,20 +19746,20 @@ var CompilerGLSL = /** @class */ (function (_super) {
     };
     CompilerGLSL.prototype.type_to_packed_base_size = function (type, _) {
         switch (type.basetype) {
-            case SPIRTypeBaseType.Double:
-            case SPIRTypeBaseType.Int64:
-            case SPIRTypeBaseType.UInt64:
+            case SPIRBaseType.Double:
+            case SPIRBaseType.Int64:
+            case SPIRBaseType.UInt64:
                 return 8;
-            case SPIRTypeBaseType.Float:
-            case SPIRTypeBaseType.Int:
-            case SPIRTypeBaseType.UInt:
+            case SPIRBaseType.Float:
+            case SPIRBaseType.Int:
+            case SPIRBaseType.UInt:
                 return 4;
-            case SPIRTypeBaseType.Half:
-            case SPIRTypeBaseType.Short:
-            case SPIRTypeBaseType.UShort:
+            case SPIRBaseType.Half:
+            case SPIRBaseType.Short:
+            case SPIRBaseType.UShort:
                 return 2;
-            case SPIRTypeBaseType.SByte:
-            case SPIRTypeBaseType.UByte:
+            case SPIRBaseType.SByte:
+            case SPIRBaseType.UByte:
                 return 1;
             default:
                 throw new Error("Unrecognized type in type_to_packed_base_size.");
@@ -19767,17 +19769,17 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var ir = this.ir;
         // If using PhysicalStorageBufferEXT storage class, this is a pointer,
         // and is 64-bit.
-        if (type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT) {
+        if (type.storage === StorageClass.PhysicalStorageBufferEXT) {
             if (!type.pointer)
                 throw new Error("Types in PhysicalStorageBufferEXT must be pointers.");
-            if (ir.addressing_model === AddressingModel.AddressingModelPhysicalStorageBuffer64EXT) {
+            if (ir.addressing_model === AddressingModel.PhysicalStorageBuffer64EXT) {
                 if (packing_is_vec4_padded(packing) && this.type_is_array_of_pointers(type))
                     return 16;
                 else
                     return 8;
             }
             else
-                throw new Error("AddressingModelPhysicalStorageBuffer64EXT must be used for PhysicalStorageBufferEXT.");
+                throw new Error("PhysicalStorageBuffer64EXT must be used for PhysicalStorageBufferEXT.");
         }
         if (type.array.length) {
             var minimum_alignment = 1;
@@ -19789,7 +19791,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             // Get the alignment of the base type, then maybe round up.
             return Math.max(minimum_alignment, this.type_to_packed_alignment(tmp, flags, packing));
         }
-        if (type.basetype === SPIRTypeBaseType.Struct) {
+        if (type.basetype === SPIRBaseType.Struct) {
             // Rule 9. Structs alignments are maximum alignment of its members.
             var alignment = 1;
             for (var i = 0; i < type.member_types.length; i++) {
@@ -19824,7 +19826,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             // Rule 4 implied. Alignment does not change in std430.
             // Rule 5. Column-major matrices are stored as arrays of
             // vectors.
-            if (flags.get(Decoration.DecorationColMajor) && type.columns > 1) {
+            if (flags.get(Decoration.ColMajor) && type.columns > 1) {
                 if (packing_is_vec4_padded(packing))
                     return 4 * base_alignment;
                 else if (type.vecsize === 3)
@@ -19834,7 +19836,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             }
             // Rule 6 implied.
             // Rule 7.
-            if (flags.get(Decoration.DecorationRowMajor) && type.vecsize > 1) {
+            if (flags.get(Decoration.RowMajor) && type.vecsize > 1) {
                 if (packing_is_vec4_padded(packing))
                     return 4 * base_alignment;
                 else if (type.columns === 3)
@@ -19860,23 +19862,23 @@ var CompilerGLSL = /** @class */ (function (_super) {
             var packed_size = this.to_array_size_literal(type) * this.type_to_packed_array_stride(type, flags, packing);
             // For arrays of vectors and matrices in HLSL, the last element has a size which depends on its vector size,
             // so that it is possible to pack other vectors into the last element.
-            /*if (packing_is_hlsl(packing) && type.basetype !== SPIRTypeBaseType.Struct)
+            /*if (packing_is_hlsl(packing) && type.basetype !== SPIRBaseType.Struct)
                 packed_size -= (4 - type.vecsize) * (type.width / 8);*/
             return packed_size;
         }
         var ir = this.ir;
         // If using PhysicalStorageBufferEXT storage class, this is a pointer,
         // and is 64-bit.
-        if (type.storage === StorageClass.StorageClassPhysicalStorageBufferEXT) {
+        if (type.storage === StorageClass.PhysicalStorageBufferEXT) {
             if (!type.pointer)
                 throw new Error("Types in PhysicalStorageBufferEXT must be pointers.");
-            if (ir.addressing_model === AddressingModel.AddressingModelPhysicalStorageBuffer64EXT)
+            if (ir.addressing_model === AddressingModel.PhysicalStorageBuffer64EXT)
                 return 8;
             else
-                throw new Error("AddressingModelPhysicalStorageBuffer64EXT must be used for PhysicalStorageBufferEXT.");
+                throw new Error("PhysicalStorageBuffer64EXT must be used for PhysicalStorageBufferEXT.");
         }
         var size = 0;
-        if (type.basetype === SPIRTypeBaseType.Struct) {
+        if (type.basetype === SPIRBaseType.Struct) {
             var pad_alignment = 1;
             for (var i = 0; i < type.member_types.length; i++) {
                 var member_flags = maplike_get(Meta, ir.meta, type.self).members[i].decoration_flags;
@@ -19885,7 +19887,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 var alignment = Math.max(packed_alignment, pad_alignment);
                 // The next member following a struct member is aligned to the base alignment of the struct that came before.
                 // GL 4.5 spec, 7.6.2.2.
-                if (member_type.basetype === SPIRTypeBaseType.Struct)
+                if (member_type.basetype === SPIRBaseType.Struct)
                     pad_alignment = packed_alignment;
                 else
                     pad_alignment = 1;
@@ -19901,7 +19903,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             else {
                 if (type.columns === 1)
                     size = type.vecsize * base_alignment;
-                if (flags.get(Decoration.DecorationColMajor) && type.columns > 1) {
+                if (flags.get(Decoration.ColMajor) && type.columns > 1) {
                     if (packing_is_vec4_padded(packing))
                         size = type.columns * 4 * base_alignment;
                     else if (type.vecsize === 3)
@@ -19909,7 +19911,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     else
                         size = type.columns * type.vecsize * base_alignment;
                 }
-                if (flags.get(Decoration.DecorationRowMajor) && type.vecsize > 1) {
+                if (flags.get(Decoration.RowMajor) && type.vecsize > 1) {
                     if (packing_is_vec4_padded(packing))
                         size = type.vecsize * 4 * base_alignment;
                     else if (type.columns === 3)
@@ -19935,8 +19937,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (out_type.basetype === in_type.basetype)
             return "";
         var options = this.options;
-        console.assert(out_type.basetype !== SPIRTypeBaseType.Boolean);
-        console.assert(in_type.basetype !== SPIRTypeBaseType.Boolean);
+        console.assert(out_type.basetype !== SPIRBaseType.Boolean);
+        console.assert(in_type.basetype !== SPIRBaseType.Boolean);
         var integral_cast = type_is_integral(out_type) && type_is_integral(in_type);
         var same_size_cast = out_type.width === in_type.width;
         // Trivial bitcast case, casts between integers.
@@ -19951,74 +19953,74 @@ var CompilerGLSL = /** @class */ (function (_super) {
             return "pack32";
         // Floating <-> Integer special casts. Just have to enumerate all cases. :(
         // 16-bit, 32-bit and 64-bit floats.
-        if (out_type.basetype === SPIRTypeBaseType.UInt && in_type.basetype === SPIRTypeBaseType.Float) {
+        if (out_type.basetype === SPIRBaseType.UInt && in_type.basetype === SPIRBaseType.Float) {
             if (this.is_legacy_es())
                 throw new Error("Float -> Uint bitcast not supported on legacy ESSL.");
             else if (!options.es && options.version < 330)
                 this.require_extension_internal("GL_ARB_shader_bit_encoding");
             return "floatBitsToUint";
         }
-        else if (out_type.basetype === SPIRTypeBaseType.Int && in_type.basetype === SPIRTypeBaseType.Float) {
+        else if (out_type.basetype === SPIRBaseType.Int && in_type.basetype === SPIRBaseType.Float) {
             if (this.is_legacy_es())
                 throw new Error("Float -> Int bitcast not supported on legacy ESSL.");
             else if (!options.es && options.version < 330)
                 this.require_extension_internal("GL_ARB_shader_bit_encoding");
             return "floatBitsToInt";
         }
-        else if (out_type.basetype === SPIRTypeBaseType.Float && in_type.basetype === SPIRTypeBaseType.UInt) {
+        else if (out_type.basetype === SPIRBaseType.Float && in_type.basetype === SPIRBaseType.UInt) {
             if (this.is_legacy_es())
                 throw new Error("Uint -> Float bitcast not supported on legacy ESSL.");
             else if (!options.es && options.version < 330)
                 this.require_extension_internal("GL_ARB_shader_bit_encoding");
             return "uintBitsToFloat";
         }
-        else if (out_type.basetype === SPIRTypeBaseType.Float && in_type.basetype === SPIRTypeBaseType.Int) {
+        else if (out_type.basetype === SPIRBaseType.Float && in_type.basetype === SPIRBaseType.Int) {
             if (this.is_legacy_es())
                 throw new Error("Int -> Float bitcast not supported on legacy ESSL.");
             else if (!options.es && options.version < 330)
                 this.require_extension_internal("GL_ARB_shader_bit_encoding");
             return "intBitsToFloat";
         }
-        else if (out_type.basetype === SPIRTypeBaseType.Int64 && in_type.basetype === SPIRTypeBaseType.Double)
+        else if (out_type.basetype === SPIRBaseType.Int64 && in_type.basetype === SPIRBaseType.Double)
             return "doubleBitsToInt64";
-        else if (out_type.basetype === SPIRTypeBaseType.UInt64 && in_type.basetype === SPIRTypeBaseType.Double)
+        else if (out_type.basetype === SPIRBaseType.UInt64 && in_type.basetype === SPIRBaseType.Double)
             return "doubleBitsToUint64";
-        else if (out_type.basetype === SPIRTypeBaseType.Double && in_type.basetype === SPIRTypeBaseType.Int64)
+        else if (out_type.basetype === SPIRBaseType.Double && in_type.basetype === SPIRBaseType.Int64)
             return "int64BitsToDouble";
-        else if (out_type.basetype === SPIRTypeBaseType.Double && in_type.basetype === SPIRTypeBaseType.UInt64)
+        else if (out_type.basetype === SPIRBaseType.Double && in_type.basetype === SPIRBaseType.UInt64)
             return "uint64BitsToDouble";
-        else if (out_type.basetype === SPIRTypeBaseType.Short && in_type.basetype === SPIRTypeBaseType.Half)
+        else if (out_type.basetype === SPIRBaseType.Short && in_type.basetype === SPIRBaseType.Half)
             return "float16BitsToInt16";
-        else if (out_type.basetype === SPIRTypeBaseType.UShort && in_type.basetype === SPIRTypeBaseType.Half)
+        else if (out_type.basetype === SPIRBaseType.UShort && in_type.basetype === SPIRBaseType.Half)
             return "float16BitsToUint16";
-        else if (out_type.basetype === SPIRTypeBaseType.Half && in_type.basetype === SPIRTypeBaseType.Short)
+        else if (out_type.basetype === SPIRBaseType.Half && in_type.basetype === SPIRBaseType.Short)
             return "int16BitsToFloat16";
-        else if (out_type.basetype === SPIRTypeBaseType.Half && in_type.basetype === SPIRTypeBaseType.UShort)
+        else if (out_type.basetype === SPIRBaseType.Half && in_type.basetype === SPIRBaseType.UShort)
             return "uint16BitsToFloat16";
         // And finally, some even more special purpose casts.
-        if (out_type.basetype === SPIRTypeBaseType.UInt64 && in_type.basetype === SPIRTypeBaseType.UInt && in_type.vecsize === 2)
+        if (out_type.basetype === SPIRBaseType.UInt64 && in_type.basetype === SPIRBaseType.UInt && in_type.vecsize === 2)
             return "packUint2x32";
-        else if (out_type.basetype === SPIRTypeBaseType.UInt && in_type.basetype === SPIRTypeBaseType.UInt64 && out_type.vecsize === 2)
+        else if (out_type.basetype === SPIRBaseType.UInt && in_type.basetype === SPIRBaseType.UInt64 && out_type.vecsize === 2)
             return "unpackUint2x32";
-        else if (out_type.basetype === SPIRTypeBaseType.Half && in_type.basetype === SPIRTypeBaseType.UInt && in_type.vecsize === 1)
+        else if (out_type.basetype === SPIRBaseType.Half && in_type.basetype === SPIRBaseType.UInt && in_type.vecsize === 1)
             return "unpackFloat2x16";
-        else if (out_type.basetype === SPIRTypeBaseType.UInt && in_type.basetype === SPIRTypeBaseType.Half && in_type.vecsize === 2)
+        else if (out_type.basetype === SPIRBaseType.UInt && in_type.basetype === SPIRBaseType.Half && in_type.vecsize === 2)
             return "packFloat2x16";
-        else if (out_type.basetype === SPIRTypeBaseType.Int && in_type.basetype === SPIRTypeBaseType.Short && in_type.vecsize === 2)
+        else if (out_type.basetype === SPIRBaseType.Int && in_type.basetype === SPIRBaseType.Short && in_type.vecsize === 2)
             return "packInt2x16";
-        else if (out_type.basetype === SPIRTypeBaseType.Short && in_type.basetype === SPIRTypeBaseType.Int && in_type.vecsize === 1)
+        else if (out_type.basetype === SPIRBaseType.Short && in_type.basetype === SPIRBaseType.Int && in_type.vecsize === 1)
             return "unpackInt2x16";
-        else if (out_type.basetype === SPIRTypeBaseType.UInt && in_type.basetype === SPIRTypeBaseType.UShort && in_type.vecsize === 2)
+        else if (out_type.basetype === SPIRBaseType.UInt && in_type.basetype === SPIRBaseType.UShort && in_type.vecsize === 2)
             return "packUint2x16";
-        else if (out_type.basetype === SPIRTypeBaseType.UShort && in_type.basetype === SPIRTypeBaseType.UInt && in_type.vecsize === 1)
+        else if (out_type.basetype === SPIRBaseType.UShort && in_type.basetype === SPIRBaseType.UInt && in_type.vecsize === 1)
             return "unpackUint2x16";
-        else if (out_type.basetype === SPIRTypeBaseType.Int64 && in_type.basetype === SPIRTypeBaseType.Short && in_type.vecsize === 4)
+        else if (out_type.basetype === SPIRBaseType.Int64 && in_type.basetype === SPIRBaseType.Short && in_type.vecsize === 4)
             return "packInt4x16";
-        else if (out_type.basetype === SPIRTypeBaseType.Short && in_type.basetype === SPIRTypeBaseType.Int64 && in_type.vecsize === 1)
+        else if (out_type.basetype === SPIRBaseType.Short && in_type.basetype === SPIRBaseType.Int64 && in_type.vecsize === 1)
             return "unpackInt4x16";
-        else if (out_type.basetype === SPIRTypeBaseType.UInt64 && in_type.basetype === SPIRTypeBaseType.UShort && in_type.vecsize === 4)
+        else if (out_type.basetype === SPIRBaseType.UInt64 && in_type.basetype === SPIRBaseType.UShort && in_type.vecsize === 4)
             return "packUint4x16";
-        else if (out_type.basetype === SPIRTypeBaseType.UShort && in_type.basetype === SPIRTypeBaseType.UInt64 && in_type.vecsize === 1)
+        else if (out_type.basetype === SPIRBaseType.UShort && in_type.basetype === SPIRBaseType.UInt64 && in_type.vecsize === 1)
             return "unpackUint4x16";
         return "";
     };
@@ -20059,7 +20061,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var subop = "";
         // Can only merge swizzles for vectors.
         var type = this.get(SPIRType, return_type);
-        var can_apply_swizzle_opt = type.basetype !== SPIRTypeBaseType.Struct && type.array.length === 0 && type.columns === 1;
+        var can_apply_swizzle_opt = type.basetype !== SPIRBaseType.Struct && type.array.length === 0 && type.columns === 1;
         var swizzle_optimization = false;
         var backend = this.backend;
         for (var i = 0; i < length; i++) {
@@ -20102,7 +20104,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     op += subop;
                 if (i)
                     op += ", ";
-                var uses_buffer_offset = type.basetype === SPIRTypeBaseType.Struct && this.has_member_decoration(type.self, i, Decoration.DecorationOffset);
+                var uses_buffer_offset = type.basetype === SPIRBaseType.Struct && this.has_member_decoration(type.self, i, Decoration.Offset);
                 subop = this.to_composite_constructor_expression(elems[i + arroffset], uses_buffer_offset);
             }
             base = e ? e.base_expression : (0);
@@ -20235,7 +20237,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var ir = this.ir;
         var m = maplike_get(Meta, ir.meta, var_.self).decoration;
         var location = 0;
-        if (m.decoration_flags.get(Decoration.DecorationLocation))
+        if (m.decoration_flags.get(Decoration.Location))
             location = m.location;
         // If our variable is arrayed, we must not emit the array part of this as the SPIR-V will
         // do the access chain part of this for us.
@@ -20264,7 +20266,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var _this = this;
         this.ir.for_each_typed_id(SPIRVariable, function (_, var_) {
             var type = _this.get(SPIRType, var_.basetype);
-            if (!_this.is_builtin_variable(var_) && !var_.remapped_variable && type.pointer && var_.storage === StorageClass.StorageClassOutput)
+            if (!_this.is_builtin_variable(var_) && !var_.remapped_variable && type.pointer && var_.storage === StorageClass.Output)
                 _this.replace_fragment_output(var_);
         });
     };
@@ -20281,16 +20283,16 @@ var CompilerGLSL = /** @class */ (function (_super) {
             case Dim.Dim3D:
                 type = "3D";
                 break;
-            case Dim.DimCube:
+            case Dim.Cube:
                 type = "Cube";
                 break;
-            case Dim.DimRect:
+            case Dim.Rect:
                 type = "2DRect";
                 break;
-            case Dim.DimBuffer:
+            case Dim.Buffer:
                 type = "Buffer";
                 break;
-            case Dim.DimSubpassData:
+            case Dim.SubpassData:
                 type = "2D";
                 break;
             default:
@@ -20302,7 +20304,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var legacy_lod_ext = false;
         var execution = this.get_entry_point();
         if (op === "textureGrad" || op === "textureProjGrad" ||
-            ((op === "textureLod" || op === "textureProjLod") && execution.model !== ExecutionModel.ExecutionModelVertex)) {
+            ((op === "textureLod" || op === "textureProjLod") && execution.model !== ExecutionModel.Vertex)) {
             if (this.is_legacy_es()) {
                 legacy_lod_ext = true;
                 this.require_extension_internal("GL_EXT_shader_texture_lod");
@@ -20367,7 +20369,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             if (i)
                 expr += ", ";
             var member_type = this.get(SPIRType, type.member_types[i]);
-            if (member_type.basetype === SPIRTypeBaseType.Struct)
+            if (member_type.basetype === SPIRBaseType.Struct)
                 expr += this.load_flattened_struct(this.to_flattened_struct_member(basename, type, i), member_type);
             else
                 expr += this.to_flattened_struct_member(basename, type, i);
@@ -20399,7 +20401,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         for (var i = 0; i < member_type.member_types.length; i++) {
             sub_indices[sub_indices.length - 1] = i;
             var lhs = ParsedIR.sanitize_underscores(basename + "_" + this.to_member_name(member_type, i));
-            if (this.get(SPIRType, member_type.member_types[i]).basetype === SPIRTypeBaseType.Struct) {
+            if (this.get(SPIRType, member_type.member_types[i]).basetype === SPIRBaseType.Struct) {
                 this.store_flattened_struct(lhs, rhs_id, type, sub_indices);
             }
             else {
@@ -20426,7 +20428,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
     CompilerGLSL.prototype.track_expression_read = function (id) {
         var ir = this.ir;
         switch (ir.ids[id].get_type()) {
-            case Types.TypeExpression: {
+            case Types.Expression: {
                 var e = this.get(SPIRExpression, id);
                 for (var _i = 0, _a = e.implied_read_expressions; _i < _a.length; _i++) {
                     var implied_read = _a[_i];
@@ -20434,7 +20436,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 }
                 break;
             }
-            case Types.TypeAccessChain: {
+            case Types.AccessChain: {
                 var e = this.get(SPIRAccessChain, id);
                 for (var _b = 0, _c = e.implied_read_expressions; _b < _c.length; _b++) {
                     var implied_read = _c[_b];
@@ -20478,8 +20480,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (!var_)
             return expr;
         var backing_type = this.get(SPIRType, var_.basetype);
-        var is_ubo = backing_type.basetype === SPIRTypeBaseType.Struct && backing_type.storage === StorageClass.StorageClassUniform &&
-            this.has_decoration(backing_type.self, Decoration.DecorationBlock);
+        var is_ubo = backing_type.basetype === SPIRBaseType.Struct && backing_type.storage === StorageClass.Uniform &&
+            this.has_decoration(backing_type.self, Decoration.Block);
         if (!is_ubo)
             return expr;
         var type = this.get(SPIRType, loaded_type);
@@ -20492,10 +20494,10 @@ var CompilerGLSL = /** @class */ (function (_super) {
             // If an access chain occurred, the workaround is not required, so loading vectors or scalars don't need workaround.
             type = backing_type;
         }
-        if (type.basetype === SPIRTypeBaseType.Struct) {
+        if (type.basetype === SPIRBaseType.Struct) {
             // If we're loading a struct where any member is a row-major matrix, apply the workaround.
             for (var i = 0; i < type.member_types.length; i++) {
-                if (this.combined_decoration_for_member(type, i).get(Decoration.DecorationRowMajor)) {
+                if (this.combined_decoration_for_member(type, i).get(Decoration.RowMajor)) {
                     rewrite = true;
                     break;
                 }
@@ -20573,7 +20575,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
     };
     CompilerGLSL.prototype.to_pls_qualifiers_glsl = function (variable) {
         var flags = maplike_get(Meta, this.ir.meta, variable.self).decoration.decoration_flags;
-        if (flags.get(Decoration.DecorationRelaxedPrecision))
+        if (flags.get(Decoration.RelaxedPrecision))
             return "mediump ";
         else
             return "highp ";
@@ -20581,7 +20583,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
     CompilerGLSL.prototype.emit_pls = function () {
         var execution = this.get_entry_point();
         var options = this.options;
-        if (execution.model !== ExecutionModel.ExecutionModelFragment)
+        if (execution.model !== ExecutionModel.Fragment)
             throw new Error("Pixel local storage only supported in fragment shaders.");
         if (!options.es)
             throw new Error("Pixel local storage only supported in OpenGL ES.");
@@ -20613,18 +20615,18 @@ var CompilerGLSL = /** @class */ (function (_super) {
             var input = _a[_i];
             var var_ = this.get(SPIRVariable, input.id);
             var input_is_target = false;
-            if (var_.storage === StorageClass.StorageClassUniformConstant) {
+            if (var_.storage === StorageClass.UniformConstant) {
                 var type = this.get(SPIRType, var_.basetype);
-                input_is_target = type.image.dim === Dim.DimSubpassData;
+                input_is_target = type.image.dim === Dim.SubpassData;
             }
-            if (var_.storage !== StorageClass.StorageClassInput && !input_is_target)
+            if (var_.storage !== StorageClass.Input && !input_is_target)
                 throw new Error("Can only use in and target variables for PLS inputs.");
             var_.remapped_variable = true;
         }
         for (var _b = 0, _c = this.pls_outputs; _b < _c.length; _b++) {
             var output = _c[_b];
             var var_ = this.get(SPIRVariable, output.id);
-            if (var_.storage !== StorageClass.StorageClassOutput)
+            if (var_.storage !== StorageClass.Output)
                 throw new Error("Can only use out variables for PLS outputs.");
             var_.remapped_variable = true;
         }
@@ -20636,9 +20638,9 @@ var CompilerGLSL = /** @class */ (function (_super) {
         return !!this.inout_color_attachments.find(function (elem) { return elem.first === location && !elem.second; });
     };
     CompilerGLSL.prototype.subpass_input_is_framebuffer_fetch = function (id) {
-        if (!this.has_decoration(id, Decoration.DecorationInputAttachmentIndex))
+        if (!this.has_decoration(id, Decoration.InputAttachmentIndex))
             return false;
-        var input_attachment_index = this.get_decoration(id, Decoration.DecorationInputAttachmentIndex);
+        var input_attachment_index = this.get_decoration(id, Decoration.InputAttachmentIndex);
         for (var _i = 0, _a = this.subpass_to_framebuffer_fetch_attachment; _i < _a.length; _i++) {
             var remap = _a[_i];
             if (remap.first === input_attachment_index)
@@ -20661,7 +20663,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             var func = this_2.get(SPIRFunction, this_2.get_entry_point().self);
             func.fixup_hooks_in.push(function () {
                 if (_this.is_legacy()) {
-                    _this.statement(_this.to_expression(subpass_var.self), " = ", "gl_LastFragData[", _this.get_decoration(output_var.self, Decoration.DecorationLocation), "];");
+                    _this.statement(_this.to_expression(subpass_var.self), " = ", "gl_LastFragData[", _this.get_decoration(output_var.self, Decoration.Location), "];");
                 }
                 else {
                     var num_rt_components = _this.get(SPIRType, output_var.basetype).vecsize;
@@ -20679,8 +20681,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var _this = this;
         var ret = null;
         this.ir.for_each_typed_id(SPIRVariable, function (_, var_) {
-            if (_this.has_decoration(var_.self, Decoration.DecorationInputAttachmentIndex) &&
-                _this.get_decoration(var_.self, Decoration.DecorationInputAttachmentIndex) === index) {
+            if (_this.has_decoration(var_.self, Decoration.InputAttachmentIndex) &&
+                _this.get_decoration(var_.self, Decoration.InputAttachmentIndex) === index) {
                 ret = var_;
             }
         });
@@ -20690,7 +20692,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var _this = this;
         var ret = null;
         this.ir.for_each_typed_id(SPIRVariable, function (_, var_) {
-            if (var_.storage === StorageClass.StorageClassOutput && _this.get_decoration(var_.self, Decoration.DecorationLocation) === location)
+            if (var_.storage === StorageClass.Output && _this.get_decoration(var_.self, Decoration.Location) === location)
                 ret = var_;
         });
         return ret;
@@ -20718,7 +20720,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             if (!var_ || !var_.remapped_variable)
                 continue;
             var type = this.get(SPIRType, var_.basetype);
-            if (type.basetype === SPIRTypeBaseType.Image && type.image.dim === Dim.DimSubpassData) {
+            if (type.basetype === SPIRBaseType.Image && type.image.dim === Dim.SubpassData) {
                 throw new Error("Tried passing a remapped subpassInput variable to a function. This will not work" +
                     " correctly because type-remapping information is lost. To workaround, please consider not passing" +
                     " the subpass input as a function parameter, or use in/out variables instead which do not need type" +
@@ -20773,7 +20775,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // this.traverse_all_reachable_opcodes(this.get<SPIRFunction>(SPIRFunction, ir.default_entry_point), new DebugHandler(this));
         // Shaders might cast unrelated data to pointers of non-block types.
         // Find all such instances and make sure we can cast the pointers to a synthesized block type.
-        if (ir.addressing_model === AddressingModel.AddressingModelPhysicalStorageBuffer64EXT)
+        if (ir.addressing_model === AddressingModel.PhysicalStorageBuffer64EXT)
             this.analyze_non_block_pointer_types();
         var pass_count = 0;
         // try {
@@ -20808,7 +20810,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // Entry point in GLSL is always main().*/
         this.get_entry_point().name = "main";
         var code = this.fixup_removed_structs(this.buffer.str());
-        if (this.get_execution_model() === ExecutionModel.ExecutionModelVertex && options.remove_attribute_layouts)
+        if (this.get_execution_model() === ExecutionModel.Vertex && options.remove_attribute_layouts)
             code = this.remove_attribute_layouts(code);
         return code;
     };
@@ -20830,29 +20832,29 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var ir = this.ir;
         var options = this.options;
         ir.for_each_typed_id(SPIRType, function (_, type) {
-            if (type.basetype === SPIRTypeBaseType.Double) {
+            if (type.basetype === SPIRBaseType.Double) {
                 if (options.es)
                     throw new Error("FP64 not supported in ES profile.");
                 if (!options.es && options.version < 400)
                     _this.require_extension_internal("GL_ARB_gpu_shader_fp64");
             }
-            else if (type.basetype === SPIRTypeBaseType.Int64 || type.basetype === SPIRTypeBaseType.UInt64) {
+            else if (type.basetype === SPIRBaseType.Int64 || type.basetype === SPIRBaseType.UInt64) {
                 if (options.es)
                     throw new Error("64-bit integers not supported in ES profile.");
                 if (!options.es)
                     _this.require_extension_internal("GL_ARB_gpu_shader_int64");
             }
-            else if (type.basetype === SPIRTypeBaseType.Half) {
+            else if (type.basetype === SPIRBaseType.Half) {
                 _this.require_extension_internal("GL_EXT_shader_explicit_arithmetic_types_float16");
                 // if (options.vulkan_semantics)
                 //     require_extension_internal("GL_EXT_shader_16bit_storage");
             }
-            else if (type.basetype === SPIRTypeBaseType.SByte || type.basetype === SPIRTypeBaseType.UByte) {
+            else if (type.basetype === SPIRBaseType.SByte || type.basetype === SPIRBaseType.UByte) {
                 _this.require_extension_internal("GL_EXT_shader_explicit_arithmetic_types_int8");
                 // if (options.vulkan_semantics)
                 //     require_extension_internal("GL_EXT_shader_8bit_storage");
             }
-            else if (type.basetype === SPIRTypeBaseType.Short || type.basetype === SPIRTypeBaseType.UShort) {
+            else if (type.basetype === SPIRBaseType.Short || type.basetype === SPIRBaseType.UShort) {
                 _this.require_extension_internal("GL_EXT_shader_explicit_arithmetic_types_int16");
                 // if (options.vulkan_semantics)
                 //     require_extension_internal("GL_EXT_shader_16bit_storage");
@@ -20860,49 +20862,49 @@ var CompilerGLSL = /** @class */ (function (_super) {
         });
         var execution = this.get_entry_point();
         switch (execution.model) {
-            case ExecutionModel.ExecutionModelGLCompute:
+            case ExecutionModel.GLCompute:
                 throw new Error("Compute shaders are not supported!");
             /*if (!options.es && options.version < 430)
                 this.require_extension_internal("GL_ARB_compute_shader");
             if (options.es && options.version < 310)
                 throw new Error("At least ESSL 3.10 required for compute shaders.");
             break;*/
-            case ExecutionModel.ExecutionModelGeometry:
+            case ExecutionModel.Geometry:
                 throw new Error("Geometry shaders are not supported!");
             /*if (options.es && options.version < 320)
                 this.require_extension_internal("GL_EXT_geometry_shader");
             if (!options.es && options.version < 150)
                 this.require_extension_internal("GL_ARB_geometry_shader4");
 
-            if (execution.flags.get(ExecutionMode.ExecutionModeInvocations) && execution.invocations !== 1)
+            if (execution.flags.get(ExecutionMode.Invocations) && execution.invocations !== 1)
             {
                 // Instanced GS is part of 400 core or this extension.
                 if (!options.es && options.version < 400)
                     this.require_extension_internal("GL_ARB_gpu_shader5");
             }
             break;*/
-            case ExecutionModel.ExecutionModelTessellationEvaluation:
-            case ExecutionModel.ExecutionModelTessellationControl:
+            case ExecutionModel.TessellationEvaluation:
+            case ExecutionModel.TessellationControl:
                 throw new Error("Tessellation shaders are not supported!");
             /*if (options.es && options.version < 320)
                 this.require_extension_internal("GL_EXT_tessellation_shader");
             if (!options.es && options.version < 400)
                 this.require_extension_internal("GL_ARB_tessellation_shader");
             break;*/
-            case ExecutionModel.ExecutionModelRayGenerationKHR:
-            case ExecutionModel.ExecutionModelIntersectionKHR:
-            case ExecutionModel.ExecutionModelAnyHitKHR:
-            case ExecutionModel.ExecutionModelClosestHitKHR:
-            case ExecutionModel.ExecutionModelMissKHR:
-            case ExecutionModel.ExecutionModelCallableKHR:
+            case ExecutionModel.RayGenerationKHR:
+            case ExecutionModel.IntersectionKHR:
+            case ExecutionModel.AnyHitKHR:
+            case ExecutionModel.ClosestHitKHR:
+            case ExecutionModel.MissKHR:
+            case ExecutionModel.CallableKHR:
         }
         if (this.pls_inputs.length !== 0 || this.pls_outputs.length !== 0) {
-            if (execution.model !== ExecutionModel.ExecutionModelFragment)
+            if (execution.model !== ExecutionModel.Fragment)
                 throw new Error("Can only use GL_EXT_shader_pixel_local_storage in fragment shaders.");
             this.require_extension_internal("GL_EXT_shader_pixel_local_storage");
         }
         if (this.inout_color_attachments.length !== 0) {
-            if (execution.model !== ExecutionModel.ExecutionModelFragment)
+            if (execution.model !== ExecutionModel.Fragment)
                 throw new Error("Can only use GL_EXT_shader_framebuffer_fetch in fragment shaders.");
             // if (options.vulkan_semantics)
             //     throw new Error("Cannot use EXT_shader_framebuffer_fetch in Vulkan GLSL.");
@@ -20922,11 +20924,11 @@ var CompilerGLSL = /** @class */ (function (_super) {
         }
         if (options.separate_shader_objects && !options.es && options.version < 410)
             this.require_extension_internal("GL_ARB_separate_shader_objects");
-        if (ir.addressing_model === AddressingModel.AddressingModelPhysicalStorageBuffer64EXT) {
+        if (ir.addressing_model === AddressingModel.PhysicalStorageBuffer64EXT) {
             // if (!options.vulkan_semantics)
             throw new Error("GL_EXT_buffer_reference is only supported in Vulkan GLSL.");
         }
-        else if (ir.addressing_model !== AddressingModel.AddressingModelLogical) {
+        else if (ir.addressing_model !== AddressingModel.Logical) {
             throw new Error("Only Logical and PhysicalStorageBuffer64EXT addressing models are supported.");
         }
         // Check for nonuniform qualifier and passthrough.
@@ -20934,15 +20936,15 @@ var CompilerGLSL = /** @class */ (function (_super) {
         for (var _b = 0, _c = ir.declared_capabilities; _b < _c.length; _b++) {
             var cap = _c[_b];
             switch (cap) {
-                case Capability.CapabilityShaderNonUniformEXT:
+                case Capability.ShaderNonUniformEXT:
                     throw new Error("CapabilityShaderNonUniformEXT not supported");
-                case Capability.CapabilityRuntimeDescriptorArrayEXT:
+                case Capability.RuntimeDescriptorArrayEXT:
                     throw new Error("CapabilityRuntimeDescriptorArrayEXT not supported");
                 /*if (!options.vulkan_semantics)
                     throw new Error("GL_EXT_nonuniform_qualifier is only supported in Vulkan GLSL.");
                 this.require_extension_internal("GL_EXT_nonuniform_qualifier");
                 break;*/
-                case Capability.CapabilityGeometryShaderPassthroughNV:
+                case Capability.GeometryShaderPassthroughNV:
                     throw new Error("GeometryShaderPassthroughNV capability not supported");
                 /*if (execution.model === ExecutionModelGeometry)
                 {
@@ -20950,10 +20952,10 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     execution.geometry_passthrough = true;
                 }
                 break;*/
-                case Capability.CapabilityVariablePointers:
-                case Capability.CapabilityVariablePointersStorageBuffer:
+                case Capability.VariablePointers:
+                case Capability.VariablePointersStorageBuffer:
                     throw new Error("VariablePointers capability is not supported in GLSL.");
-                case Capability.CapabilityMultiView:
+                case Capability.MultiView:
                     throw new Error("MultiView capability is not supported in GLSL.");
                 /*if (options.vulkan_semantics)
                     require_extension_internal("GL_EXT_multiview");
@@ -20966,14 +20968,14 @@ var CompilerGLSL = /** @class */ (function (_super) {
                         throw new Error("OVR_multiview2 can only be used with Vertex shaders.");
                 }
                 break;*/
-                case Capability.CapabilityRayQueryKHR:
+                case Capability.RayQueryKHR:
                     throw new Error("RayQuery capability is not supported.");
                 /*if (options.es || options.version < 460 || !options.vulkan_semantics)
                     throw new Error("RayQuery requires Vulkan GLSL 460.");
                 require_extension_internal("GL_EXT_ray_query");
                 ray_tracing_is_khr = true;
                 break;*/
-                case Capability.CapabilityRayTraversalPrimitiveCullingKHR:
+                case Capability.RayTraversalPrimitiveCullingKHR:
                     throw new Error("RayTraversalPrimitiveCulling capability is not supported.");
             }
         }
@@ -21000,7 +21002,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             var expr = this.get(SPIRVariable, variable).static_expression;
             // Sometimes loop variables are initialized with OpUndef, but we can just declare
             // a plain variable without initializer in this case.
-            if (expr === 0 || ir.ids[expr].get_type() === Types.TypeUndef)
+            if (expr === 0 || ir.ids[expr].get_type() === Types.Undef)
                 missing_initializers++;
         }
         if (block.loop_variables.length === 1 && missing_initializers === 0) {
@@ -21020,7 +21022,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             for (var _d = 0, _e = block.loop_variables; _d < _e.length; _d++) {
                 var loop_var = _e[_d];
                 var static_expr = this.get(SPIRVariable, loop_var).static_expression;
-                if (static_expr === 0 || ir.ids[static_expr].get_type() === Types.TypeUndef) {
+                if (static_expr === 0 || ir.ids[static_expr].get_type() === Types.Undef) {
                     this.statement(this.variable_decl(this.get(SPIRVariable, loop_var)), ";");
                 }
                 else {
@@ -21061,7 +21063,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             var var_ = _a[_i];
             // Don't care about uninitialized variables as they will not be part of the initializers.
             var expr = this.get(SPIRVariable, var_).static_expression;
-            if (expr === 0 || ir.ids[expr].get_type() === Types.TypeUndef)
+            if (expr === 0 || ir.ids[expr].get_type() === Types.Undef)
                 continue;
             if (expected === 0) {
                 expected = this.get(SPIRVariable, var_).basetype;
@@ -21117,20 +21119,20 @@ var CompilerGLSL = /** @class */ (function (_super) {
             return;
         this.ir.for_each_typed_id(SPIRVariable, function (var_, _) {
             var vartype = _this.expression_type(var_);
-            if (vartype.basetype === SPIRTypeBaseType.Image && vartype.image.sampled === 2) {
+            if (vartype.basetype === SPIRBaseType.Image && vartype.image.sampled === 2) {
                 // Very old glslangValidator and HLSL compilers do not emit required qualifiers here.
                 // Solve this by making the image access as restricted as possible and loosen up if we need to.
                 // If any no-read/no-write flags are actually set, assume that the compiler knows what it's doing.
                 var flags = maplike_get(Meta, _this.ir.meta, var_).decoration.decoration_flags;
-                if (!flags.get(Decoration.DecorationNonWritable) && !flags.get(Decoration.DecorationNonReadable)) {
-                    flags.set(Decoration.DecorationNonWritable);
-                    flags.set(Decoration.DecorationNonReadable);
+                if (!flags.get(Decoration.NonWritable) && !flags.get(Decoration.NonReadable)) {
+                    flags.set(Decoration.NonWritable);
+                    flags.set(Decoration.NonReadable);
                 }
             }
         });
     };
     CompilerGLSL.prototype.type_is_empty = function (type) {
-        return type.basetype === SPIRTypeBaseType.Struct && type.member_types.length === 0;
+        return type.basetype === SPIRBaseType.Struct && type.member_types.length === 0;
     };
     CompilerGLSL.prototype.declare_undefined_values = function () {
         var _this = this;
@@ -21138,7 +21140,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         this.ir.for_each_typed_id(SPIRUndef, function (_, undef) {
             var type = _this.get(SPIRType, undef.basetype);
             // OpUndef can be void for some reason ...
-            if (type.basetype === SPIRTypeBaseType.Void)
+            if (type.basetype === SPIRBaseType.Void)
                 return;
             var initializer = "";
             if (_this.options.force_zero_initialized_variables && _this.type_can_zero_initialize(type))
@@ -21153,8 +21155,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var options = this.options;
         // Location specifiers are must have in SPIR-V, but they aren't really supported in earlier versions of GLSL.
         // Be very explicit here about how to solve the issue.
-        if ((this.get_execution_model() !== ExecutionModel.ExecutionModelVertex && storage === StorageClass.StorageClassInput) ||
-            (this.get_execution_model() !== ExecutionModel.ExecutionModelFragment && storage === StorageClass.StorageClassOutput)) {
+        if ((this.get_execution_model() !== ExecutionModel.Vertex && storage === StorageClass.Input) ||
+            (this.get_execution_model() !== ExecutionModel.Fragment && storage === StorageClass.Output)) {
             var minimum_desktop_version = block ? 440 : 410;
             // ARB_enhanced_layouts vs ARB_separate_shader_objects ...
             if (!options.es && options.version < minimum_desktop_version && !options.separate_shader_objects)
@@ -21162,14 +21164,14 @@ var CompilerGLSL = /** @class */ (function (_super) {
             else if (options.es && options.version < 310)
                 return false;
         }
-        if ((this.get_execution_model() === ExecutionModel.ExecutionModelVertex && storage === StorageClass.StorageClassInput) ||
-            (this.get_execution_model() === ExecutionModel.ExecutionModelFragment && storage === StorageClass.StorageClassOutput)) {
+        if ((this.get_execution_model() === ExecutionModel.Vertex && storage === StorageClass.Input) ||
+            (this.get_execution_model() === ExecutionModel.Fragment && storage === StorageClass.Output)) {
             if (options.es && options.version < 300)
                 return false;
             else if (!options.es && options.version < 330)
                 return false;
         }
-        if (storage === StorageClass.StorageClassUniform || storage === StorageClass.StorageClassUniformConstant || storage === StorageClass.StorageClassPushConstant) {
+        if (storage === StorageClass.Uniform || storage === StorageClass.UniformConstant || storage === StorageClass.PushConstant) {
             if (options.es && options.version < 310)
                 return false;
             else if (!options.es && options.version < 430)
@@ -21184,7 +21186,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // of complicated workarounds, just value-cast to the half type always.
         if (isNaN(float_value) || float_value === Number.POSITIVE_INFINITY || float_value === Number.NEGATIVE_INFINITY) {
             var type = new SPIRType();
-            type.basetype = SPIRTypeBaseType.Half;
+            type.basetype = SPIRBaseType.Half;
             type.vecsize = 1;
             type.columns = 1;
             if (float_value === Number.POSITIVE_INFINITY)
@@ -21198,7 +21200,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         }
         else {
             var type = new SPIRType();
-            type.basetype = SPIRTypeBaseType.Half;
+            type.basetype = SPIRBaseType.Half;
             type.vecsize = 1;
             type.columns = 1;
             var res_1 = convert_to_string(float_value);
@@ -21217,8 +21219,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
             if (!this.is_legacy()) {
                 var out_type = new SPIRType();
                 var in_type = new SPIRType();
-                out_type.basetype = SPIRTypeBaseType.Float;
-                in_type.basetype = SPIRTypeBaseType.UInt;
+                out_type.basetype = SPIRBaseType.Float;
+                in_type.basetype = SPIRBaseType.UInt;
                 out_type.vecsize = 1;
                 in_type.vecsize = 1;
                 out_type.width = 32;
@@ -21273,8 +21275,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
             if (!this.is_legacy()) {
                 var out_type = new SPIRType();
                 var in_type = new SPIRType();
-                out_type.basetype = SPIRTypeBaseType.Double;
-                in_type.basetype = SPIRTypeBaseType.UInt64;
+                out_type.basetype = SPIRBaseType.Double;
+                in_type.basetype = SPIRBaseType.UInt64;
                 out_type.vecsize = 1;
                 in_type.vecsize = 1;
                 out_type.width = 64;
@@ -21333,14 +21335,14 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // In Vulkan GLSL, we can make use of the newer GL_EXT_samplerless_texture_functions.
         if (var_) {
             var type = this.get(SPIRType, var_.basetype);
-            if (type.basetype === SPIRTypeBaseType.Image && type.image.sampled === 1 && type.image.dim !== Dim.DimBuffer) {
+            if (type.basetype === SPIRBaseType.Image && type.image.sampled === 1 && type.image.dim !== Dim.Buffer) {
                 /*if (options.vulkan_semantics)
                 {
                     if (dummy_sampler_id)
                     {
                         // Don't need to consider Shadow state since the dummy sampler is always non-shadow.
                         auto sampled_type = type;
-                        sampled_type.basetype = SPIRTypeBaseType.SampledImage;
+                        sampled_type.basetype = SPIRBaseType.SampledImage;
                         return join(type_to_glsl(sampled_type), "(", to_non_uniform_aware_expression(id), ", ",
                             to_expression(dummy_sampler_id), ")");
                     }
@@ -21368,20 +21370,20 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (var_)
             target_id = var_.self;
         // Only interested in standalone builtin variables.
-        if (!this.has_decoration(target_id, Decoration.DecorationBuiltIn))
+        if (!this.has_decoration(target_id, Decoration.BuiltIn))
             return expr;
-        var builtin = (this.get_decoration(target_id, Decoration.DecorationBuiltIn));
+        var builtin = (this.get_decoration(target_id, Decoration.BuiltIn));
         var expected_type = expr_type.basetype;
         // TODO: Fill in for more builtins.
         switch (builtin) {
-            case BuiltIn.BuiltInLayer:
-            case BuiltIn.BuiltInPrimitiveId:
-            case BuiltIn.BuiltInViewportIndex:
-            case BuiltIn.BuiltInFragStencilRefEXT:
-            case BuiltIn.BuiltInSampleMask:
-            case BuiltIn.BuiltInPrimitiveShadingRateKHR:
-            case BuiltIn.BuiltInShadingRateKHR:
-                expected_type = SPIRTypeBaseType.Int;
+            case BuiltIn.Layer:
+            case BuiltIn.PrimitiveId:
+            case BuiltIn.ViewportIndex:
+            case BuiltIn.FragStencilRefEXT:
+            case BuiltIn.SampleMask:
+            case BuiltIn.PrimitiveShadingRateKHR:
+            case BuiltIn.ShadingRateKHR:
+                expected_type = SPIRBaseType.Int;
                 break;
         }
         if (expected_type !== expr_type.basetype) {
@@ -21399,40 +21401,40 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (var_)
             source_id = var_.self;
         // Only interested in standalone builtin variables.
-        if (!this.has_decoration(source_id, Decoration.DecorationBuiltIn))
+        if (!this.has_decoration(source_id, Decoration.BuiltIn))
             return expr;
-        var builtin = (this.get_decoration(source_id, Decoration.DecorationBuiltIn));
+        var builtin = (this.get_decoration(source_id, Decoration.BuiltIn));
         var expected_type = expr_type.basetype;
         // TODO: Fill in for more builtins.
         switch (builtin) {
-            case BuiltIn.BuiltInLayer:
-            case BuiltIn.BuiltInPrimitiveId:
-            case BuiltIn.BuiltInViewportIndex:
-            case BuiltIn.BuiltInInstanceId:
-            case BuiltIn.BuiltInInstanceIndex:
-            case BuiltIn.BuiltInVertexId:
-            case BuiltIn.BuiltInVertexIndex:
-            case BuiltIn.BuiltInSampleId:
-            case BuiltIn.BuiltInBaseVertex:
-            case BuiltIn.BuiltInBaseInstance:
-            case BuiltIn.BuiltInDrawIndex:
-            case BuiltIn.BuiltInFragStencilRefEXT:
-            case BuiltIn.BuiltInInstanceCustomIndexNV:
-            case BuiltIn.BuiltInSampleMask:
-            case BuiltIn.BuiltInPrimitiveShadingRateKHR:
-            case BuiltIn.BuiltInShadingRateKHR:
-                expected_type = SPIRTypeBaseType.Int;
+            case BuiltIn.Layer:
+            case BuiltIn.PrimitiveId:
+            case BuiltIn.ViewportIndex:
+            case BuiltIn.InstanceId:
+            case BuiltIn.InstanceIndex:
+            case BuiltIn.VertexId:
+            case BuiltIn.VertexIndex:
+            case BuiltIn.SampleId:
+            case BuiltIn.BaseVertex:
+            case BuiltIn.BaseInstance:
+            case BuiltIn.DrawIndex:
+            case BuiltIn.FragStencilRefEXT:
+            case BuiltIn.InstanceCustomIndexNV:
+            case BuiltIn.SampleMask:
+            case BuiltIn.PrimitiveShadingRateKHR:
+            case BuiltIn.ShadingRateKHR:
+                expected_type = SPIRBaseType.Int;
                 break;
-            case BuiltIn.BuiltInGlobalInvocationId:
-            case BuiltIn.BuiltInLocalInvocationId:
-            case BuiltIn.BuiltInWorkgroupId:
-            case BuiltIn.BuiltInLocalInvocationIndex:
-            case BuiltIn.BuiltInWorkgroupSize:
-            case BuiltIn.BuiltInNumWorkgroups:
-            case BuiltIn.BuiltInIncomingRayFlagsNV:
-            case BuiltIn.BuiltInLaunchIdNV:
-            case BuiltIn.BuiltInLaunchSizeNV:
-                expected_type = SPIRTypeBaseType.UInt;
+            case BuiltIn.GlobalInvocationId:
+            case BuiltIn.LocalInvocationId:
+            case BuiltIn.WorkgroupId:
+            case BuiltIn.LocalInvocationIndex:
+            case BuiltIn.WorkgroupSize:
+            case BuiltIn.NumWorkgroups:
+            case BuiltIn.IncomingRayFlagsNV:
+            case BuiltIn.LaunchIdNV:
+            case BuiltIn.LaunchSizeNV:
+                expected_type = SPIRBaseType.UInt;
                 break;
         }
         if (expected_type !== expr_type.basetype)
@@ -21446,19 +21448,19 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var var_ = this.maybe_get(SPIRVariable, source_id);
         if (!var_)
             return expr;
-        if (var_.storage !== StorageClass.StorageClassInput && var_.storage !== StorageClass.StorageClassOutput)
+        if (var_.storage !== StorageClass.Input && var_.storage !== StorageClass.Output)
             return expr;
         var type = this.get_variable_data_type(var_);
         if (type.array.length === 0)
             return expr;
-        var builtin = (this.get_decoration(var_.self, Decoration.DecorationBuiltIn));
+        var builtin = (this.get_decoration(var_.self, Decoration.BuiltIn));
         var is_builtin = this.is_builtin_variable(var_) &&
-            (builtin === BuiltIn.BuiltInPointSize ||
-                builtin === BuiltIn.BuiltInPosition ||
-                builtin === BuiltIn.BuiltInSampleMask);
+            (builtin === BuiltIn.PointSize ||
+                builtin === BuiltIn.Position ||
+                builtin === BuiltIn.SampleMask);
         var is_tess = false; //this.is_tessellation_shader();
-        var is_patch = this.has_decoration(var_.self, Decoration.DecorationPatch);
-        var is_sample_mask = is_builtin && builtin === BuiltIn.BuiltInSampleMask;
+        var is_patch = this.has_decoration(var_.self, Decoration.Patch);
+        var is_sample_mask = is_builtin && builtin === BuiltIn.SampleMask;
         // Tessellation input arrays are special in that they are unsized, so we cannot directly copy from it.
         // We must unroll the array load.
         // For builtins, we couldn't catch this case normally,
@@ -21483,7 +21485,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 this.statement(new_expr, "[i] = gl_in[i].", expr, ";");
             else if (is_sample_mask) {
                 var target_type = new SPIRType();
-                target_type.basetype = SPIRTypeBaseType.Int;
+                target_type.basetype = SPIRBaseType.Int;
                 this.statement(new_expr, "[i] = ", this.bitcast_expression(target_type, type.basetype, expr + "[i]"), ";");
             }
             else
@@ -21498,9 +21500,9 @@ var CompilerGLSL = /** @class */ (function (_super) {
             return false;
         // This path is only relevant for GL backends.
         var var_ = this.maybe_get(SPIRVariable, target_id);
-        if (!var_ || var_.storage !== StorageClass.StorageClassOutput)
+        if (!var_ || var_.storage !== StorageClass.Output)
             return false;
-        if (!this.is_builtin_variable(var_) || (this.get_decoration(var_.self, Decoration.DecorationBuiltIn)) !== BuiltIn.BuiltInSampleMask)
+        if (!this.is_builtin_variable(var_) || (this.get_decoration(var_.self, Decoration.BuiltIn)) !== BuiltIn.SampleMask)
             return false;
         var type = this.expression_type(source_id);
         var array_expr;
@@ -21513,7 +21515,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         else
             array_expr = this.to_expression(type.array[type.array.length - 1]);
         var target_type = new SPIRType();
-        target_type.basetype = SPIRTypeBaseType.Int;
+        target_type.basetype = SPIRBaseType.Int;
         this.statement("for (int i = 0; i < int(", array_expr, "); i++)");
         this.begin_scope();
         this.statement(this.to_expression(target_id), "[i] = ", this.bitcast_expression(target_type, type.basetype, this.to_expression(source_id) + "[i]"), ";");
@@ -21526,9 +21528,9 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var var_ = this.maybe_get_backing_variable(ptr_id);
         if (!var_)
             return expr;
-        if (var_.storage !== StorageClass.StorageClassUniformConstant &&
-            var_.storage !== StorageClass.StorageClassStorageBuffer &&
-            var_.storage !== StorageClass.StorageClassUniform)
+        if (var_.storage !== StorageClass.UniformConstant &&
+            var_.storage !== StorageClass.StorageBuffer &&
+            var_.storage !== StorageClass.Uniform)
             return expr;
         var backing_type = this.get(SPIRType, var_.basetype);
         if (backing_type.array.length === 0)
@@ -21585,7 +21587,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // expressions to be temporaries.
         // It is uncertain if this is enough to support invariant in all possible cases, but it should be good enough
         // for all reasonable uses of invariant.
-        if (!this.has_decoration(store_id, Decoration.DecorationInvariant))
+        if (!this.has_decoration(store_id, Decoration.Invariant))
             return;
         var expr = this.maybe_get(SPIRExpression, value_id);
         if (!expr)
@@ -21608,8 +21610,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (!var_)
             return false;
         var backed_type = this.get(SPIRType, var_.basetype);
-        return !this.backend.buffer_offset_array_is_value_type && backed_type.basetype === SPIRTypeBaseType.Struct &&
-            this.has_member_decoration(backed_type.self, 0, Decoration.DecorationOffset);
+        return !this.backend.buffer_offset_array_is_value_type && backed_type.basetype === SPIRBaseType.Struct &&
+            this.has_member_decoration(backed_type.self, 0, Decoration.Offset);
     };
     CompilerGLSL.prototype.emit_store_statement = function (lhs_expression, rhs_expression) {
         var rhs = this.to_pointer_expression(rhs_expression);
@@ -21618,7 +21620,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             this.handle_store_to_invariant_variable(lhs_expression, rhs_expression);
             if (!this.unroll_array_to_complex_store(lhs_expression, rhs_expression)) {
                 var lhs = this.to_dereferenced_expression(lhs_expression);
-                if (this.has_decoration(lhs_expression, Decoration.DecorationNonUniform))
+                if (this.has_decoration(lhs_expression, Decoration.NonUniform))
                     lhs = this.convert_non_uniform_expression(lhs, lhs_expression);
                 // We might need to cast in order to store to a builtin.
                 rhs = this.cast_to_variable_store(lhs_expression, rhs, this.expression_type(rhs_expression));
@@ -21637,20 +21639,20 @@ var CompilerGLSL = /** @class */ (function (_super) {
             return 32;
         var ops = this.stream(instr);
         switch (instr.op) {
-            case Op.OpSConvert:
-            case Op.OpConvertSToF:
-            case Op.OpUConvert:
-            case Op.OpConvertUToF:
-            case Op.OpIEqual:
-            case Op.OpINotEqual:
-            case Op.OpSLessThan:
-            case Op.OpSLessThanEqual:
-            case Op.OpSGreaterThan:
-            case Op.OpSGreaterThanEqual:
-            case Op.OpULessThan:
-            case Op.OpULessThanEqual:
-            case Op.OpUGreaterThan:
-            case Op.OpUGreaterThanEqual:
+            case Op.SConvert:
+            case Op.ConvertSToF:
+            case Op.UConvert:
+            case Op.ConvertUToF:
+            case Op.IEqual:
+            case Op.INotEqual:
+            case Op.SLessThan:
+            case Op.SLessThanEqual:
+            case Op.SGreaterThan:
+            case Op.SGreaterThanEqual:
+            case Op.ULessThan:
+            case Op.ULessThanEqual:
+            case Op.UGreaterThan:
+            case Op.UGreaterThanEqual:
                 return this.expression_type(ops[2]).width;
             default: {
                 // We can look at result type which is more robust.
@@ -21666,16 +21668,16 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (length < 1)
             return 32;
         switch (op) {
-            case GLSLstd450.GLSLstd450SAbs:
-            case GLSLstd450.GLSLstd450SSign:
-            case GLSLstd450.GLSLstd450UMin:
-            case GLSLstd450.GLSLstd450SMin:
-            case GLSLstd450.GLSLstd450UMax:
-            case GLSLstd450.GLSLstd450SMax:
-            case GLSLstd450.GLSLstd450UClamp:
-            case GLSLstd450.GLSLstd450SClamp:
-            case GLSLstd450.GLSLstd450FindSMsb:
-            case GLSLstd450.GLSLstd450FindUMsb:
+            case GLSLstd450.SAbs:
+            case GLSLstd450.SSign:
+            case GLSLstd450.UMin:
+            case GLSLstd450.SMin:
+            case GLSLstd450.UMax:
+            case GLSLstd450.SMax:
+            case GLSLstd450.UClamp:
+            case GLSLstd450.SClamp:
+            case GLSLstd450.FindSMsb:
+            case GLSLstd450.FindUMsb:
                 return this.expression_type(ops[arroffs]).width;
             default: {
                 // We don't need to care about other opcodes, just return 32.
@@ -21699,7 +21701,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         ir.for_each_typed_id(SPIRType, function (self, type) {
             if (!type.type_alias)
                 return;
-            if (_this.has_decoration(type.self, Decoration.DecorationBlock) || _this.has_decoration(type.self, Decoration.DecorationBufferBlock)) {
+            if (_this.has_decoration(type.self, Decoration.Block) || _this.has_decoration(type.self, Decoration.BufferBlock)) {
                 // Top-level block types should never alias anything else.
                 type.type_alias = 0;
             }
@@ -21724,12 +21726,12 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // We need this in case a type B depends on type A (A must come before in the vector), but A is an alias of a type Abuffer, which
         // means declaration of A doesn't happen (yet), and order would be B, ABuffer and not ABuffer, B. Fix this up here.
         var loop_lock = ir.create_loop_hard_lock();
-        var type_ids = ir.ids_for_type[Types.TypeType];
+        var type_ids = ir.ids_for_type[Types.Type];
         for (var _i = 0, type_ids_1 = type_ids; _i < type_ids_1.length; _i++) {
             var alias_itr = type_ids_1[_i];
             var type = this.get(SPIRType, alias_itr);
             if (type.type_alias !== (0) &&
-                !this.has_extended_decoration(type.type_alias, ExtendedDecorations.SPIRVCrossDecorationBufferBlockRepacked)) {
+                !this.has_extended_decoration(type.type_alias, ExtendedDecorations.BufferBlockRepacked)) {
                 // We will skip declaring this type, so make sure the type_alias type comes before.
                 var master_itr = type_ids.indexOf((type.type_alias));
                 console.assert(master_itr >= 0);
@@ -21758,17 +21760,17 @@ var CompilerGLSL = /** @class */ (function (_super) {
 function is_unsigned_opcode(op) {
     // Don't have to be exhaustive, only relevant for legacy target checking ...
     switch (op) {
-        case Op.OpShiftRightLogical:
-        case Op.OpUGreaterThan:
-        case Op.OpUGreaterThanEqual:
-        case Op.OpULessThan:
-        case Op.OpULessThanEqual:
-        case Op.OpUConvert:
-        case Op.OpUDiv:
-        case Op.OpUMod:
-        case Op.OpUMulExtended:
-        case Op.OpConvertUToF:
-        case Op.OpConvertFToU:
+        case Op.ShiftRightLogical:
+        case Op.UGreaterThan:
+        case Op.UGreaterThanEqual:
+        case Op.ULessThan:
+        case Op.ULessThanEqual:
+        case Op.UConvert:
+        case Op.UDiv:
+        case Op.UMod:
+        case Op.UMulExtended:
+        case Op.ConvertUToF:
+        case Op.ConvertFToU:
             return true;
         default:
             return false;
@@ -21776,9 +21778,9 @@ function is_unsigned_opcode(op) {
 }
 function packing_has_flexible_offset(packing) {
     switch (packing) {
-        case BufferPackingStandard.BufferPackingStd140:
-        case BufferPackingStandard.BufferPackingStd430:
-        case BufferPackingStandard.BufferPackingScalar:
+        case BufferPackingStandard.Std140:
+        case BufferPackingStandard.Std430:
+        case BufferPackingStandard.PackingScalar:
             // case BufferPackingHLSLCbuffer:
             return false;
         default:
@@ -21787,14 +21789,14 @@ function packing_has_flexible_offset(packing) {
 }
 function packing_to_substruct_packing(packing) {
     switch (packing) {
-        case BufferPackingStandard.BufferPackingStd140EnhancedLayout:
-            return BufferPackingStandard.BufferPackingStd140;
-        case BufferPackingStandard.BufferPackingStd430EnhancedLayout:
-            return BufferPackingStandard.BufferPackingStd430;
+        case BufferPackingStandard.Std140EnhancedLayout:
+            return BufferPackingStandard.Std140;
+        case BufferPackingStandard.Std430EnhancedLayout:
+            return BufferPackingStandard.Std430;
         // case BufferPackingStandard.BufferPackingHLSLCbufferPackOffset:
         // return BufferPackingStandard.BufferPackingHLSLCbuffer;
-        case BufferPackingStandard.BufferPackingScalarEnhancedLayout:
-            return BufferPackingStandard.BufferPackingScalar;
+        case BufferPackingStandard.PackingScalarEnhancedLayout:
+            return BufferPackingStandard.PackingScalar;
         default:
             return packing;
     }
@@ -21803,8 +21805,8 @@ function packing_is_vec4_padded(packing) {
     switch (packing) {
         // case BufferPackingStandard.BufferPackingHLSLCbuffer:
         // case BufferPackingStandard.BufferPackingHLSLCbufferPackOffset:
-        case BufferPackingStandard.BufferPackingStd140:
-        case BufferPackingStandard.BufferPackingStd140EnhancedLayout:
+        case BufferPackingStandard.Std140:
+        case BufferPackingStandard.Std140EnhancedLayout:
             return true;
         default:
             return false;
@@ -21812,8 +21814,8 @@ function packing_is_vec4_padded(packing) {
 }
 function packing_is_scalar(packing) {
     switch (packing) {
-        case BufferPackingStandard.BufferPackingScalar:
-        case BufferPackingStandard.BufferPackingScalarEnhancedLayout:
+        case BufferPackingStandard.PackingScalar:
+        case BufferPackingStandard.PackingScalarEnhancedLayout:
             return true;
         default:
             return false;
@@ -21821,70 +21823,70 @@ function packing_is_scalar(packing) {
 }
 function pls_format_to_basetype(format) {
     switch (format) {
-        case PlsFormat.PlsRGBA8I:
-        case PlsFormat.PlsRG16I:
-            return SPIRTypeBaseType.Int;
-        case PlsFormat.PlsRGB10A2UI:
-        case PlsFormat.PlsRGBA8UI:
-        case PlsFormat.PlsRG16UI:
-        case PlsFormat.PlsR32UI:
-            return SPIRTypeBaseType.UInt;
+        case PlsFormat.RGBA8I:
+        case PlsFormat.RG16I:
+            return SPIRBaseType.Int;
+        case PlsFormat.RGB10A2UI:
+        case PlsFormat.RGBA8UI:
+        case PlsFormat.RG16UI:
+        case PlsFormat.R32UI:
+            return SPIRBaseType.UInt;
         default:
-            /*case PlsR11FG11FB10F:
-            case PlsR32F:
-            case PlsRG16F:
-            case PlsRGB10A2:
-            case PlsRGBA8:
+            /*case R11FG11FB10F:
+            case R32F:
+            case RG16F:
+            case RGB10A2:
+            case RGBA8:
             case PlsRG16:*/
-            return SPIRTypeBaseType.Float;
+            return SPIRBaseType.Float;
     }
 }
 function pls_format_to_components(format) {
     switch (format) {
         default:
-        case PlsFormat.PlsR32F:
-        case PlsFormat.PlsR32UI:
+        case PlsFormat.R32F:
+        case PlsFormat.R32UI:
             return 1;
-        case PlsFormat.PlsRG16F:
-        case PlsFormat.PlsRG16:
-        case PlsFormat.PlsRG16UI:
-        case PlsFormat.PlsRG16I:
+        case PlsFormat.RG16F:
+        case PlsFormat.RG16:
+        case PlsFormat.RG16UI:
+        case PlsFormat.RG16I:
             return 2;
-        case PlsFormat.PlsR11FG11FB10F:
+        case PlsFormat.R11FG11FB10F:
             return 3;
-        case PlsFormat.PlsRGB10A2:
-        case PlsFormat.PlsRGBA8:
-        case PlsFormat.PlsRGBA8I:
-        case PlsFormat.PlsRGB10A2UI:
-        case PlsFormat.PlsRGBA8UI:
+        case PlsFormat.RGB10A2:
+        case PlsFormat.RGBA8:
+        case PlsFormat.RGBA8I:
+        case PlsFormat.RGB10A2UI:
+        case PlsFormat.RGBA8UI:
             return 4;
     }
 }
 function to_pls_layout(format) {
     switch (format) {
-        case PlsFormat.PlsR11FG11FB10F:
+        case PlsFormat.R11FG11FB10F:
             return "layout(r11f_g11f_b10f) ";
-        case PlsFormat.PlsR32F:
+        case PlsFormat.R32F:
             return "layout(r32f) ";
-        case PlsFormat.PlsRG16F:
+        case PlsFormat.RG16F:
             return "layout(rg16f) ";
-        case PlsFormat.PlsRGB10A2:
+        case PlsFormat.RGB10A2:
             return "layout(rgb10_a2) ";
-        case PlsFormat.PlsRGBA8:
+        case PlsFormat.RGBA8:
             return "layout(rgba8) ";
-        case PlsFormat.PlsRG16:
+        case PlsFormat.RG16:
             return "layout(rg16) ";
-        case PlsFormat.PlsRGBA8I:
+        case PlsFormat.RGBA8I:
             return "layout(rgba8i)";
-        case PlsFormat.PlsRG16I:
+        case PlsFormat.RG16I:
             return "layout(rg16i) ";
-        case PlsFormat.PlsRGB10A2UI:
+        case PlsFormat.RGB10A2UI:
             return "layout(rgb10_a2ui) ";
-        case PlsFormat.PlsRGBA8UI:
+        case PlsFormat.RGBA8UI:
             return "layout(rgba8ui) ";
-        case PlsFormat.PlsRG16UI:
+        case PlsFormat.RG16UI:
             return "layout(rg16ui) ";
-        case PlsFormat.PlsR32UI:
+        case PlsFormat.R32UI:
             return "layout(r32ui) ";
         default:
             return "";
@@ -21892,18 +21894,18 @@ function to_pls_layout(format) {
 }
 function image_opcode_is_sample_no_dref(op) {
     switch (op) {
-        case Op.OpImageSampleExplicitLod:
-        case Op.OpImageSampleImplicitLod:
-        case Op.OpImageSampleProjExplicitLod:
-        case Op.OpImageSampleProjImplicitLod:
-        case Op.OpImageFetch:
-        case Op.OpImageRead:
-        case Op.OpImageSparseSampleExplicitLod:
-        case Op.OpImageSparseSampleImplicitLod:
-        case Op.OpImageSparseSampleProjExplicitLod:
-        case Op.OpImageSparseSampleProjImplicitLod:
-        case Op.OpImageSparseFetch:
-        case Op.OpImageSparseRead:
+        case Op.ImageSampleExplicitLod:
+        case Op.ImageSampleImplicitLod:
+        case Op.ImageSampleProjExplicitLod:
+        case Op.ImageSampleProjImplicitLod:
+        case Op.ImageFetch:
+        case Op.ImageRead:
+        case Op.ImageSparseSampleExplicitLod:
+        case Op.ImageSparseSampleImplicitLod:
+        case Op.ImageSparseSampleProjExplicitLod:
+        case Op.ImageSparseSampleProjImplicitLod:
+        case Op.ImageSparseFetch:
+        case Op.ImageSparseRead:
             return true;
         default:
             return false;
@@ -21912,10 +21914,10 @@ function image_opcode_is_sample_no_dref(op) {
 function is_unsigned_glsl_opcode(op) {
     // Don't have to be exhaustive, only relevant for legacy target checking ...
     switch (op) {
-        case GLSLstd450.GLSLstd450UClamp:
-        case GLSLstd450.GLSLstd450UMin:
-        case GLSLstd450.GLSLstd450UMax:
-        case GLSLstd450.GLSLstd450FindUMsb:
+        case GLSLstd450.UClamp:
+        case GLSLstd450.UMin:
+        case GLSLstd450.UMax:
+        case GLSLstd450.FindUMsb:
             return true;
         default:
             return false;
@@ -21925,15 +21927,15 @@ function is_unsigned_glsl_opcode(op) {
 function rename_interface_variable(compiler, resources, location, name) {
     for (var _i = 0, resources_1 = resources; _i < resources_1.length; _i++) {
         var v = resources_1[_i];
-        if (!compiler.has_decoration(v.id, Decoration.DecorationLocation))
+        if (!compiler.has_decoration(v.id, Decoration.Location))
             continue;
-        var loc = compiler.get_decoration(v.id, Decoration.DecorationLocation);
+        var loc = compiler.get_decoration(v.id, Decoration.Location);
         if (loc !== location)
             continue;
         var type = compiler.get_type(v.base_type_id);
         // This is more of a friendly variant. If we need to rename interface variables, we might have to rename
         // structs as well and make sure all the names match up.
-        if (type.basetype === SPIRTypeBaseType.Struct) {
+        if (type.basetype === SPIRBaseType.Struct) {
             compiler.set_name(v.base_type_id, "SPIRV_Cross_Interface_Location" + location);
             for (var i = 0; i < type.member_types.length; i++)
                 compiler.set_member_name(v.base_type_id, i, "InterfaceMember" + i);
@@ -21945,13 +21947,13 @@ function inherit_combined_sampler_bindings(compiler) {
     var samplers = compiler.get_combined_image_samplers();
     for (var _i = 0, samplers_1 = samplers; _i < samplers_1.length; _i++) {
         var s = samplers_1[_i];
-        if (compiler.has_decoration(s.image_id, Decoration.DecorationDescriptorSet)) {
-            var set = compiler.get_decoration(s.image_id, Decoration.DecorationDescriptorSet);
-            compiler.set_decoration(s.combined_id, Decoration.DecorationDescriptorSet, set);
+        if (compiler.has_decoration(s.image_id, Decoration.DescriptorSet)) {
+            var set = compiler.get_decoration(s.image_id, Decoration.DescriptorSet);
+            compiler.set_decoration(s.combined_id, Decoration.DescriptorSet, set);
         }
-        if (compiler.has_decoration(s.image_id, Decoration.DecorationBinding)) {
-            var binding = compiler.get_decoration(s.image_id, Decoration.DecorationBinding);
-            compiler.set_decoration(s.combined_id, Decoration.DecorationBinding, binding);
+        if (compiler.has_decoration(s.image_id, Decoration.Binding)) {
+            var binding = compiler.get_decoration(s.image_id, Decoration.Binding);
+            compiler.set_decoration(s.combined_id, Decoration.Binding, binding);
         }
     }
 }
@@ -21966,17 +21968,17 @@ var PlsRemap = /** @class */ (function () {
 
 function stage_to_execution_model(stage) {
     if (stage === "vert")
-        return ExecutionModel.ExecutionModelVertex;
+        return ExecutionModel.Vertex;
     else if (stage === "frag")
-        return ExecutionModel.ExecutionModelFragment;
+        return ExecutionModel.Fragment;
     else if (stage === "comp")
-        return ExecutionModel.ExecutionModelGLCompute;
+        return ExecutionModel.GLCompute;
     else if (stage === "tesc")
-        return ExecutionModel.ExecutionModelTessellationControl;
+        return ExecutionModel.TessellationControl;
     else if (stage === "tese")
-        return ExecutionModel.ExecutionModelTessellationEvaluation;
+        return ExecutionModel.TessellationEvaluation;
     else if (stage === "geom")
-        return ExecutionModel.ExecutionModelGeometry;
+        return ExecutionModel.Geometry;
     else
         throw new Error("Invalid stage!");
 }
@@ -22009,7 +22011,7 @@ function compile_iteration(args, spirv_file) {
     }
     var entry_points = compiler.get_entry_points_and_stages();
     var entry_point = args.entry;
-    var model = ExecutionModel.ExecutionModelMax;
+    var model = ExecutionModel.Max;
     if (args.entry_stage && args.entry_stage.length > 0) {
         model = stage_to_execution_model(args.entry_stage);
         if (!entry_point || entry_point === "") {
@@ -22125,9 +22127,9 @@ function compile_iteration(args, spirv_file) {
     }
     for (var _u = 0, _v = args.interface_variable_renames; _u < _v.length; _u++) {
         var rename = _v[_u];
-        if (rename.storageClass === StorageClass.StorageClassInput)
+        if (rename.storageClass === StorageClass.Input)
             rename_interface_variable(compiler, res.stage_inputs, rename.location, rename.variable_name);
-        else if (rename.storageClass === StorageClass.StorageClassOutput)
+        else if (rename.storageClass === StorageClass.Output)
             rename_interface_variable(compiler, res.stage_outputs, rename.location, rename.variable_name);
         else {
             throw new Error("error at --rename-interface-variable <in|out> ...");

@@ -5,7 +5,7 @@ import { StorageClass } from "../spirv/StorageClass";
 
 export class SPIRAccessChain extends IVariant
 {
-    static type = Types.TypeAccessChain;
+    static type = Types.AccessChain;
 
     // The access chain represents an offset into a buffer.
     // Some backends need more complicated handling of access chains to be able to use buffers, like HLSL

@@ -4,7 +4,7 @@ import { defaultCopy } from "../utils/defaultCopy";
 
 export class SPIRCombinedImageSampler extends IVariant
 {
-    static type = Types.TypeCombinedImageSampler;
+    static type = Types.CombinedImageSampler;
 
     combined_type: TypeID;
     image: VariableID;

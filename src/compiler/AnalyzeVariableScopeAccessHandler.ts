@@ -6,7 +6,7 @@ import { maplike_get } from "../utils/maplike_get";
 import { SPIRVariable } from "../common/SPIRVariable";
 import { Types } from "../common/Types";
 import { SPIRExpression } from "../common/SPIRExpression";
-import { SPIRTypeBaseType } from "../common/SPIRType";
+import { SPIRBaseType } from "../common/SPIRType";
 import { SPIRExtension, SPIRExtensionExtension } from "../common/SPIRExtension";
 import { GLSLstd450 } from "./glsl/glsl";
 import { Op } from "../spirv/Op";
@@ -118,7 +118,7 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
             return false;
 
         // Temporaries are not created before we start emitting code.
-        return this.compiler.ir.ids[id].empty() || (this.compiler.ir.ids[id].get_type() === Types.TypeExpression);
+        return this.compiler.ir.ids[id].empty() || (this.compiler.ir.ids[id].get_type() === Types.Expression);
     }
 
     handle(op: Op, args: Uint32Array, length: number): boolean
@@ -130,7 +130,7 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
             this.result_id_to_type[result.result_id] = result.result_type;
 
         switch (op) {
-            case Op.OpStore: {
+            case Op.Store: {
                 if (length < 2)
                     return false;
 
@@ -153,9 +153,9 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
                 break;
             }
 
-            case Op.OpAccessChain:
-            case Op.OpInBoundsAccessChain:
-            case Op.OpPtrAccessChain: {
+            case Op.AccessChain:
+            case Op.InBoundsAccessChain:
+            case Op.PtrAccessChain: {
                 if (length < 3)
                     return false;
 
@@ -190,7 +190,7 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
                 break;
             }
 
-            case Op.OpCopyMemory: {
+            case Op.CopyMemory: {
                 if (length < 2)
                     return false;
 
@@ -217,7 +217,7 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
                 break;
             }
 
-            case Op.OpCopyObject: {
+            case Op.CopyObject: {
                 if (length < 3)
                     return false;
 
@@ -235,7 +235,7 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
                 break;
             }
 
-            case Op.OpLoad: {
+            case Op.Load: {
                 if (length < 3)
                     return false;
                 const ptr = args[2];
@@ -251,12 +251,12 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
                 break;
             }
 
-            case Op.OpFunctionCall: {
+            case Op.FunctionCall: {
                 if (length < 3)
                     return false;
 
                 // Return value may be a temporary.
-                if (compiler.get_type(args[0]).basetype !== SPIRTypeBaseType.Void)
+                if (compiler.get_type(args[0]).basetype !== SPIRBaseType.Void)
                     this.notify_variable_access(args[1], this.current_block.self);
 
                 length -= 3;
@@ -280,7 +280,7 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
                 break;
             }
 
-            case Op.OpSelect: {
+            case Op.Select: {
                 // In case of variable pointers, we might access a variable here.
                 // We cannot prove anything about these accesses however.
                 for (let i = 1; i < length; i++) {
@@ -299,7 +299,7 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
                 break;
             }
 
-            case Op.OpExtInst: {
+            case Op.ExtInst: {
                 for (let i = 4; i < length; i++)
                     this.notify_variable_access(args[i], this.current_block.self);
                 this.notify_variable_access(args[1], this.current_block.self);
@@ -308,8 +308,8 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
                 if (compiler.get<SPIRExtension>(SPIRExtension, extension_set).ext === SPIRExtensionExtension.GLSL) {
                     const op_450 = <GLSLstd450>(args[3]);
                     switch (op_450) {
-                        case GLSLstd450.GLSLstd450Modf:
-                        case GLSLstd450.GLSLstd450Frexp: {
+                        case GLSLstd450.Modf:
+                        case GLSLstd450.Frexp: {
                             const ptr = args[5];
                             const var_ = compiler.maybe_get_backing_variable(ptr);
                             if (var_) {
@@ -329,33 +329,33 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
                 break;
             }
 
-            case Op.OpArrayLength:
+            case Op.ArrayLength:
                 // Only result is a temporary.
                 this.notify_variable_access(args[1], this.current_block.self);
                 break;
 
-            case Op.OpLine:
-            case Op.OpNoLine:
+            case Op.Line:
+            case Op.NoLine:
                 // Uses literals, but cannot be a phi variable or temporary, so ignore.
                 break;
 
             // Atomics shouldn't be able to access function-local variables.
             // Some GLSL builtins access a pointer.
 
-            case Op.OpCompositeInsert:
-            case Op.OpVectorShuffle:
+            case Op.CompositeInsert:
+            case Op.VectorShuffle:
                 // Specialize for opcode which contains literals.
                 for (let i = 1; i < 4; i++)
                     this.notify_variable_access(args[i], this.current_block.self);
                 break;
 
-            case Op.OpCompositeExtract:
+            case Op.CompositeExtract:
                 // Specialize for opcode which contains literals.
                 for (let i = 1; i < 3; i++)
                     this.notify_variable_access(args[i], this.current_block.self);
                 break;
 
-            case Op.OpImageWrite:
+            case Op.ImageWrite:
                 for (let i = 0; i < length; i++) {
                     // Argument 3 is a literal.
                     if (i !== 3)
@@ -363,18 +363,18 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
                 }
                 break;
 
-            case Op.OpImageSampleImplicitLod:
-            case Op.OpImageSampleExplicitLod:
-            case Op.OpImageSparseSampleImplicitLod:
-            case Op.OpImageSparseSampleExplicitLod:
-            case Op.OpImageSampleProjImplicitLod:
-            case Op.OpImageSampleProjExplicitLod:
-            case Op.OpImageSparseSampleProjImplicitLod:
-            case Op.OpImageSparseSampleProjExplicitLod:
-            case Op.OpImageFetch:
-            case Op.OpImageSparseFetch:
-            case Op.OpImageRead:
-            case Op.OpImageSparseRead:
+            case Op.ImageSampleImplicitLod:
+            case Op.ImageSampleExplicitLod:
+            case Op.ImageSparseSampleImplicitLod:
+            case Op.ImageSparseSampleExplicitLod:
+            case Op.ImageSampleProjImplicitLod:
+            case Op.ImageSampleProjExplicitLod:
+            case Op.ImageSparseSampleProjImplicitLod:
+            case Op.ImageSparseSampleProjExplicitLod:
+            case Op.ImageFetch:
+            case Op.ImageSparseFetch:
+            case Op.ImageRead:
+            case Op.ImageSparseRead:
                 for (let i = 1; i < length; i++) {
                     // Argument 4 is a literal.
                     if (i !== 4)
@@ -382,18 +382,18 @@ export class AnalyzeVariableScopeAccessHandler extends OpcodeHandler
                 }
                 break;
 
-            case Op.OpImageSampleDrefImplicitLod:
-            case Op.OpImageSampleDrefExplicitLod:
-            case Op.OpImageSparseSampleDrefImplicitLod:
-            case Op.OpImageSparseSampleDrefExplicitLod:
-            case Op.OpImageSampleProjDrefImplicitLod:
-            case Op.OpImageSampleProjDrefExplicitLod:
-            case Op.OpImageSparseSampleProjDrefImplicitLod:
-            case Op.OpImageSparseSampleProjDrefExplicitLod:
-            case Op.OpImageGather:
-            case Op.OpImageSparseGather:
-            case Op.OpImageDrefGather:
-            case Op.OpImageSparseDrefGather:
+            case Op.ImageSampleDrefImplicitLod:
+            case Op.ImageSampleDrefExplicitLod:
+            case Op.ImageSparseSampleDrefImplicitLod:
+            case Op.ImageSparseSampleDrefExplicitLod:
+            case Op.ImageSampleProjDrefImplicitLod:
+            case Op.ImageSampleProjDrefExplicitLod:
+            case Op.ImageSparseSampleProjDrefImplicitLod:
+            case Op.ImageSparseSampleProjDrefExplicitLod:
+            case Op.ImageGather:
+            case Op.ImageSparseGather:
+            case Op.ImageDrefGather:
+            case Op.ImageSparseDrefGather:
                 for (let i = 1; i < length; i++) {
                     // Argument 5 is a literal.
                     if (i !== 5)

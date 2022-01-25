@@ -1,8 +1,8 @@
 export enum FragmentShadingRateMask
 {
-    FragmentShadingRateMaskNone = 0,
-    FragmentShadingRateVertical2PixelsMask = 0x00000001,
-    FragmentShadingRateVertical4PixelsMask = 0x00000002,
-    FragmentShadingRateHorizontal2PixelsMask = 0x00000004,
-    FragmentShadingRateHorizontal4PixelsMask = 0x00000008,
+    None = 0,
+    Vertical2Pixels = 0x00000001,
+    Vertical4Pixels = 0x00000002,
+    Horizontal2Pixels = 0x00000004,
+    Horizontal4Pixels = 0x00000008,
 }

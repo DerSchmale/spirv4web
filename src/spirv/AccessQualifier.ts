@@ -1,6 +1,6 @@
 export enum AccessQualifier {
-    AccessQualifierReadOnly = 0,
-    AccessQualifierWriteOnly = 1,
-    AccessQualifierReadWrite = 2,
-    AccessQualifierMax = 0x7fffffff,
+    ReadOnly = 0,
+    WriteOnly = 1,
+    ReadWrite = 2,
+    Max = 0x7fffffff,
 }

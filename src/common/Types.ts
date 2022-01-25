@@ -1,18 +1,18 @@
 export enum Types
 {
-    TypeNone,
-    TypeType,
-    TypeVariable,
-    TypeConstant,
-    TypeFunction,
-    TypeFunctionPrototype,
-    TypeBlock,
-    TypeExtension,
-    TypeExpression,
-    TypeConstantOp,
-    TypeCombinedImageSampler,
-    TypeAccessChain,
-    TypeUndef,
-    TypeString,
-    TypeCount
-};
+    None,
+    Type,
+    Variable,
+    Constant,
+    Function,
+    FunctionPrototype,
+    Block,
+    Extension,
+    Expression,
+    ConstantOp,
+    CombinedImageSampler,
+    AccessChain,
+    Undef,
+    String,
+    Count
+}

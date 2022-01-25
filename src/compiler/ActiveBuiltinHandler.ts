@@ -27,7 +27,7 @@ export class ActiveBuiltinHandler extends OpcodeHandler
     {
         // If used, we will need to explicitly declare a new array size for these builtins.
 
-        if (builtin === BuiltIn.BuiltInClipDistance) {
+        if (builtin === BuiltIn.ClipDistance) {
             if (!type.array_size_literal[0])
                 throw new Error("Array size for ClipDistance must be a literal.");
             const array_size = type.array[0];
@@ -35,7 +35,7 @@ export class ActiveBuiltinHandler extends OpcodeHandler
                 throw new Error("Array size for ClipDistance must not be unsized.");
             this.compiler.clip_distance_count = array_size;
         }
-        else if (builtin === BuiltIn.BuiltInCullDistance) {
+        else if (builtin === BuiltIn.CullDistance) {
             if (!type.array_size_literal[0])
                 throw new Error("Array size for CullDistance must be a literal.");
             const array_size = type.array[0];
@@ -43,8 +43,8 @@ export class ActiveBuiltinHandler extends OpcodeHandler
                 throw new Error("Array size for CullDistance must not be unsized.");
             this.compiler.cull_distance_count = array_size;
         }
-        else if (builtin === BuiltIn.BuiltInPosition) {
-            if (decoration_flags.get(Decoration.DecorationInvariant))
+        else if (builtin === BuiltIn.Position) {
+            if (decoration_flags.get(Decoration.Invariant))
                 this.compiler.position_invariant = true;
         }
     }
@@ -68,22 +68,22 @@ export class ActiveBuiltinHandler extends OpcodeHandler
         {
             const type = compiler.get<SPIRType>(SPIRType, var_.basetype);
             const decorations = m.decoration;
-            const flags = type.storage === StorageClass.StorageClassInput ?
+            const flags = type.storage === StorageClass.Input ?
                 compiler.active_input_builtins : compiler.active_output_builtins;
             if (decorations.builtin)
             {
                 flags.set(decorations.builtin_type);
                 this.handle_builtin(type, decorations.builtin_type, decorations.decoration_flags);
             }
-            else if (allow_blocks && compiler.has_decoration(type.self, Decoration.DecorationBlock))
+            else if (allow_blocks && compiler.has_decoration(type.self, Decoration.Block))
             {
                 const member_count = type.member_types.length;
                 for (let i = 0; i < member_count; i++)
                 {
-                    if (compiler.has_member_decoration(type.self, i, Decoration.DecorationBuiltIn))
+                    if (compiler.has_member_decoration(type.self, i, Decoration.BuiltIn))
                     {
                         const member_type = compiler.get<SPIRType>(SPIRType, type.member_types[i]);
-                        const builtin = <BuiltIn>(compiler.get_member_decoration(type.self, i, Decoration.DecorationBuiltIn));
+                        const builtin = <BuiltIn>(compiler.get_member_decoration(type.self, i, Decoration.BuiltIn));
                         flags.set(builtin);
                         this.handle_builtin(member_type, builtin, compiler.get_member_decoration_bitset(type.self, i));
                     }

@@ -5,7 +5,7 @@ import { Op } from "../spirv/Op";
 
 export class SPIRConstantOp extends IVariant
 {
-    static type = Types.TypeConstantOp;
+    static type = Types.ConstantOp;
 
     opcode: Op;
     arguments: number[] = [];

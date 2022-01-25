@@ -7,7 +7,7 @@ export class Variant
 {
     private group: ObjectPoolGroup;
     private holder: IVariant = null;
-    private type: Types = Types.TypeNone;
+    private type: Types = Types.None;
     private allow_type_rewrite: boolean = false;
     private createdIn: string;
 
@@ -24,7 +24,7 @@ export class Variant
 
         this.holder = null;
 
-        if (!this.allow_type_rewrite && this.type !== Types.TypeNone && this.type !== new_type) {
+        if (!this.allow_type_rewrite && this.type !== Types.None && this.type !== new_type) {
             if (val)
                 this.group.pools[new_type].deallocate_opaque(val);
 
@@ -73,7 +73,7 @@ export class Variant
         if (this.holder)
             this.group.pools[this.type].deallocate_opaque(this.holder);
         this.holder = null;
-        this.type = Types.TypeNone;
+        this.type = Types.None;
     }
 
     set_allow_type_rewrite()

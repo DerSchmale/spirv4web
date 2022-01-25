@@ -4,7 +4,7 @@ import { defaultCopy } from "../utils/defaultCopy";
 
 export class SPIRExpression extends IVariant
 {
-    static type = Types.TypeExpression;
+    static type = Types.Expression;
 
     // If non-zero, prepend expression with to_expression(base_expression).
     // Used in amortizing multiple calls to to_expression()

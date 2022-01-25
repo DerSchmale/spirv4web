@@ -1,7 +1,7 @@
 export enum FPRoundingMode {
-    FPRoundingModeRTE = 0,
-    FPRoundingModeRTZ = 1,
-    FPRoundingModeRTP = 2,
-    FPRoundingModeRTN = 3,
-    FPRoundingModeMax = 0x7fffffff,
+    RTE = 0,
+    RTZ = 1,
+    RTP = 2,
+    RTN = 3,
+    Max = 0x7fffffff,
 }

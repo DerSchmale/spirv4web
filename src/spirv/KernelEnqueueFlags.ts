@@ -1,6 +1,6 @@
 export enum KernelEnqueueFlags {
-    KernelEnqueueFlagsNoWait = 0,
-    KernelEnqueueFlagsWaitKernel = 1,
-    KernelEnqueueFlagsWaitWorkGroup = 2,
-    KernelEnqueueFlagsMax = 0x7fffffff,
+    NoWait = 0,
+    WaitKernel = 1,
+    WaitWorkGroup = 2,
+    Max = 0x7fffffff,
 }

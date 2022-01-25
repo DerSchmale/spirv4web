@@ -25,7 +25,7 @@ export class StaticExpressionAccessHandler extends OpcodeHandler
     {
         switch (opcode)
         {
-            case Op.OpStore:
+            case Op.Store:
                 if (length < 2)
                     return false;
                 if (args[0] === this.variable_id)
@@ -35,7 +35,7 @@ export class StaticExpressionAccessHandler extends OpcodeHandler
                 }
                 break;
 
-            case Op.OpLoad:
+            case Op.Load:
                 if (length < 3)
                     return false;
                 if (args[2] === this.variable_id && this.static_expression === 0) // Tried to read from variable before it
@@ -43,9 +43,9 @@ export class StaticExpressionAccessHandler extends OpcodeHandler
                     return false;
                 break;
 
-            case Op.OpAccessChain:
-            case Op.OpInBoundsAccessChain:
-            case Op.OpPtrAccessChain:
+            case Op.AccessChain:
+            case Op.InBoundsAccessChain:
+            case Op.PtrAccessChain:
                 if (length < 3)
                     return false;
                 if (args[2] === this.variable_id) // If we try to access chain our candidate variable before we store to

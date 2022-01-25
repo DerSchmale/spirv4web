@@ -30,7 +30,7 @@ export class InterfaceVariableAccessHandler extends OpcodeHandler
             default:
                 break;
 
-            case Op.OpFunctionCall:
+            case Op.FunctionCall:
             {
                 // Invalid SPIR-V.
                 if (length < 3)
@@ -47,7 +47,7 @@ export class InterfaceVariableAccessHandler extends OpcodeHandler
                 break;
             }
 
-            case Op.OpSelect:
+            case Op.Select:
             {
                 // Invalid SPIR-V.
                 if (length < 5)
@@ -64,7 +64,7 @@ export class InterfaceVariableAccessHandler extends OpcodeHandler
                 break;
             }
 
-            case Op.OpPhi:
+            case Op.Phi:
             {
                 // Invalid SPIR-V.
                 if (length < 2)
@@ -81,15 +81,15 @@ export class InterfaceVariableAccessHandler extends OpcodeHandler
                 break;
             }
 
-            case Op.OpAtomicStore:
-            case Op.OpStore:
+            case Op.AtomicStore:
+            case Op.Store:
                 // Invalid SPIR-V.
                 if (length < 1)
                     return false;
                 variable = args[offset];
                 break;
 
-            case Op.OpCopyMemory:
+            case Op.CopyMemory:
             {
                 if (length < 2)
                     return false;
@@ -104,7 +104,7 @@ export class InterfaceVariableAccessHandler extends OpcodeHandler
                 break;
             }
 
-            case Op.OpExtInst:
+            case Op.ExtInst:
             {
                 if (length < 5)
                     return false;
@@ -117,9 +117,9 @@ export class InterfaceVariableAccessHandler extends OpcodeHandler
 
                         switch (op)
                         {
-                            case GLSLstd450.GLSLstd450InterpolateAtCentroid:
-                            case GLSLstd450.GLSLstd450InterpolateAtSample:
-                            case GLSLstd450.GLSLstd450InterpolateAtOffset:
+                            case GLSLstd450.InterpolateAtCentroid:
+                            case GLSLstd450.InterpolateAtSample:
+                            case GLSLstd450.InterpolateAtOffset:
                             {
                                 const var_ = compiler.maybe_get<SPIRVariable>(SPIRVariable, args[offset + 4]);
                                 if (var_ && storage_class_is_interface(var_.storage))
@@ -127,8 +127,8 @@ export class InterfaceVariableAccessHandler extends OpcodeHandler
                                 break;
                             }
 
-                            case GLSLstd450.GLSLstd450Modf:
-                            case GLSLstd450.GLSLstd450Fract:
+                            case GLSLstd450.Modf:
+                            case GLSLstd450.Fract:
                             {
                                 const var_ = compiler.maybe_get<SPIRVariable>(SPIRVariable, args[offset + 5]);
                                 if (var_ && storage_class_is_interface(var_.storage))
@@ -168,28 +168,28 @@ export class InterfaceVariableAccessHandler extends OpcodeHandler
                 break;
             }
 
-            case Op.OpAccessChain:
-            case Op.OpInBoundsAccessChain:
-            case Op.OpPtrAccessChain:
-            case Op.OpLoad:
-            case Op.OpCopyObject:
-            case Op.OpImageTexelPointer:
-            case Op.OpAtomicLoad:
-            case Op.OpAtomicExchange:
-            case Op.OpAtomicCompareExchange:
-            case Op.OpAtomicCompareExchangeWeak:
-            case Op.OpAtomicIIncrement:
-            case Op.OpAtomicIDecrement:
-            case Op.OpAtomicIAdd:
-            case Op.OpAtomicISub:
-            case Op.OpAtomicSMin:
-            case Op.OpAtomicUMin:
-            case Op.OpAtomicSMax:
-            case Op.OpAtomicUMax:
-            case Op.OpAtomicAnd:
-            case Op.OpAtomicOr:
-            case Op.OpAtomicXor:
-            case Op.OpArrayLength:
+            case Op.AccessChain:
+            case Op.InBoundsAccessChain:
+            case Op.PtrAccessChain:
+            case Op.Load:
+            case Op.CopyObject:
+            case Op.ImageTexelPointer:
+            case Op.AtomicLoad:
+            case Op.AtomicExchange:
+            case Op.AtomicCompareExchange:
+            case Op.AtomicCompareExchangeWeak:
+            case Op.AtomicIIncrement:
+            case Op.AtomicIDecrement:
+            case Op.AtomicIAdd:
+            case Op.AtomicISub:
+            case Op.AtomicSMin:
+            case Op.AtomicUMin:
+            case Op.AtomicSMax:
+            case Op.AtomicUMax:
+            case Op.AtomicAnd:
+            case Op.AtomicOr:
+            case Op.AtomicXor:
+            case Op.ArrayLength:
                 // Invalid SPIR-V.
                 if (length < 3)
                     return false;
@@ -211,13 +211,13 @@ function storage_class_is_interface(storage: StorageClass): boolean
 {
     switch (storage)
     {
-        case StorageClass.StorageClassInput:
-        case StorageClass.StorageClassOutput:
-        case StorageClass.StorageClassUniform:
-        case StorageClass.StorageClassUniformConstant:
-        case StorageClass.StorageClassAtomicCounter:
-        case StorageClass.StorageClassPushConstant:
-        case StorageClass.StorageClassStorageBuffer:
+        case StorageClass.Input:
+        case StorageClass.Output:
+        case StorageClass.Uniform:
+        case StorageClass.UniformConstant:
+        case StorageClass.AtomicCounter:
+        case StorageClass.PushConstant:
+        case StorageClass.StorageBuffer:
             return true;
 
         default:

@@ -43,7 +43,7 @@ export class InterlockedResourceAccessPrepassHandler extends OpcodeHandler
 
     handle(op: Op, args: Uint32Array, length: number): boolean
     {
-        if (op === Op.OpBeginInvocationInterlockEXT || op === Op.OpEndInvocationInterlockEXT)
+        if (op === Op.BeginInvocationInterlockEXT || op === Op.EndInvocationInterlockEXT)
         {
             if (this.interlock_function_id !== 0 && this.interlock_function_id !== this.call_stack[this.call_stack.length - 1])
             {

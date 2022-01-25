@@ -4,7 +4,7 @@ import { defaultCopy } from "../utils/defaultCopy";
 
 export class SPIRUndef extends IVariant
 {
-    static type = Types.TypeUndef;
+    static type = Types.Undef;
 
     basetype: TypeID;
 

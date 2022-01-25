@@ -1,4 +1,4 @@
 export enum KernelProfilingInfoMask {
-    KernelProfilingInfoMaskNone = 0,
-    KernelProfilingInfoCmdExecTimeMask = 0x00000001,
+    None = 0,
+    CmdExecTime = 0x00000001,
 }

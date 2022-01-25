@@ -6,7 +6,7 @@ import { ImageFormat } from "../spirv/ImageFormat";
 import { AccessQualifier } from "../spirv/AccessQualifier";
 import { StorageClass } from "../spirv/StorageClass";
 
-export enum SPIRTypeBaseType
+export enum SPIRBaseType
 {
     Unknown,
     Void,
@@ -57,10 +57,10 @@ export class SPIRTypeImageType
 
 export class SPIRType extends IVariant
 {
-    static type = Types.TypeType;
+    static type = Types.Type;
 
     // Scalar/vector/matrix support.
-    basetype: SPIRTypeBaseType = SPIRTypeBaseType.Unknown;
+    basetype: SPIRBaseType = SPIRBaseType.Unknown;
     width: number = 0;
     vecsize: number = 1;
     columns: number = 1;
@@ -80,7 +80,7 @@ export class SPIRType extends IVariant
     pointer_depth: number = 0;
     pointer: boolean = false;
     forward_pointer: boolean = false;
-    storage: StorageClass = StorageClass.StorageClassGeneric;
+    storage: StorageClass = StorageClass.Generic;
 
     member_types: TypeID[] = [];
 

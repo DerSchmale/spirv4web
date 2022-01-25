@@ -1,4 +1,4 @@
 export enum KernelProfilingInfoShift {
-    KernelProfilingInfoCmdExecTimeShift = 0,
-    KernelProfilingInfoMax = 0x7fffffff,
+    CmdExecTime = 0,
+    Max = 0x7fffffff,
 }

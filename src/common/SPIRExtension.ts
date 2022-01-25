@@ -14,7 +14,7 @@ export enum SPIRExtensionExtension {
 
 export class SPIRExtension extends IVariant
 {
-    static type = Types.TypeExtension;
+    static type = Types.Extension;
 
     ext: SPIRExtensionExtension;
 

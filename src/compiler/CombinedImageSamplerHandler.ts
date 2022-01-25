@@ -5,7 +5,7 @@ import {
     SPIRFunctionCombinedImageSamplerParameter,
     SPIRFunctionParameter
 } from "../common/SPIRFunction";
-import { SPIRType, SPIRTypeBaseType } from "../common/SPIRType";
+import { SPIRType, SPIRBaseType } from "../common/SPIRType";
 import { SPIRExpression } from "../common/SPIRExpression";
 import { defaultCopy } from "../utils/defaultCopy";
 import { SPIRVariable } from "../common/SPIRVariable";
@@ -38,15 +38,15 @@ export class CombinedImageSamplerHandler extends OpcodeHandler
         let is_fetch = false;
 
         switch (opcode) {
-            case Op.OpLoad: {
+            case Op.Load: {
                 if (length < 3)
                     return false;
 
                 const result_type = args[0];
 
                 const type = compiler.get<SPIRType>(SPIRType, result_type);
-                const separate_image = type.basetype === SPIRTypeBaseType.Image && type.image.sampled === 1;
-                const separate_sampler = type.basetype === SPIRTypeBaseType.Sampler;
+                const separate_image = type.basetype === SPIRBaseType.Image && type.image.sampled === 1;
+                const separate_sampler = type.basetype === SPIRBaseType.Sampler;
 
                 // If not separate image or sampler, don't bother.
                 if (!separate_image && !separate_sampler)
@@ -59,9 +59,9 @@ export class CombinedImageSamplerHandler extends OpcodeHandler
                 return true;
             }
 
-            case Op.OpInBoundsAccessChain:
-            case Op.OpAccessChain:
-            case Op.OpPtrAccessChain: {
+            case Op.InBoundsAccessChain:
+            case Op.AccessChain:
+            case Op.PtrAccessChain: {
                 if (length < 3)
                     return false;
 
@@ -74,8 +74,8 @@ export class CombinedImageSamplerHandler extends OpcodeHandler
                 const result_type = args[0];
 
                 const type = compiler.get<SPIRType>(SPIRType, result_type);
-                const separate_image = type.basetype === SPIRTypeBaseType.Image && type.image.sampled === 1;
-                const separate_sampler = type.basetype === SPIRTypeBaseType.Sampler;
+                const separate_image = type.basetype === SPIRBaseType.Image && type.image.sampled === 1;
+                const separate_sampler = type.basetype === SPIRBaseType.Sampler;
                 if (separate_sampler)
                     throw new Error("Attempting to use arrays or structs of separate samplers. This is not possible" +
                         " to statically remap to plain GLSL.");
@@ -89,18 +89,18 @@ export class CombinedImageSamplerHandler extends OpcodeHandler
                 return true;
             }
 
-            case Op.OpImageFetch:
-            case Op.OpImageQuerySizeLod:
-            case Op.OpImageQuerySize:
-            case Op.OpImageQueryLevels:
-            case Op.OpImageQuerySamples: {
+            case Op.ImageFetch:
+            case Op.ImageQuerySizeLod:
+            case Op.ImageQuerySize:
+            case Op.ImageQueryLevels:
+            case Op.ImageQuerySamples: {
                 // If we are fetching from a plain OpTypeImage or querying LOD, we must pre-combine with our dummy sampler.
                 const var_ = compiler.maybe_get_backing_variable(args[2]);
                 if (!var_)
                     return true;
 
                 const type = compiler.get<SPIRType>(SPIRType, var_.basetype);
-                if (type.basetype === SPIRTypeBaseType.Image && type.image.sampled === 1 && type.image.dim !== Dim.DimBuffer) {
+                if (type.basetype === SPIRBaseType.Image && type.image.sampled === 1 && type.image.dim !== Dim.Buffer) {
                     if (compiler.dummy_sampler_id === 0)
                         throw new Error("texelFetch without sampler was found, but no dummy sampler has been created" +
                             " with build_dummy_sampler_for_combined_images().");
@@ -113,7 +113,7 @@ export class CombinedImageSamplerHandler extends OpcodeHandler
                 return true;
             }
 
-            case Op.OpSampledImage:
+            case Op.SampledImage:
                 // Do it outside.
                 break;
 
@@ -166,7 +166,7 @@ export class CombinedImageSamplerHandler extends OpcodeHandler
                 const type = compiler.set<SPIRType>(SPIRType, sampled_type);
                 defaultCopy(compiler.expression_type(args[2]), type);
                 type.self = sampled_type;
-                type.basetype = SPIRTypeBaseType.SampledImage;
+                type.basetype = SPIRBaseType.SampledImage;
                 type.image.depth = false;
                 combined_module_id = 0;
             }
@@ -186,21 +186,21 @@ export class CombinedImageSamplerHandler extends OpcodeHandler
             const base = compiler.get<SPIRType>(SPIRType, sampled_type);
             defaultCopy(base, type);
             type.pointer = true;
-            type.storage = StorageClass.StorageClassUniformConstant;
+            type.storage = StorageClass.UniformConstant;
             type.parent_type = type_id;
 
             // Build new variable.
-            compiler.set<SPIRVariable>(SPIRVariable, combined_id, type_id, StorageClass.StorageClassUniformConstant, 0);
+            compiler.set<SPIRVariable>(SPIRVariable, combined_id, type_id, StorageClass.UniformConstant, 0);
 
             // Inherit RelaxedPrecision (and potentially other useful flags if deemed relevant).
             // If any of OpSampledImage, underlying image or sampler are marked, inherit the decoration.
             const relaxed_precision =
-                (sampler_id && compiler.has_decoration(sampler_id, Decoration.DecorationRelaxedPrecision)) ||
-                (image_id && compiler.has_decoration(image_id, Decoration.DecorationRelaxedPrecision)) ||
-                (combined_module_id && compiler.has_decoration(combined_module_id, Decoration.DecorationRelaxedPrecision));
+                (sampler_id && compiler.has_decoration(sampler_id, Decoration.RelaxedPrecision)) ||
+                (image_id && compiler.has_decoration(image_id, Decoration.RelaxedPrecision)) ||
+                (combined_module_id && compiler.has_decoration(combined_module_id, Decoration.RelaxedPrecision));
 
             if (relaxed_precision)
-                compiler.set_decoration(combined_id, Decoration.DecorationRelaxedPrecision);
+                compiler.set_decoration(combined_id, Decoration.RelaxedPrecision);
 
             // Propagate the array type for the original image as well.
             const var_ = compiler.maybe_get_backing_variable(image_id);
@@ -356,28 +356,28 @@ export class CombinedImageSamplerHandler extends OpcodeHandler
 
             defaultCopy(base, type);
             type.self = type_id;
-            type.basetype = SPIRTypeBaseType.SampledImage;
+            type.basetype = SPIRBaseType.SampledImage;
             type.pointer = false;
-            type.storage = StorageClass.StorageClassGeneric;
+            type.storage = StorageClass.Generic;
             type.image.depth = depth;
 
             defaultCopy(type, ptr_type);
             ptr_type.pointer = true;
-            ptr_type.storage = StorageClass.StorageClassUniformConstant;
+            ptr_type.storage = StorageClass.UniformConstant;
             ptr_type.parent_type = type_id;
 
             // Build new variable.
-            compiler.set<SPIRVariable>(SPIRVariable, combined_id, ptr_type_id, StorageClass.StorageClassFunction, 0);
+            compiler.set<SPIRVariable>(SPIRVariable, combined_id, ptr_type_id, StorageClass.Function, 0);
 
             // Inherit RelaxedPrecision.
             // If any of OpSampledImage, underlying image or sampler are marked, inherit the decoration.
             const relaxed_precision =
-                compiler.has_decoration(sampler_id, Decoration.DecorationRelaxedPrecision) ||
-                compiler.has_decoration(image_id, Decoration.DecorationRelaxedPrecision) ||
-                (combined_module_id && compiler.has_decoration(combined_module_id, Decoration.DecorationRelaxedPrecision));
+                compiler.has_decoration(sampler_id, Decoration.RelaxedPrecision) ||
+                compiler.has_decoration(image_id, Decoration.RelaxedPrecision) ||
+                (combined_module_id && compiler.has_decoration(combined_module_id, Decoration.RelaxedPrecision));
 
             if (relaxed_precision)
-                compiler.set_decoration(combined_id, Decoration.DecorationRelaxedPrecision);
+                compiler.set_decoration(combined_id, Decoration.RelaxedPrecision);
 
             param.id = combined_id;
 

@@ -1,6 +1,6 @@
 // @ts-ignore
 import { createWith, equals, transform } from "@derschmale/array-utils";
-import { BlockMetaFlagBits, ParsedIR } from "./ParsedIR";
+import { ParsedIR } from "./ParsedIR";
 import { Instruction } from "../common/Instruction";
 import { SPIRFunction } from "../common/SPIRFunction";
 import {
@@ -11,7 +11,7 @@ import {
     SPIRBlockPhi,
     SPIRBlockTerminator
 } from "../common/SPIRBlock";
-import { SPIRType, SPIRTypeBaseType } from "../common/SPIRType";
+import { SPIRType, SPIRBaseType } from "../common/SPIRType";
 import { IVariant, IVariantType } from "../common/IVariant";
 import { Pair } from "../utils/Pair";
 import { variant_get, variant_set } from "../common/Variant";
@@ -39,6 +39,7 @@ import { AccessQualifier } from "../spirv/AccessQualifier";
 import { StorageClass } from "../spirv/StorageClass";
 import { SelectionControlMask } from "../spirv/SelectionControlMask";
 import { LoopControlMask } from "../spirv/LoopControlMask";
+import { BlockMetaFlagBits } from "./BlockMetaFlagBits";
 
 export class Parser
 {
@@ -137,40 +138,40 @@ export class Parser
 
 
         switch (op) {
-            case Op.OpSourceContinued:
-            case Op.OpSourceExtension:
-            case Op.OpNop:
-            case Op.OpModuleProcessed:
+            case Op.SourceContinued:
+            case Op.SourceExtension:
+            case Op.Nop:
+            case Op.ModuleProcessed:
                 break;
 
-            case Op.OpString: {
+            case Op.String: {
                 this.set<SPIRString>(SPIRString, ops[0], extract_string(ir.spirv, instruction.offset + 1));
                 break;
             }
 
-            case Op.OpMemoryModel:
+            case Op.MemoryModel:
                 ir.addressing_model = <AddressingModel>ops[0];
                 ir.memory_model = <MemoryModel>ops[1];
                 break;
 
-            case Op.OpSource: {
+            case Op.Source: {
                 const lang: SourceLanguage = ops[0];
                 switch (lang) {
-                    case SourceLanguage.SourceLanguageESSL:
+                    case SourceLanguage.ESSL:
                         ir.source.es = true;
                         ir.source.version = ops[1];
                         ir.source.known = true;
                         ir.source.hlsl = false;
                         break;
 
-                    case SourceLanguage.SourceLanguageGLSL:
+                    case SourceLanguage.GLSL:
                         ir.source.es = false;
                         ir.source.version = ops[1];
                         ir.source.known = true;
                         ir.source.hlsl = false;
                         break;
 
-                    case SourceLanguage.SourceLanguageHLSL:
+                    case SourceLanguage.HLSL:
                         // For purposes of cross-compiling, this is GLSL 450.
                         ir.source.es = false;
                         ir.source.version = 450;
@@ -185,7 +186,7 @@ export class Parser
                 break;
             }
 
-            case Op.OpUndef: {
+            case Op.Undef: {
                 const result_type = ops[0];
                 const id = ops[1];
                 this.set<SPIRUndef>(SPIRUndef, id, result_type);
@@ -194,22 +195,22 @@ export class Parser
                 break;
             }
 
-            case Op.OpCapability: {
+            case Op.Capability: {
                 const cap: Capability = ops[0];
-                if (cap === Capability.CapabilityKernel)
+                if (cap === Capability.Kernel)
                     throw new Error("Kernel capability not supported.");
 
                 ir.declared_capabilities.push(ops[0]);
                 break;
             }
 
-            case Op.OpExtension: {
+            case Op.Extension: {
                 const ext = extract_string(ir.spirv, instruction.offset);
                 ir.declared_extensions.push(ext);
                 break;
             }
 
-            case Op.OpExtInstImport: {
+            case Op.ExtInstImport: {
                 const id = ops[0];
                 const ext = extract_string(ir.spirv, instruction.offset + 1);
                 if (ext === "GLSL.std.450")
@@ -232,14 +233,14 @@ export class Parser
                 break;
             }
 
-            case Op.OpExtInst: {
+            case Op.ExtInst: {
                 // The SPIR-V debug information extended instructions might come at global scope.
                 if (this.current_block)
                     this.current_block.ops.push(instruction);
                 break;
             }
 
-            case Op.OpEntryPoint: {
+            case Op.EntryPoint: {
                 const e = new SPIREntryPoint(ops[1], <ExecutionModel>(ops[0]), extract_string(ir.spirv, instruction.offset + 2));
                 ir.entry_points[ops[1]] = e;
 
@@ -259,23 +260,23 @@ export class Parser
                 break;
             }
 
-            case Op.OpExecutionMode: {
+            case Op.ExecutionMode: {
                 const execution = ir.entry_points[ops[0]];
                 const mode = <ExecutionMode>(ops[1]);
                 execution.flags.set(mode);
 
                 switch (mode) {
-                    case ExecutionMode.ExecutionModeInvocations:
+                    case ExecutionMode.Invocations:
                         execution.invocations = ops[2];
                         break;
 
-                    case ExecutionMode.ExecutionModeLocalSize:
+                    case ExecutionMode.LocalSize:
                         execution.workgroup_size.x = ops[2];
                         execution.workgroup_size.y = ops[3];
                         execution.workgroup_size.z = ops[4];
                         break;
 
-                    case ExecutionMode.ExecutionModeOutputVertices:
+                    case ExecutionMode.OutputVertices:
                         execution.output_vertices = ops[2];
                         break;
 
@@ -285,26 +286,26 @@ export class Parser
                 break;
             }
 
-            case Op.OpName: {
+            case Op.Name: {
                 const id = ops[0];
                 ir.set_name(id, extract_string(ir.spirv, instruction.offset + 1));
                 break;
             }
 
-            case Op.OpMemberName: {
+            case Op.MemberName: {
                 const id = ops[0];
                 const member = ops[1];
                 ir.set_member_name(id, member, extract_string(ir.spirv, instruction.offset + 2));
                 break;
             }
 
-            case Op.OpDecorationGroup: {
+            case Op.DecorationGroup: {
                 // Noop, this simply means an ID should be a collector of decorations.
                 // The meta array is already a flat array of decorations which will contain the relevant decorations.
                 break;
             }
 
-            case Op.OpGroupDecorate: {
+            case Op.GroupDecorate: {
                 const group_id = ops[0];
                 const decorations = ir.get_meta(group_id).decoration;
                 const flags = decorations.decoration_flags;
@@ -330,7 +331,7 @@ export class Parser
                 break;
             }
 
-            case Op.OpGroupMemberDecorate: {
+            case Op.GroupMemberDecorate: {
                 const group_id = ops[0];
                 const flags = ir.get_meta(group_id).decoration.decoration_flags;
 
@@ -353,8 +354,8 @@ export class Parser
                 break;
             }
 
-            case Op.OpDecorate:
-            case Op.OpDecorateId: {
+            case Op.Decorate:
+            case Op.DecorateId: {
                 // OpDecorateId technically supports an array of arguments, but our only supported decorations are single uint,
                 // so merge decorate and decorate-id here.
                 const id = ops[0];
@@ -372,14 +373,14 @@ export class Parser
                 break;
             }
 
-            case Op.OpDecorateStringGOOGLE: {
+            case Op.DecorateStringGOOGLE: {
                 const id = ops[0];
                 const decoration: Decoration = ops[1];
                 ir.set_decoration_string(id, decoration, extract_string(ir.spirv, instruction.offset + 2));
                 break;
             }
 
-            case Op.OpMemberDecorate: {
+            case Op.MemberDecorate: {
                 const id = ops[0];
                 const member = ops[1];
                 const decoration: Decoration = ops[2];
@@ -390,7 +391,7 @@ export class Parser
                 break;
             }
 
-            case Op.OpMemberDecorateStringGOOGLE: {
+            case Op.MemberDecorateStringGOOGLE: {
                 const id = ops[0];
                 const member = ops[1];
                 const decoration: Decoration = ops[2];
@@ -399,38 +400,38 @@ export class Parser
             }
 
             // Build up basic types.
-            case Op.OpTypeVoid: {
+            case Op.TypeVoid: {
                 const id = ops[0];
                 const type = this.set<SPIRType>(SPIRType, id);
-                type.basetype = SPIRTypeBaseType.Void;
+                type.basetype = SPIRBaseType.Void;
                 break;
             }
 
-            case Op.OpTypeBool: {
+            case Op.TypeBool: {
                 const id = ops[0];
                 const type = this.set<SPIRType>(SPIRType, id);
-                type.basetype = SPIRTypeBaseType.Boolean;
+                type.basetype = SPIRBaseType.Boolean;
                 type.width = 1;
                 break;
             }
 
-            case Op.OpTypeFloat: {
+            case Op.TypeFloat: {
                 const id = ops[0];
                 const width = ops[1];
                 const type = this.set<SPIRType>(SPIRType, id);
                 if (width === 64)
-                    type.basetype = SPIRTypeBaseType.Double;
+                    type.basetype = SPIRBaseType.Double;
                 else if (width === 32)
-                    type.basetype = SPIRTypeBaseType.Float;
+                    type.basetype = SPIRBaseType.Float;
                 else if (width === 16)
-                    type.basetype = SPIRTypeBaseType.Half;
+                    type.basetype = SPIRBaseType.Half;
                 else
                     throw new Error("Unrecognized bit-width of floating point type.");
                 type.width = width;
                 break;
             }
 
-            case Op.OpTypeInt: {
+            case Op.TypeInt: {
                 const id = ops[0];
                 const width = ops[1];
                 const signedness = ops[2] !== 0;
@@ -443,7 +444,7 @@ export class Parser
             // Build composite types by "inheriting".
             // NOTE: The self member is also copied! For pointers and array modifiers this is a good thing
             // since we can refer to decorations on pointee classes which is needed for UBO/SSBO, I/O blocks in geometry/tess etc.
-            case Op.OpTypeVector: {
+            case Op.TypeVector: {
                 const id = ops[0];
                 const vecsize = ops[2];
 
@@ -457,7 +458,7 @@ export class Parser
                 break;
             }
 
-            case Op.OpTypeMatrix: {
+            case Op.TypeMatrix: {
                 const id = ops[0];
                 const colcount = ops[2];
 
@@ -471,7 +472,7 @@ export class Parser
                 break;
             }
 
-            case Op.OpTypeArray: {
+            case Op.TypeArray: {
                 const id = ops[0];
                 const arraybase = this.set<SPIRType>(SPIRType, id);
 
@@ -497,7 +498,7 @@ export class Parser
                 break;
             }
 
-            case Op.OpTypeRuntimeArray: {
+            case Op.TypeRuntimeArray: {
                 const id = ops[0];
 
                 const base = this.get<SPIRType>(SPIRType, ops[1]);
@@ -516,10 +517,10 @@ export class Parser
                 break;
             }
 
-            case Op.OpTypeImage: {
+            case Op.TypeImage: {
                 const id = ops[0];
                 const type = this.set<SPIRType>(SPIRType, id);
-                type.basetype = SPIRTypeBaseType.Image;
+                type.basetype = SPIRBaseType.Image;
                 type.image.type = ops[1];
                 type.image.dim = <Dim>(ops[2]);
                 type.image.depth = ops[3] === 1;
@@ -527,28 +528,28 @@ export class Parser
                 type.image.ms = ops[5] !== 0;
                 type.image.sampled = ops[6];
                 type.image.format = <ImageFormat>(ops[7]);
-                type.image.access = (length >= 9) ? <AccessQualifier>(ops[8]) : AccessQualifier.AccessQualifierMax;
+                type.image.access = (length >= 9) ? <AccessQualifier>(ops[8]) : AccessQualifier.Max;
                 break;
             }
 
-            case Op.OpTypeSampledImage: {
+            case Op.TypeSampledImage: {
                 const id = ops[0];
                 const imagetype = ops[1];
                 const type = this.set<SPIRType>(SPIRType, id);
                 defaultCopy(this.get<SPIRType>(SPIRType, imagetype), type);
-                type.basetype = SPIRTypeBaseType.SampledImage;
+                type.basetype = SPIRBaseType.SampledImage;
                 type.self = id;
                 break;
             }
 
-            case Op.OpTypeSampler: {
+            case Op.TypeSampler: {
                 const id = ops[0];
                 const type = this.set<SPIRType>(SPIRType, id);
-                type.basetype = SPIRTypeBaseType.Sampler;
+                type.basetype = SPIRBaseType.Sampler;
                 break;
             }
 
-            case Op.OpTypePointer: {
+            case Op.TypePointer: {
                 const id = ops[0];
 
                 // Very rarely, we might receive a FunctionPrototype here.
@@ -564,8 +565,8 @@ export class Parser
                 ptrbase.pointer_depth++;
                 ptrbase.storage = <StorageClass>(ops[1]);
 
-                if (ptrbase.storage === StorageClass.StorageClassAtomicCounter)
-                    ptrbase.basetype = SPIRTypeBaseType.AtomicCounter;
+                if (ptrbase.storage === StorageClass.AtomicCounter)
+                    ptrbase.basetype = SPIRBaseType.AtomicCounter;
 
                 if (base && base.forward_pointer)
                     this.forward_pointer_fixups.push(new Pair(id, ops[2]));
@@ -576,7 +577,7 @@ export class Parser
                 break;
             }
 
-            case Op.OpTypeForwardPointer: {
+            case Op.TypeForwardPointer: {
                 const id = ops[0];
                 const ptrbase = this.set<SPIRType>(SPIRType, id);
                 ptrbase.pointer = true;
@@ -584,16 +585,16 @@ export class Parser
                 ptrbase.storage = <StorageClass>(ops[1]);
                 ptrbase.forward_pointer = true;
 
-                if (ptrbase.storage === StorageClass.StorageClassAtomicCounter)
-                    ptrbase.basetype = SPIRTypeBaseType.AtomicCounter;
+                if (ptrbase.storage === StorageClass.AtomicCounter)
+                    ptrbase.basetype = SPIRBaseType.AtomicCounter;
 
                 break;
             }
 
-            case Op.OpTypeStruct: {
+            case Op.TypeStruct: {
                 const id = ops[0];
                 const type = this.set<SPIRType>(SPIRType, id);
-                type.basetype = SPIRTypeBaseType.Struct;
+                type.basetype = SPIRBaseType.Struct;
                 for (let i = 1; i < length; i++)
                     type.member_types.push(ops[i]);
 
@@ -624,7 +625,7 @@ export class Parser
                 break;
             }
 
-            case Op.OpTypeFunction:
+            case Op.TypeFunction:
             {
                 const id = ops[0];
                 const ret = ops[1];
@@ -636,32 +637,32 @@ export class Parser
                 break;
             }
 
-            case Op.OpTypeAccelerationStructureKHR:
+            case Op.TypeAccelerationStructureKHR:
             {
                 const id = ops[0];
                 const type = this.set<SPIRType>(SPIRType, id);
-                type.basetype = SPIRTypeBaseType.AccelerationStructure;
+                type.basetype = SPIRBaseType.AccelerationStructure;
                 break;
             }
 
-            case Op.OpTypeRayQueryKHR:
+            case Op.TypeRayQueryKHR:
             {
                 const id = ops[0];
                 const type = this.set<SPIRType>(SPIRType, id);
-                type.basetype = SPIRTypeBaseType.RayQuery;
+                type.basetype = SPIRBaseType.RayQuery;
                 break;
             }
 
             // Variable declaration
             // All variables are essentially pointers with a storage qualifier.
-            case Op.OpVariable:
+            case Op.Variable:
             {
                 const type = ops[0];
                 const id = ops[1];
                 const storage = <StorageClass>(ops[2]);
                 const initializer = length === 4 ? ops[3] : 0;
 
-                if (storage === StorageClass.StorageClassFunction)
+                if (storage === StorageClass.Function)
                 {
                     if (!this.current_function)
                         throw new Error("No function currently in scope");
@@ -677,7 +678,7 @@ export class Parser
             // It selects temporary variables based on which parent block we *came from*.
             // In high-level languages we can "de-SSA" by creating a function local, and flush out temporaries to this function-local
             // variable to emulate SSA Phi.
-            case Op.OpPhi:
+            case Op.Phi:
             {
                 if (!this.current_function)
                     throw new Error("No function currently in scope");
@@ -688,7 +689,7 @@ export class Parser
                 const id = ops[1];
 
                 // Instead of a temporary, create a new function-wide temporary with this ID instead.
-                const var_ = this.set<SPIRVariable>(SPIRVariable, id, result_type, StorageClass.StorageClassFunction);
+                const var_ = this.set<SPIRVariable>(SPIRVariable, id, result_type, StorageClass.Function);
                 var_.phi_variable = true;
 
                 this.current_function.add_local_variable(id);
@@ -700,42 +701,42 @@ export class Parser
             }
 
             // Constants
-            case Op.OpSpecConstant:
-            case Op.OpConstant:
+            case Op.SpecConstant:
+            case Op.Constant:
             {
                 const id = ops[1];
                 const type = this.get<SPIRType>(SPIRType, ops[0]);
 
                 if (type.width > 32) {
-                    this.set<SPIRConstant>(SPIRConstant, id, ops[0], bigintFrom(ops[3], ops[2]), op === Op.OpSpecConstant);
+                    this.set<SPIRConstant>(SPIRConstant, id, ops[0], bigintFrom(ops[3], ops[2]), op === Op.SpecConstant);
                 }
                 else
-                    this.set<SPIRConstant>(SPIRConstant, id, ops[0], ops[2], op === Op.OpSpecConstant);
+                    this.set<SPIRConstant>(SPIRConstant, id, ops[0], ops[2], op === Op.SpecConstant);
                 break;
             }
 
-            case Op.OpSpecConstantFalse:
-            case Op.OpConstantFalse:
+            case Op.SpecConstantFalse:
+            case Op.ConstantFalse:
             {
-                this.set<SPIRConstant>(SPIRConstant, ops[1], ops[0], 0, op === Op.OpSpecConstantFalse);
+                this.set<SPIRConstant>(SPIRConstant, ops[1], ops[0], 0, op === Op.SpecConstantFalse);
                 break;
             }
 
-            case Op.OpSpecConstantTrue:
-            case Op.OpConstantTrue:
+            case Op.SpecConstantTrue:
+            case Op.ConstantTrue:
             {
-                this.set<SPIRConstant>(SPIRConstant, ops[1], ops[0], 1, op === Op.OpSpecConstantTrue);
+                this.set<SPIRConstant>(SPIRConstant, ops[1], ops[0], 1, op === Op.SpecConstantTrue);
                 break;
             }
 
-            case Op.OpConstantNull:
+            case Op.ConstantNull:
             {
                 ir.make_constant_null(ops[1], ops[0], true);
                 break;
             }
 
-            case Op.OpSpecConstantComposite:
-            case Op.OpConstantComposite:
+            case Op.SpecConstantComposite:
+            case Op.ConstantComposite:
             {
                 const id = ops[1];
                 const type = ops[0];
@@ -745,10 +746,10 @@ export class Parser
                 // We can have constants which are structs and arrays.
                 // In this case, our SPIRConstant will be a list of other SPIRConstant ids which we
                 // can refer to.
-                if (ctype.basetype === SPIRTypeBaseType.Struct || ctype.array.length !== 0)
+                if (ctype.basetype === SPIRBaseType.Struct || ctype.array.length !== 0)
                 {
                     const elements = ops.slice(2);
-                    this.set<SPIRConstant>(SPIRConstant, id, type, elements, length - 2, op === Op.OpSpecConstantComposite);
+                    this.set<SPIRConstant>(SPIRConstant, id, type, elements, length - 2, op === Op.SpecConstantComposite);
                 }
                 else
                 {
@@ -767,7 +768,7 @@ export class Parser
                         const undef_op = this.maybe_get<SPIRUndef>(SPIRUndef, ops[2 + i]);
                         if (constant_op)
                         {
-                            if (op === Op.OpConstantComposite)
+                            if (op === Op.ConstantComposite)
                                 throw new Error("Specialization constant operation used in OpConstantComposite.");
 
                             remapped_constant_ops[i].make_null(this.get<SPIRType>(SPIRType, constant_op.basetype));
@@ -786,13 +787,13 @@ export class Parser
                         else
                             c[i] = this.get<SPIRConstant>(SPIRConstant, ops[2 + i]);
                     }
-                    this.set<SPIRConstant>(SPIRConstant, id, type, c, elements, op === Op.OpSpecConstantComposite);
+                    this.set<SPIRConstant>(SPIRConstant, id, type, c, elements, op === Op.SpecConstantComposite);
                 }
                 break;
             }
 
             // Functions
-            case Op.OpFunction:
+            case Op.Function:
             {
                 const res = ops[0];
                 const id = ops[1];
@@ -806,7 +807,7 @@ export class Parser
                 break;
             }
 
-            case Op.OpFunctionParameter:
+            case Op.FunctionParameter:
             {
                 const type = ops[0];
                 const id = ops[1];
@@ -815,11 +816,11 @@ export class Parser
                     throw new Error("Must be in a function!");
 
                 this.current_function.add_parameter(type, id);
-                this.set<SPIRVariable>(SPIRVariable, id, type, StorageClass.StorageClassFunction);
+                this.set<SPIRVariable>(SPIRVariable, id, type, StorageClass.Function);
                 break;
             }
 
-            case Op.OpFunctionEnd:
+            case Op.FunctionEnd:
             {
                 if (this.current_block)
                 {
@@ -832,7 +833,7 @@ export class Parser
             }
 
             // Blocks
-            case Op.OpLabel:
+            case Op.Label:
             {
                 // OpLabel always starts a block.
                 if (!this.current_function)
@@ -852,7 +853,7 @@ export class Parser
             }
 
             // Branch instructions end blocks.
-            case Op.OpBranch:
+            case Op.Branch:
             {
                 if (!this.current_block)
                     throw new Error("Trying to end a non-existing block.");
@@ -865,7 +866,7 @@ export class Parser
                 break;
             }
 
-            case Op.OpBranchConditional:
+            case Op.BranchConditional:
             {
                 if (!this.current_block)
                     throw new Error("Trying to end a non-existing block.");
@@ -888,12 +889,12 @@ export class Parser
                     // The problem here is that this breaks any attempt to break out of outer switch statements,
                     // but it's theoretically solvable if this ever comes up using the ladder breaking system ...
 
-                    if (current_block.true_block !== current_block.next_block && current_block.merge === SPIRBlockMerge.MergeSelection)
+                    if (current_block.true_block !== current_block.next_block && current_block.merge === SPIRBlockMerge.Selection)
                     {
                         const ids = ir.increase_bound_by(2);
 
                         const type = new SPIRType();
-                        type.basetype = SPIRTypeBaseType.Int;
+                        type.basetype = SPIRBaseType.Int;
                         type.width = 32;
                         this.set<SPIRType>(SPIRType, ids, type);
                         const c = this.set<SPIRConstant>(SPIRConstant, ids + 1, ids);
@@ -902,19 +903,19 @@ export class Parser
                         current_block.default_block = current_block.true_block;
                         current_block.terminator = SPIRBlockTerminator.MultiSelect;
                         ir.block_meta[current_block.next_block] = ir.block_meta[current_block.next_block] || 0;
-                        ir.block_meta[current_block.next_block] &= ~BlockMetaFlagBits.BLOCK_META_SELECTION_MERGE_BIT;
-                        ir.block_meta[current_block.next_block] |= BlockMetaFlagBits.BLOCK_META_MULTISELECT_MERGE_BIT;
+                        ir.block_meta[current_block.next_block] &= ~BlockMetaFlagBits.SELECTION_MERGE_BIT;
+                        ir.block_meta[current_block.next_block] |= BlockMetaFlagBits.MULTISELECT_MERGE_BIT;
                     }
                 else
                     {
                         ir.block_meta[current_block.next_block] = ir.block_meta[current_block.next_block] || 0;
-                        ir.block_meta[current_block.next_block] &= ~BlockMetaFlagBits.BLOCK_META_SELECTION_MERGE_BIT;
+                        ir.block_meta[current_block.next_block] &= ~BlockMetaFlagBits.SELECTION_MERGE_BIT;
                         current_block.next_block = current_block.true_block;
                         current_block.condition = 0;
                         current_block.true_block = 0;
                         current_block.false_block = 0;
                         current_block.merge_block = 0;
-                        current_block.merge = SPIRBlockMerge.MergeNone;
+                        current_block.merge = SPIRBlockMerge.None;
                         current_block.terminator = SPIRBlockTerminator.Direct;
                     }
                 }
@@ -923,7 +924,7 @@ export class Parser
                 break;
             }
 
-            case Op.OpSwitch:
+            case Op.Switch:
             {
                 const current_block = this.current_block;
 
@@ -952,13 +953,13 @@ export class Parser
 
                 // If we jump to next block, make it break instead since we're inside a switch case block at that point.
                 ir.block_meta[current_block.next_block] = ir.block_meta[current_block.next_block] || 0;
-                ir.block_meta[current_block.next_block] |= BlockMetaFlagBits.BLOCK_META_MULTISELECT_MERGE_BIT;
+                ir.block_meta[current_block.next_block] |= BlockMetaFlagBits.MULTISELECT_MERGE_BIT;
 
                 this.current_block = null;
                 break;
             }
 
-            case Op.OpKill:
+            case Op.Kill:
             {
                 if (!this.current_block)
                     throw new Error("Trying to end a non-existing block.");
@@ -967,7 +968,7 @@ export class Parser
                 break;
             }
 
-            case Op.OpTerminateRayKHR:
+            case Op.TerminateRayKHR:
                 // NV variant is not a terminator.
                 if (!this.current_block)
                     throw new Error("Trying to end a non-existing block.");
@@ -975,7 +976,7 @@ export class Parser
                 this.current_block = null;
                 break;
 
-            case Op.OpIgnoreIntersectionKHR:
+            case Op.IgnoreIntersectionKHR:
                 // NV variant is not a terminator.
                 if (!this.current_block)
                     throw new Error("Trying to end a non-existing block.");
@@ -983,7 +984,7 @@ export class Parser
                 this.current_block = null;
                 break;
 
-            case Op.OpReturn:
+            case Op.Return:
             {
                 if (!this.current_block)
                     throw new Error("Trying to end a non-existing block.");
@@ -992,7 +993,7 @@ export class Parser
                 break;
             }
 
-            case Op.OpReturnValue:
+            case Op.ReturnValue:
             {
                 const current_block = this.current_block;
 
@@ -1005,7 +1006,7 @@ export class Parser
                 break;
             }
 
-            case Op.OpUnreachable:
+            case Op.Unreachable:
             {
                 if (!this.current_block)
                     throw new Error("Trying to end a non-existing block.");
@@ -1014,7 +1015,7 @@ export class Parser
                 break;
             }
 
-            case Op.OpSelectionMerge:
+            case Op.SelectionMerge:
             {
                 const current_block = this.current_block;
 
@@ -1022,21 +1023,21 @@ export class Parser
                     throw new Error("Trying to modify a non-existing block.");
 
                 current_block.next_block = ops[0];
-                current_block.merge = SPIRBlockMerge.MergeSelection;
+                current_block.merge = SPIRBlockMerge.Selection;
                 ir.block_meta[current_block.next_block] = ir.block_meta[current_block.next_block] || 0;
-                ir.block_meta[current_block.next_block] |= BlockMetaFlagBits.BLOCK_META_SELECTION_MERGE_BIT;
+                ir.block_meta[current_block.next_block] |= BlockMetaFlagBits.SELECTION_MERGE_BIT;
 
                 if (length >= 2)
                 {
-                    if (ops[1] & SelectionControlMask.SelectionControlFlattenMask)
-                        current_block.hint = SPIRBlockHints.HintFlatten;
-                    else if (ops[1] & SelectionControlMask.SelectionControlDontFlattenMask)
-                        current_block.hint = SPIRBlockHints.HintDontFlatten;
+                    if (ops[1] & SelectionControlMask.Flatten)
+                        current_block.hint = SPIRBlockHints.Flatten;
+                    else if (ops[1] & SelectionControlMask.DontFlatten)
+                        current_block.hint = SPIRBlockHints.DontFlatten;
                 }
                 break;
             }
 
-            case Op.OpLoopMerge:
+            case Op.LoopMerge:
             {
                 const current_block = this.current_block;
                 if (!current_block)
@@ -1044,12 +1045,12 @@ export class Parser
 
                 current_block.merge_block = ops[0];
                 current_block.continue_block = ops[1];
-                current_block.merge = SPIRBlockMerge.MergeLoop;
+                current_block.merge = SPIRBlockMerge.Loop;
 
                 ir.block_meta[current_block.self] = ir.block_meta[current_block.self] || 0;
-                ir.block_meta[current_block.self] |= BlockMetaFlagBits.BLOCK_META_LOOP_HEADER_BIT;
+                ir.block_meta[current_block.self] |= BlockMetaFlagBits.LOOP_HEADER_BIT;
                 ir.block_meta[current_block.merge_block] = ir.block_meta[current_block.merge_block] || 0;
-                ir.block_meta[current_block.merge_block] |= BlockMetaFlagBits.BLOCK_META_LOOP_MERGE_BIT;
+                ir.block_meta[current_block.merge_block] |= BlockMetaFlagBits.LOOP_MERGE_BIT;
 
                 ir.continue_block_to_loop_header[current_block.continue_block] = <BlockID>current_block.self;
 
@@ -1058,20 +1059,20 @@ export class Parser
                 // they are treated as continues.
                 if (current_block.continue_block !== <BlockID>current_block.self) {
                     ir.block_meta[current_block.continue_block] = ir.block_meta[current_block.continue_block] || 0;
-                    ir.block_meta[current_block.continue_block] |= BlockMetaFlagBits.BLOCK_META_CONTINUE_BIT;
+                    ir.block_meta[current_block.continue_block] |= BlockMetaFlagBits.CONTINUE_BIT;
                 }
 
                 if (length >= 3)
                 {
-                    if (ops[2] & LoopControlMask.LoopControlUnrollMask)
-                        current_block.hint = SPIRBlockHints.HintUnroll;
-                    else if (ops[2] & LoopControlMask.LoopControlDontUnrollMask)
-                        current_block.hint = SPIRBlockHints.HintDontUnroll;
+                    if (ops[2] & LoopControlMask.Unroll)
+                        current_block.hint = SPIRBlockHints.Unroll;
+                    else if (ops[2] & LoopControlMask.DontUnroll)
+                        current_block.hint = SPIRBlockHints.DontUnroll;
                 }
                 break;
             }
 
-            case Op.OpSpecConstantOp:
+            case Op.SpecConstantOp:
             {
                 if (length < 3)
                     throw new Error("OpSpecConstantOp not enough arguments.");
@@ -1084,7 +1085,7 @@ export class Parser
                 break;
             }
 
-            case Op.OpLine:
+            case Op.Line:
             {
                 const current_block = this.current_block;
                 // OpLine might come at global scope, but we don't care about those since they will not be declared in any
@@ -1109,7 +1110,7 @@ export class Parser
                 break;
             }
 
-            case Op.OpNoLine:
+            case Op.NoLine:
             {
                 // OpNoLine might come at global scope.
                 if (this.current_block)
@@ -1181,7 +1182,7 @@ export class Parser
         if (!equals(a.array, b.array))
             return false;
 
-        if (a.basetype === SPIRTypeBaseType.Image || a.basetype === SPIRTypeBaseType.SampledImage) {
+        if (a.basetype === SPIRBaseType.Image || a.basetype === SPIRBaseType.SampledImage) {
             if (!a.image.equals(b.image))
                 return false;
         }
@@ -1243,7 +1244,7 @@ function extract_string(spirv: Uint32Array, offset: number): string
 function decoration_is_string(decoration: Decoration): boolean
 {
     switch (decoration) {
-        case Decoration.DecorationHlslSemanticGOOGLE:
+        case Decoration.HlslSemanticGOOGLE:
             return true;
 
         default:
@@ -1251,33 +1252,33 @@ function decoration_is_string(decoration: Decoration): boolean
     }
 }
 
-function to_signed_basetype(width: number): SPIRTypeBaseType
+function to_signed_basetype(width: number): SPIRBaseType
 {
     switch (width) {
         case 8:
-            return SPIRTypeBaseType.SByte;
+            return SPIRBaseType.SByte;
         case 16:
-            return SPIRTypeBaseType.Short;
+            return SPIRBaseType.Short;
         case 32:
-            return SPIRTypeBaseType.Int;
+            return SPIRBaseType.Int;
         case 64:
-            return SPIRTypeBaseType.Int64;
+            return SPIRBaseType.Int64;
         default:
             throw new Error("Invalid bit width.");
     }
 }
 
-function to_unsigned_basetype(width: number): SPIRTypeBaseType
+function to_unsigned_basetype(width: number): SPIRBaseType
 {
     switch (width) {
         case 8:
-            return SPIRTypeBaseType.UByte;
+            return SPIRBaseType.UByte;
         case 16:
-            return SPIRTypeBaseType.UShort;
+            return SPIRBaseType.UShort;
         case 32:
-            return SPIRTypeBaseType.UInt;
+            return SPIRBaseType.UInt;
         case 64:
-            return SPIRTypeBaseType.UInt64;
+            return SPIRBaseType.UInt64;
         default:
             throw new Error("Invalid bit width.");
     }

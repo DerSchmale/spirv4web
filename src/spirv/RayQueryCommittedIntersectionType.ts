@@ -1,6 +1,6 @@
 export enum RayQueryCommittedIntersectionType {
-    RayQueryCommittedIntersectionTypeRayQueryCommittedIntersectionNoneKHR = 0,
-    RayQueryCommittedIntersectionTypeRayQueryCommittedIntersectionTriangleKHR = 1,
-    RayQueryCommittedIntersectionTypeRayQueryCommittedIntersectionGeneratedKHR = 2,
-    RayQueryCommittedIntersectionTypeMax = 0x7fffffff,
+    NoneKHR = 0,
+    TriangleKHR = 1,
+    GeneratedKHR = 2,
+    Max = 0x7fffffff,
 }

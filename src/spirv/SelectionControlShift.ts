@@ -1,5 +1,5 @@
 export enum SelectionControlShift {
-    SelectionControlFlattenShift = 0,
-    SelectionControlDontFlattenShift = 1,
-    SelectionControlMax = 0x7fffffff,
+    Flatten = 0,
+    DontFlatten = 1,
+    Max = 0x7fffffff,
 }

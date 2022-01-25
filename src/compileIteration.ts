@@ -13,17 +13,17 @@ import { Options } from "./main";
 function stage_to_execution_model(stage: string): ExecutionModel
 {
     if (stage === "vert")
-        return ExecutionModel.ExecutionModelVertex;
+        return ExecutionModel.Vertex;
     else if (stage === "frag")
-        return ExecutionModel.ExecutionModelFragment;
+        return ExecutionModel.Fragment;
     else if (stage === "comp")
-        return ExecutionModel.ExecutionModelGLCompute;
+        return ExecutionModel.GLCompute;
     else if (stage === "tesc")
-        return ExecutionModel.ExecutionModelTessellationControl;
+        return ExecutionModel.TessellationControl;
     else if (stage === "tese")
-        return ExecutionModel.ExecutionModelTessellationEvaluation;
+        return ExecutionModel.TessellationEvaluation;
     else if (stage === "geom")
-        return ExecutionModel.ExecutionModelGeometry;
+        return ExecutionModel.Geometry;
     else
         throw new Error("Invalid stage!");
 }
@@ -62,7 +62,7 @@ export function compile_iteration(args: Args, spirv_file: Uint32Array): string
 
     const entry_points = compiler.get_entry_points_and_stages();
     let entry_point = args.entry;
-    let model = ExecutionModel.ExecutionModelMax;
+    let model = ExecutionModel.Max;
 
     if (args.entry_stage && args.entry_stage.length > 0)
     {
@@ -166,8 +166,8 @@ export function compile_iteration(args: Args, spirv_file: Uint32Array): string
         if (sampler !== 0)
         {
             // Set some defaults to make validation happy.
-            compiler.set_decoration(sampler, Decoration.DecorationDescriptorSet, 0);
-            compiler.set_decoration(sampler, Decoration.DecorationBinding, 0);
+            compiler.set_decoration(sampler, Decoration.DescriptorSet, 0);
+            compiler.set_decoration(sampler, Decoration.Binding, 0);
         }
     }
 
@@ -208,9 +208,9 @@ export function compile_iteration(args: Args, spirv_file: Uint32Array): string
 
     for (let rename of args.interface_variable_renames)
     {
-        if (rename.storageClass === StorageClass.StorageClassInput)
+        if (rename.storageClass === StorageClass.Input)
             rename_interface_variable(compiler, res.stage_inputs, rename.location, rename.variable_name);
-    else if (rename.storageClass === StorageClass.StorageClassOutput)
+    else if (rename.storageClass === StorageClass.Output)
             rename_interface_variable(compiler, res.stage_outputs, rename.location, rename.variable_name);
     else
         {

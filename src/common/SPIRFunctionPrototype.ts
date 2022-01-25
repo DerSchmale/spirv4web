@@ -4,7 +4,7 @@ import { defaultCopy } from "../utils/defaultCopy";
 
 export class SPIRFunctionPrototype extends IVariant
 {
-    static type = Types.TypeFunctionPrototype;
+    static type = Types.FunctionPrototype;
 
     return_type: TypeID;
     parameter_types: number[] = [];

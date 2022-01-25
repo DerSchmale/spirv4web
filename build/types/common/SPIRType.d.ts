@@ -4,7 +4,7 @@ import { Dim } from "../spirv/Dim";
 import { ImageFormat } from "../spirv/ImageFormat";
 import { AccessQualifier } from "../spirv/AccessQualifier";
 import { StorageClass } from "../spirv/StorageClass";
-export declare enum SPIRTypeBaseType {
+export declare enum SPIRBaseType {
     Unknown = 0,
     Void = 1,
     Boolean = 2,
@@ -44,7 +44,7 @@ export declare class SPIRTypeImageType {
 }
 export declare class SPIRType extends IVariant {
     static type: Types;
-    basetype: SPIRTypeBaseType;
+    basetype: SPIRBaseType;
     width: number;
     vecsize: number;
     columns: number;

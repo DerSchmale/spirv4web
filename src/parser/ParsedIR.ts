@@ -8,7 +8,7 @@ import { SPIREntryPoint } from "../common/SPIREntryPoint";
 import { Bitset } from "../common/Bitset";
 import { MemberPointer, Pointer } from "../utils/Pointer";
 import { SPIRVariable } from "../common/SPIRVariable";
-import { SPIRType, SPIRTypeBaseType } from "../common/SPIRType";
+import { SPIRType, SPIRBaseType } from "../common/SPIRType";
 import { SPIRConstant } from "../common/SPIRConstant";
 import { SPIRConstantOp } from "../common/SPIRConstantOp";
 import { IVariant, IVariantType } from "../common/IVariant";
@@ -29,17 +29,6 @@ import { MemoryModel } from "../spirv/MemoryModel";
 import { Decoration } from "../spirv/Decoration";
 import { FPRoundingMode } from "../spirv/FPRoundingMode";
 import { Op } from "../spirv/Op";
-
-// Meta data about blocks. The cross-compiler needs to query if a block is either of these types.
-// It is a bitset as there can be more than one tag per block.
-export enum BlockMetaFlagBits
-{
-    BLOCK_META_LOOP_HEADER_BIT = 1 << 0,
-    BLOCK_META_CONTINUE_BIT = 1 << 1,
-    BLOCK_META_LOOP_MERGE_BIT = 1 << 2,
-    BLOCK_META_SELECTION_MERGE_BIT = 1 << 3,
-    BLOCK_META_MULTISELECT_MERGE_BIT = 1 << 4
-}
 
 class Source
 {
@@ -84,7 +73,7 @@ export class ParsedIR
     // Holds all IDs which have a certain type.
     // This is needed so we can iterate through a specific kind of resource quickly,
     // and in-order of module declaration.
-    ids_for_type: ID[][] = new Array(Types.TypeCount);
+    ids_for_type: ID[][] = new Array(Types.Count);
 
     // Special purpose lists which contain a union of types.
     // This is needed so we can declare specialization constants and structs in an interleaved fashion,
@@ -117,8 +106,8 @@ export class ParsedIR
 
     source: Source = new Source();
 
-    addressing_model: AddressingModel = AddressingModel.AddressingModelMax;
-    memory_model: MemoryModel = MemoryModel.MemoryModelMax;
+    addressing_model: AddressingModel = AddressingModel.Max;
+    memory_model: MemoryModel = MemoryModel.Max;
 
     private loop_iteration_depth_hard: number = 0;
     private loop_iteration_depth_soft: number = 0;
@@ -134,19 +123,19 @@ export class ParsedIR
 
         // we're not using pools for now because we don't have destructors
         this.pool_group = new ObjectPoolGroup();
-        this.pool_group.pools[Types.TypeType] = new ObjectPool(SPIRType);
-        this.pool_group.pools[Types.TypeVariable] = new ObjectPool(SPIRVariable);
-        this.pool_group.pools[Types.TypeConstant] = new ObjectPool(SPIRConstant);
-        this.pool_group.pools[Types.TypeFunction] = new ObjectPool(SPIRFunction);
-        this.pool_group.pools[Types.TypeFunctionPrototype] = new ObjectPool(SPIRFunctionPrototype);
-        this.pool_group.pools[Types.TypeBlock] = new ObjectPool(SPIRBlock);
-        this.pool_group.pools[Types.TypeExtension] = new ObjectPool(SPIRExtension);
-        this.pool_group.pools[Types.TypeExpression] = new ObjectPool(SPIRExpression);
-        this.pool_group.pools[Types.TypeConstantOp] = new ObjectPool(SPIRConstantOp);
-        this.pool_group.pools[Types.TypeCombinedImageSampler] = new ObjectPool(SPIRCombinedImageSampler);
-        this.pool_group.pools[Types.TypeAccessChain] = new ObjectPool(SPIRAccessChain);
-        this.pool_group.pools[Types.TypeUndef] = new ObjectPool(SPIRUndef);
-        this.pool_group.pools[Types.TypeString] = new ObjectPool(SPIRString);
+        this.pool_group.pools[Types.Type] = new ObjectPool(SPIRType);
+        this.pool_group.pools[Types.Variable] = new ObjectPool(SPIRVariable);
+        this.pool_group.pools[Types.Constant] = new ObjectPool(SPIRConstant);
+        this.pool_group.pools[Types.Function] = new ObjectPool(SPIRFunction);
+        this.pool_group.pools[Types.FunctionPrototype] = new ObjectPool(SPIRFunctionPrototype);
+        this.pool_group.pools[Types.Block] = new ObjectPool(SPIRBlock);
+        this.pool_group.pools[Types.Extension] = new ObjectPool(SPIRExtension);
+        this.pool_group.pools[Types.Expression] = new ObjectPool(SPIRExpression);
+        this.pool_group.pools[Types.ConstantOp] = new ObjectPool(SPIRConstantOp);
+        this.pool_group.pools[Types.CombinedImageSampler] = new ObjectPool(SPIRCombinedImageSampler);
+        this.pool_group.pools[Types.AccessChain] = new ObjectPool(SPIRAccessChain);
+        this.pool_group.pools[Types.Undef] = new ObjectPool(SPIRUndef);
+        this.pool_group.pools[Types.String] = new ObjectPool(SPIRString);
     }
 
     // Resizes ids, meta and block_meta.
@@ -183,69 +172,69 @@ export class ParsedIR
         dec.decoration_flags.set(decoration);
 
         switch (decoration) {
-            case Decoration.DecorationBuiltIn:
+            case Decoration.BuiltIn:
                 dec.builtin = true;
                 dec.builtin_type = argument;
                 break;
 
-            case Decoration.DecorationLocation:
+            case Decoration.Location:
                 dec.location = argument;
                 break;
 
-            case Decoration.DecorationComponent:
+            case Decoration.Component:
                 dec.component = argument;
                 break;
 
-            case Decoration.DecorationOffset:
+            case Decoration.Offset:
                 dec.offset = argument;
                 break;
 
-            case Decoration.DecorationXfbBuffer:
+            case Decoration.XfbBuffer:
                 dec.xfb_buffer = argument;
                 break;
 
-            case Decoration.DecorationXfbStride:
+            case Decoration.XfbStride:
                 dec.xfb_stride = argument;
                 break;
 
-            case Decoration.DecorationStream:
+            case Decoration.Stream:
                 dec.stream = argument;
                 break;
 
-            case Decoration.DecorationArrayStride:
+            case Decoration.ArrayStride:
                 dec.array_stride = argument;
                 break;
 
-            case Decoration.DecorationMatrixStride:
+            case Decoration.MatrixStride:
                 dec.matrix_stride = argument;
                 break;
 
-            case Decoration.DecorationBinding:
+            case Decoration.Binding:
                 dec.binding = argument;
                 break;
 
-            case Decoration.DecorationDescriptorSet:
+            case Decoration.DescriptorSet:
                 dec.set = argument;
                 break;
 
-            case Decoration.DecorationInputAttachmentIndex:
+            case Decoration.InputAttachmentIndex:
                 dec.input_attachment = argument;
                 break;
 
-            case Decoration.DecorationSpecId:
+            case Decoration.SpecId:
                 dec.spec_id = argument;
                 break;
 
-            case Decoration.DecorationIndex:
+            case Decoration.Index:
                 dec.index = argument;
                 break;
 
-            case Decoration.DecorationHlslCounterBufferGOOGLE:
+            case Decoration.HlslCounterBufferGOOGLE:
                 this.get_meta(id).hlsl_magic_counter_buffer = argument;
                 this.meta[argument].hlsl_is_magic_counter_buffer = true;
                 break;
 
-            case Decoration.DecorationFPRoundingMode:
+            case Decoration.FPRoundingMode:
                 dec.fp_rounding_mode = argument;
                 break;
 
@@ -260,7 +249,7 @@ export class ParsedIR
         dec.decoration_flags.set(decoration);
 
         switch (decoration) {
-            case Decoration.DecorationHlslSemanticGOOGLE:
+            case Decoration.HlslSemanticGOOGLE:
                 dec.hlsl_semantic = argument;
                 break;
 
@@ -285,35 +274,35 @@ export class ParsedIR
             return 0;
 
         switch (decoration) {
-            case Decoration.DecorationBuiltIn:
+            case Decoration.BuiltIn:
                 return dec.builtin_type;
-            case Decoration.DecorationLocation:
+            case Decoration.Location:
                 return dec.location;
-            case Decoration.DecorationComponent:
+            case Decoration.Component:
                 return dec.component;
-            case Decoration.DecorationOffset:
+            case Decoration.Offset:
                 return dec.offset;
-            case Decoration.DecorationXfbBuffer:
+            case Decoration.XfbBuffer:
                 return dec.xfb_buffer;
-            case Decoration.DecorationXfbStride:
+            case Decoration.XfbStride:
                 return dec.xfb_stride;
-            case Decoration.DecorationStream:
+            case Decoration.Stream:
                 return dec.stream;
-            case Decoration.DecorationBinding:
+            case Decoration.Binding:
                 return dec.binding;
-            case Decoration.DecorationDescriptorSet:
+            case Decoration.DescriptorSet:
                 return dec.set;
-            case Decoration.DecorationInputAttachmentIndex:
+            case Decoration.InputAttachmentIndex:
                 return dec.input_attachment;
-            case Decoration.DecorationSpecId:
+            case Decoration.SpecId:
                 return dec.spec_id;
-            case Decoration.DecorationArrayStride:
+            case Decoration.ArrayStride:
                 return dec.array_stride;
-            case Decoration.DecorationMatrixStride:
+            case Decoration.MatrixStride:
                 return dec.matrix_stride;
-            case Decoration.DecorationIndex:
+            case Decoration.Index:
                 return dec.index;
-            case Decoration.DecorationFPRoundingMode:
+            case Decoration.FPRoundingMode:
                 return dec.fp_rounding_mode;
             default:
                 return 1;
@@ -332,7 +321,7 @@ export class ParsedIR
             return this.empty_string;
 
         switch (decoration) {
-            case Decoration.DecorationHlslSemanticGOOGLE:
+            case Decoration.HlslSemanticGOOGLE:
                 return dec.hlsl_semantic;
 
             default:
@@ -357,59 +346,59 @@ export class ParsedIR
         dec.decoration_flags.clear(decoration);
 
         switch (decoration) {
-            case Decoration.DecorationBuiltIn:
+            case Decoration.BuiltIn:
                 dec.builtin = false;
                 break;
 
-            case Decoration.DecorationLocation:
+            case Decoration.Location:
                 dec.location = 0;
                 break;
 
-            case Decoration.DecorationComponent:
+            case Decoration.Component:
                 dec.component = 0;
                 break;
 
-            case Decoration.DecorationOffset:
+            case Decoration.Offset:
                 dec.offset = 0;
                 break;
 
-            case Decoration.DecorationXfbBuffer:
+            case Decoration.XfbBuffer:
                 dec.xfb_buffer = 0;
                 break;
 
-            case Decoration.DecorationXfbStride:
+            case Decoration.XfbStride:
                 dec.xfb_stride = 0;
                 break;
 
-            case Decoration.DecorationStream:
+            case Decoration.Stream:
                 dec.stream = 0;
                 break;
 
-            case Decoration.DecorationBinding:
+            case Decoration.Binding:
                 dec.binding = 0;
                 break;
 
-            case Decoration.DecorationDescriptorSet:
+            case Decoration.DescriptorSet:
                 dec.set = 0;
                 break;
 
-            case Decoration.DecorationInputAttachmentIndex:
+            case Decoration.InputAttachmentIndex:
                 dec.input_attachment = 0;
                 break;
 
-            case Decoration.DecorationSpecId:
+            case Decoration.SpecId:
                 dec.spec_id = 0;
                 break;
 
-            case Decoration.DecorationHlslSemanticGOOGLE:
+            case Decoration.HlslSemanticGOOGLE:
                 dec.hlsl_semantic = "";
                 break;
 
-            case Decoration.DecorationFPRoundingMode:
-                dec.fp_rounding_mode = FPRoundingMode.FPRoundingModeMax;
+            case Decoration.FPRoundingMode:
+                dec.fp_rounding_mode = FPRoundingMode.Max;
                 break;
 
-            case Decoration.DecorationHlslCounterBufferGOOGLE: {
+            case Decoration.HlslCounterBufferGOOGLE: {
                 const meta = this.get_meta(id);
                 const counter = meta.hlsl_magic_counter_buffer;
                 if (counter) {
@@ -466,48 +455,48 @@ export class ParsedIR
         dec.decoration_flags.set(decoration);
 
         switch (decoration) {
-            case Decoration.DecorationBuiltIn:
+            case Decoration.BuiltIn:
                 dec.builtin = true;
                 dec.builtin_type = argument;
                 break;
 
-            case Decoration.DecorationLocation:
+            case Decoration.Location:
                 dec.location = argument;
                 break;
 
-            case Decoration.DecorationComponent:
+            case Decoration.Component:
                 dec.component = argument;
                 break;
 
-            case Decoration.DecorationBinding:
+            case Decoration.Binding:
                 dec.binding = argument;
                 break;
 
-            case Decoration.DecorationOffset:
+            case Decoration.Offset:
                 dec.offset = argument;
                 break;
 
-            case Decoration.DecorationXfbBuffer:
+            case Decoration.XfbBuffer:
                 dec.xfb_buffer = argument;
                 break;
 
-            case Decoration.DecorationXfbStride:
+            case Decoration.XfbStride:
                 dec.xfb_stride = argument;
                 break;
 
-            case Decoration.DecorationStream:
+            case Decoration.Stream:
                 dec.stream = argument;
                 break;
 
-            case Decoration.DecorationSpecId:
+            case Decoration.SpecId:
                 dec.spec_id = argument;
                 break;
 
-            case Decoration.DecorationMatrixStride:
+            case Decoration.MatrixStride:
                 dec.matrix_stride = argument;
                 break;
 
-            case Decoration.DecorationIndex:
+            case Decoration.Index:
                 dec.index = argument;
                 break;
 
@@ -525,7 +514,7 @@ export class ParsedIR
         dec.decoration_flags.set(decoration);
 
         switch (decoration) {
-            case Decoration.DecorationHlslSemanticGOOGLE:
+            case Decoration.HlslSemanticGOOGLE:
                 dec.hlsl_semantic = argument;
                 break;
 
@@ -548,25 +537,25 @@ export class ParsedIR
             return 0;
 
         switch (decoration) {
-            case Decoration.DecorationBuiltIn:
+            case Decoration.BuiltIn:
                 return dec.builtin_type;
-            case Decoration.DecorationLocation:
+            case Decoration.Location:
                 return dec.location;
-            case Decoration.DecorationComponent:
+            case Decoration.Component:
                 return dec.component;
-            case Decoration.DecorationBinding:
+            case Decoration.Binding:
                 return dec.binding;
-            case Decoration.DecorationOffset:
+            case Decoration.Offset:
                 return dec.offset;
-            case Decoration.DecorationXfbBuffer:
+            case Decoration.XfbBuffer:
                 return dec.xfb_buffer;
-            case Decoration.DecorationXfbStride:
+            case Decoration.XfbStride:
                 return dec.xfb_stride;
-            case Decoration.DecorationStream:
+            case Decoration.Stream:
                 return dec.stream;
-            case Decoration.DecorationSpecId:
+            case Decoration.SpecId:
                 return dec.spec_id;
-            case Decoration.DecorationIndex:
+            case Decoration.Index:
                 return dec.index;
             default:
                 return 1;
@@ -583,7 +572,7 @@ export class ParsedIR
             const dec = m.members[index];
 
             switch (decoration) {
-                case Decoration.DecorationHlslSemanticGOOGLE:
+                case Decoration.HlslSemanticGOOGLE:
                     return dec.hlsl_semantic;
 
                 default:
@@ -621,39 +610,39 @@ export class ParsedIR
 
         dec.decoration_flags.clear(decoration);
         switch (decoration) {
-            case Decoration.DecorationBuiltIn:
+            case Decoration.BuiltIn:
                 dec.builtin = false;
                 break;
 
-            case Decoration.DecorationLocation:
+            case Decoration.Location:
                 dec.location = 0;
                 break;
 
-            case Decoration.DecorationComponent:
+            case Decoration.Component:
                 dec.component = 0;
                 break;
 
-            case Decoration.DecorationOffset:
+            case Decoration.Offset:
                 dec.offset = 0;
                 break;
 
-            case Decoration.DecorationXfbBuffer:
+            case Decoration.XfbBuffer:
                 dec.xfb_buffer = 0;
                 break;
 
-            case Decoration.DecorationXfbStride:
+            case Decoration.XfbStride:
                 dec.xfb_stride = 0;
                 break;
 
-            case Decoration.DecorationStream:
+            case Decoration.Stream:
                 dec.stream = 0;
                 break;
 
-            case Decoration.DecorationSpecId:
+            case Decoration.SpecId:
                 dec.spec_id = 0;
                 break;
 
-            case Decoration.DecorationHlslSemanticGOOGLE:
+            case Decoration.HlslSemanticGOOGLE:
                 dec.hlsl_semantic = "";
                 break;
 
@@ -666,16 +655,16 @@ export class ParsedIR
     {
         switch (this.ids[id].get_type())
         {
-            case Types.TypeConstant:
+            case Types.Constant:
                 this.get<SPIRConstant>(SPIRConstant, id).is_used_as_array_length = true;
                 break;
 
-            case Types.TypeConstantOp:
+            case Types.ConstantOp:
             {
                 const cop = this.get<SPIRConstantOp>(SPIRConstantOp, id);
-                if (cop.opcode === Op.OpCompositeExtract)
+                if (cop.opcode === Op.CompositeExtract)
                     this.mark_used_as_array_length(cop.arguments[0]);
-                else if (cop.opcode === Op.OpCompositeInsert)
+                else if (cop.opcode === Op.CompositeInsert)
                 {
                     this.mark_used_as_array_length(cop.arguments[0]);
                     this.mark_used_as_array_length(cop.arguments[1]);
@@ -686,7 +675,7 @@ export class ParsedIR
                 break;
             }
 
-            case Types.TypeUndef:
+            case Types.Undef:
                 break;
 
             default:
@@ -697,7 +686,7 @@ export class ParsedIR
     get_buffer_block_flags(var_: SPIRVariable): Bitset
     {
         const type = this.get(SPIRType, var_.basetype);
-        if (type.basetype !== SPIRTypeBaseType.Struct) {
+        if (type.basetype !== SPIRBaseType.Struct) {
             throw new Error("Assertion failure");
         }
 
@@ -747,17 +736,17 @@ export class ParsedIR
         {
             switch (type)
             {
-                case Types.TypeConstant:
+                case Types.Constant:
                     this.ids_for_constant_or_variable.push(id);
                     this.ids_for_constant_or_type.push(id);
                     break;
 
-                case Types.TypeVariable:
+                case Types.Variable:
                     this.ids_for_constant_or_variable.push(id);
                     break;
 
-                case Types.TypeType:
-                case Types.TypeConstantOp:
+                case Types.Type:
+                case Types.ConstantOp:
                     this.ids_for_constant_or_type.push(id);
                     break;
 
@@ -851,7 +840,7 @@ export class ParsedIR
         if (constant_type.pointer)
         {
             if (add_to_typed_id_set)
-                this.add_typed_id(Types.TypeConstant, id);
+                this.add_typed_id(Types.Constant, id);
             const constant = variant_set<SPIRConstant>(SPIRConstant, this.ids[id], type);
             constant.self = id;
             constant.make_null(constant_type);
@@ -870,7 +859,7 @@ export class ParsedIR
                 elements[i] = parent_id;
 
             if (add_to_typed_id_set)
-                this.add_typed_id(Types.TypeConstant, id);
+                this.add_typed_id(Types.Constant, id);
             variant_set<SPIRConstant>(SPIRConstant, this.ids[id], type, elements, elements.length, false).self = id;
         }
         else if (constant_type.member_types.length !== 0)
@@ -884,13 +873,13 @@ export class ParsedIR
             }
 
             if (add_to_typed_id_set)
-                this.add_typed_id(Types.TypeConstant, id);
+                this.add_typed_id(Types.Constant, id);
             variant_set(SPIRConstant, this.ids[id], type, elements, elements.length, false).self = id;
         }
         else
         {
             if (add_to_typed_id_set)
-                this.add_typed_id(Types.TypeConstant, id);
+                this.add_typed_id(Types.Constant, id);
             let constant = variant_set<SPIRConstant>(SPIRConstant, this.ids[id], type);
             constant.self = id;
             constant.make_null(constant_type);

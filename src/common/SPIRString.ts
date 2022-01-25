@@ -4,7 +4,7 @@ import { defaultCopy } from "../utils/defaultCopy";
 
 export class SPIRString extends IVariant
 {
-    static type = Types.TypeString;
+    static type = Types.String;
 
     str: string;
 
