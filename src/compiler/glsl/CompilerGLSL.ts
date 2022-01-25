@@ -10,7 +10,7 @@ import { ParsedIR } from "../../parser/ParsedIR";
 import { LocationComponentPair } from "../../common/LocationComponentPair";
 import { Pair } from "../../utils/Pair";
 import { SPIRVariable } from "../../common/SPIRVariable";
-import { SPIRType, SPIRBaseType } from "../../common/SPIRType";
+import { SPIRBaseType, SPIRType } from "../../common/SPIRType";
 import { BackendVariations, GLSLstd450, PlsFormat } from "./glsl";
 import { PlsRemap } from "./PlsRemap";
 import { GLSLOptions } from "./GLSLOptions";
@@ -74,10 +74,10 @@ const swizzle: string[][] = [
     [ "" ]
 ];
 
-const workaround_types: string[] = [
+/*const workaround_types: string[] = [
     "int", "ivec2", "ivec3", "ivec4", "uint", "uvec2", "uvec3", "uvec4",
     "float", "vec2", "vec3", "vec4", "double", "dvec2", "dvec3", "dvec4"
-];
+];*/
 
 const ops: string[] = [];
 ops[Op.SNegate] = "-";
@@ -1780,7 +1780,7 @@ export class CompilerGLSL extends Compiler
 
                 switch (type.vecsize) {
                     case 1:
-                        op = "unpackHalf2x16(packHalf2x16(vec2(" + this.to_expression(arg), "))).x";
+                        op = "unpackHalf2x16(packHalf2x16(vec2(" + this.to_expression(arg) + "))).x";
                         break;
                     case 2:
                         op = "unpackHalf2x16(packHalf2x16(" + this.to_expression(arg) + "))";
@@ -2233,12 +2233,13 @@ export class CompilerGLSL extends Compiler
                 const img = ops[2];
 
                 let fname = "textureSize";
-                if (this.is_legacy_desktop()) {
+                /*if (this.is_legacy_desktop()) {
                     const type = this.expression_type(img);
                     const imgtype = this.get<SPIRType>(SPIRType, type.self);
                     fname = this.legacy_tex_op(fname, imgtype, img);
                 }
-                else if (this.is_legacy_es())
+                else */
+                if (this.is_legacy_es())
                     throw new Error("textureSize is not supported in ESSL 100.");
 
                 let expr = fname + "(" + this.convert_separate_image_to_expression(img) + ", " + this.bitcast_expression(SPIRBaseType.Int, ops[3]) + ")";
@@ -2332,7 +2333,7 @@ export class CompilerGLSL extends Compiler
                 }
                 else {
                     const sparse = opcode === Op.ImageSparseRead;
-                    let props: { sparse_code_id: 0, sparse_texel_id: 0 };
+                    const props = { sparse_code_id: 0, sparse_texel_id: 0 };
                     if (sparse)
                         this.emit_sparse_feedback_temporaries(ops[0], ops[1], props);
 
@@ -3143,14 +3144,14 @@ export class CompilerGLSL extends Compiler
                     throw new Error("GL_EXT_demote_to_helper_invocation is only supported in Vulkan GLSL.");
                 // require_extension_internal("GL_EXT_demote_to_helper_invocation");
                 // statement(backend.demote_literal, ";");
-                break;
+                // break;
 
             case Op.IsHelperInvocationEXT:
                 // if (!options.vulkan_semantics)
                     throw new Error("GL_EXT_demote_to_helper_invocation is only supported in Vulkan GLSL.");
                 // require_extension_internal("GL_EXT_demote_to_helper_invocation");
                 // emit_op(ops[0], ops[1], "helperInvocationEXT()", false);
-                break;
+                // break;
 
             /*case OpBeginInvocationInterlockEXT:
                 // If the interlock is complex, we emit this elsewhere.
@@ -3177,7 +3178,7 @@ export class CompilerGLSL extends Compiler
                 this.statement("// unimplemented op ", instruction.op);
 
                 throw new Error("Unsupported op " + instruction.op)
-                break;
+                // break;
         }
     }
 
@@ -3201,7 +3202,7 @@ export class CompilerGLSL extends Compiler
     const int_type = to_signed_basetype(integer_width);
     const uint_type = to_unsigned_basetype(integer_width);
 
-    const { options, ir } = this;
+    const { ir } = this;
 
     switch (op)
     {
@@ -3744,7 +3745,7 @@ export class CompilerGLSL extends Compiler
             this.statement(header);
 
         const inputs: string[] = [];
-        const outputs: string[] = [];
+        // const outputs: string[] = [];
 
         switch (execution.model) {
             case ExecutionModel.Vertex:
@@ -3910,8 +3911,8 @@ export class CompilerGLSL extends Compiler
 
         if (inputs.length > 0)
             this.statement("layout(", inputs.join(", "), ") in;");
-        if (outputs.length > 0)
-            this.statement("layout(", outputs.join(", "), ") out;");
+        // if (outputs.length > 0)
+        //     this.statement("layout(", outputs.join(", "), ") out;");
 
         this.statement("");
     }
@@ -3998,7 +3999,7 @@ export class CompilerGLSL extends Compiler
         let optOffset: number;
 
         const result_type = this.get<SPIRType>(SPIRType, result_type_id);
-        const { options, backend } = this;
+        const { backend } = this;
 
         inherited_expressions.push(coord);
         if (this.has_decoration(img, Decoration.NonUniform) && !this.maybe_get_backing_variable(img))
@@ -4078,7 +4079,7 @@ export class CompilerGLSL extends Compiler
         const type = this.expression_type(img);
         const imgtype = this.get<SPIRType>(SPIRType, type.self);
 
-        let coord_components = 0;
+        let coord_components;
         switch (imgtype.image.dim) {
             case Dim.Dim1D:
                 coord_components = 1;
@@ -4240,7 +4241,7 @@ export class CompilerGLSL extends Compiler
         }
     }
 
-    protected emit_struct_member(type: SPIRType, member_type_id: number, index: number, qualifier: string = "", base_offset: number = 0)
+    protected emit_struct_member(type: SPIRType, member_type_id: number, index: number, qualifier: string = "", _base_offset: number = 0)
     {
         const membertype = this.get<SPIRType>(SPIRType, member_type_id);
 
@@ -4270,7 +4271,6 @@ export class CompilerGLSL extends Compiler
 
     protected to_function_name(args: TextureFunctionNameArguments): string
     {
-        const { options } = this;
         if (args.has_min_lod) {
             // if (options.es)
                 throw new Error("Sparse residency is not supported in ESSL.");
@@ -4733,7 +4733,7 @@ export class CompilerGLSL extends Compiler
 
         // Pass in the varying qualifier here so it will appear in the correct declaration order.
         // Replace member name while emitting it so it encodes both struct name and member name.
-        const backup_name = this.get_member_name(parent_type.self, last_index);
+        // const backup_name = this.get_member_name(parent_type.self, last_index);
         const member_name = this.to_member_name(parent_type, last_index);
         this.set_member_name(parent_type.self, last_index, flattened_name);
         this.emit_struct_member(parent_type, member_type_id, last_index, qual);
@@ -5294,7 +5294,7 @@ export class CompilerGLSL extends Compiler
                     this.get<SPIRBlock>(SPIRBlock, continue_block.loop_dominator));
 
                 const current_count = this.statement_count;
-                const statements = this.emit_continue_block(block.continue_block, positive_test, !positive_test);
+                /*const statements =*/ this.emit_continue_block(block.continue_block, positive_test, !positive_test);
                 if (this.statement_count !== current_count) {
                     // The DoWhile block has side effects, force ComplexLoop pattern next pass.
                     this.get<SPIRBlock>(SPIRBlock, block.continue_block).complex_continue = true;
@@ -5372,7 +5372,6 @@ export class CompilerGLSL extends Compiler
     protected emit_uniform(var_: SPIRVariable)
     {
         const type = this.get<SPIRType>(SPIRType, var_.basetype);
-        const { options } = this;
         if (type.basetype === SPIRBaseType.Image && type.image.sampled === 2 && type.image.dim !== Dim.SubpassData) {
             /*if (!options.es && options.version < 420)
                 this.require_extension_internal("GL_ARB_shader_image_load_store");
@@ -5518,11 +5517,11 @@ export class CompilerGLSL extends Compiler
 
             case SPIRBaseType.AccelerationStructure:
                 // return this.ray_tracing_is_khr ? "accelerationStructureEXT" : "accelerationStructureNV";
-                throw new Error("AccelerationStructure is not supported");
+
 
             case SPIRBaseType.RayQuery:
                 throw new Error("RayQuery is not supported");
-                return "rayQueryEXT";
+                // return "rayQueryEXT";
 
             case SPIRBaseType.Void:
                 return "void";
@@ -5552,8 +5551,8 @@ export class CompilerGLSL extends Compiler
                     return backend.basic_int_type;
                 case SPIRBaseType.UInt:
                     return backend.basic_uint_type;
-                case SPIRBaseType.AtomicCounter:
-                    return "atomic_uint";
+                /*case SPIRBaseType.AtomicCounter:
+                    return "atomic_uint";*/
                 case SPIRBaseType.Half:
                     return "float16_t";
                 case SPIRBaseType.Float:
@@ -5972,7 +5971,7 @@ export class CompilerGLSL extends Compiler
 
         // For half image types, we will force mediump for the sampler, and cast to f16 after any sampling operation.
         // We cannot express a true half texture type in GLSL. Neither for short integer formats for that matter.
-        const options = this.options;
+
         /*if (type.basetype === SPIRBaseType.Image && type.image.dim === Dim.SubpassData && options.vulkan_semantics)
             return res + "subpassInput" + (type.image.ms ? "MS" : "");
         else*/
@@ -6036,8 +6035,8 @@ export class CompilerGLSL extends Compiler
         if (type.image.ms)
             res += "MS";
         if (type.image.arrayed) {
-            if (this.is_legacy_desktop())
-                this.require_extension_internal("GL_EXT_texture_array");
+            /*if (this.is_legacy_desktop())
+                this.require_extension_internal("GL_EXT_texture_array");*/
             res += "Array";
         }
 
@@ -6186,7 +6185,7 @@ export class CompilerGLSL extends Compiler
             case Op.SRem: {
                 const op0 = cop.arguments[0];
                 const op1 = cop.arguments[1];
-                return this.to_enclosed_expression(op0) + " - " + this.to_enclosed_expression(op1) + " * (",
+                return this.to_enclosed_expression(op0) + " - " + this.to_enclosed_expression(op1) + " * (" +
                 this.to_enclosed_expression(op0) + " / " + this.to_enclosed_expression(op1) + ")";
             }
 
@@ -6235,9 +6234,8 @@ export class CompilerGLSL extends Compiler
             }
 
             case Op.CompositeExtract: {
-                const expr = this.access_chain_internal(cop.arguments[0], cop.arguments, 1, cop.arguments.length - 1,
+                return this.access_chain_internal(cop.arguments[0], cop.arguments, 1, cop.arguments.length - 1,
                     AccessChainFlagBits.INDEX_IS_LITERAL_BIT, null);
-                return expr;
             }
 
             case Op.CompositeInsert:
@@ -8106,7 +8104,7 @@ export class CompilerGLSL extends Compiler
         let xfb_stride = 0, xfb_buffer = 0, geom_stream = 0;
         const builtin_xfb_offsets: number[] = []; //std::unordered_map<uint32_t, uint32_t> ;
 
-        const { ir, options } = this;
+        const { ir } = this;
 
         ir.for_each_typed_id<SPIRVariable>(SPIRVariable, (_, var_) =>
         {
@@ -8223,7 +8221,7 @@ export class CompilerGLSL extends Compiler
             return;
 
         if (storage === StorageClass.Output) {
-            const attr: string[] = [];
+            // const attr: string[] = [];
             if (have_xfb_buffer_stride && have_any_xfb_offset) {
                 /*if (!options.es) {
                     if (options.version < 440 && options.version >= 140)
@@ -8248,9 +8246,9 @@ export class CompilerGLSL extends Compiler
                 attr.push("stream = " + geom_stream);*/
             }
 
-            if (attr.length > 0)
-                this.statement("layout(", attr.join(", "), ") out gl_PerVertex");
-            else
+            // if (attr.length > 0)
+            //     this.statement("layout(", attr.join(", "), ") out gl_PerVertex");
+            // else
                 this.statement("out gl_PerVertex");
         }
         else {
@@ -8385,7 +8383,7 @@ export class CompilerGLSL extends Compiler
     protected emit_interface_block(var_: SPIRVariable)
     {
         const type = this.get<SPIRType>(SPIRType, var_.basetype);
-        const { ir, options } = this;
+        const { ir } = this;
         /*if (var_.storage === StorageClass.Input && type.basetype === SPIRBaseType.Double &&
             !options.es && options.version < 410) {
             this.require_extension_internal("GL_ARB_vertex_attrib_64bit");
@@ -9117,8 +9115,6 @@ export class CompilerGLSL extends Compiler
             this.register_write(right);
         }
 
-        const { backend, options } = this;
-
         /*let has_boolean_mix = backend.boolean_mix_function &&
             ((options.es && options.version >= 310) || (!options.es && options.version >= 450));*/
         const mix_op = this.to_trivial_mix_op(restype, left, right, lerp);
@@ -9810,9 +9806,9 @@ export class CompilerGLSL extends Compiler
                         case BuiltIn.Position:
                         case BuiltIn.PointSize:
                             if (var_.storage === StorageClass.Input)
-                                expr = "gl_in[" + this.to_expression(index, register_expression_read), "]." + expr;
+                                expr = "gl_in[" + this.to_expression(index, register_expression_read) + "]." + expr;
                             else if (var_.storage === StorageClass.Output)
-                                expr = "gl_out[" + this.to_expression(index, register_expression_read), "]." + expr;
+                                expr = "gl_out[" + this.to_expression(index, register_expression_read) + "]." + expr;
                             else
                                 append_index(index, is_literal);
                             break;
@@ -10860,7 +10856,7 @@ export class CompilerGLSL extends Compiler
         else if (expr.charAt(0) === "*") {
             // If this expression starts with a dereference operator ('*'), then
             // just return the part after the operator.
-            return expr.substr(1);
+            return expr.substring(1);
         }
         else
             return "&" + this.enclose_expression(expr);
@@ -11387,7 +11383,7 @@ export class CompilerGLSL extends Compiler
         if (!is_block)
             return "";
 
-        const { ir, options } = this;
+        const { ir } = this;
         const memb = maplike_get(Meta, ir.meta, type.self).members;
         if (index >= memb.length)
             return "";
@@ -11976,7 +11972,6 @@ export class CompilerGLSL extends Compiler
 
     protected buffer_to_packing_standard(type: SPIRType, support_std430_without_scalar_layout: boolean): string
     {
-        const { options } = this;
         if (support_std430_without_scalar_layout && this.buffer_is_packing_standard(type, BufferPackingStandard.Std430))
             return "std430";
         else if (this.buffer_is_packing_standard(type, BufferPackingStandard.Std140))
@@ -12273,8 +12268,6 @@ export class CompilerGLSL extends Compiler
 
         if (out_type.basetype === in_type.basetype)
             return "";
-
-        const options = this.options;
 
         console.assert(out_type.basetype !== SPIRBaseType.Boolean);
         console.assert(in_type.basetype !== SPIRBaseType.Boolean);
@@ -12688,7 +12681,6 @@ export class CompilerGLSL extends Compiler
     protected legacy_tex_op(op: string, imgtype: SPIRType, tex: number): string
     {
         let type: string;
-        const { options } = this;
 
         switch (imgtype.image.dim) {
             case Dim.Dim1D:
@@ -12729,8 +12721,8 @@ export class CompilerGLSL extends Compiler
                 legacy_lod_ext = true;
                 this.require_extension_internal("GL_EXT_shader_texture_lod");
             }
-            else if (this.is_legacy_desktop())
-                this.require_extension_internal("GL_ARB_shader_texture_lod");
+            /*else if (this.is_legacy_desktop())
+                this.require_extension_internal("GL_ARB_shader_texture_lod");*/
         }
 
         if (op === "textureLodOffset" || op === "textureProjLodOffset") {
@@ -12772,13 +12764,13 @@ export class CompilerGLSL extends Compiler
         else if (op === "textureProj")
             return type_prefix + type + is_es_and_depth ? "ProjEXT" : "Proj";
         else if (op === "textureGrad")
-            return type_prefix + type + this.is_legacy_es() ? "GradEXT" : this.is_legacy_desktop() ? "GradARB" : "Grad";
+            return type_prefix + type + this.is_legacy_es() ? "GradEXT" : /*this.is_legacy_desktop() ? "GradARB" : */"Grad";
         else if (op === "textureProjLod")
             return type_prefix + type + legacy_lod_ext ? "ProjLodEXT" : "ProjLod";
         else if (op === "textureLodOffset")
             return type_prefix + type + "LodOffset";
         else if (op === "textureProjGrad")
-            return type_prefix + type + this.is_legacy_es() ? "ProjGradEXT" : this.is_legacy_desktop() ? "ProjGradARB" : "ProjGrad";
+            return type_prefix + type + this.is_legacy_es() ? "ProjGradEXT" : /*this.is_legacy_desktop() ? "ProjGradARB" :*/ "ProjGrad";
         else if (op === "textureProjLodOffset")
             return type_prefix + type + "ProjLodOffset";
         else if (op === "textureSize")
@@ -12984,12 +12976,12 @@ export class CompilerGLSL extends Compiler
         return options.version < 300;
     }
 
-    protected is_legacy_desktop(): boolean
+    /*protected is_legacy_desktop(): boolean
     {
         return false;
         // const options = this.options;
         // return !options.es && options.version < 130;
-    }
+    }*/
 
     protected register_impure_function_call()
     {
@@ -13525,8 +13517,8 @@ export class CompilerGLSL extends Compiler
                     /*if (!options.vulkan_semantics)
                         this.require_extension_internal("GL_NV_gpu_shader5");
                     else
-                         require_extension_internal("GL_EXT_nonuniform_qualifier");*/
-                    break;
+                         require_extension_internal("GL_EXT_nonuniform_qualifier");
+                    break;*/
                 case Capability.RuntimeDescriptorArrayEXT:
                     throw new Error("CapabilityRuntimeDescriptorArrayEXT not supported");
                 /*if (!options.vulkan_semantics)
@@ -13845,7 +13837,7 @@ export class CompilerGLSL extends Compiler
             type.basetype = SPIRBaseType.Half;
             type.vecsize = 1;
             type.columns = 1;
-            let res = convert_to_string(float_value);
+            res = convert_to_string(float_value);
             if (res.indexOf(".") < 0) res += ".0";
             res = this.type_to_glsl(type) + "(" + res + ")";
         }
@@ -13919,7 +13911,6 @@ export class CompilerGLSL extends Compiler
     {
         let res;
         const double_value = c.scalar_f64(col, row);
-        const options = this.options;
         const backend = this.backend;
 
         if (isNaN(double_value) || isNaN(double_value)) {
@@ -13939,7 +13930,7 @@ export class CompilerGLSL extends Compiler
                 const u64_value = c.scalar_u64(col, row);*/
 
                 // if (options.es)
-                    throw new Error("64-bit integers/float not supported in ES profile.");
+                //     throw new Error("64-bit integers/float not supported in ES profile.");
                 /*this.require_extension_internal("GL_ARB_gpu_shader_int64");
 
                 const print_buffer = "0x" + u64_value.toString() + backend.long_long_literal_suffix ? "ull" : "ul";

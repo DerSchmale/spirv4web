@@ -2,7 +2,6 @@ import { Args } from "./Args";
 import { compile_iteration } from "./compileIteration";
 
 // TODO:
-//  - remove is_legacy_desktop() --> always false
 //  - go through options and remove useless ones --> see compile() for stuff that's always set
 //  - go through enums and remove useless ones
 //  - remove unused functions
