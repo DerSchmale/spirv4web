@@ -56,6 +56,7 @@ export class Args
     glsl_emit_push_constant_as_ubo: boolean = false;
     glsl_emit_ubo_as_plain_uniforms: boolean = false;
     glsl_force_flattened_io_blocks: boolean = false;
+    glsl_unnamed_ubo_to_global_uniforms: boolean = false;
     glsl_ovr_multiview_view_count: number = 0;
     glsl_ext_framebuffer_fetch: Pair<number, number>[] = [];
     glsl_ext_framebuffer_fetch_noncoherent: boolean = false;

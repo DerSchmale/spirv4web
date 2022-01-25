@@ -150,6 +150,7 @@ export function compile_iteration(args: Args, spirv_file: Uint32Array, options: 
     opts.emit_push_constant_as_uniform_buffer = args.glsl_emit_push_constant_as_ubo;
     opts.emit_uniform_buffer_as_plain_uniforms = args.glsl_emit_ubo_as_plain_uniforms;
     opts.force_flattened_io_blocks = args.glsl_force_flattened_io_blocks;
+    opts.unnamed_ubo_to_global_uniforms = args.glsl_unnamed_ubo_to_global_uniforms;
     opts.ovr_multiview_view_count = args.glsl_ovr_multiview_view_count;
     opts.emit_line_directives = args.emit_line_directives;
     opts.enable_storage_image_qualifier_deduction = args.enable_storage_image_qualifier_deduction;

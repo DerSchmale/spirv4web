@@ -60,6 +60,9 @@ export class GLSLOptions
     // what happens on legacy GLSL targets for blocks and structs.
     force_flattened_io_blocks: boolean = false;
 
+    // In WebGL 1, when we have unnamed uniform blocks, emit them as global uniforms.
+    unnamed_ubo_to_global_uniforms: boolean = false;
+
     // If non-zero, controls layout(num_views = N) in; in GL_OVR_multiview2.
     ovr_multiview_view_count: number = 0;
 

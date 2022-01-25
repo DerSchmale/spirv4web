@@ -16,6 +16,7 @@ var Args = /** @class */ (function () {
         this.glsl_emit_push_constant_as_ubo = false;
         this.glsl_emit_ubo_as_plain_uniforms = false;
         this.glsl_force_flattened_io_blocks = false;
+        this.glsl_unnamed_ubo_to_global_uniforms = false;
         this.glsl_ovr_multiview_view_count = 0;
         this.glsl_ext_framebuffer_fetch = [];
         this.glsl_ext_framebuffer_fetch_noncoherent = false;
@@ -9329,6 +9330,8 @@ var GLSLOptions = /** @class */ (function () {
         // In GLSL, force use of I/O block flattening, similar to
         // what happens on legacy GLSL targets for blocks and structs.
         this.force_flattened_io_blocks = false;
+        // In WebGL 1, when we have unnamed uniform blocks, emit them as global uniforms.
+        this.unnamed_ubo_to_global_uniforms = false;
         // If non-zero, controls layout(num_views = N) in; in GL_OVR_multiview2.
         this.ovr_multiview_view_count = 0;
         this.vertex = new GLSLVertexOptions();
@@ -9648,6 +9651,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
         _this.inout_color_attachments = [];
         _this.masked_output_locations = new Set();
         _this.masked_output_builtins = new Set();
+        // used when making unnamed uniform buffers global
+        _this.removed_structs = new Set();
         _this.init();
         return _this;
     }
@@ -9718,6 +9723,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // Clear invalid expression tracking.
         this.invalid_expressions.clear();
         this.current_function = null;
+        this.removed_structs.clear();
         // Clear temporary usage tracking.
         this.expression_usage_counts = [];
         this.forwarded_temporaries.clear();
@@ -13388,12 +13394,19 @@ var CompilerGLSL = /** @class */ (function (_super) {
     CompilerGLSL.prototype.emit_buffer_block = function (var_) {
         var type = this.get(SPIRType, var_.basetype);
         var ubo_block = var_.storage === StorageClass.StorageClassUniform && this.has_decoration(type.self, Decoration.DecorationBlock);
-        var options = this.options;
+        var _a = this, options = _a.options, ir = _a.ir;
         if (this.flattened_buffer_blocks.has(var_.self))
             this.emit_buffer_block_flattened(var_);
         else if (this.is_legacy() || (!options.es && options.version === 130) ||
-            (ubo_block && options.emit_uniform_buffer_as_plain_uniforms))
-            this.emit_buffer_block_legacy(var_);
+            (ubo_block && options.emit_uniform_buffer_as_plain_uniforms)) {
+            if (ir.get_name(var_.self) === "" && options.unnamed_ubo_to_global_uniforms) {
+                this.emit_buffer_block_global(var_);
+                // mark this struct instance as removed
+                this.removed_structs.add(var_.self);
+            }
+            else
+                this.emit_buffer_block_legacy(var_);
+        }
         else
             this.emit_buffer_block_native(var_);
     };
@@ -16319,6 +16332,23 @@ var CompilerGLSL = /** @class */ (function (_super) {
             this.end_scope();
             this.statement("");
         }
+    };
+    CompilerGLSL.prototype.emit_buffer_block_global = function (var_) {
+        var type = this.get(SPIRType, var_.basetype);
+        var ir = this.ir;
+        var meta = maplike_get(Meta, ir.meta, type.self);
+        var ssbo = var_.storage === StorageClass.StorageClassStorageBuffer ||
+            meta.decoration.decoration_flags.get(Decoration.DecorationBufferBlock);
+        if (ssbo)
+            throw new Error("SSBOs not supported in legacy targets.");
+        var i = 0;
+        for (var _i = 0, _a = type.member_types; _i < _a.length; _i++) {
+            var member = _a[_i];
+            var membertype = this.get(SPIRType, member);
+            this.statement("uniform ", this.variable_decl(membertype, this.to_member_name(type, i)), ";");
+            i++;
+        }
+        this.statement("");
     };
     CompilerGLSL.prototype.emit_buffer_block_native = function (var_) {
         var type = this.get(SPIRType, var_.basetype);
@@ -20776,7 +20806,18 @@ var CompilerGLSL = /** @class */ (function (_super) {
 
         // Entry point in GLSL is always main().*/
         this.get_entry_point().name = "main";
-        return this.buffer.str();
+        return this.fixup_removed_structs();
+    };
+    CompilerGLSL.prototype.fixup_removed_structs = function () {
+        var _this = this;
+        var str = this.buffer.str();
+        // this is done as a post-processing step, there's probably better ways to get this done, but for now, this
+        // works
+        this.removed_structs.forEach(function (id) {
+            var regex = new RegExp(_this.to_name(id) + "\\.", "g");
+            str = str.replace(regex, "");
+        });
+        return str;
     };
     CompilerGLSL.prototype.find_static_extensions = function () {
         var _this = this;
@@ -22032,6 +22073,7 @@ function compile_iteration(args, spirv_file, options) {
     opts.emit_push_constant_as_uniform_buffer = args.glsl_emit_push_constant_as_ubo;
     opts.emit_uniform_buffer_as_plain_uniforms = args.glsl_emit_ubo_as_plain_uniforms;
     opts.force_flattened_io_blocks = args.glsl_force_flattened_io_blocks;
+    opts.unnamed_ubo_to_global_uniforms = args.glsl_unnamed_ubo_to_global_uniforms;
     opts.ovr_multiview_view_count = args.glsl_ovr_multiview_view_count;
     opts.emit_line_directives = args.emit_line_directives;
     opts.enable_storage_image_qualifier_deduction = args.enable_storage_image_qualifier_deduction;
@@ -22159,11 +22201,13 @@ function compile(data, version, options) {
     options = options || {};
     options.removeUnused = getOrDefault(options.removeUnused, true);
     options.specializationConstantPrefix = getOrDefault(options.specializationConstantPrefix, "SPIRV_CROSS_CONSTANT_ID_");
+    options.unnamed_ubo_to_global_uniforms = getOrDefault(options.unnamed_ubo_to_global_uniforms, true);
     args.version = version;
     args.set_version = true;
     args.es = true;
     args.set_es = true;
     args.remove_unused = options.removeUnused;
+    args.glsl_unnamed_ubo_to_global_uniforms = true;
     var spirv_file = new Uint32Array(data);
     if (args.reflect && args.reflect !== "") {
         throw new Error("Reflection not yet supported!");

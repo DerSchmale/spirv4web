@@ -15,6 +15,7 @@ export type Options =
 {
     removeUnused?: boolean;
     specializationConstantPrefix?: string;
+    unnamed_ubo_to_global_uniforms?: boolean;
 }
 
 export function compile(data: ArrayBuffer, version: Version, options?: Options): string
@@ -24,6 +25,7 @@ export function compile(data: ArrayBuffer, version: Version, options?: Options):
     options = options || {};
     options.removeUnused = getOrDefault(options.removeUnused, true);
     options.specializationConstantPrefix = getOrDefault(options.specializationConstantPrefix, "SPIRV_CROSS_CONSTANT_ID_");
+    options.unnamed_ubo_to_global_uniforms = getOrDefault(options.unnamed_ubo_to_global_uniforms, true);
 
 
     args.version = version;
@@ -33,6 +35,7 @@ export function compile(data: ArrayBuffer, version: Version, options?: Options):
     args.set_es = true;
 
     args.remove_unused = options.removeUnused;
+    args.glsl_unnamed_ubo_to_global_uniforms = true;
 
     const spirv_file = new Uint32Array(data);
 

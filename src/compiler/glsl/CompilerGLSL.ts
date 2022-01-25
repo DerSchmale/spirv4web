@@ -241,6 +241,9 @@ export class CompilerGLSL extends Compiler
     protected masked_output_locations: Set<LocationComponentPair> = new Set();
     protected masked_output_builtins: Set<number> = new Set();
 
+    // used when making unnamed uniform buffers global
+    protected removed_structs: Set<number> = new Set();
+
 
     constructor(parsedIR: ParsedIR)
     {
@@ -333,6 +336,8 @@ export class CompilerGLSL extends Compiler
         // Clear invalid expression tracking.
         this.invalid_expressions.clear();
         this.current_function = null;
+
+        this.removed_structs.clear();
 
         // Clear temporary usage tracking.
         this.expression_usage_counts = [];
@@ -4554,12 +4559,20 @@ export class CompilerGLSL extends Compiler
         const type = this.get<SPIRType>(SPIRType, var_.basetype);
         const ubo_block = var_.storage === StorageClass.StorageClassUniform && this.has_decoration(type.self, Decoration.DecorationBlock);
 
-        const { options } = this;
+        const { options, ir } = this;
+
         if (this.flattened_buffer_blocks.has(var_.self))
             this.emit_buffer_block_flattened(var_);
         else if (this.is_legacy() || (!options.es && options.version === 130) ||
-            (ubo_block && options.emit_uniform_buffer_as_plain_uniforms))
-            this.emit_buffer_block_legacy(var_);
+            (ubo_block && options.emit_uniform_buffer_as_plain_uniforms)) {
+            if (ir.get_name(var_.self) === "" && options.unnamed_ubo_to_global_uniforms) {
+                this.emit_buffer_block_global(var_);
+                // mark this struct instance as removed
+                this.removed_structs.add(var_.self);
+            }
+            else
+                this.emit_buffer_block_legacy(var_);
+        }
         else
             this.emit_buffer_block_native(var_);
     }
@@ -7884,6 +7897,27 @@ export class CompilerGLSL extends Compiler
             this.end_scope();
             this.statement("");
         }
+    }
+
+    protected emit_buffer_block_global(var_: SPIRVariable)
+    {
+        const type = this.get<SPIRType>(SPIRType, var_.basetype);
+        const ir = this.ir;
+        const meta = maplike_get(Meta, ir.meta, type.self);
+        const ssbo = var_.storage === StorageClass.StorageClassStorageBuffer ||
+            meta.decoration.decoration_flags.get(Decoration.DecorationBufferBlock);
+
+        if (ssbo)
+            throw new Error("SSBOs not supported in legacy targets.");
+
+        let i = 0;
+        for (let member of type.member_types) {
+            const membertype = this.get<SPIRType>(SPIRType, member);
+            this.statement("uniform ", this.variable_decl(membertype, this.to_member_name(type, i)), ";");
+            i++;
+        }
+
+        this.statement("");
     }
 
     protected emit_buffer_block_native(var_: SPIRVariable)
@@ -13294,7 +13328,20 @@ export class CompilerGLSL extends Compiler
         // Entry point in GLSL is always main().*/
         this.get_entry_point().name = "main";
 
-        return this.buffer.str();
+        return this.fixup_removed_structs();
+    }
+
+    protected fixup_removed_structs(): string
+    {
+        let str = this.buffer.str();
+        // this is done as a post-processing step, there's probably better ways to get this done, but for now, this
+        // works
+        this.removed_structs.forEach(id => {
+            const regex = new RegExp(this.to_name(id) + "\\.", "g");
+            str = str.replace(regex, "");
+        });
+
+        return str;
     }
 
     protected find_static_extensions()
