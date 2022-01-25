@@ -29,10 +29,8 @@ export declare class Remap {
 export declare class Args {
     version: number;
     shader_model: number;
-    es: boolean;
     set_version: boolean;
     set_shader_model: boolean;
-    set_es: boolean;
     dump_resources: boolean;
     force_temporary: boolean;
     flatten_ubo: boolean;

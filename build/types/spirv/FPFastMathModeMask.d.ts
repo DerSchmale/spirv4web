@@ -1,8 +1,8 @@
 export declare enum FPFastMathModeMask {
-    FPFastMathModeMaskNone = 0,
-    FPFastMathModeNotNaNMask = 1,
-    FPFastMathModeNotInfMask = 2,
-    FPFastMathModeNSZMask = 4,
-    FPFastMathModeAllowRecipMask = 8,
-    FPFastMathModeFastMask = 16
+    None = 0,
+    NaNMask = 1,
+    InfMask = 2,
+    NSZMask = 4,
+    AllowRecipMask = 8,
+    FastMask = 16
 }

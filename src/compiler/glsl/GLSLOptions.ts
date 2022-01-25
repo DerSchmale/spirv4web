@@ -10,7 +10,8 @@ export class GLSLOptions
     specialization_constant_prefix: string = "SPIRV_CROSS_CONSTANT_ID_";
 
     // Emit the OpenGL ES shading language instead of desktop OpenGL.
-    es: boolean = false;
+    // for WebGL: always true
+    // es: boolean = false;
 
     // Debug option to always emit temporary variables for all expressions.
     force_temporary: boolean = false;

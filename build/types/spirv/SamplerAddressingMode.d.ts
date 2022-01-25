@@ -1,8 +1,8 @@
 export declare enum SamplerAddressingMode {
-    SamplerAddressingModeNone = 0,
-    SamplerAddressingModeClampToEdge = 1,
-    SamplerAddressingModeClamp = 2,
-    SamplerAddressingModeRepeat = 3,
-    SamplerAddressingModeRepeatMirrored = 4,
-    SamplerAddressingModeMax = 2147483647
+    None = 0,
+    ClampToEdge = 1,
+    Clamp = 2,
+    Repeat = 3,
+    RepeatMirrored = 4,
+    Max = 2147483647
 }

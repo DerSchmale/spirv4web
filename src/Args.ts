@@ -9,7 +9,7 @@ export class Rename
     old_name: string;
     new_name: string;
     execution_model: ExecutionModel;
-};
+}
 
 export class VariableTypeRemap
 {
@@ -42,10 +42,10 @@ export class Args
 {
     version: number = 0;
     shader_model: number = 0;
-    es: boolean = false;
+    // es: boolean = false;
     set_version: boolean = false;
     set_shader_model: boolean = false;
-    set_es: boolean = false;
+    // set_es: boolean = false;
     dump_resources: boolean = false;
     force_temporary: boolean = false;
     flatten_ubo: boolean = false;

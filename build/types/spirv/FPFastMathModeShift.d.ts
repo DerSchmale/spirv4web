@@ -1,8 +1,8 @@
 export declare enum FPFastMathModeShift {
-    FPFastMathModeNotNaNShift = 0,
-    FPFastMathModeNotInfShift = 1,
-    FPFastMathModeNSZShift = 2,
-    FPFastMathModeAllowRecipShift = 3,
-    FPFastMathModeFastShift = 4,
-    FPFastMathModeMax = 2147483647
+    NotNaN = 0,
+    NotInf = 1,
+    NSZ = 2,
+    AllowRecip = 3,
+    Fast = 4,
+    Max = 2147483647
 }

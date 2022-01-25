@@ -1,5 +1,5 @@
 export declare enum RayQueryIntersection {
-    RayQueryIntersectionRayQueryCandidateIntersectionKHR = 0,
-    RayQueryIntersectionRayQueryCommittedIntersectionKHR = 1,
-    RayQueryIntersectionMax = 2147483647
+    CandidateKHR = 0,
+    CommittedKHR = 1,
+    Max = 2147483647
 }

@@ -1,11 +1,11 @@
 export declare enum Scope {
-    ScopeCrossDevice = 0,
-    ScopeDevice = 1,
-    ScopeWorkgroup = 2,
-    ScopeSubgroup = 3,
-    ScopeInvocation = 4,
-    ScopeQueueFamily = 5,
-    ScopeQueueFamilyKHR = 5,
-    ScopeShaderCallKHR = 6,
-    ScopeMax = 2147483647
+    CrossDevice = 0,
+    Device = 1,
+    Workgroup = 2,
+    Subgroup = 3,
+    Invocation = 4,
+    QueueFamily = 5,
+    QueueFamilyKHR = 5,
+    ShaderCallKHR = 6,
+    Max = 2147483647
 }

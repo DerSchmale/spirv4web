@@ -1,13 +1,13 @@
 export declare enum RayFlagsShift {
-    RayFlagsOpaqueKHRShift = 0,
-    RayFlagsNoOpaqueKHRShift = 1,
-    RayFlagsTerminateOnFirstHitKHRShift = 2,
-    RayFlagsSkipClosestHitShaderKHRShift = 3,
-    RayFlagsCullBackFacingTrianglesKHRShift = 4,
-    RayFlagsCullFrontFacingTrianglesKHRShift = 5,
-    RayFlagsCullOpaqueKHRShift = 6,
-    RayFlagsCullNoOpaqueKHRShift = 7,
-    RayFlagsSkipTrianglesKHRShift = 8,
-    RayFlagsSkipAABBsKHRShift = 9,
-    RayFlagsMax = 2147483647
+    OpaqueKHR = 0,
+    NoOpaqueKHR = 1,
+    TerminateOnFirstHitKHR = 2,
+    SkipClosestHitShaderKHR = 3,
+    CullBackFacingTrianglesKHR = 4,
+    CullFrontFacingTrianglesKHR = 5,
+    CullOpaqueKHR = 6,
+    CullNoOpaqueKHR = 7,
+    SkipTrianglesKHR = 8,
+    SkipAABBsKHR = 9,
+    Max = 2147483647
 }

@@ -1,5 +1,5 @@
 export declare enum SamplerFilterMode {
-    SamplerFilterModeNearest = 0,
-    SamplerFilterModeLinear = 1,
-    SamplerFilterModeMax = 2147483647
+    Nearest = 0,
+    Linear = 1,
+    Max = 2147483647
 }

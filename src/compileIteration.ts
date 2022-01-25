@@ -8,7 +8,6 @@ import { PlsRemap } from "./compiler/glsl/PlsRemap";
 import { ExecutionModel } from "./spirv/ExecutionModel";
 import { Decoration } from "./spirv/Decoration";
 import { StorageClass } from "./spirv/StorageClass";
-import { Options } from "./main";
 
 function stage_to_execution_model(stage: string): ExecutionModel
 {
@@ -16,14 +15,14 @@ function stage_to_execution_model(stage: string): ExecutionModel
         return ExecutionModel.Vertex;
     else if (stage === "frag")
         return ExecutionModel.Fragment;
-    else if (stage === "comp")
+    /*else if (stage === "comp")
         return ExecutionModel.GLCompute;
     else if (stage === "tesc")
         return ExecutionModel.TessellationControl;
     else if (stage === "tese")
         return ExecutionModel.TessellationEvaluation;
     else if (stage === "geom")
-        return ExecutionModel.Geometry;
+        return ExecutionModel.Geometry;*/
     else
         throw new Error("Invalid stage!");
 }
@@ -137,8 +136,8 @@ export function compile_iteration(args: Args, spirv_file: Uint32Array): string
     const opts = compiler.get_common_options();
     if (args.set_version)
         opts.version = args.version;
-    if (args.set_es)
-        opts.es = args.es;
+    // if (args.set_es)
+    //     opts.es = args.es;
     opts.force_temporary = args.force_temporary;
     opts.separate_shader_objects = args.sso;
     opts.flatten_multidimensional_arrays = args.flatten_multidimensional_arrays;

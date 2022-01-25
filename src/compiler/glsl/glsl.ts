@@ -139,7 +139,7 @@ export class BackendVariations
     int16_t_literal_suffix: string = "s";
     uint16_t_literal_suffix: string = "us";
     nonuniform_qualifier: string = "nonuniformEXT";
-    boolean_mix_function: string = "mix";
+    // boolean_mix_function: string = "mix";
     swizzle_is_function: boolean = false;
     shared_is_implied: boolean = false;
     unsized_array_supported: boolean = true;

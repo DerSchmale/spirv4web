@@ -117,7 +117,6 @@ export declare class BackendVariations {
     int16_t_literal_suffix: string;
     uint16_t_literal_suffix: string;
     nonuniform_qualifier: string;
-    boolean_mix_function: string;
     swizzle_is_function: boolean;
     shared_is_implied: boolean;
     unsized_array_supported: boolean;

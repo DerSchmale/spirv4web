@@ -2,8 +2,12 @@ import { Args } from "./Args";
 import { compile_iteration } from "./compileIteration";
 
 // TODO:
+//  - remove is_legacy_desktop() --> always false
+//  - go through options and remove useless ones --> see compile() for stuff that's always set
+//  - go through enums and remove useless ones
+//  - remove unused functions
+//  - pass in supported extensions and let the compiler handle fallbacks?
 //  - compare more against baseline compiles
-//  - Everywhere we're using slice(), remove this and pass in an offset param
 
 export enum Version
 {
@@ -30,13 +34,14 @@ export function compile(data: ArrayBuffer, version: Version, options?: Options):
     args.version = version;
     args.set_version = true;
 
-    args.es = true;
-    args.set_es = true;
+    // args.es = true;
+    // args.set_es = true;
 
     args.remove_unused = getOrDefault(options.removeUnused, true);
     args.glsl_keep_unnamed_ubos = getOrDefault(options.keepUnnamedUBOs, true);
     args.glsl_remove_attribute_layouts = getOrDefault(options.removeAttributeLayouts, false);
-    args.specialization_constant_prefix = getOrDefault(options.specializationConstantPrefix, "SPIRV_CROSS_CONSTANT_ID_")
+    args.specialization_constant_prefix = getOrDefault(options.specializationConstantPrefix, "SPIRV_CROSS_CONSTANT_ID_");
+    args.flatten_multidimensional_arrays = true;
 
     const spirv_file = new Uint32Array(data);
 

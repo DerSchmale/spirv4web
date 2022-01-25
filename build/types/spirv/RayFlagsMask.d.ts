@@ -1,13 +1,13 @@
 export declare enum RayFlagsMask {
-    RayFlagsMaskNone = 0,
-    RayFlagsOpaqueKHRMask = 1,
-    RayFlagsNoOpaqueKHRMask = 2,
-    RayFlagsTerminateOnFirstHitKHRMask = 4,
-    RayFlagsSkipClosestHitShaderKHRMask = 8,
-    RayFlagsCullBackFacingTrianglesKHRMask = 16,
-    RayFlagsCullFrontFacingTrianglesKHRMask = 32,
-    RayFlagsCullOpaqueKHRMask = 64,
-    RayFlagsCullNoOpaqueKHRMask = 128,
-    RayFlagsSkipTrianglesKHRMask = 256,
-    RayFlagsSkipAABBsKHRMask = 512
+    None = 0,
+    OpaqueKHR = 1,
+    NoOpaqueKHR = 2,
+    TerminateOnFirstHitKHR = 4,
+    SkipClosestHitShaderKHR = 8,
+    CullBackFacingTrianglesKHR = 16,
+    CullFrontFacingTrianglesKHR = 32,
+    CullOpaqueKHR = 64,
+    CullNoOpaqueKHR = 128,
+    SkipTrianglesKHR = 256,
+    SkipAABBsKHR = 512
 }

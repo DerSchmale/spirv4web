@@ -3,7 +3,6 @@ import { GLSLFragmentOptions } from "./GLSLFragmentOptions";
 export declare class GLSLOptions {
     version: number;
     specialization_constant_prefix: string;
-    es: boolean;
     force_temporary: boolean;
     separate_shader_objects: boolean;
     flatten_multidimensional_arrays: boolean;

@@ -1,12 +1,12 @@
 export declare enum MemoryAccessShift {
-    MemoryAccessVolatileShift = 0,
-    MemoryAccessAlignedShift = 1,
-    MemoryAccessNontemporalShift = 2,
-    MemoryAccessMakePointerAvailableShift = 3,
-    MemoryAccessMakePointerAvailableKHRShift = 3,
-    MemoryAccessMakePointerVisibleShift = 4,
-    MemoryAccessMakePointerVisibleKHRShift = 4,
-    MemoryAccessNonPrivatePointerShift = 5,
-    MemoryAccessNonPrivatePointerKHRShift = 5,
-    MemoryAccessMax = 2147483647
+    Volatile = 0,
+    Aligned = 1,
+    Nontemporal = 2,
+    MakePointerAvailable = 3,
+    MakePointerAvailableKHR = 3,
+    MakePointerVisible = 4,
+    MakePointerVisibleKHR = 4,
+    NonPrivatePointer = 5,
+    NonPrivatePointerKHR = 5,
+    Max = 2147483647
 }

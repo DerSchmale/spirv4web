@@ -1,7 +1,7 @@
 export declare enum FunctionControlMask {
-    FunctionControlMaskNone = 0,
-    FunctionControlInlineMask = 1,
-    FunctionControlDontInlineMask = 2,
-    FunctionControlPureMask = 4,
-    FunctionControlConstMask = 8
+    None = 0,
+    Inline = 1,
+    DontInline = 2,
+    Pure = 4,
+    Const = 8
 }

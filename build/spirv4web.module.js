@@ -2,10 +2,10 @@ var Args = /** @class */ (function () {
     function Args() {
         this.version = 0;
         this.shader_model = 0;
-        this.es = false;
+        // es: boolean = false;
         this.set_version = false;
         this.set_shader_model = false;
-        this.set_es = false;
+        // set_es: boolean = false;
         this.dump_resources = false;
         this.force_temporary = false;
         this.flatten_ubo = false;
@@ -4738,7 +4738,7 @@ var BackendVariations = /** @class */ (function () {
         this.int16_t_literal_suffix = "s";
         this.uint16_t_literal_suffix = "us";
         this.nonuniform_qualifier = "nonuniformEXT";
-        this.boolean_mix_function = "mix";
+        // boolean_mix_function: string = "mix";
         this.swizzle_is_function = false;
         this.shared_is_implied = false;
         this.unsized_array_supported = true;
@@ -9295,7 +9295,8 @@ var GLSLOptions = /** @class */ (function () {
         this.version = 450;
         this.specialization_constant_prefix = "SPIRV_CROSS_CONSTANT_ID_";
         // Emit the OpenGL ES shading language instead of desktop OpenGL.
-        this.es = false;
+        // for WebGL: always true
+        // es: boolean = false;
         // Debug option to always emit temporary variables for all expressions.
         this.force_temporary = false;
         // If true, gl_PerVertex is explicitly redeclared in vertex, geometry and tessellation shaders.
@@ -10653,38 +10654,47 @@ var CompilerGLSL = /** @class */ (function (_super) {
             case Op.UDiv:
                 this.emit_binary_op_cast(ops[0], ops[1], ops[2], ops[3], "/", uint_type, opcode_is_sign_invariant(opcode));
                 break;
-            case Op.IAddCarry:
+            /*case Op.IAddCarry:
             case Op.ISubBorrow: {
                 if (options.es && options.version < 310)
                     throw new Error("Extended arithmetic is only available from ESSL 310.");
                 else if (!options.es && options.version < 400)
                     throw new Error("Extended arithmetic is only available from GLSL 400.");
-                var result_type = ops[0];
-                var result_id = ops[1];
-                var op0 = ops[2];
-                var op1 = ops[3];
-                var type = this.get(SPIRType, result_type);
+
+                const result_type = ops[0];
+                const result_id = ops[1];
+                const op0 = ops[2];
+                const op1 = ops[3];
+                const type = this.get<SPIRType>(SPIRType, result_type);
                 this.emit_uninitialized_temporary_expression(result_type, result_id);
-                var op = opcode === Op.IAddCarry ? "uaddCarry" : "usubBorrow";
-                this.statement(this.to_expression(result_id), ".", this.to_member_name(type, 0), " = ", op, "(", this.to_expression(op0), ", ", this.to_expression(op1), ", ", this.to_expression(result_id), ".", this.to_member_name(type, 1), ");");
+                const op = opcode === Op.IAddCarry ? "uaddCarry" : "usubBorrow";
+
+                this.statement(this.to_expression(result_id), ".", this.to_member_name(type, 0), " = ", op, "(", this.to_expression(op0), ", ",
+                    this.to_expression(op1), ", ", this.to_expression(result_id), ".", this.to_member_name(type, 1),
+                     ");");
+
                 break;
             }
+
             case Op.UMulExtended:
             case Op.SMulExtended: {
                 if (options.es && options.version < 310)
                     throw new Error("Extended arithmetic is only available from ESSL 310.");
                 else if (!options.es && options.version < 400)
                     throw new Error("Extended arithmetic is only available from GLSL 4000.");
-                var result_type = ops[0];
-                var result_id = ops[1];
-                var op0 = ops[2];
-                var op1 = ops[3];
-                var type = this.get(SPIRType, result_type);
+
+                const result_type = ops[0];
+                const result_id = ops[1];
+                const op0 = ops[2];
+                const op1 = ops[3];
+                const type = this.get<SPIRType>(SPIRType, result_type);
                 this.emit_uninitialized_temporary_expression(result_type, result_id);
-                var op = opcode === Op.UMulExtended ? "umulExtended" : "imulExtended";
-                this.statement(op, "(", this.to_expression(op0), ", ", this.to_expression(op1), ", ", this.to_expression(result_id), ".", this.to_member_name(type, 1), ", ", this.to_expression(result_id), ".", this.to_member_name(type, 0), ");");
+                const op = opcode === Op.UMulExtended ? "umulExtended" : "imulExtended";
+
+                this.statement(op, "(", this.to_expression(op0), ", ", this.to_expression(op1), ", ", this.to_expression(result_id), ".",
+                    this.to_member_name(type, 1), ", ", this.to_expression(result_id), ".", this.to_member_name(type, 0), ");");
                 break;
-            }
+            }*/
             case Op.FDiv:
                 this.emit_binary_op(ops[0], ops[1], ops[2], ops[3], "/");
                 break;
@@ -10969,7 +10979,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.require_extension_internal("GL_OES_standard_derivatives");
                 this.register_control_dependent_expression(ops[1]);
                 break;
-            case Op.DPdxFine:
+            /*case Op.DPdxFine:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "dFdxFine");
                 if (options.es) {
                     throw new Error("GL_ARB_derivative_control is unavailable in OpenGL ES.");
@@ -10978,6 +10988,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.require_extension_internal("GL_ARB_derivative_control");
                 this.register_control_dependent_expression(ops[1]);
                 break;
+
             case Op.DPdyFine:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "dFdyFine");
                 if (options.es) {
@@ -10987,6 +10998,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.require_extension_internal("GL_ARB_derivative_control");
                 this.register_control_dependent_expression(ops[1]);
                 break;
+
             case Op.DPdxCoarse:
                 if (options.es) {
                     throw new Error("GL_ARB_derivative_control is unavailable in OpenGL ES.");
@@ -10996,6 +11008,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.require_extension_internal("GL_ARB_derivative_control");
                 this.register_control_dependent_expression(ops[1]);
                 break;
+
             case Op.DPdyCoarse:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "dFdyCoarse");
                 if (options.es) {
@@ -11004,14 +11017,14 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 if (options.version < 450)
                     this.require_extension_internal("GL_ARB_derivative_control");
                 this.register_control_dependent_expression(ops[1]);
-                break;
+                break;*/
             case Op.Fwidth:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "fwidth");
                 if (this.is_legacy_es())
                     this.require_extension_internal("GL_OES_standard_derivatives");
                 this.register_control_dependent_expression(ops[1]);
                 break;
-            case Op.FwidthCoarse:
+            /*case Op.FwidthCoarse:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "fwidthCoarse");
                 if (options.es) {
                     throw new Error("GL_ARB_derivative_control is unavailable in OpenGL ES.");
@@ -11020,6 +11033,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.require_extension_internal("GL_ARB_derivative_control");
                 this.register_control_dependent_expression(ops[1]);
                 break;
+
             case Op.FwidthFine:
                 this.emit_unary_func_op(ops[0], ops[1], ops[2], "fwidthFine");
                 if (options.es) {
@@ -11028,7 +11042,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 if (options.version < 450)
                     this.require_extension_internal("GL_ARB_derivative_control");
                 this.register_control_dependent_expression(ops[1]);
-                break;
+                break;*/
             // Bitfield
             case Op.BitFieldInsert: {
                 this.emit_bitfield_insert_op(ops[0], ops[1], ops[2], ops[3], ops[4], ops[5], "bitfieldInsert", SPIRBaseType.Int);
@@ -11266,12 +11280,12 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 // Gets a bit hairy, so move this to a separate instruction.
                 this.emit_texture_op(instruction, true);
                 break;
-            case Op.ImageSparseTexelsResident:
+            /*case Op.ImageSparseTexelsResident:
                 if (options.es)
                     throw new Error("Sparse feedback is not supported in GLSL.");
                 this.require_extension_internal("GL_ARB_sparse_texture2");
                 this.emit_unary_func_op_cast(ops[0], ops[1], ops[2], "sparseTexelsResidentARB", int_type, SPIRBaseType.Boolean);
-                break;
+                break;*/
             case Op.Image: {
                 var result_type = ops[0];
                 var id = ops[1];
@@ -11282,8 +11296,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 e.loaded_from = var_ ? var_.self : (0);
                 break;
             }
-            case Op.ImageQueryLod: {
-                var op = null;
+            /*case Op.ImageQueryLod: {
+                let op: string = null;
                 if (!options.es && options.version < 400) {
                     this.require_extension_internal("GL_ARB_texture_query_lod");
                     // For some reason, the ARB spec is all-caps.
@@ -11293,33 +11307,40 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     throw new Error("textureQueryLod not supported in ES profile.");
                 else
                     op = "textureQueryLod";
-                var sampler_expr = this.to_expression(ops[2]);
+
+                let sampler_expr = this.to_expression(ops[2]);
                 if (this.has_decoration(ops[2], Decoration.NonUniform)) {
                     if (this.maybe_get_backing_variable(ops[2]))
                         sampler_expr = this.convert_non_uniform_expression(sampler_expr, ops[2]);
                     else if (backend.nonuniform_qualifier !== "\0")
                         sampler_expr = backend.nonuniform_qualifier + "(" + sampler_expr + ")";
                 }
-                var forward = this.should_forward(ops[3]);
-                this.emit_op(ops[0], ops[1], op + "(" + sampler_expr + ", " + this.to_unpacked_expression(ops[3]) + ")", forward);
+
+                const forward = this.should_forward(ops[3]);
+                this.emit_op(ops[0], ops[1],
+                    op + "(" + sampler_expr + ", " + this.to_unpacked_expression(ops[3]) + ")",
+                    forward);
                 this.inherit_expression_dependencies(ops[1], ops[2]);
                 this.inherit_expression_dependencies(ops[1], ops[3]);
                 this.register_control_dependent_expression(ops[1]);
                 break;
             }
+
             case Op.ImageQueryLevels: {
-                var result_type = ops[0];
-                var id = ops[1];
+                const result_type = ops[0];
+                const id = ops[1];
+
                 if (!options.es && options.version < 430)
                     this.require_extension_internal("GL_ARB_texture_query_levels");
                 if (options.es)
                     throw new Error("textureQueryLevels not supported in ES profile.");
-                var expr = "textureQueryLevels(" + this.convert_separate_image_to_expression(ops[2]) + ")";
-                var restype = this.get(SPIRType, ops[0]);
+
+                let expr = "textureQueryLevels(" + this.convert_separate_image_to_expression(ops[2]) + ")";
+                const restype = this.get<SPIRType>(SPIRType, ops[0]);
                 expr = this.bitcast_expression(restype, SPIRBaseType.Int, expr);
                 this.emit_op(result_type, id, expr, true);
                 break;
-            }
+            }*/
             case Op.ImageQuerySamples: {
                 var type = this.expression_type(ops[2]);
                 var result_type = ops[0];
@@ -11552,12 +11573,12 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     if (type.basetype === SPIRBaseType.Image) {
                         var expr = void 0;
                         if (type.image.sampled === 2) {
-                            if (!options.es && options.version < 430)
+                            /*if (!options.es && options.version < 430)
                                 this.require_extension_internal("GL_ARB_shader_image_size");
-                            else if (options.es && options.version < 310)
-                                throw new Error("At least ESSL 3.10 required for imageSize.");
+                            else if (options.es && options.version < 310)*/
+                            throw new Error("At least ESSL 3.10 required for imageSize.");
                             // The size of an image is always constant.
-                            expr = "imageSize(" + this.to_non_uniform_aware_expression(ops[2]) + ")";
+                            // expr = "imageSize(" + this.to_non_uniform_aware_expression(ops[2]) + ")";
                         }
                         else {
                             // This path is hit for samplerBuffers and multisampled images which do not have LOD.
@@ -12200,7 +12221,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             default:
                 console.log("unimplemented op ", instruction.op);
                 this.statement("// unimplemented op ", instruction.op);
-                break;
+                throw new Error("Unsupported op " + instruction.op);
         }
     };
     CompilerGLSL.prototype.emit_block_instructions = function (block) {
@@ -12219,7 +12240,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var integer_width = this.get_integer_width_for_glsl_instruction(op, args, arroffs, length);
         var int_type = to_signed_basetype(integer_width);
         var uint_type = to_unsigned_basetype(integer_width);
-        var _a = this, options = _a.options, ir = _a.ir;
+        var _a = this; _a.options; var ir = _a.ir;
         switch (op) {
             // FP fiddling
             case GLSLstd450.Round:
@@ -12237,11 +12258,12 @@ var CompilerGLSL = /** @class */ (function (_super) {
             case GLSLstd450.RoundEven:
                 if (!this.is_legacy())
                     this.emit_unary_func_op(result_type, id, args[arroffs], "roundEven");
-                else if (!options.es) {
+                /*else if (!options.es)
+                {
                     // This extension provides round() with round-to-even semantics.
                     this.require_extension_internal("GL_EXT_gpu_shader4");
                     this.emit_unary_func_op(result_type, id, args[arroffs], "round");
-                }
+                }*/
                 else
                     throw new Error("roundEven supported only in ESSL 300.");
                 break;
@@ -12276,15 +12298,16 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 this.emit_unary_func_op(result_type, id, args[arroffs], "degrees");
                 break;
             case GLSLstd450.Fma:
-                if ((!options.es && options.version < 400) || (options.es && options.version < 320)) {
+                // if ((!options.es && options.version < 400) || (options.es && options.version < 320))
+                {
                     var expr = this.to_enclosed_expression(args[arroffs]) + " * " + this.to_enclosed_expression(args[arroffs + 1]) + " + " +
                         this.to_enclosed_expression(args[arroffs + 2]);
                     this.emit_op(result_type, id, expr, this.should_forward(args[arroffs]) && this.should_forward(args[arroffs + 1]) && this.should_forward(args[arroffs + 2]));
                     for (var i = 0; i < 3; i++)
                         this.inherit_expression_dependencies(id, args[i]);
                 }
-                else
-                    this.emit_trinary_func_op(result_type, id, args[arroffs], args[arroffs + 1], args[arroffs + 2], "fma");
+                // else
+                //     this.emit_trinary_func_op(result_type, id, args[arroffs], args[arroffs + 1], args[arroffs + 2], "fma");
                 break;
             case GLSLstd450.Modf:
                 this.register_call_out_argument(args[arroffs + 1]);
@@ -12548,8 +12571,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var options = this.options;
         // WEBGL 1 doesn't support version number
         if (options.version !== 100)
-            this.statement("#version ", options.version, options.es && options.version > 100 ? " es" : "");
-        if (!options.es && options.version < 420) {
+            this.statement("#version ", options.version, /*options.es &&*/ " es");
+        /*if (!options.es && options.version < 420) {
             // Needed for binding = # on UBOs, etc.
             if (options.enable_420pack_extension) {
                 this.statement("#ifdef GL_ARB_shading_language_420pack");
@@ -12559,7 +12582,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             // Needed for: layout(early_fragment_tests) in;
             if (execution.flags.get(ExecutionMode.EarlyFragmentTests))
                 this.require_extension_internal("GL_ARB_shader_image_load_store");
-        }
+        }*/
         // Needed for: layout(post_depth_coverage) in;
         if (execution.flags.get(ExecutionMode.PostDepthCoverage))
             this.require_extension_internal("GL_ARB_post_depth_coverage");
@@ -12569,16 +12592,16 @@ var CompilerGLSL = /** @class */ (function (_super) {
             execution.flags.get(ExecutionMode.SampleInterlockOrderedEXT) ||
             execution.flags.get(ExecutionMode.SampleInterlockUnorderedEXT);
         if (interlock_used) {
-            if (options.es) {
-                if (options.version < 310)
-                    throw new Error("At least ESSL 3.10 required for fragment shader interlock.");
-                this.require_extension_internal("GL_NV_fragment_shader_interlock");
+            // if (options.es) {
+            //     if (options.version < 310)
+            throw new Error("At least ESSL 3.10 required for fragment shader interlock.");
+            /*    this.require_extension_internal("GL_NV_fragment_shader_interlock");
             }
             else {
                 if (options.version < 420)
                     this.require_extension_internal("GL_ARB_shader_image_load_store");
                 this.require_extension_internal("GL_ARB_fragment_shader_interlock");
-            }
+            }*/
         }
         for (var _i = 0, _a = this.forced_extensions; _i < _a.length; _i++) {
             var ext = _a[_i];
@@ -12616,15 +12639,15 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 // }
             }
             else if (ext === "GL_ARB_post_depth_coverage") {
-                if (options.es)
-                    this.statement("#extension GL_EXT_post_depth_coverage : require");
-                else {
+                // if (options.es)
+                this.statement("#extension GL_EXT_post_depth_coverage : require");
+                /*else {
                     this.statement("#if defined(GL_ARB_post_depth_coverge)");
                     this.statement("#extension GL_ARB_post_depth_coverage : require");
                     this.statement("#else");
                     this.statement("#extension GL_EXT_post_depth_coverage : require");
                     this.statement("#endif");
-                }
+                }*/
             }
             else if ( /*!options.vulkan_semantics &&*/ext === "GL_ARB_shader_draw_parameters") {
                 // Soft-enable this extension on plain GLSL.
@@ -12796,30 +12819,30 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 break;
             }*/
             case ExecutionModel.Fragment:
-                if (options.es) {
-                    switch (options.fragment.default_float_precision) {
-                        case GLSLPrecision.Lowp:
-                            this.statement("precision lowp float;");
-                            break;
-                        case GLSLPrecision.Mediump:
-                            this.statement("precision mediump float;");
-                            break;
-                        case GLSLPrecision.Highp:
-                            this.statement("precision highp float;");
-                            break;
-                    }
-                    switch (options.fragment.default_int_precision) {
-                        case GLSLPrecision.Lowp:
-                            this.statement("precision lowp int;");
-                            break;
-                        case GLSLPrecision.Mediump:
-                            this.statement("precision mediump int;");
-                            break;
-                        case GLSLPrecision.Highp:
-                            this.statement("precision highp int;");
-                            break;
-                    }
+                // if (options.es) {
+                switch (options.fragment.default_float_precision) {
+                    case GLSLPrecision.Lowp:
+                        this.statement("precision lowp float;");
+                        break;
+                    case GLSLPrecision.Mediump:
+                        this.statement("precision mediump float;");
+                        break;
+                    case GLSLPrecision.Highp:
+                        this.statement("precision highp float;");
+                        break;
                 }
+                switch (options.fragment.default_int_precision) {
+                    case GLSLPrecision.Lowp:
+                        this.statement("precision lowp int;");
+                        break;
+                    case GLSLPrecision.Mediump:
+                        this.statement("precision mediump int;");
+                        break;
+                    case GLSLPrecision.Highp:
+                        this.statement("precision highp int;");
+                        break;
+                }
+                // }
                 if (execution.flags.get(ExecutionMode.EarlyFragmentTests))
                     inputs.push("early_fragment_tests");
                 if (execution.flags.get(ExecutionMode.PostDepthCoverage))
@@ -12839,10 +12862,10 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     this.statement("#error Fragment Shader Interlock/Ordering extension missing!");
                     this.statement("#endif");
                 }
-                if (!options.es && execution.flags.get(ExecutionMode.DepthGreater))
+                /*if (!options.es && execution.flags.get(ExecutionMode.DepthGreater))
                     this.statement("layout(depth_greater) out float gl_FragDepth;");
                 else if (!options.es && execution.flags.get(ExecutionMode.DepthLess))
-                    this.statement("layout(depth_less) out float gl_FragDepth;");
+                    this.statement("layout(depth_less) out float gl_FragDepth;");*/
                 break;
         }
         /*for (let cap of ir.declared_capabilities)
@@ -12922,7 +12945,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var nonuniform_expression = false;
         var optOffset;
         var result_type = this.get(SPIRType, result_type_id);
-        var _a = this, options = _a.options, backend = _a.backend;
+        var _a = this; _a.options; var backend = _a.backend;
         inherited_expressions.push(coord);
         if (this.has_decoration(img, Decoration.NonUniform) && !this.maybe_get_backing_variable(img))
             nonuniform_expression = true;
@@ -12944,7 +12967,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 length -= 5;
                 proj = true;
                 break;
-            case Op.ImageDrefGather:
+            /*case Op.ImageDrefGather:
             case Op.ImageSparseDrefGather:
                 dref = ops[4];
                 optOffset = 5;
@@ -12955,6 +12978,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 else if (!options.es && options.version < 400)
                     throw new Error("textureGather with depth compare requires GLSL 400.");
                 break;
+
             case Op.ImageGather:
             case Op.ImageSparseGather:
                 comp = ops[4];
@@ -12968,7 +12992,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                         throw new Error("textureGather with component requires GLSL 400.");
                     this.require_extension_internal("GL_ARB_texture_gather");
                 }
-                break;
+                break;*/
             case Op.ImageFetch:
             case Op.ImageSparseFetch:
             case Op.ImageRead: // Reads === fetches in Metal (other langs will not get here)
@@ -13151,11 +13175,11 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // empty
     };
     CompilerGLSL.prototype.to_function_name = function (args) {
-        var options = this.options;
+        this.options;
         if (args.has_min_lod) {
-            if (options.es)
-                throw new Error("Sparse residency is not supported in ESSL.");
-            this.require_extension_internal("GL_ARB_sparse_texture_clamp");
+            // if (options.es)
+            throw new Error("Sparse residency is not supported in ESSL.");
+            // this.require_extension_internal("GL_ARB_sparse_texture_clamp");
         }
         var fname = "";
         var imgtype = args.base.imgtype;
@@ -13375,21 +13399,24 @@ var CompilerGLSL = /** @class */ (function (_super) {
     };
     CompilerGLSL.prototype.emit_sparse_feedback_temporaries = function (result_type_id, id, ids) {
         // Need to allocate two temporaries.
-        if (this.options.es)
-            throw new Error("Sparse texture feedback is not supported on ESSL.");
-        this.require_extension_internal("GL_ARB_sparse_texture2");
-        var temps = maplike_get(0, this.extra_sub_expressions, id);
+        //         if (this.options.es)
+        throw new Error("Sparse texture feedback is not supported on ESSL.");
+        /*this.require_extension_internal("GL_ARB_sparse_texture2");
+
+        let temps = maplike_get(0, this.extra_sub_expressions, id);
         if (temps === 0) {
             temps = this.ir.increase_bound_by(2);
             this.extra_sub_expressions[id] = temps;
         }
+
         ids.sparse_code_id = temps + 0;
         ids.sparse_texel_id = temps + 1;
-        var return_type = this.get(SPIRType, result_type_id);
+
+        const return_type = this.get<SPIRType>(SPIRType, result_type_id);
         if (return_type.basetype !== SPIRBaseType.Struct || return_type.member_types.length !== 2)
             throw new Error("Invalid return type for sparse feedback.");
         this.emit_uninitialized_temporary(return_type.member_types[0], ids.sparse_code_id);
-        this.emit_uninitialized_temporary(return_type.member_types[1], ids.sparse_texel_id);
+        this.emit_uninitialized_temporary(return_type.member_types[1], ids.sparse_texel_id);*/
     };
     CompilerGLSL.prototype.get_sparse_feedback_texel_id = function (id) {
         return this.extra_sub_expressions[id] || 0;
@@ -13400,7 +13427,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var _a = this, options = _a.options, ir = _a.ir;
         if (this.flattened_buffer_blocks.has(var_.self))
             this.emit_buffer_block_flattened(var_);
-        else if (this.is_legacy() || (!options.es && options.version === 130) ||
+        else if (this.is_legacy() /*|| (!options.es && options.version === 130)*/ ||
             (ubo_block && options.emit_uniform_buffer_as_plain_uniforms)) {
             if (ir.get_name(var_.self) === "" && options.keep_unnamed_ubos) {
                 this.emit_buffer_block_global(var_);
@@ -14097,12 +14124,12 @@ var CompilerGLSL = /** @class */ (function (_super) {
     };
     CompilerGLSL.prototype.emit_uniform = function (var_) {
         var type = this.get(SPIRType, var_.basetype);
-        var options = this.options;
+        this.options;
         if (type.basetype === SPIRBaseType.Image && type.image.sampled === 2 && type.image.dim !== Dim.SubpassData) {
-            if (!options.es && options.version < 420)
+            /*if (!options.es && options.version < 420)
                 this.require_extension_internal("GL_ARB_shader_image_load_store");
-            else if (options.es && options.version < 310)
-                throw new Error("At least ESSL 3.10 required for shader image load store.");
+            else if (options.es && options.version < 310)*/
+            throw new Error("At least ESSL 3.10 required for shader image load store.");
         }
         this.add_resource_name(var_.self);
         this.statement(this.layout_for_variable(var_), this.variable_decl(var_), ";");
@@ -14366,9 +14393,9 @@ var CompilerGLSL = /** @class */ (function (_super) {
                             "created with GL semantics.");
                     }
                 }*/
-                if (!options.es && options.version < 140) {
+                /*if (!options.es && options.version < 140) {
                     this.require_extension_internal("GL_ARB_draw_instanced");
-                }
+                }*/
                 return "gl_InstanceID";
             case BuiltIn.VertexIndex:
                 /*if (options.vulkan_semantics)
@@ -14378,9 +14405,9 @@ var CompilerGLSL = /** @class */ (function (_super) {
             case BuiltIn.InstanceIndex:
                 // if (options.vulkan_semantics)
                 //     return "gl_InstanceIndex";
-                if (!options.es && options.version < 140) {
+                /*if (!options.es && options.version < 140) {
                     this.require_extension_internal("GL_ARB_draw_instanced");
-                }
+                }*/
                 if (options.vertex.support_nonzero_base_instance) {
                     // if (!options.vulkan_semantics)
                     // {
@@ -14431,70 +14458,70 @@ var CompilerGLSL = /** @class */ (function (_super) {
             case BuiltIn.HelperInvocation:
                 return "gl_HelperInvocation";
             case BuiltIn.BaseVertex:
-                if (options.es)
-                    throw new Error("BaseVertex not supported in ES profile.");
-                /*if (options.vulkan_semantics)
+                // if (options.es)
+                throw new Error("BaseVertex not supported in ES profile.");
+            /*if (options.vulkan_semantics)
+            {
+                if (options.version < 460)
                 {
-                    if (options.version < 460)
-                    {
-                        require_extension_internal("GL_ARB_shader_draw_parameters");
-                        return "gl_BaseVertexARB";
-                    }
-                    return "gl_BaseVertex";
-                }*/
-                // On regular GL, this is soft-enabled and we emit ifdefs in code.
-                this.require_extension_internal("GL_ARB_shader_draw_parameters");
-                return "SPIRV_Cross_BaseVertex";
+                    require_extension_internal("GL_ARB_shader_draw_parameters");
+                    return "gl_BaseVertexARB";
+                }
+                return "gl_BaseVertex";
+            }*/
+            // On regular GL, this is soft-enabled and we emit ifdefs in code.
+            /*this.require_extension_internal("GL_ARB_shader_draw_parameters");
+            return "SPIRV_Cross_BaseVertex";*/
             case BuiltIn.BaseInstance:
-                if (options.es)
-                    throw new Error("BaseInstance not supported in ES profile.");
-                /*if (options.vulkan_semantics)
+                // if (options.es)
+                throw new Error("BaseInstance not supported in ES profile.");
+            /*if (options.vulkan_semantics)
+            {
+                if (options.version < 460)
                 {
-                    if (options.version < 460)
-                    {
-                        require_extension_internal("GL_ARB_shader_draw_parameters");
-                        return "gl_BaseInstanceARB";
-                    }
-                    return "gl_BaseInstance";
-                }*/
-                // On regular GL, this is soft-enabled and we emit ifdefs in code.
-                this.require_extension_internal("GL_ARB_shader_draw_parameters");
-                return "SPIRV_Cross_BaseInstance";
+                    require_extension_internal("GL_ARB_shader_draw_parameters");
+                    return "gl_BaseInstanceARB";
+                }
+                return "gl_BaseInstance";
+            }*/
+            // On regular GL, this is soft-enabled and we emit ifdefs in code.
+            /*this.require_extension_internal("GL_ARB_shader_draw_parameters");
+            return "SPIRV_Cross_BaseInstance";*/
             case BuiltIn.DrawIndex:
-                if (options.es)
-                    throw new Error("DrawIndex not supported in ES profile.");
-                /*if (options.vulkan_semantics)
+                // if (options.es)
+                throw new Error("DrawIndex not supported in ES profile.");
+            /*if (options.vulkan_semantics)
+            {
+                if (options.version < 460)
                 {
-                    if (options.version < 460)
-                    {
-                        require_extension_internal("GL_ARB_shader_draw_parameters");
-                        return "gl_DrawIDARB";
-                    }
-                    return "gl_DrawID";
-                }*/
-                // On regular GL, this is soft-enabled and we emit ifdefs in code.
-                this.require_extension_internal("GL_ARB_shader_draw_parameters");
-                return "gl_DrawIDARB";
+                    require_extension_internal("GL_ARB_shader_draw_parameters");
+                    return "gl_DrawIDARB";
+                }
+                return "gl_DrawID";
+            }*/
+            // On regular GL, this is soft-enabled and we emit ifdefs in code.
+            /*this.require_extension_internal("GL_ARB_shader_draw_parameters");
+            return "gl_DrawIDARB";*/
             case BuiltIn.SampleId:
-                if (options.es && options.version < 320)
-                    this.require_extension_internal("GL_OES_sample_variables");
-                if (!options.es && options.version < 400)
-                    throw new Error("gl_SampleID not supported before GLSL 400.");
+                // if (options.es && options.version < 320)
+                this.require_extension_internal("GL_OES_sample_variables");
+                /*if (!options.es && options.version < 400)
+                    throw new Error("gl_SampleID not supported before GLSL 400.");*/
                 return "gl_SampleID";
             case BuiltIn.SampleMask:
-                if (options.es && options.version < 320)
-                    this.require_extension_internal("GL_OES_sample_variables");
-                if (!options.es && options.version < 400)
-                    throw new Error("gl_SampleMask/gl_SampleMaskIn not supported before GLSL 400.");
+                // if (options.es && options.version < 320)
+                this.require_extension_internal("GL_OES_sample_variables");
+                /*if (!options.es && options.version < 400)
+                    throw new Error("gl_SampleMask/gl_SampleMaskIn not supported before GLSL 400.");*/
                 if (storage === StorageClass.Input)
                     return "gl_SampleMaskIn";
                 else
                     return "gl_SampleMask";
             case BuiltIn.SamplePosition:
-                if (options.es && options.version < 320)
-                    this.require_extension_internal("GL_OES_sample_variables");
-                if (!options.es && options.version < 400)
-                    throw new Error("gl_SamplePosition not supported before GLSL 400.");
+                // if (options.es && options.version < 320)
+                this.require_extension_internal("GL_OES_sample_variables");
+                /*if (!options.es && options.version < 400)
+                    throw new Error("gl_SamplePosition not supported before GLSL 400.");*/
                 return "gl_SamplePosition";
             case BuiltIn.ViewIndex:
                 /*if (options.vulkan_semantics)
@@ -14560,28 +14587,28 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 throw new Error("Raytracing not supported");
             // return ray_tracing_is_khr ? "gl_IncomingRayFlagsEXT" : "gl_IncomingRayFlagsNV";
             case BuiltIn.BaryCoordNV: {
-                if (options.es && options.version < 320)
-                    throw new Error("gl_BaryCoordNV requires ESSL 320.");
-                else if (!options.es && options.version < 450)
+                // if (options.es && options.version < 320)
+                throw new Error("gl_BaryCoordNV requires ESSL 320.");
+                /*else if (!options.es && options.version < 450)
                     throw new Error("gl_BaryCoordNV requires GLSL 450.");
                 this.require_extension_internal("GL_NV_fragment_shader_barycentric");
-                return "gl_BaryCoordNV";
+                return "gl_BaryCoordNV";*/
             }
             case BuiltIn.BaryCoordNoPerspNV: {
-                if (options.es && options.version < 320)
-                    throw new Error("gl_BaryCoordNoPerspNV requires ESSL 320.");
-                else if (!options.es && options.version < 450)
+                // if (options.es && options.version < 320)
+                throw new Error("gl_BaryCoordNoPerspNV requires ESSL 320.");
+                /*else if (!options.es && options.version < 450)
                     throw new Error("gl_BaryCoordNoPerspNV requires GLSL 450.");
                 this.require_extension_internal("GL_NV_fragment_shader_barycentric");
-                return "gl_BaryCoordNoPerspNV";
+                return "gl_BaryCoordNoPerspNV";*/
             }
             case BuiltIn.FragStencilRefEXT: {
-                if (!options.es) {
+                /*if (!options.es) {
                     this.require_extension_internal("GL_ARB_shader_stencil_export");
                     return "gl_FragStencilRefARB";
                 }
-                else
-                    throw new Error("Stencil export not supported in GLES.");
+                else*/
+                throw new Error("Stencil export not supported in GLES.");
             }
             case BuiltIn.PrimitiveShadingRateKHR: {
                 // if (!options.vulkan_semantics)
@@ -14601,11 +14628,11 @@ var CompilerGLSL = /** @class */ (function (_super) {
             // require_extension_internal("GL_EXT_device_group");
             // return "gl_DeviceIndex";
             case BuiltIn.FullyCoveredEXT:
-                if (!options.es)
+                /*if (!options.es)
                     this.require_extension_internal("GL_NV_conservative_raster_underestimation");
-                else
-                    throw new Error("Need desktop GL to use GL_NV_conservative_raster_underestimation.");
-                return "gl_FragFullyCoveredNV";
+                else*/
+                throw new Error("Need desktop GL to use GL_NV_conservative_raster_underestimation.");
+            // return "gl_FragFullyCoveredNV";
             default:
                 return "gl_BuiltIn_" + convert_to_string(builtin);
         }
@@ -14628,7 +14655,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         }
         // For half image types, we will force mediump for the sampler, and cast to f16 after any sampling operation.
         // We cannot express a true half texture type in GLSL. Neither for short integer formats for that matter.
-        var options = this.options;
+        this.options;
         /*if (type.basetype === SPIRBaseType.Image && type.image.dim === Dim.SubpassData && options.vulkan_semantics)
             return res + "subpassInput" + (type.image.ms ? "MS" : "");
         else*/
@@ -14663,17 +14690,18 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 res += "Cube";
                 break;
             case Dim.Rect:
-                if (options.es)
-                    throw new Error("Rectangle textures are not supported on OpenGL ES.");
-                if (this.is_legacy_desktop())
-                    this.require_extension_internal("GL_ARB_texture_rectangle");
-                res += "2DRect";
-                break;
+                // if (options.es)
+                throw new Error("Rectangle textures are not supported on OpenGL ES.");
+            /*if (this.is_legacy_desktop())
+                this.require_extension_internal("GL_ARB_texture_rectangle");
+
+            res += "2DRect";
+            break;*/
             case Dim.Buffer:
-                if (options.es && options.version < 320)
-                    this.require_extension_internal("GL_EXT_texture_buffer");
-                else if (!options.es && options.version < 300)
-                    this.require_extension_internal("GL_EXT_texture_buffer_object");
+                // if (options.es && options.version < 320)
+                this.require_extension_internal("GL_EXT_texture_buffer");
+                /*else if (!options.es && options.version < 300)
+                    this.require_extension_internal("GL_EXT_texture_buffer_object");*/
                 res += "Buffer";
                 break;
             case Dim.SubpassData:
@@ -15336,20 +15364,20 @@ var CompilerGLSL = /** @class */ (function (_super) {
         }
         else {
             if (type.array.length > 1) {
-                if (!options.es && options.version < 430)
+                /*if (!options.es && options.version < 430)
                     this.require_extension_internal("GL_ARB_arrays_of_arrays");
-                else if (options.es && options.version < 310)
-                    throw new Error("Arrays of arrays not supported before ESSL version 310. " +
-                        "Try using --flatten-multidimensional-arrays or set " +
-                        "options.flatten_multidimensional_arrays to true.");
+                else if (options.es && options.version < 310)*/
+                throw new Error("Arrays of arrays not supported before ESSL version 310. " +
+                    "Try using --flatten-multidimensional-arrays or set " +
+                    "options.flatten_multidimensional_arrays to true.");
             }
-            var res = "";
-            for (var i = type.array.length; i; i--) {
+            /*let res = "";
+            for (let i = type.array.length; i; i--) {
                 res += "[";
                 res += this.to_array_size(type, i - 1);
                 res += "]";
             }
-            return res;
+            return res;*/
         }
     };
     CompilerGLSL.prototype.add_function_overload = function (func) {
@@ -15649,20 +15677,24 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 break;
         }*/
         // Emit custom gl_PerVertex for SSO compatibility.
-        if (options.separate_shader_objects && !options.es && execution.model !== ExecutionModel.Fragment) {
+        /*if (options.separate_shader_objects && !options.es && execution.model !== ExecutionModel.Fragment) {
             switch (execution.model) {
-                /*case ExecutionModelGeometry:
+                /!*case ExecutionModelGeometry:
                 case ExecutionModelTessellationControl:
                 case ExecutionModelTessellationEvaluation:
                     emit_declared_builtin_block(StorageClassInput, execution.model);
                     emit_declared_builtin_block(StorageClassOutput, execution.model);
-                    break;*/
+                    break;*!/
+
                 case ExecutionModel.Vertex:
                     this.emit_declared_builtin_block(StorageClass.Output, execution.model);
                     break;
+
+                default:
+                    break;
             }
         }
-        else if (this.should_force_emit_builtin_block(StorageClass.Output)) {
+        else*/ if (this.should_force_emit_builtin_block(StorageClass.Output)) {
             this.emit_declared_builtin_block(StorageClass.Output, execution.model);
         }
         else if (execution.geometry_passthrough) {
@@ -15837,7 +15869,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             if (var_.storage !== StorageClass.Function && type.pointer &&
                 (var_.storage === StorageClass.Input || var_.storage === StorageClass.Output) &&
                 _this.interface_variable_exists_in_entry_point(var_.self) && !is_hidden) {
-                if (options.es && _this.get_execution_model() === ExecutionModel.Vertex &&
+                if ( /*options.es &&*/_this.get_execution_model() === ExecutionModel.Vertex &&
                     var_.storage === StorageClass.Input && type.array.length === 1) {
                     throw new Error("OpenGL ES doesn't support array input variables in vertex shader.");
                 }
@@ -16500,7 +16532,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var have_any_xfb_offset = false;
         var xfb_stride = 0, xfb_buffer = 0, geom_stream = 0;
         var builtin_xfb_offsets = []; //std::unordered_map<uint32_t, uint32_t> ;
-        var _a = this, ir = _a.ir, options = _a.options;
+        var _a = this, ir = _a.ir; _a.options;
         ir.for_each_typed_id(SPIRVariable, function (_, var_) {
             var type = _this.get(SPIRType, var_.basetype);
             var block = _this.has_decoration(type.self, Decoration.Block);
@@ -16603,7 +16635,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (storage === StorageClass.Output) {
             var attr = [];
             if (have_xfb_buffer_stride && have_any_xfb_offset) {
-                if (!options.es) {
+                /*if (!options.es) {
                     if (options.version < 440 && options.version >= 140)
                         this.require_extension_internal("GL_ARB_enhanced_layouts");
                     else if (options.version < 140)
@@ -16611,18 +16643,18 @@ var CompilerGLSL = /** @class */ (function (_super) {
                     if (!options.es && options.version < 440)
                         this.require_extension_internal("GL_ARB_enhanced_layouts");
                 }
-                else if (options.es)
-                    throw new Error("Need GL_ARB_enhanced_layouts for xfb_stride or xfb_buffer.");
-                attr.push("xfb_buffer = ".concat(xfb_buffer, ", xfb_stride = ").concat(xfb_stride));
+                else if (options.es)*/
+                throw new Error("Need GL_ARB_enhanced_layouts for xfb_stride or xfb_buffer.");
+                // attr.push(`xfb_buffer = ${xfb_buffer}, xfb_stride = ${xfb_stride}`);
             }
             if (have_geom_stream) {
-                if (this.get_execution_model() !== ExecutionModel.Geometry)
-                    throw new Error("Geometry streams can only be used in geometry shaders.");
-                if (options.es)
-                    throw new Error("Multiple geometry streams not supported in ESSL.");
-                if (options.version < 400)
+                /*if (this.get_execution_model() !== ExecutionModel.Geometry)
+                    throw new Error("Geometry streams can only be used in geometry shaders.");*/
+                // if (options.es)
+                throw new Error("Multiple geometry streams not supported in ESSL.");
+                /*if (options.version < 400)
                     this.require_extension_internal("GL_ARB_transform_feedback3");
-                attr.push("stream = " + geom_stream);
+                attr.push("stream = " + geom_stream);*/
             }
             if (attr.length > 0)
                 this.statement("layout(", attr.join(", "), ") out gl_PerVertex");
@@ -16733,11 +16765,11 @@ var CompilerGLSL = /** @class */ (function (_super) {
     };
     CompilerGLSL.prototype.emit_interface_block = function (var_) {
         var type = this.get(SPIRType, var_.basetype);
-        var _a = this, ir = _a.ir, options = _a.options;
-        if (var_.storage === StorageClass.Input && type.basetype === SPIRBaseType.Double &&
+        var _a = this, ir = _a.ir; _a.options;
+        /*if (var_.storage === StorageClass.Input && type.basetype === SPIRBaseType.Double &&
             !options.es && options.version < 410) {
             this.require_extension_internal("GL_ARB_vertex_attrib_64bit");
-        }
+        }*/
         // Either make it plain in/out or in/out blocks depending on what shader is doing ...
         var block = maplike_get(Meta, ir.meta, type.self).decoration.decoration_flags.get(Decoration.Block);
         var qual = this.to_storage_qualifiers_glsl(var_);
@@ -16745,59 +16777,68 @@ var CompilerGLSL = /** @class */ (function (_super) {
             // ESSL earlier than 310 and GLSL earlier than 150 did not support
             // I/O variables which are struct types.
             // To support this, flatten the struct into separate varyings instead.
-            if (options.force_flattened_io_blocks || (options.es && options.version < 310) ||
-                (!options.es && options.version < 150)) {
-                // I/O blocks on ES require version 310 with Android Extension Pack extensions, or core version 320.
-                // On desktop, I/O blocks were introduced with geometry shaders in GL 3.2 (GLSL 150).
-                this.emit_flattened_io_block(var_, qual);
-            }
+            /*if (options.force_flattened_io_blocks || (options.es && options.version < 310) ||
+                (!options.es && options.version < 150)) {*/
+            // I/O blocks on ES require version 310 with Android Extension Pack extensions, or core version 320.
+            // On desktop, I/O blocks were introduced with geometry shaders in GL 3.2 (GLSL 150).
+            this.emit_flattened_io_block(var_, qual);
+            /*}
             else {
                 if (options.es && options.version < 320) {
                     // Geometry and tessellation extensions imply this extension.
                     if (!this.has_extension("GL_EXT_geometry_shader") && !this.has_extension("GL_EXT_tessellation_shader"))
                         this.require_extension_internal("GL_EXT_shader_io_blocks");
                 }
+
                 // Workaround to make sure we can emit "patch in/out" correctly.
                 this.fixup_io_block_patch_qualifiers(var_);
+
                 // Block names should never alias.
-                var block_name = this.to_name(type.self, false);
+                let block_name = this.to_name(type.self, false);
+
                 // The namespace for I/O blocks is separate from other variables in GLSL.
-                var block_namespace = type.storage === StorageClass.Input ? this.block_input_names : this.block_output_names;
+                const block_namespace = type.storage === StorageClass.Input ? this.block_input_names : this.block_output_names;
+
                 // Shaders never use the block by interface name, so we don't
                 // have to track this other than updating name caches.
                 if (block_name.length === 0 || block_namespace.has(block_name))
                     block_name = this.get_fallback_name(type.self);
                 else
                     block_namespace.add(block_name);
+
                 // If for some reason buffer_name is an illegal name, make a final fallback to a workaround name.
                 // This cannot conflict with anything else, so we're safe now.
                 if (block_name.length === 0)
-                    block_name = "_" + this.get(SPIRType, var_.basetype).self + "_" + var_.self;
+                    block_name = "_" + this.get<SPIRType>(SPIRType, var_.basetype).self + "_" + var_.self;
+
                 // Instance names cannot alias block names.
                 this.resource_names.add(block_name);
-                var is_patch = this.has_decoration(var_.self, Decoration.Patch);
+
+                const is_patch = this.has_decoration(var_.self, Decoration.Patch);
                 this.statement(this.layout_for_variable(var_), (is_patch ? "patch " : ""), qual, block_name);
                 this.begin_scope();
+
                 type.member_name_cache.clear();
-                var i = 0;
-                for (var _i = 0, _b = type.member_types; _i < _b.length; _i++) {
-                    var member = _b[_i];
+
+                let i = 0;
+                for (let member of type.member_types) {
                     this.add_member_name(type, i);
                     this.emit_struct_member(type, member, i);
                     i++;
                 }
+
                 this.add_resource_name(var_.self);
                 this.end_scope_decl(this.to_name(var_.self) + this.type_to_array_glsl(type));
                 this.statement("");
-            }
+            }*/
         }
         else {
             // ESSL earlier than 310 and GLSL earlier than 150 did not support
             // I/O variables which are struct types.
             // To support this, flatten the struct into separate varyings instead.
-            if (type.basetype === SPIRBaseType.Struct &&
+            if (type.basetype === SPIRBaseType.Struct /*&&
                 (options.force_flattened_io_blocks || (options.es && options.version < 310) ||
-                    (!options.es && options.version < 150))) {
+                    (!options.es && options.version < 150))*/) {
                 this.emit_flattened_io_block(var_, qual);
             }
             else {
@@ -17325,22 +17366,22 @@ var CompilerGLSL = /** @class */ (function (_super) {
             this.register_write(left);
             this.register_write(right);
         }
-        var _a = this, backend = _a.backend, options = _a.options;
-        var has_boolean_mix = backend.boolean_mix_function &&
-            ((options.es && options.version >= 310) || (!options.es && options.version >= 450));
+        var _a = this; _a.backend; _a.options;
+        /*let has_boolean_mix = backend.boolean_mix_function &&
+            ((options.es && options.version >= 310) || (!options.es && options.version >= 450));*/
         var mix_op = this.to_trivial_mix_op(restype, left, right, lerp);
         var trivial_mix = mix_op !== undefined;
         // Cannot use boolean mix when the lerp argument is just one boolean,
         // fall back to regular trinary statements.
-        if (lerptype.vecsize === 1)
-            has_boolean_mix = false;
+        // if (lerptype.vecsize === 1)
+        //     has_boolean_mix = false;
         // If we can reduce the mix to a simple cast, do so.
         // This helps for cases like int(bool), uint(bool) which is implemented with
         // OpSelect bool 1 0.
         if (trivial_mix) {
             this.emit_unary_func_op(result_type, id, lerp, mix_op);
         }
-        else if (!has_boolean_mix && lerptype.basetype === SPIRBaseType.Boolean) {
+        else if ( /*!has_boolean_mix &&*/lerptype.basetype === SPIRBaseType.Boolean) {
             // Boolean mix not supported on desktop without extension.
             // Was added in OpenGL 4.5 with ES 3.1 compat.
             //
@@ -17353,8 +17394,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
             this.inherit_expression_dependencies(id, right);
             this.inherit_expression_dependencies(id, lerp);
         }
-        else if (lerptype.basetype === SPIRBaseType.Boolean)
-            this.emit_trinary_func_op(result_type, id, left, right, lerp, backend.boolean_mix_function);
+        /*else if (lerptype.basetype === SPIRBaseType.Boolean)
+            this.emit_trinary_func_op(result_type, id, left, right, lerp, backend.boolean_mix_function);*/
         else
             this.emit_trinary_func_op(result_type, id, left, right, lerp, "mix");
     };
@@ -18804,9 +18845,9 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (backend.use_array_constructor && type.array.length > 1) {
             if (options.flatten_multidimensional_arrays)
                 throw new Error("Cannot flatten constructors of multidimensional array constructors, e.g. float[][]().");
-            else if (!options.es && options.version < 430)
-                this.require_extension_internal("GL_ARB_arrays_of_arrays");
-            else if (options.es && options.version < 310)
+            /*else if (!options.es && options.version < 430)
+                this.require_extension_internal("GL_ARB_arrays_of_arrays");*/
+            else /*if (options.es && options.version < 310)*/
                 throw new Error("Arrays of arrays not supported before ESSL version 310.");
         }
         var e = this.type_to_glsl(type);
@@ -18853,10 +18894,10 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 formatted_load = false;
             }
             if (formatted_load) {
-                if (!this.options.es)
+                /*if (!this.options.es)
                     this.require_extension_internal("GL_EXT_shader_image_load_formatted");
-                else
-                    throw new Error("Cannot use GL_EXT_shader_image_load_formatted in ESSL.");
+                else*/
+                throw new Error("Cannot use GL_EXT_shader_image_load_formatted in ESSL.");
             }
         }
         res += this.to_precision_qualifiers_glsl(id);
@@ -19079,38 +19120,38 @@ var CompilerGLSL = /** @class */ (function (_super) {
             type.basetype === SPIRBaseType.Sampler;
         if (!type_supports_precision)
             return qual;
-        if (options.es) {
-            var execution = this.get_entry_point();
-            if (flags.get(Decoration.RelaxedPrecision)) {
-                var implied_fmediump = type.basetype === SPIRBaseType.Float &&
-                    options.fragment.default_float_precision === GLSLPrecision.Mediump &&
-                    execution.model === ExecutionModel.Fragment;
-                var implied_imediump = (type.basetype === SPIRBaseType.Int || type.basetype === SPIRBaseType.UInt) &&
-                    options.fragment.default_int_precision === GLSLPrecision.Mediump &&
-                    execution.model === ExecutionModel.Fragment;
-                qual += (implied_fmediump || implied_imediump) ? "" : "mediump ";
-            }
-            else {
-                var implied_fhighp = type.basetype === SPIRBaseType.Float && ((options.fragment.default_float_precision === GLSLPrecision.Highp &&
+        // if (options.es) {
+        var execution = this.get_entry_point();
+        if (flags.get(Decoration.RelaxedPrecision)) {
+            var implied_fmediump = type.basetype === SPIRBaseType.Float &&
+                options.fragment.default_float_precision === GLSLPrecision.Mediump &&
+                execution.model === ExecutionModel.Fragment;
+            var implied_imediump = (type.basetype === SPIRBaseType.Int || type.basetype === SPIRBaseType.UInt) &&
+                options.fragment.default_int_precision === GLSLPrecision.Mediump &&
+                execution.model === ExecutionModel.Fragment;
+            qual += (implied_fmediump || implied_imediump) ? "" : "mediump ";
+        }
+        else {
+            var implied_fhighp = type.basetype === SPIRBaseType.Float && ((options.fragment.default_float_precision === GLSLPrecision.Highp &&
+                execution.model === ExecutionModel.Fragment) ||
+                (execution.model !== ExecutionModel.Fragment));
+            var implied_ihighp = (type.basetype === SPIRBaseType.Int || type.basetype === SPIRBaseType.UInt) &&
+                ((options.fragment.default_int_precision === GLSLPrecision.Highp &&
                     execution.model === ExecutionModel.Fragment) ||
                     (execution.model !== ExecutionModel.Fragment));
-                var implied_ihighp = (type.basetype === SPIRBaseType.Int || type.basetype === SPIRBaseType.UInt) &&
-                    ((options.fragment.default_int_precision === GLSLPrecision.Highp &&
-                        execution.model === ExecutionModel.Fragment) ||
-                        (execution.model !== ExecutionModel.Fragment));
-                qual += (implied_fhighp || implied_ihighp) ? "" : "highp ";
-            }
+            qual += (implied_fhighp || implied_ihighp) ? "" : "highp ";
         }
+        /*}
         else if (backend.allow_precision_qualifiers) {
             // Vulkan GLSL supports precision qualifiers, even in desktop profiles, which is convenient.
             // The default is highp however, so only emit mediump in the rare case that a shader has these.
             if (flags.get(Decoration.RelaxedPrecision))
                 qual += "mediump ";
-        }
+        }*/
         return qual;
     };
     CompilerGLSL.prototype.format_to_glsl = function (format) {
-        if (this.options.es && this.is_desktop_only_format(format))
+        if ( /*this.options.es &&*/this.is_desktop_only_format(format))
             throw new Error("Attempting to use image format not supported in ES profile.");
         switch (format) {
             case ImageFormat.Rgba32f:
@@ -19202,7 +19243,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var is_block = this.has_decoration(type.self, Decoration.Block) || this.has_decoration(type.self, Decoration.BufferBlock);
         if (!is_block)
             return "";
-        var _a = this, ir = _a.ir, options = _a.options;
+        var _a = this, ir = _a.ir; _a.options;
         var memb = maplike_get(Meta, ir.meta, type.self).members;
         if (index >= memb.length)
             return "";
@@ -19234,15 +19275,15 @@ var CompilerGLSL = /** @class */ (function (_super) {
             attr.push("location = " + dec.location);
         // Can only declare component if we can declare location.
         if (dec.decoration_flags.get(Decoration.Component) && this.can_use_io_location(type.storage, true)) {
-            if (!options.es) {
+            /*if (!options.es) {
                 if (options.version < 440 && options.version >= 140)
                     this.require_extension_internal("GL_ARB_enhanced_layouts");
                 else if (options.version < 140)
                     throw new Error("Component decoration is not supported in targets below GLSL 1.40.");
                 attr.push("component = " + dec.component);
             }
-            else
-                throw new Error("Component decoration is not supported in ES targets.");
+            else*/
+            throw new Error("Component decoration is not supported in ES targets.");
         }
         // Packed is set by layout_for_variable earlier to mark that we need to emit offset qualifiers.
         // This is only done selectively in GLSL as needed.
@@ -19280,13 +19321,13 @@ var CompilerGLSL = /** @class */ (function (_super) {
             res += "__explicitInterpAMD ";
         }
         if (flags.get(Decoration.PerVertexNV)) {
-            var options = this.options;
-            if (options.es && options.version < 320)
-                throw new Error("pervertexNV requires ESSL 320.");
-            else if (!options.es && options.version < 450)
+            /*const options = this.options;
+            if (options.es && options.version < 320)*/
+            throw new Error("pervertexNV requires ESSL 320.");
+            /*else if (!options.es && options.version < 450)
                 throw new Error("pervertexNV requires GLSL 450.");
             this.require_extension_internal("GL_NV_fragment_shader_barycentric");
-            res += "pervertexNV ";
+            res += "pervertexNV ";*/
         }
         return res;
     };
@@ -19388,13 +19429,13 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 uses_enhanced_layouts = true;
             }
             if (have_geom_stream) {
-                if (this.get_execution_model() !== ExecutionModel.Geometry)
+                /*if (this.get_execution_model() !== ExecutionModel.Geometry)
                     throw new Error("Geometry streams can only be used in geometry shaders.");
-                if (options.es)
-                    throw new Error("Multiple geometry streams not supported in ESSL.");
-                if (options.version < 400)
+                 if (options.es)*/
+                throw new Error("Multiple geometry streams not supported in ESSL.");
+                /*if (options.version < 400)
                     this.require_extension_internal("GL_ARB_transform_feedback3");
-                attr.push("stream = " + this.get_decoration(var_.self, Decoration.Stream));
+                attr.push("stream = " + this.get_decoration(var_.self, Decoration.Stream));*/
             }
         }
         else if (var_.storage === StorageClass.Output) {
@@ -19406,13 +19447,13 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 uses_enhanced_layouts = true;
             }
             if (flags.get(Decoration.Stream)) {
-                if (this.get_execution_model() !== ExecutionModel.Geometry)
+                /*if (this.get_execution_model() !== ExecutionModel.Geometry)
                     throw new Error("Geometry streams can only be used in geometry shaders.");
-                if (options.es)
-                    throw new Error("Multiple geometry streams not supported in ESSL.");
-                if (options.version < 400)
+                if (options.es)*/
+                throw new Error("Multiple geometry streams not supported in ESSL.");
+                /*if (options.version < 400)
                     this.require_extension_internal("GL_ARB_transform_feedback3");
-                attr.push("stream = " + this.get_decoration(var_.self, Decoration.Stream));
+                attr.push("stream = " + this.get_decoration(var_.self, Decoration.Stream));*/
             }
         }
         // Can only declare Component if we can declare location.
@@ -19421,7 +19462,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             attr.push("component = " + this.get_decoration(var_.self, Decoration.Component));
         }
         if (uses_enhanced_layouts) {
-            if (!options.es) {
+            /*if (!options.es) {
                 if (options.version < 440 && options.version >= 140)
                     this.require_extension_internal("GL_ARB_enhanced_layouts");
                 else if (options.version < 140)
@@ -19429,8 +19470,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 if (!options.es && options.version < 440)
                     this.require_extension_internal("GL_ARB_enhanced_layouts");
             }
-            else if (options.es)
-                throw new Error("GL_ARB_enhanced_layouts is not supported in ESSL.");
+            else if (options.es)*/
+            throw new Error("GL_ARB_enhanced_layouts is not supported in ESSL.");
         }
         if (flags.get(Decoration.Index))
             attr.push("index = " + this.get_decoration(var_.self, Decoration.Index));
@@ -19439,15 +19480,15 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var emulated_ubo = var_.storage === StorageClass.PushConstant && options.emit_push_constant_as_uniform_buffer;
         var ubo_block = var_.storage === StorageClass.Uniform && typeflags.get(Decoration.Block);
         // GL 3.0/GLSL 1.30 is not considered legacy, but it doesn't have UBOs ...
-        var can_use_buffer_blocks = (options.es && options.version >= 300) || (!options.es && options.version >= 140);
+        var can_use_buffer_blocks = ( /*options.es &&*/options.version >= 300) /* || (!options.es && options.version >= 140)*/;
         // pretend no UBOs when options say so
         if (ubo_block && options.emit_uniform_buffer_as_plain_uniforms)
             can_use_buffer_blocks = false;
         var can_use_binding;
-        if (options.es)
-            can_use_binding = options.version >= 310;
-        else
-            can_use_binding = options.enable_420pack_extension || (options.version >= 420);
+        // if (options.es)
+        can_use_binding = options.version >= 310;
+        /*else
+            can_use_binding = options.enable_420pack_extension || (options.version >= 420);*/
         // Make sure we don't emit binding layout for a classic uniform on GLSL 1.30.
         if (!can_use_buffer_blocks && var_.storage === StorageClass.Uniform)
             can_use_binding = false;
@@ -19534,10 +19575,10 @@ var CompilerGLSL = /** @class */ (function (_super) {
         this.statement(lhs, " = ", this.to_expression(rhs_id), ";");
     };
     CompilerGLSL.prototype.emit_block_hints = function (block) {
-        var options = this.options;
-        if ((options.es && options.version < 310) || (!options.es && options.version < 140))
-            return;
-        switch (block.hint) {
+        // const { options } = this;
+        // if ((options.es && options.version < 310) || (!options.es && options.version < 140))
+        return;
+        /*switch (block.hint) {
             case SPIRBlockHints.Flatten:
                 this.require_extension_internal("GL_EXT_control_flow_attributes");
                 this.statement("SPIRV_CROSS_FLATTEN");
@@ -19554,7 +19595,9 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 this.require_extension_internal("GL_EXT_control_flow_attributes");
                 this.statement("SPIRV_CROSS_LOOP");
                 break;
-        }
+            default:
+                break;
+        }*/
     };
     CompilerGLSL.prototype.to_initializer_expression = function (var_) {
         return this.to_unpacked_expression(var_.initializer);
@@ -19689,7 +19732,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         return true;
     };
     CompilerGLSL.prototype.buffer_to_packing_standard = function (type, support_std430_without_scalar_layout) {
-        var options = this.options;
+        this.options;
         if (support_std430_without_scalar_layout && this.buffer_is_packing_standard(type, BufferPackingStandard.Std430))
             return "std430";
         else if (this.buffer_is_packing_standard(type, BufferPackingStandard.Std140))
@@ -19699,12 +19742,13 @@ var CompilerGLSL = /** @class */ (function (_super) {
             require_extension_internal("GL_EXT_scalar_block_layout");
             return "scalar";
         }*/
-        else if (support_std430_without_scalar_layout &&
+        /*else if (support_std430_without_scalar_layout &&
             this.buffer_is_packing_standard(type, BufferPackingStandard.Std430EnhancedLayout)) {
-            if (options.es /* && !options.vulkan_semantics*/)
+            if (options.es && !options.vulkan_semantics)
                 throw new Error("Push constant block cannot be expressed as neither std430 nor std140. ES-targets do not support GL_ARB_enhanced_layouts.");
-            /*if (!options.es && !options.vulkan_semantics && options.version < 440)
-                this.require_extension_internal("GL_ARB_enhanced_layouts");*/
+            if (!options.es && !options.vulkan_semantics && options.version < 440)
+                this.require_extension_internal("GL_ARB_enhanced_layouts");
+
             this.set_extended_decoration(type.self, ExtendedDecorations.ExplicitOffset);
             return "std430";
         }
@@ -19712,13 +19756,14 @@ var CompilerGLSL = /** @class */ (function (_super) {
             // Fallback time. We might be able to use the ARB_enhanced_layouts to deal with this difference,
             // however, we can only use layout(offset) on the block itself, not any substructs, so the substructs better be the appropriate layout.
             // Enhanced layouts seem to always work in Vulkan GLSL, so no need for extensions there.
-            if (options.es /*&& !options.vulkan_semantics*/)
+            if (options.es && !options.vulkan_semantics)
                 throw new Error("Push constant block cannot be expressed as neither std430 nor std140. ES-targets do not support GL_ARB_enhanced_layouts.");
-            if (!options.es && /*!options.vulkan_semantics &&*/ options.version < 440)
+            if (!options.es && !options.vulkan_semantics && options.version < 440)
                 this.require_extension_internal("GL_ARB_enhanced_layouts");
+
             this.set_extended_decoration(type.self, ExtendedDecorations.ExplicitOffset);
             return "std140";
-        }
+        }*/
         /*else if (options.vulkan_semantics && buffer_is_packing_standard(type, BufferPackingStandard.PackingScalarEnhancedLayout))
         {
             set_extended_decoration(type.self, ExplicitOffset);
@@ -19936,7 +19981,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         }
         if (out_type.basetype === in_type.basetype)
             return "";
-        var options = this.options;
+        this.options;
         console.assert(out_type.basetype !== SPIRBaseType.Boolean);
         console.assert(in_type.basetype !== SPIRBaseType.Boolean);
         var integral_cast = type_is_integral(out_type) && type_is_integral(in_type);
@@ -19956,29 +20001,29 @@ var CompilerGLSL = /** @class */ (function (_super) {
         if (out_type.basetype === SPIRBaseType.UInt && in_type.basetype === SPIRBaseType.Float) {
             if (this.is_legacy_es())
                 throw new Error("Float -> Uint bitcast not supported on legacy ESSL.");
-            else if (!options.es && options.version < 330)
-                this.require_extension_internal("GL_ARB_shader_bit_encoding");
+            /*else if (!options.es && options.version < 330)
+                this.require_extension_internal("GL_ARB_shader_bit_encoding");*/
             return "floatBitsToUint";
         }
         else if (out_type.basetype === SPIRBaseType.Int && in_type.basetype === SPIRBaseType.Float) {
             if (this.is_legacy_es())
                 throw new Error("Float -> Int bitcast not supported on legacy ESSL.");
-            else if (!options.es && options.version < 330)
-                this.require_extension_internal("GL_ARB_shader_bit_encoding");
+            /*else if (!options.es && options.version < 330)
+                this.require_extension_internal("GL_ARB_shader_bit_encoding");*/
             return "floatBitsToInt";
         }
         else if (out_type.basetype === SPIRBaseType.Float && in_type.basetype === SPIRBaseType.UInt) {
             if (this.is_legacy_es())
                 throw new Error("Uint -> Float bitcast not supported on legacy ESSL.");
-            else if (!options.es && options.version < 330)
-                this.require_extension_internal("GL_ARB_shader_bit_encoding");
+            /*else if (!options.es && options.version < 330)
+                this.require_extension_internal("GL_ARB_shader_bit_encoding");*/
             return "uintBitsToFloat";
         }
         else if (out_type.basetype === SPIRBaseType.Float && in_type.basetype === SPIRBaseType.Int) {
             if (this.is_legacy_es())
                 throw new Error("Int -> Float bitcast not supported on legacy ESSL.");
-            else if (!options.es && options.version < 330)
-                this.require_extension_internal("GL_ARB_shader_bit_encoding");
+            /*else if (!options.es && options.version < 330)
+                this.require_extension_internal("GL_ARB_shader_bit_encoding");*/
             return "intBitsToFloat";
         }
         else if (out_type.basetype === SPIRBaseType.Int64 && in_type.basetype === SPIRBaseType.Double)
@@ -20272,13 +20317,15 @@ var CompilerGLSL = /** @class */ (function (_super) {
     };
     CompilerGLSL.prototype.legacy_tex_op = function (op, imgtype, tex) {
         var type;
-        var options = this.options;
+        this.options;
         switch (imgtype.image.dim) {
             case Dim.Dim1D:
-                type = (imgtype.image.arrayed && !options.es) ? "1DArray" : "1D";
+                // type = (imgtype.image.arrayed && !options.es) ? "1DArray" : "1D";
+                type = "1D";
                 break;
             case Dim.Dim2D:
-                type = (imgtype.image.arrayed && !options.es) ? "2DArray" : "2D";
+                // type = (imgtype.image.arrayed && !options.es) ? "2DArray" : "2D";
+                type = "2D";
                 break;
             case Dim.Dim3D:
                 type = "3D";
@@ -20511,15 +20558,17 @@ var CompilerGLSL = /** @class */ (function (_super) {
     };
     CompilerGLSL.prototype.is_legacy = function () {
         var options = this.options;
-        return (options.es && options.version < 300) || (!options.es && options.version < 130);
+        // return (options.es && options.version < 300) || (!options.es && options.version < 130);
+        return options.version < 300;
     };
     CompilerGLSL.prototype.is_legacy_es = function () {
         var options = this.options;
-        return options.es && options.version < 300;
+        return options.version < 300;
     };
     CompilerGLSL.prototype.is_legacy_desktop = function () {
-        var options = this.options;
-        return !options.es && options.version < 130;
+        return false;
+        // const options = this.options;
+        // return !options.es && options.version < 130;
     };
     CompilerGLSL.prototype.register_impure_function_call = function () {
         // Impure functions can modify globals and aliased variables, so invalidate them as well.
@@ -20585,8 +20634,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var options = this.options;
         if (execution.model !== ExecutionModel.Fragment)
             throw new Error("Pixel local storage only supported in fragment shaders.");
-        if (!options.es)
-            throw new Error("Pixel local storage only supported in OpenGL ES.");
+        /*if (!options.es)
+            throw new Error("Pixel local storage only supported in OpenGL ES.");*/
         if (options.version < 300)
             throw new Error("Pixel local storage only supported in ESSL 3.0 and above.");
         if (this.pls_inputs.length > 0) {
@@ -20738,7 +20787,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var ir = this.ir;
         var options = this.options;
         if (ir.source.known) {
-            options.es = ir.source.es;
+            // options.es = ir.source.es;
             options.version = ir.source.version;
         }
     };
@@ -20753,12 +20802,13 @@ var CompilerGLSL = /** @class */ (function (_super) {
         backend.nonuniform_qualifier = "";
         backend.needs_row_major_load_workaround = true;
         // }
-        backend.allow_precision_qualifiers = /*options.vulkan_semantics ||*/ options.es;
+        backend.allow_precision_qualifiers = true; ///*options.vulkan_semantics ||*/ options.es;
         backend.force_gl_in_out_block = true;
         backend.supports_extensions = true;
         backend.use_array_constructor = true;
         backend.workgroup_size_is_hidden = true;
-        backend.support_precise_qualifier = (!options.es && options.version >= 400) || (options.es && options.version >= 320);
+        backend.support_precise_qualifier = false; /*(!options.es && options.version >= 400) || (options.es &&
+         options.version >= 320);*/
         if (this.is_legacy_es())
             backend.support_case_fallthrough = false;
         // Scan the SPIR-V to find trivial uses of extensions.
@@ -20833,16 +20883,16 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var options = this.options;
         ir.for_each_typed_id(SPIRType, function (_, type) {
             if (type.basetype === SPIRBaseType.Double) {
-                if (options.es)
-                    throw new Error("FP64 not supported in ES profile.");
-                if (!options.es && options.version < 400)
-                    _this.require_extension_internal("GL_ARB_gpu_shader_fp64");
+                // if (options.es)
+                throw new Error("FP64 not supported in ES profile.");
+                /*if (!options.es && options.version < 400)
+                    this.require_extension_internal("GL_ARB_gpu_shader_fp64");*/
             }
             else if (type.basetype === SPIRBaseType.Int64 || type.basetype === SPIRBaseType.UInt64) {
-                if (options.es)
-                    throw new Error("64-bit integers not supported in ES profile.");
-                if (!options.es)
-                    _this.require_extension_internal("GL_ARB_gpu_shader_int64");
+                // if (options.es)
+                throw new Error("64-bit integers not supported in ES profile.");
+                /*if (!options.es)
+                    this.require_extension_internal("GL_ARB_gpu_shader_int64");*/
             }
             else if (type.basetype === SPIRBaseType.Half) {
                 _this.require_extension_internal("GL_EXT_shader_explicit_arithmetic_types_float16");
@@ -20922,11 +20972,16 @@ var CompilerGLSL = /** @class */ (function (_super) {
             if (has_incoherent)
                 this.require_extension_internal("GL_EXT_shader_framebuffer_fetch_non_coherent");
         }
-        if (options.separate_shader_objects && !options.es && options.version < 410)
-            this.require_extension_internal("GL_ARB_separate_shader_objects");
+        /*if (options.separate_shader_objects && !options.es && options.version < 410)
+            this.require_extension_internal("GL_ARB_separate_shader_objects");*/
         if (ir.addressing_model === AddressingModel.PhysicalStorageBuffer64EXT) {
             // if (!options.vulkan_semantics)
             throw new Error("GL_EXT_buffer_reference is only supported in Vulkan GLSL.");
+            /*if (options.es && options.version < 320)
+                throw new Error("GL_EXT_buffer_reference requires ESSL 320.");
+            else if (!options.es && options.version < 450)
+                throw new Error("GL_EXT_buffer_reference requires GLSL 450.");
+            this.require_extension_internal("GL_EXT_buffer_reference");*/
         }
         else if (ir.addressing_model !== AddressingModel.Logical) {
             throw new Error("Only Logical and PhysicalStorageBuffer64EXT addressing models are supported.");
@@ -21157,25 +21212,25 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // Be very explicit here about how to solve the issue.
         if ((this.get_execution_model() !== ExecutionModel.Vertex && storage === StorageClass.Input) ||
             (this.get_execution_model() !== ExecutionModel.Fragment && storage === StorageClass.Output)) {
-            var minimum_desktop_version = block ? 440 : 410;
+            // const minimum_desktop_version = block ? 440 : 410;
             // ARB_enhanced_layouts vs ARB_separate_shader_objects ...
-            if (!options.es && options.version < minimum_desktop_version && !options.separate_shader_objects)
+            /*if (!options.es && options.version < minimum_desktop_version && !options.separate_shader_objects)
                 return false;
-            else if (options.es && options.version < 310)
-                return false;
+            else if (options.es && options.version < 310)*/
+            return false;
         }
         if ((this.get_execution_model() === ExecutionModel.Vertex && storage === StorageClass.Input) ||
             (this.get_execution_model() === ExecutionModel.Fragment && storage === StorageClass.Output)) {
-            if (options.es && options.version < 300)
+            if ( /*options.es &&*/options.version < 300)
                 return false;
-            else if (!options.es && options.version < 330)
-                return false;
+            /*else if (!options.es && options.version < 330)
+                return false;*/
         }
         if (storage === StorageClass.Uniform || storage === StorageClass.UniformConstant || storage === StorageClass.PushConstant) {
-            if (options.es && options.version < 310)
-                return false;
-            else if (!options.es && options.version < 430)
-                return false;
+            // if (options.es && options.version < 310)
+            return false;
+            /*else if (!options.es && options.version < 430)
+                return false;*/
         }
         return true;
     };
@@ -21268,36 +21323,27 @@ var CompilerGLSL = /** @class */ (function (_super) {
     CompilerGLSL.prototype.convert_double_to_string = function (c, col, row) {
         var res;
         var double_value = c.scalar_f64(col, row);
-        var options = this.options;
+        this.options;
         var backend = this.backend;
         if (isNaN(double_value) || isNaN(double_value)) {
-            // Use special representation.
-            if (!this.is_legacy()) {
-                var out_type = new SPIRType();
-                var in_type = new SPIRType();
-                out_type.basetype = SPIRBaseType.Double;
-                in_type.basetype = SPIRBaseType.UInt64;
-                out_type.vecsize = 1;
-                in_type.vecsize = 1;
-                out_type.width = 64;
-                in_type.width = 64;
-                var u64_value = c.scalar_u64(col, row);
-                if (options.es)
-                    throw new Error("64-bit integers/float not supported in ES profile.");
-                this.require_extension_internal("GL_ARB_gpu_shader_int64");
-                var print_buffer = "0x" + u64_value.toString() + backend.long_long_literal_suffix ? "ull" : "ul";
-                var comment = "inf";
-                if (double_value === Number.POSITIVE_INFINITY)
-                    comment = "-inf";
-                else if (isNaN(double_value))
-                    comment = "nan";
-                res = this.bitcast_glsl_op(out_type, in_type) + "(".concat(print_buffer, " /* ").concat(comment, " */)");
-            }
+            throw new Error("64-bit integers/float not supported in ES profile.");
+            /*this.require_extension_internal("GL_ARB_gpu_shader_int64");
+
+            const print_buffer = "0x" + u64_value.toString() + backend.long_long_literal_suffix ? "ull" : "ul";
+
+            let comment = "inf";
+            if (double_value === Number.POSITIVE_INFINITY)
+                comment = "-inf";
+            else if (isNaN(double_value))
+                comment = "nan";*/
+            // res = this.bitcast_glsl_op(out_type, in_type) + `(${print_buffer} /* ${comment} */)`;
+            /*}
             else {
                 if (options.es)
                     throw new Error("FP64 not supported in ES profile.");
                 if (options.version < 400)
                     this.require_extension_internal("GL_ARB_gpu_shader_fp64");
+
                 if (double_value === Number.POSITIVE_INFINITY) {
                     if (backend.double_literal_suffix)
                         res = "(1.0lf / 0.0lf)";
@@ -21318,7 +21364,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 }
                 else
                     throw new Error("Cannot represent non-finite floating point constant.");
-            }
+            }*/
         }
         else {
             res = convert_to_string(double_value);
@@ -21971,14 +22017,14 @@ function stage_to_execution_model(stage) {
         return ExecutionModel.Vertex;
     else if (stage === "frag")
         return ExecutionModel.Fragment;
-    else if (stage === "comp")
+    /*else if (stage === "comp")
         return ExecutionModel.GLCompute;
     else if (stage === "tesc")
         return ExecutionModel.TessellationControl;
     else if (stage === "tese")
         return ExecutionModel.TessellationEvaluation;
     else if (stage === "geom")
-        return ExecutionModel.Geometry;
+        return ExecutionModel.Geometry;*/
     else
         throw new Error("Invalid stage!");
 }
@@ -22068,8 +22114,8 @@ function compile_iteration(args, spirv_file) {
     var opts = compiler.get_common_options();
     if (args.set_version)
         opts.version = args.version;
-    if (args.set_es)
-        opts.es = args.es;
+    // if (args.set_es)
+    //     opts.es = args.es;
     opts.force_temporary = args.force_temporary;
     opts.separate_shader_objects = args.sso;
     opts.flatten_multidimensional_arrays = args.flatten_multidimensional_arrays;
@@ -22198,8 +22244,12 @@ function remap_pls(pls_variables, resources, secondary_resources) {
 }
 
 // TODO:
+//  - remove is_legacy_desktop() --> always false
+//  - go through options and remove useless ones --> see compile() for stuff that's always set
+//  - go through enums and remove useless ones
+//  - remove unused functions
+//  - pass in supported extensions and let the compiler handle fallbacks?
 //  - compare more against baseline compiles
-//  - Everywhere we're using slice(), remove this and pass in an offset param
 var Version;
 (function (Version) {
     Version[Version["WebGL1"] = 100] = "WebGL1";
@@ -22210,12 +22260,13 @@ function compile(data, version, options) {
     options = options || {};
     args.version = version;
     args.set_version = true;
-    args.es = true;
-    args.set_es = true;
+    // args.es = true;
+    // args.set_es = true;
     args.remove_unused = getOrDefault(options.removeUnused, true);
     args.glsl_keep_unnamed_ubos = getOrDefault(options.keepUnnamedUBOs, true);
     args.glsl_remove_attribute_layouts = getOrDefault(options.removeAttributeLayouts, false);
     args.specialization_constant_prefix = getOrDefault(options.specializationConstantPrefix, "SPIRV_CROSS_CONSTANT_ID_");
+    args.flatten_multidimensional_arrays = true;
     var spirv_file = new Uint32Array(data);
     if (args.reflect && args.reflect !== "") {
         throw new Error("Reflection not yet supported!");

@@ -1,7 +1,7 @@
 export declare enum FragmentShadingRateShift {
-    FragmentShadingRateVertical2PixelsShift = 0,
-    FragmentShadingRateVertical4PixelsShift = 1,
-    FragmentShadingRateHorizontal2PixelsShift = 2,
-    FragmentShadingRateHorizontal4PixelsShift = 3,
-    FragmentShadingRateMax = 2147483647
+    Vertical2Pixels = 0,
+    Vertical4Pixels = 1,
+    Horizontal2Pixels = 2,
+    Horizontal4Pixels = 3,
+    Max = 2147483647
 }

@@ -1,10 +1,10 @@
 export declare enum GroupOperation {
-    GroupOperationReduce = 0,
-    GroupOperationInclusiveScan = 1,
-    GroupOperationExclusiveScan = 2,
-    GroupOperationClusteredReduce = 3,
-    GroupOperationPartitionedReduceNV = 6,
-    GroupOperationPartitionedInclusiveScanNV = 7,
-    GroupOperationPartitionedExclusiveScanNV = 8,
-    GroupOperationMax = 2147483647
+    Reduce = 0,
+    InclusiveScan = 1,
+    ExclusiveScan = 2,
+    ClusteredReduce = 3,
+    PartitionedReduceNV = 6,
+    PartitionedInclusiveScanNV = 7,
+    PartitionedExclusiveScanNV = 8,
+    Max = 2147483647
 }
