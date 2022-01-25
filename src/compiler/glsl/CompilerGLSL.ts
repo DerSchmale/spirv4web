@@ -727,7 +727,7 @@ export class CompilerGLSL extends Compiler
                 // If an expression is mutable and forwardable, we speculate that it is immutable.
                 const meta = new AccessChainMeta();
                 const ptr_chain = opcode === Op.OpPtrAccessChain;
-                const e = this.access_chain(ops[2], ops.slice(3), length - 3, this.get<SPIRType>(SPIRType, ops[0]), meta, ptr_chain);
+                const e = this.access_chain(ops[2], ops, 3, length - 3, this.get<SPIRType>(SPIRType, ops[0]), meta, ptr_chain);
 
                 const expr = this.set<SPIRExpression>(SPIRExpression, ops[1], e, ops[0], this.should_forward(ops[2]));
 
@@ -794,7 +794,7 @@ export class CompilerGLSL extends Compiler
             case Op.OpArrayLength: {
                 const result_type = ops[0];
                 const id = ops[1];
-                let e = this.access_chain_internal(ops[2], ops.slice(3), length - 3, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, null);
+                let e = this.access_chain_internal(ops[2], ops, 3, length - 3, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, null);
                 if (this.has_decoration(ops[2], Decoration.DecorationNonUniform))
                     e = this.convert_non_uniform_expression(e, ops[2]);
                 this.set<SPIRExpression>(SPIRExpression, id, this.type_to_glsl(this.get<SPIRType>(SPIRType, result_type)),
@@ -807,7 +807,6 @@ export class CompilerGLSL extends Compiler
                 const result_type = ops[0];
                 const id = ops[1];
                 const func = ops[2];
-                const arg = ops.slice(3);
                 length -= 3;
 
                 const callee = this.get<SPIRFunction>(SPIRFunction, func);
@@ -820,11 +819,11 @@ export class CompilerGLSL extends Compiler
                 // Invalidate out variables passed to functions since they can be OpStore'd to.
                 for (let i = 0; i < length; i++) {
                     if (callee.arguments[i].write_count) {
-                        this.register_call_out_argument(arg[i]);
+                        this.register_call_out_argument(ops[i + 3]);
                         callee_has_out_variables = true;
                     }
 
-                    this.flush_variable_declaration(arg[i]);
+                    this.flush_variable_declaration(ops[i + 3]);
                 }
 
                 if (return_type.array.length > 0 && !backend.can_return_array) {
@@ -847,15 +846,15 @@ export class CompilerGLSL extends Compiler
                 for (let i = 0; i < length; i++) {
                     // Do not pass in separate images or samplers if we're remapping
                     // to combined image samplers.
-                    if (this.skip_argument(arg[i]))
+                    if (this.skip_argument(ops[i + 3]))
                         continue;
 
-                    arglist.push(this.to_func_call_arg(callee.arguments[i], arg[i]));
+                    arglist.push(this.to_func_call_arg(callee.arguments[i], ops[i + 3]));
                 }
 
                 for (let combined of callee.combined_parameters) {
-                    const image_id = combined.global_image ? combined.image_id : <VariableID>(arg[combined.image_id]);
-                    const sampler_id = combined.global_sampler ? combined.sampler_id : <VariableID>(arg[combined.sampler_id]);
+                    const image_id = combined.global_image ? combined.image_id : <VariableID>(ops[3 + combined.image_id]);
+                    const sampler_id = combined.global_sampler ? combined.sampler_id : <VariableID>(ops[3 + combined.sampler_id]);
                     arglist.push(this.to_combined_image_sampler(image_id, sampler_id));
                 }
 
@@ -865,7 +864,7 @@ export class CompilerGLSL extends Compiler
                 funexpr += ")";
 
                 // Check for function call constraints.
-                this.check_function_call_constraints(arg, length);
+                this.check_function_call_constraints(ops, 3, length);
 
                 if (return_type.basetype !== SPIRTypeBaseType.Void) {
                     // If the function actually writes to an out variable,
@@ -875,7 +874,7 @@ export class CompilerGLSL extends Compiler
                     // is read (common case when return value is ignored!
                     // In order to avoid start tracking invalid variables,
                     // just avoid the forwarding problem altogether.
-                    const forward = this.args_will_forward(id, arg, length, pure) && !callee_has_out_variables && pure &&
+                    const forward = this.args_will_forward(id, ops, 3, length, pure) && !callee_has_out_variables && pure &&
                         (!this.forced_temporaries.has(id));
 
                     if (emit_return_value_as_argument) {
@@ -888,7 +887,7 @@ export class CompilerGLSL extends Compiler
                     // Function calls are implicit loads from all variables in question.
                     // Set dependencies for them.
                     for (let i = 0; i < length; i++)
-                        this.register_read(id, arg[i], forward);
+                        this.register_read(id, ops[i + 3], forward);
 
                     // If we're going to forward the temporary result,
                     // put dependencies on every variable that must not change.
@@ -905,15 +904,15 @@ export class CompilerGLSL extends Compiler
             case Op.OpCompositeConstruct: {
                 const result_type = ops[0];
                 const id = ops[1];
-                const elems = ops.slice(2);
+                // const elems = ops.slice(2);
                 length -= 2;
 
                 let forward = true;
                 for (let i = 0; i < length; i++)
-                    forward = forward && this.should_forward(elems[i]);
+                    forward = forward && this.should_forward(ops[i + 2]);
 
                 const out_type = this.get<SPIRType>(SPIRType, result_type);
-                const in_type = length > 0 ? this.expression_type(elems[0]) : null;
+                const in_type = length > 0 ? this.expression_type(ops[2]) : null;
 
                 // Only splat if we have vector constructors.
                 // Arrays and structs must be initialized properly in full.
@@ -926,16 +925,16 @@ export class CompilerGLSL extends Compiler
                     splat = in_type.vecsize === 1 && in_type.columns === 1 && !composite && backend.use_constructor_splatting;
                     swizzle_splat = in_type.vecsize === 1 && in_type.columns === 1 && backend.can_swizzle_scalar;
 
-                    if (ir.ids[elems[0]].get_type() === Types.TypeConstant && !type_is_floating_point(in_type)) {
+                    if (ir.ids[ops[2]].get_type() === Types.TypeConstant && !type_is_floating_point(in_type)) {
                         // Cannot swizzle literal integers as a special case.
                         swizzle_splat = false;
                     }
                 }
 
                 if (splat || swizzle_splat) {
-                    const input = elems[0];
+                    const input = ops[2];
                     for (let i = 0; i < length; i++) {
-                        if (input !== elems[i]) {
+                        if (input !== ops[i + 2]) {
                             splat = false;
                             swizzle_splat = false;
                         }
@@ -966,31 +965,31 @@ export class CompilerGLSL extends Compiler
                     if (this.type_is_empty(out_type) && !backend.supports_empty_struct)
                         constructor_op += "0";
                     else if (splat)
-                        constructor_op += this.to_unpacked_expression(elems[0]);
+                        constructor_op += this.to_unpacked_expression(ops[2]);
                     else
-                        constructor_op += this.build_composite_combiner(result_type, elems, length);
+                        constructor_op += this.build_composite_combiner(result_type, ops, 2, length);
                     constructor_op += " }";
                     if (needs_trailing_tracket)
                         constructor_op += ")";
                 }
                 else if (swizzle_splat && !composite) {
-                    constructor_op = this.remap_swizzle(this.get<SPIRType>(SPIRType, result_type), 1, this.to_unpacked_expression(elems[0]));
+                    constructor_op = this.remap_swizzle(this.get<SPIRType>(SPIRType, result_type), 1, this.to_unpacked_expression(ops[2]));
                 }
                 else {
                     constructor_op = this.type_to_glsl_constructor(this.get<SPIRType>(SPIRType, result_type)) + "(";
                     if (this.type_is_empty(out_type) && !backend.supports_empty_struct)
                         constructor_op += "0";
                     else if (splat)
-                        constructor_op += this.to_unpacked_expression(elems[0]);
+                        constructor_op += this.to_unpacked_expression(ops[2]);
                     else
-                        constructor_op += this.build_composite_combiner(result_type, elems, length);
+                        constructor_op += this.build_composite_combiner(result_type, ops, 2, length);
                     constructor_op += ")";
                 }
 
                 if (constructor_op !== "") {
                     this.emit_op(result_type, id, constructor_op, forward);
                     for (let i = 0; i < length; i++)
-                        this.inherit_expression_dependencies(id, elems[i]);
+                        this.inherit_expression_dependencies(id, ops[i + 2]);
                 }
                 break;
             }
@@ -1006,7 +1005,7 @@ export class CompilerGLSL extends Compiler
                 // Make a copy, then use access chain to store the variable.
                 this.statement(this.declare_temporary(result_type, id), this.to_expression(vec), ";");
                 this.set<SPIRExpression>(SPIRExpression, id, this.to_name(id), result_type, true);
-                const chain = this.access_chain_internal(id, ops.slice(4), 1, 0, null);
+                const chain = this.access_chain_internal(id, ops, 4, 1, 0, null);
                 this.statement(chain, " = ", this.to_unpacked_expression(comp), ";");
                 break;
             }
@@ -1015,7 +1014,7 @@ export class CompilerGLSL extends Compiler
                 const result_type = ops[0];
                 const id = ops[1];
 
-                const expr = this.access_chain_internal(ops[2], ops.slice(3), 1, 0, null);
+                const expr = this.access_chain_internal(ops[2], ops, 3, 1, 0, null);
                 this.emit_op(result_type, id, expr, this.should_forward(ops[2]));
                 this.inherit_expression_dependencies(id, ops[2]);
                 this.inherit_expression_dependencies(id, ops[3]);
@@ -1053,7 +1052,7 @@ export class CompilerGLSL extends Compiler
                 const c = this.maybe_get<SPIRConstant>(SPIRConstant, ops[2]);
 
                 if (c && !c.specialization && !composite_type_is_complex) {
-                    const expr = this.to_extract_constant_composite_expression(result_type, c, ops.slice(3), length);
+                    const expr = this.to_extract_constant_composite_expression(result_type, c, ops, 3, length);
                     e = this.emit_op(result_type, id, expr, true, true);
                 }
                 else if (allow_base_expression && this.should_forward(ops[2]) && type.vecsize === 1 && type.columns === 1 && length === 1) {
@@ -1071,7 +1070,7 @@ export class CompilerGLSL extends Compiler
                     //
                     // Including the base will prevent this and would trigger multiple reads
                     // from expression causing it to be forced to an actual temporary in GLSL.
-                    const expr = this.access_chain_internal(ops[2], ops.slice(3), length,
+                    const expr = this.access_chain_internal(ops[2], ops, 3, length,
                         AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT | AccessChainFlagBits.ACCESS_CHAIN_CHAIN_ONLY_BIT |
                         AccessChainFlagBits.ACCESS_CHAIN_FORCE_COMPOSITE_BIT, meta);
                     e = this.emit_op(result_type, id, expr, true, this.should_suppress_usage_tracking(ops[2]));
@@ -1079,7 +1078,7 @@ export class CompilerGLSL extends Compiler
                     e.base_expression = ops[2];
                 }
                 else {
-                    const expr = this.access_chain_internal(ops[2], ops.slice(3), length,
+                    const expr = this.access_chain_internal(ops[2], ops, 3, length,
                         AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT | AccessChainFlagBits.ACCESS_CHAIN_FORCE_COMPOSITE_BIT, meta);
                     e = this.emit_op(result_type, id, expr, this.should_forward(ops[2]), this.should_suppress_usage_tracking(ops[2]));
                     this.inherit_expression_dependencies(id, ops[2]);
@@ -1104,7 +1103,6 @@ export class CompilerGLSL extends Compiler
                 const id = ops[1];
                 const obj = ops[2];
                 const composite = ops[3];
-                const elems = ops.slice(4);
                 length -= 4;
 
                 this.flush_variable_declaration(composite);
@@ -1112,7 +1110,7 @@ export class CompilerGLSL extends Compiler
                 // Make a copy, then use access chain to store the variable.
                 this.statement(this.declare_temporary(result_type, id), this.to_expression(composite), ";");
                 this.set<SPIRExpression>(SPIRExpression, id, this.to_name(id), result_type, true);
-                const chain = this.access_chain_internal(id, elems, length, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, null);
+                const chain = this.access_chain_internal(id, ops, 4, length, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, null);
                 this.statement(chain, " = ", this.to_unpacked_expression(obj), ";");
 
                 break;
@@ -1212,7 +1210,7 @@ export class CompilerGLSL extends Compiler
                 const id = ops[1];
                 const vec0 = ops[2];
                 const vec1 = ops[3];
-                const elems = ops.slice(4);
+                // const elems = ops.slice(4);
                 length -= 4;
 
                 const type0 = this.expression_type(vec0);
@@ -1221,7 +1219,7 @@ export class CompilerGLSL extends Compiler
                 // or in our case, T(0).
                 let shuffle = false;
                 for (let i = 0; i < length; i++)
-                    if (elems[i] >= type0.vecsize || elems[i] === 0xffffffff)
+                    if (ops[i + 4] >= type0.vecsize || ops[i + 4] === 0xffffffff)
                         shuffle = true;
 
                 // Cannot use swizzles with packed expressions, force shuffle path.
@@ -1239,7 +1237,7 @@ export class CompilerGLSL extends Compiler
                     // Constructor style and shuffling from two different vectors.
                     const args: string[] = [];
                     for (let i = 0; i < length; i++) {
-                        if (elems[i] === 0xffffffff) {
+                        if (ops[i + 4] === 0xffffffff) {
                             // Use a constant 0 here.
                             // We could use the first component or similar, but then we risk propagating
                             // a value we might not need, and bog down codegen.
@@ -1248,10 +1246,10 @@ export class CompilerGLSL extends Compiler
                             console.assert(type0.parent_type !== 0);
                             args.push(this.constant_expression(c));
                         }
-                        else if (elems[i] >= type0.vecsize)
-                            args.push(this.to_extract_component_expression(vec1, elems[i] - type0.vecsize));
+                        else if (ops[i + 4] >= type0.vecsize)
+                            args.push(this.to_extract_component_expression(vec1, ops[i + 4] - type0.vecsize));
                         else
-                            args.push(this.to_extract_component_expression(vec0, elems[i]));
+                            args.push(this.to_extract_component_expression(vec0, ops[i + 4]));
                     }
                     expr += this.type_to_glsl_constructor(this.get<SPIRType>(SPIRType, result_type)) + "(" + args.join(", ") + ")";
                 }
@@ -1264,8 +1262,8 @@ export class CompilerGLSL extends Compiler
                     expr += this.to_enclosed_unpacked_expression(vec0);
                     expr += ".";
                     for (let i = 0; i < length; i++) {
-                        console.assert(elems[i] !== 0xffffffff);
-                        expr += this.index_to_swizzle(elems[i]);
+                        console.assert(ops[i + 4] !== 0xffffffff);
+                        expr += this.index_to_swizzle(ops[i + 4]);
                     }
 
                     if (backend.swizzle_is_function && length > 1)
@@ -2673,27 +2671,27 @@ export class CompilerGLSL extends Compiler
                 const extension_set = ops[2];
 
                 const ext = this.get<SPIRExtension>(SPIRExtension, extension_set).ext;
-                const ops4 = ops.slice(4);
+                // const ops4 = ops.slice(4);
 
                 if (ext === SPIRExtensionExtension.GLSL)
                 {
-                    this.emit_glsl_op(ops[0], ops[1], ops[3], ops4, length - 4);
+                    this.emit_glsl_op(ops[0], ops[1], ops[3], ops, 4, length - 4);
                 }
                 /*else if (ext === SPIRExtensionExtension.SPV_AMD_shader_ballot)
                 {
-                    this.emit_spv_amd_shader_ballot_op(ops[0], ops[1], ops[3], ops4, length - 4);
+                    this.emit_spv_amd_shader_ballot_op(ops[0], ops[1], ops[3], ops, 4, length - 4);
                 }
                 else if (ext === SPIRExtensionExtension.SPV_AMD_shader_explicit_vertex_parameter)
                 {
-                    this.emit_spv_amd_shader_explicit_vertex_parameter_op(ops[0], ops[1], ops[3], ops4, length - 4);
+                    this.emit_spv_amd_shader_explicit_vertex_parameter_op(ops[0], ops[1], ops[3], ops, 4, length - 4);
                 }
                 else if (ext === SPIRExtensionExtension.SPV_AMD_shader_trinary_minmax)
                 {
-                    this.emit_spv_amd_shader_trinary_minmax_op(ops[0], ops[1], ops[3], ops4, length - 4);
+                    this.emit_spv_amd_shader_trinary_minmax_op(ops[0], ops[1], ops[3], ops, 4, length - 4);
                 }
                 else if (ext === SPIRExtensionExtension.SPV_AMD_gcn_shader)
                 {
-                    this.emit_spv_amd_gcn_shader_op(ops[0], ops[1], ops[3], ops4, length - 4);
+                    this.emit_spv_amd_gcn_shader_op(ops[0], ops[1], ops[3], ops, 4, length - 4);
                 }*/
                 else if (ext === SPIRExtensionExtension.SPV_debug_info)
                 {
@@ -3185,7 +3183,7 @@ export class CompilerGLSL extends Compiler
         this.current_emitting_block = null;
     }
 
-    protected emit_glsl_op(result_type: number, id: number, eop: number, args: number[] | Uint32Array, length: number)
+    protected emit_glsl_op(result_type: number, id: number, eop: number, args: number[] | Uint32Array, arroffs: number, length: number)
 {
     const op = <GLSLstd450>(eop);
 
@@ -3193,7 +3191,7 @@ export class CompilerGLSL extends Compiler
         throw new Error("Unsigned integers are not supported on legacy GLSL targets.");
 
     // If we need to do implicit bitcasts, make sure we do it with the correct type.
-    const integer_width = this.get_integer_width_for_glsl_instruction(op, args, length);
+    const integer_width = this.get_integer_width_for_glsl_instruction(op, args, arroffs, length);
     const int_type = to_signed_basetype(integer_width);
     const uint_type = to_unsigned_basetype(integer_width);
 
@@ -3204,236 +3202,236 @@ export class CompilerGLSL extends Compiler
         // FP fiddling
     case GLSLstd450.GLSLstd450Round:
         if (!this.is_legacy())
-            this.emit_unary_func_op(result_type, id, args[0], "round");
+            this.emit_unary_func_op(result_type, id, args[arroffs], "round");
         else
         {
-            const op0 = this.to_enclosed_expression(args[0]);
-            const op0_type = this.expression_type(args[0]);
+            const op0 = this.to_enclosed_expression(args[arroffs]);
+            const op0_type = this.expression_type(args[arroffs]);
             const expr = "floor(" + op0 + " + " + this.type_to_glsl_constructor(op0_type) + "(0.5))";
-            const forward = this.should_forward(args[0]);
+            const forward = this.should_forward(args[arroffs]);
             this.emit_op(result_type, id, expr, forward);
-            this.inherit_expression_dependencies(id, args[0]);
+            this.inherit_expression_dependencies(id, args[arroffs]);
         }
         break;
 
     case GLSLstd450.GLSLstd450RoundEven:
         if (!this.is_legacy())
-            this.emit_unary_func_op(result_type, id, args[0], "roundEven");
+            this.emit_unary_func_op(result_type, id, args[arroffs], "roundEven");
         else if (!options.es)
         {
             // This extension provides round() with round-to-even semantics.
             this.require_extension_internal("GL_EXT_gpu_shader4");
-            this.emit_unary_func_op(result_type, id, args[0], "round");
+            this.emit_unary_func_op(result_type, id, args[arroffs], "round");
         }
         else
             throw new Error("roundEven supported only in ESSL 300.");
         break;
 
     case GLSLstd450.GLSLstd450Trunc:
-        this.emit_unary_func_op(result_type, id, args[0], "trunc");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "trunc");
         break;
     case GLSLstd450.GLSLstd450SAbs:
-        this.emit_unary_func_op_cast(result_type, id, args[0], "abs", int_type, int_type);
+        this.emit_unary_func_op_cast(result_type, id, args[arroffs], "abs", int_type, int_type);
         break;
     case GLSLstd450.GLSLstd450FAbs:
-        this.emit_unary_func_op(result_type, id, args[0], "abs");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "abs");
         break;
     case GLSLstd450.GLSLstd450SSign:
-        this.emit_unary_func_op_cast(result_type, id, args[0], "sign", int_type, int_type);
+        this.emit_unary_func_op_cast(result_type, id, args[arroffs], "sign", int_type, int_type);
         break;
     case GLSLstd450.GLSLstd450FSign:
-        this.emit_unary_func_op(result_type, id, args[0], "sign");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "sign");
         break;
     case GLSLstd450.GLSLstd450Floor:
-        this.emit_unary_func_op(result_type, id, args[0], "floor");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "floor");
         break;
     case GLSLstd450.GLSLstd450Ceil:
-        this.emit_unary_func_op(result_type, id, args[0], "ceil");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "ceil");
         break;
     case GLSLstd450.GLSLstd450Fract:
-        this.emit_unary_func_op(result_type, id, args[0], "fract");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "fract");
         break;
     case GLSLstd450.GLSLstd450Radians:
-        this.emit_unary_func_op(result_type, id, args[0], "radians");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "radians");
         break;
     case GLSLstd450.GLSLstd450Degrees:
-        this.emit_unary_func_op(result_type, id, args[0], "degrees");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "degrees");
         break;
     case GLSLstd450.GLSLstd450Fma:
         if ((!options.es && options.version < 400) || (options.es && options.version < 320))
         {
-            const expr = this.to_enclosed_expression(args[0]) + " * " + this.to_enclosed_expression(args[1]) + " + " +
-                        this.to_enclosed_expression(args[2]);
+            const expr = this.to_enclosed_expression(args[arroffs]) + " * " + this.to_enclosed_expression(args[arroffs + 1]) + " + " +
+                        this.to_enclosed_expression(args[arroffs + 2]);
 
             this.emit_op(result_type, id, expr,
-                this.should_forward(args[0]) && this.should_forward(args[1]) && this.should_forward(args[2]));
+                this.should_forward(args[arroffs]) && this.should_forward(args[arroffs + 1]) && this.should_forward(args[arroffs + 2]));
             for (let i = 0; i < 3; i++)
                 this.inherit_expression_dependencies(id, args[i]);
         }
         else
-            this.emit_trinary_func_op(result_type, id, args[0], args[1], args[2], "fma");
+            this.emit_trinary_func_op(result_type, id, args[arroffs], args[arroffs + 1], args[arroffs + 2], "fma");
         break;
     case GLSLstd450.GLSLstd450Modf:
-        this.register_call_out_argument(args[1]);
+        this.register_call_out_argument(args[arroffs + 1]);
         this.forced_temporaries.add(id);
-        this.emit_binary_func_op(result_type, id, args[0], args[1], "modf");
+        this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "modf");
         break;
 
     case GLSLstd450.GLSLstd450ModfStruct:
     {
         const type = this.get<SPIRType>(SPIRType, result_type);
         this.emit_uninitialized_temporary_expression(result_type, id);
-        this.statement(this.to_expression(id), ".", this.to_member_name(type, 0), " = ", "modf(", this.to_expression(args[0]), ", ",
+        this.statement(this.to_expression(id), ".", this.to_member_name(type, 0), " = ", "modf(", this.to_expression(args[arroffs]), ", ",
             this.to_expression(id), ".", this.to_member_name(type, 1), ");");
         break;
     }
 
         // Minmax
     case GLSLstd450.GLSLstd450UMin:
-        this.emit_binary_func_op_cast(result_type, id, args[0], args[1], "min", uint_type, false);
+        this.emit_binary_func_op_cast(result_type, id, args[arroffs], args[arroffs + 1], "min", uint_type, false);
         break;
 
     case GLSLstd450.GLSLstd450SMin:
-        this.emit_binary_func_op_cast(result_type, id, args[0], args[1], "min", int_type, false);
+        this.emit_binary_func_op_cast(result_type, id, args[arroffs], args[arroffs + 1], "min", int_type, false);
         break;
 
     case GLSLstd450.GLSLstd450FMin:
-        this.emit_binary_func_op(result_type, id, args[0], args[1], "min");
+        this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "min");
         break;
 
     case GLSLstd450.GLSLstd450FMax:
-        this.emit_binary_func_op(result_type, id, args[0], args[1], "max");
+        this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "max");
         break;
 
     case GLSLstd450.GLSLstd450UMax:
-        this.emit_binary_func_op_cast(result_type, id, args[0], args[1], "max", uint_type, false);
+        this.emit_binary_func_op_cast(result_type, id, args[arroffs], args[arroffs + 1], "max", uint_type, false);
         break;
 
     case GLSLstd450.GLSLstd450SMax:
-        this.emit_binary_func_op_cast(result_type, id, args[0], args[1], "max", int_type, false);
+        this.emit_binary_func_op_cast(result_type, id, args[arroffs], args[arroffs + 1], "max", int_type, false);
         break;
 
     case GLSLstd450.GLSLstd450FClamp:
-        this.emit_trinary_func_op(result_type, id, args[0], args[1], args[2], "clamp");
+        this.emit_trinary_func_op(result_type, id, args[arroffs], args[arroffs + 1], args[arroffs + 2], "clamp");
         break;
 
     case GLSLstd450.GLSLstd450UClamp:
-        this.emit_trinary_func_op_cast(result_type, id, args[0], args[1], args[2], "clamp", uint_type);
+        this.emit_trinary_func_op_cast(result_type, id, args[arroffs], args[arroffs + 1], args[arroffs + 2], "clamp", uint_type);
         break;
 
     case GLSLstd450.GLSLstd450SClamp:
-        this.emit_trinary_func_op_cast(result_type, id, args[0], args[1], args[2], "clamp", int_type);
+        this.emit_trinary_func_op_cast(result_type, id, args[arroffs], args[arroffs + 1], args[arroffs + 2], "clamp", int_type);
         break;
 
         // Trig
     case GLSLstd450.GLSLstd450Sin:
-        this.emit_unary_func_op(result_type, id, args[0], "sin");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "sin");
         break;
     case GLSLstd450.GLSLstd450Cos:
-        this.emit_unary_func_op(result_type, id, args[0], "cos");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "cos");
         break;
     case GLSLstd450.GLSLstd450Tan:
-        this.emit_unary_func_op(result_type, id, args[0], "tan");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "tan");
         break;
     case GLSLstd450.GLSLstd450Asin:
-        this.emit_unary_func_op(result_type, id, args[0], "asin");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "asin");
         break;
     case GLSLstd450.GLSLstd450Acos:
-        this.emit_unary_func_op(result_type, id, args[0], "acos");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "acos");
         break;
     case GLSLstd450.GLSLstd450Atan:
-        this.emit_unary_func_op(result_type, id, args[0], "atan");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "atan");
         break;
     case GLSLstd450.GLSLstd450Sinh:
-        this.emit_unary_func_op(result_type, id, args[0], "sinh");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "sinh");
         break;
     case GLSLstd450.GLSLstd450Cosh:
-        this.emit_unary_func_op(result_type, id, args[0], "cosh");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "cosh");
         break;
     case GLSLstd450.GLSLstd450Tanh:
-        this.emit_unary_func_op(result_type, id, args[0], "tanh");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "tanh");
         break;
     case GLSLstd450.GLSLstd450Asinh:
-        this.emit_unary_func_op(result_type, id, args[0], "asinh");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "asinh");
         break;
     case GLSLstd450.GLSLstd450Acosh:
-        this.emit_unary_func_op(result_type, id, args[0], "acosh");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "acosh");
         break;
     case GLSLstd450.GLSLstd450Atanh:
-        this.emit_unary_func_op(result_type, id, args[0], "atanh");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "atanh");
         break;
     case GLSLstd450.GLSLstd450Atan2:
-        this.emit_binary_func_op(result_type, id, args[0], args[1], "atan");
+        this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "atan");
         break;
 
         // Exponentials
     case GLSLstd450.GLSLstd450Pow:
-        this.emit_binary_func_op(result_type, id, args[0], args[1], "pow");
+        this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "pow");
         break;
     case GLSLstd450.GLSLstd450Exp:
-        this.emit_unary_func_op(result_type, id, args[0], "exp");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "exp");
         break;
     case GLSLstd450.GLSLstd450Log:
-        this.emit_unary_func_op(result_type, id, args[0], "log");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "log");
         break;
     case GLSLstd450.GLSLstd450Exp2:
-        this.emit_unary_func_op(result_type, id, args[0], "exp2");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "exp2");
         break;
     case GLSLstd450.GLSLstd450Log2:
-        this.emit_unary_func_op(result_type, id, args[0], "log2");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "log2");
         break;
     case GLSLstd450.GLSLstd450Sqrt:
-        this.emit_unary_func_op(result_type, id, args[0], "sqrt");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "sqrt");
         break;
     case GLSLstd450.GLSLstd450InverseSqrt:
-        this.emit_unary_func_op(result_type, id, args[0], "inversesqrt");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "inversesqrt");
         break;
 
         // Matrix math
     case GLSLstd450.GLSLstd450Determinant:
-        this.emit_unary_func_op(result_type, id, args[0], "determinant");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "determinant");
         break;
     case GLSLstd450.GLSLstd450MatrixInverse:
-        this.emit_unary_func_op(result_type, id, args[0], "inverse");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "inverse");
         break;
 
         // Lerping
     case GLSLstd450.GLSLstd450FMix:
         case GLSLstd450.GLSLstd450IMix:
     {
-        this.emit_mix_op(result_type, id, args[0], args[1], args[2]);
+        this.emit_mix_op(result_type, id, args[arroffs], args[arroffs+ 1], args[arroffs + 2]);
         break;
     }
     case GLSLstd450.GLSLstd450Step:
-        this.emit_binary_func_op(result_type, id, args[0], args[1], "step");
+        this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "step");
         break;
     case GLSLstd450.GLSLstd450SmoothStep:
-        this.emit_trinary_func_op(result_type, id, args[0], args[1], args[2], "smoothstep");
+        this.emit_trinary_func_op(result_type, id, args[arroffs], args[arroffs + 1], args[arroffs + 2], "smoothstep");
         break;
 
         // Packing
     case GLSLstd450.GLSLstd450Frexp:
-        this.register_call_out_argument(args[1]);
+        this.register_call_out_argument(args[arroffs + 1]);
         this.forced_temporaries.add(id);
-        this.emit_binary_func_op(result_type, id, args[0], args[1], "frexp");
+        this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "frexp");
         break;
 
     case GLSLstd450.GLSLstd450FrexpStruct:
     {
         const type = this.get<SPIRType>(SPIRType, result_type);
         this.emit_uninitialized_temporary_expression(result_type, id);
-        this.statement(this.to_expression(id), ".", this.to_member_name(type, 0), " = ", "frexp(", this.to_expression(args[0]), ", ",
+        this.statement(this.to_expression(id), ".", this.to_member_name(type, 0), " = ", "frexp(", this.to_expression(args[arroffs]), ", ",
             this.to_expression(id), ".", this.to_member_name(type, 1), ");");
         break;
     }
 
     case GLSLstd450.GLSLstd450Ldexp:
     {
-        const forward = this.should_forward(args[0]) && this.should_forward(args[1]);
+        const forward = this.should_forward(args[arroffs]) && this.should_forward(args[arroffs + 1]);
 
-        const op0 = this.to_unpacked_expression(args[0]);
-        let op1 = this.to_unpacked_expression(args[1]);
-        const op1_type = this.expression_type(args[1]);
+        const op0 = this.to_unpacked_expression(args[arroffs]);
+        let op1 = this.to_unpacked_expression(args[arroffs + 1]);
+        const op1_type = this.expression_type(args[arroffs + 1]);
         if (op1_type.basetype !== SPIRTypeBaseType.Int)
         {
             // Need a value cast here.
@@ -3445,102 +3443,102 @@ export class CompilerGLSL extends Compiler
         const expr = "ldexp(" + op0 + ", " + op1 + ")";
 
         this.emit_op(result_type, id, expr, forward);
-        this.inherit_expression_dependencies(id, args[0]);
-        this.inherit_expression_dependencies(id, args[1]);
+        this.inherit_expression_dependencies(id, args[arroffs]);
+        this.inherit_expression_dependencies(id, args[arroffs + 1]);
         break;
     }
 
     case GLSLstd450.GLSLstd450PackSnorm4x8:
-        this.emit_unary_func_op(result_type, id, args[0], "packSnorm4x8");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "packSnorm4x8");
         break;
     case GLSLstd450.GLSLstd450PackUnorm4x8:
-        this.emit_unary_func_op(result_type, id, args[0], "packUnorm4x8");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "packUnorm4x8");
         break;
     case GLSLstd450.GLSLstd450PackSnorm2x16:
-        this.emit_unary_func_op(result_type, id, args[0], "packSnorm2x16");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "packSnorm2x16");
         break;
     case GLSLstd450.GLSLstd450PackUnorm2x16:
-        this.emit_unary_func_op(result_type, id, args[0], "packUnorm2x16");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "packUnorm2x16");
         break;
     case GLSLstd450.GLSLstd450PackHalf2x16:
-        this.emit_unary_func_op(result_type, id, args[0], "packHalf2x16");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "packHalf2x16");
         break;
     case GLSLstd450.GLSLstd450UnpackSnorm4x8:
-        this.emit_unary_func_op(result_type, id, args[0], "unpackSnorm4x8");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "unpackSnorm4x8");
         break;
     case GLSLstd450.GLSLstd450UnpackUnorm4x8:
-        this.emit_unary_func_op(result_type, id, args[0], "unpackUnorm4x8");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "unpackUnorm4x8");
         break;
     case GLSLstd450.GLSLstd450UnpackSnorm2x16:
-        this.emit_unary_func_op(result_type, id, args[0], "unpackSnorm2x16");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "unpackSnorm2x16");
         break;
     case GLSLstd450.GLSLstd450UnpackUnorm2x16:
-        this.emit_unary_func_op(result_type, id, args[0], "unpackUnorm2x16");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "unpackUnorm2x16");
         break;
     case GLSLstd450.GLSLstd450UnpackHalf2x16:
-        this.emit_unary_func_op(result_type, id, args[0], "unpackHalf2x16");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "unpackHalf2x16");
         break;
 
     case GLSLstd450.GLSLstd450PackDouble2x32:
-        this.emit_unary_func_op(result_type, id, args[0], "packDouble2x32");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "packDouble2x32");
         break;
     case GLSLstd450.GLSLstd450UnpackDouble2x32:
-        this.emit_unary_func_op(result_type, id, args[0], "unpackDouble2x32");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "unpackDouble2x32");
         break;
 
         // Vector math
     case GLSLstd450.GLSLstd450Length:
-        this.emit_unary_func_op(result_type, id, args[0], "length");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "length");
         break;
     case GLSLstd450.GLSLstd450Distance:
-        this.emit_binary_func_op(result_type, id, args[0], args[1], "distance");
+        this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "distance");
         break;
     case GLSLstd450.GLSLstd450Cross:
-        this.emit_binary_func_op(result_type, id, args[0], args[1], "cross");
+        this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "cross");
         break;
     case GLSLstd450.GLSLstd450Normalize:
-        this.emit_unary_func_op(result_type, id, args[0], "normalize");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "normalize");
         break;
     case GLSLstd450.GLSLstd450FaceForward:
-        this.emit_trinary_func_op(result_type, id, args[0], args[1], args[2], "faceforward");
+        this.emit_trinary_func_op(result_type, id, args[arroffs], args[arroffs + 1], args[arroffs+ 2], "faceforward");
         break;
     case GLSLstd450.GLSLstd450Reflect:
-        this.emit_binary_func_op(result_type, id, args[0], args[1], "reflect");
+        this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "reflect");
         break;
     case GLSLstd450.GLSLstd450Refract:
-        this.emit_trinary_func_op(result_type, id, args[0], args[1], args[2], "refract");
+        this.emit_trinary_func_op(result_type, id, args[arroffs], args[arroffs + 1], args[arroffs + 2], "refract");
         break;
 
         // Bit-fiddling
     case GLSLstd450.GLSLstd450FindILsb:
         // findLSB always returns int.
-        this.emit_unary_func_op_cast(result_type, id, args[0], "findLSB", this.expression_type(args[0]).basetype, int_type);
+        this.emit_unary_func_op_cast(result_type, id, args[arroffs], "findLSB", this.expression_type(args[arroffs]).basetype, int_type);
         break;
 
     case GLSLstd450.GLSLstd450FindSMsb:
-        this.emit_unary_func_op_cast(result_type, id, args[0], "findMSB", int_type, int_type);
+        this.emit_unary_func_op_cast(result_type, id, args[arroffs], "findMSB", int_type, int_type);
         break;
 
     case GLSLstd450.GLSLstd450FindUMsb:
-        this.emit_unary_func_op_cast(result_type, id, args[0], "findMSB", uint_type, int_type); // findMSB always
+        this.emit_unary_func_op_cast(result_type, id, args[arroffs], "findMSB", uint_type, int_type); // findMSB always
         // returns int.
         break;
 
         // Multisampled varying
     case GLSLstd450.GLSLstd450InterpolateAtCentroid:
-        this.emit_unary_func_op(result_type, id, args[0], "interpolateAtCentroid");
+        this.emit_unary_func_op(result_type, id, args[arroffs], "interpolateAtCentroid");
         break;
     case GLSLstd450.GLSLstd450InterpolateAtSample:
-        this.emit_binary_func_op(result_type, id, args[0], args[1], "interpolateAtSample");
+        this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "interpolateAtSample");
         break;
     case GLSLstd450.GLSLstd450InterpolateAtOffset:
-        this.emit_binary_func_op(result_type, id, args[0], args[1], "interpolateAtOffset");
+        this.emit_binary_func_op(result_type, id, args[arroffs], args[arroffs + 1], "interpolateAtOffset");
         break;
 
     case GLSLstd450.GLSLstd450NMin:
         case GLSLstd450.GLSLstd450NMax:
     {
-        this.emit_nminmax_op(result_type, id, args[0], args[1], op);
+        this.emit_nminmax_op(result_type, id, args[arroffs], args[arroffs+ 1], op);
         break;
     }
 
@@ -3555,8 +3553,8 @@ export class CompilerGLSL extends Compiler
         // Inherit precision qualifiers.
         ir.meta[max_id] = defaultClone(Meta, ir.meta[id]);
 
-        this.emit_nminmax_op(result_type, max_id, args[0], args[1], GLSLstd450.GLSLstd450NMax);
-        this.emit_nminmax_op(result_type, id, max_id, args[2], GLSLstd450.GLSLstd450NMin);
+        this.emit_nminmax_op(result_type, max_id, args[arroffs], args[arroffs + 1], GLSLstd450.GLSLstd450NMax);
+        this.emit_nminmax_op(result_type, id, max_id, args[arroffs + 2], GLSLstd450.GLSLstd450NMin);
         break;
     }
 
@@ -5428,8 +5426,8 @@ export class CompilerGLSL extends Compiler
 
             const lhs_meta = new AccessChainMeta();
             const rhs_meta = new AccessChainMeta();
-            const lhs = this.access_chain_internal(lhs_id, chain, chain.length, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, lhs_meta);
-            const rhs = this.access_chain_internal(rhs_id, chain, chain.length, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, rhs_meta);
+            const lhs = this.access_chain_internal(lhs_id, chain, 0, chain.length, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, lhs_meta);
+            const rhs = this.access_chain_internal(rhs_id, chain, 0, chain.length, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, rhs_meta);
 
             const id = this.ir.increase_bound_by(2);
             lhs_id = id;
@@ -6231,7 +6229,7 @@ export class CompilerGLSL extends Compiler
             }
 
             case Op.OpCompositeExtract: {
-                const expr = this.access_chain_internal(cop.arguments[0], cop.arguments.slice(1), cop.arguments.length - 1,
+                const expr = this.access_chain_internal(cop.arguments[0], cop.arguments, 1, cop.arguments.length - 1,
                     AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, null);
                 return expr;
             }
@@ -6679,7 +6677,7 @@ export class CompilerGLSL extends Compiler
         }
         else {
             for (let i = 0; i < this.indent; i++)
-                this.buffer.append("\t");
+                this.buffer.append("   ");
 
             this.statement_inner(...args);
             this.buffer.append("\n");
@@ -9669,7 +9667,7 @@ export class CompilerGLSL extends Compiler
         return expr;
     }
 
-    protected access_chain_internal(base: number, indices: number[] | Uint32Array, count: number, flags: AccessChainFlags, meta: AccessChainMeta): string
+    protected access_chain_internal(base: number, indices: number[] | Uint32Array, arroffset: number, count: number, flags: AccessChainFlags, meta: AccessChainMeta): string
     {
         let expr = "";
 
@@ -9728,7 +9726,7 @@ export class CompilerGLSL extends Compiler
         };
 
         for (let i = 0; i < count; i++) {
-            let index = indices[i];
+            let index = indices[i + arroffset];
 
             let is_literal = index_is_literal;
             if (is_literal && msb_is_id && (index >> 31) !== 0) {
@@ -10053,7 +10051,7 @@ export class CompilerGLSL extends Compiler
         return expr;
     }
 
-    protected access_chain(base: number, indices: Uint32Array, count: number, target_type: SPIRType, meta: AccessChainMeta = null, ptr_chain: boolean = false): string
+    protected access_chain(base: number, indices: Uint32Array, arroffset: number, count: number, target_type: SPIRType, meta: AccessChainMeta = null, ptr_chain: boolean = false): string
     {
         if (this.flattened_buffer_blocks.has(base)) {
             // need to be able to change these in functions:
@@ -10063,14 +10061,14 @@ export class CompilerGLSL extends Compiler
                 need_transpose: false
             };
 
-            this.flattened_access_chain_offset(this.expression_type(base), indices, count, 0, 16, props, ptr_chain);
+            this.flattened_access_chain_offset(this.expression_type(base), indices, arroffset, count, 0, 16, props, ptr_chain);
 
             if (meta) {
                 meta.need_transpose = target_type.columns > 1 && props.need_transpose;
                 meta.storage_is_packed = false;
             }
 
-            return this.flattened_access_chain(base, indices, count, target_type, 0, props.matrix_stride, props.array_stride, props.need_transpose);
+            return this.flattened_access_chain(base, indices, arroffset, count, target_type, 0, props.matrix_stride, props.array_stride, props.need_transpose);
         }
         else if (this.flattened_structs.hasOwnProperty(base) && count > 0) {
             let flags = AccessChainFlagBits.ACCESS_CHAIN_CHAIN_ONLY_BIT | AccessChainFlagBits.ACCESS_CHAIN_SKIP_REGISTER_EXPRESSION_READ_BIT;
@@ -10083,7 +10081,7 @@ export class CompilerGLSL extends Compiler
                     meta.flattened_struct = target_type.basetype === SPIRTypeBaseType.Struct;
             }
 
-            const chain = this.access_chain_internal(base, indices, count, flags, null).substring(1);
+            const chain = this.access_chain_internal(base, indices, arroffset, count, flags, null).substring(1);
             if (meta) {
                 meta.need_transpose = false;
                 meta.storage_is_packed = false;
@@ -10097,25 +10095,25 @@ export class CompilerGLSL extends Compiler
             let flags = AccessChainFlagBits.ACCESS_CHAIN_SKIP_REGISTER_EXPRESSION_READ_BIT;
             if (ptr_chain)
                 flags |= AccessChainFlagBits.ACCESS_CHAIN_PTR_CHAIN_BIT;
-            return this.access_chain_internal(base, indices, count, flags, meta);
+            return this.access_chain_internal(base, indices, arroffset, count, flags, meta);
         }
     }
 
-    protected flattened_access_chain(base: number, indices: Uint32Array | Array<number>, count: number,
+    protected flattened_access_chain(base: number, indices: Uint32Array | Array<number>, arroffset: number, count: number,
                                      target_type: SPIRType, offset: number, matrix_stride: number,
                                      _array_stride: number, need_transpose: boolean)
     {
         if (target_type.array.length > 0)
             throw new Error("Access chains that result in an array can not be flattened");
         else if (target_type.basetype === SPIRTypeBaseType.Struct)
-            return this.flattened_access_chain_struct(base, indices, count, target_type, offset);
+            return this.flattened_access_chain_struct(base, indices, arroffset, count, target_type, offset);
         else if (target_type.columns > 1)
-            return this.flattened_access_chain_matrix(base, indices, count, target_type, offset, matrix_stride, need_transpose);
+            return this.flattened_access_chain_matrix(base, indices, arroffset, count, target_type, offset, matrix_stride, need_transpose);
         else
-            return this.flattened_access_chain_vector(base, indices, count, target_type, offset, matrix_stride, need_transpose);
+            return this.flattened_access_chain_vector(base, indices, arroffset, count, target_type, offset, matrix_stride, need_transpose);
     }
 
-    protected flattened_access_chain_struct(base: number, indices: Uint32Array | Array<number>, count: number,
+    protected flattened_access_chain_struct(base: number, indices: Uint32Array | Array<number>, arroffset: number, count: number,
                                             target_type: SPIRType, offset: number): string
     {
         let expr = this.type_to_glsl_constructor(target_type) + "(";
@@ -10136,7 +10134,7 @@ export class CompilerGLSL extends Compiler
                 matrix_stride = this.type_struct_member_matrix_stride(target_type, i);
             }
 
-            const tmp = this.flattened_access_chain(base, indices, count, member_type, offset + member_offset,
+            const tmp = this.flattened_access_chain(base, indices, arroffset, count, member_type, offset + member_offset,
                 matrix_stride, 0 /* array_stride */, need_transpose);
 
             // Cannot forward transpositions, so resolve them here.
@@ -10151,7 +10149,7 @@ export class CompilerGLSL extends Compiler
         return expr;
     }
 
-    protected flattened_access_chain_matrix(base: number, indices: Uint32Array | Array<number>, count: number,
+    protected flattened_access_chain_matrix(base: number, indices: Uint32Array | Array<number>, arroffset: number, count: number,
                                             target_type: SPIRType, offset: number, matrix_stride: number, need_transpose: boolean): string
     {
         console.assert(matrix_stride);
@@ -10168,7 +10166,7 @@ export class CompilerGLSL extends Compiler
             if (i !== 0)
                 expr += ", ";
 
-            expr += this.flattened_access_chain_vector(base, indices, count, tmp_type, offset + i * matrix_stride, matrix_stride, false);
+            expr += this.flattened_access_chain_vector(base, indices, arroffset, count, tmp_type, offset + i * matrix_stride, matrix_stride, false);
         }
 
         expr += ")";
@@ -10176,10 +10174,10 @@ export class CompilerGLSL extends Compiler
         return expr;
     }
 
-    protected flattened_access_chain_vector(base: number, indices: Uint32Array | Array<number>, count: number,
+    protected flattened_access_chain_vector(base: number, indices: Uint32Array | Array<number>, arroffset: number, count: number,
                                             target_type: SPIRType, offset: number, matrix_stride: number, need_transpose: boolean): string
     {
-        const result = this.flattened_access_chain_offset(this.expression_type(base), indices, count, offset, 16);
+        const result = this.flattened_access_chain_offset(this.expression_type(base), indices, arroffset, count, offset, 16);
 
         const buffer_name = this.to_name(this.expression_type(base).self);
 
@@ -10234,7 +10232,7 @@ export class CompilerGLSL extends Compiler
     }
 
     protected flattened_access_chain_offset(basetype: SPIRType, indices: Uint32Array | Array<number>,
-                                            count: number, offset: number, word_stride: number,
+                                            arroffset: number, count: number, offset: number, word_stride: number,
                                             out: { need_transpose: boolean, matrix_stride: number, array_stride: number } = null,
                                             ptr_chain: boolean = false): Pair<string, number>
     {
@@ -10249,7 +10247,7 @@ export class CompilerGLSL extends Compiler
         let array_stride = out?.array_stride || 0;
 
         for (let i = 0; i < count; i++) {
-            let index = indices[i];
+            let index = indices[arroffset + i];
 
             // Pointers
             if (ptr_chain && i === 0) {
@@ -10754,7 +10752,7 @@ export class CompilerGLSL extends Compiler
             return expr + "." + this.index_to_swizzle(index);
     }
 
-    protected to_extract_constant_composite_expression(result_type: number, c: SPIRConstant, chain: Uint32Array | number[], length: number)
+    protected to_extract_constant_composite_expression(result_type: number, c: SPIRConstant, chain: Uint32Array | number[], arroffset: number, length: number)
     {
         // It is kinda silly if application actually enters this path since they know the constant up front.
         // It is useful here to extract the plain constant directly.
@@ -10768,20 +10766,20 @@ export class CompilerGLSL extends Compiler
             if (length === 2) {
                 tmp.m.c[0].vecsize = 1;
                 tmp.m.columns = 1;
-                tmp.m.c[0].r[0] = c.m.c[chain[0]].r[chain[1]];
+                tmp.m.c[0].r[0] = c.m.c[chain[arroffset]].r[chain[arroffset + 1]];
             }
             else {
                 console.assert(length === 1);
                 tmp.m.c[0].vecsize = composite_type.vecsize;
                 tmp.m.columns = 1;
-                tmp.m.c[0] = c.m.c[chain[0]];
+                tmp.m.c[0] = c.m.c[chain[arroffset]];
             }
         }
         else {
             console.assert(length === 1);
             tmp.m.c[0].vecsize = 1;
             tmp.m.columns = 1;
-            tmp.m.c[0].r[0] = c.m.c[0].r[chain[0]];
+            tmp.m.c[0].r[0] = c.m.c[0].r[chain[arroffset]];
         }
 
         return this.constant_expression(tmp);
@@ -11102,16 +11100,16 @@ export class CompilerGLSL extends Compiler
 
                         if (type_is_array && !is_control_point) {
                             const indices = [ j, i ];
-                            const chain = this.access_chain_internal(var_.self, indices, 2, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, meta);
+                            const chain = this.access_chain_internal(var_.self, indices, 0, 2, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, meta);
                             this.statement(chain, " = ", lut_name, "[", j, "];");
                         }
                         else if (is_control_point) {
                             const indices = [ invocation_id, member_index_id ];
-                            const chain = this.access_chain_internal(var_.self, indices, 2, 0, meta);
+                            const chain = this.access_chain_internal(var_.self, indices, 0, 2, 0, meta);
                             this.statement(chain, " = ", lut_name, "[", this.builtin_to_glsl(BuiltIn.BuiltInInvocationId, StorageClass.StorageClassInput), "];");
                         }
                         else {
-                            const chain = this.access_chain_internal(var_.self, [ i ], 1, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, meta);
+                            const chain = this.access_chain_internal(var_.self, [ i ], 0, 1, AccessChainFlagBits.ACCESS_CHAIN_INDEX_IS_LITERAL_BIT, meta);
                             this.statement(chain, " = ", this.to_expression(c.subconstants[i]), ";");
                         }
 
@@ -12407,7 +12405,7 @@ export class CompilerGLSL extends Compiler
 
     }
 
-    protected build_composite_combiner(return_type: number, elems: Array<number> | Uint32Array, length: number): string
+    protected build_composite_combiner(return_type: number, elems: Array<number> | Uint32Array, arroffset: number, length: number): string
     {
         let base: ID = 0;
         let op = "";
@@ -12421,7 +12419,7 @@ export class CompilerGLSL extends Compiler
         const { backend } = this;
 
         for (let i = 0; i < length; i++) {
-            const e = this.maybe_get<SPIRExpression>(SPIRExpression, elems[i]);
+            const e = this.maybe_get<SPIRExpression>(SPIRExpression, elems[i + arroffset]);
 
             // If we're merging another scalar which belongs to the same base
             // object, just merge the swizzles to avoid triggering more than 1 expression read as much as possible!
@@ -12466,7 +12464,7 @@ export class CompilerGLSL extends Compiler
                     op += ", ";
 
                 const uses_buffer_offset = type.basetype === SPIRTypeBaseType.Struct && this.has_member_decoration(type.self, i, Decoration.DecorationOffset);
-                subop = this.to_composite_constructor_expression(elems[i], uses_buffer_offset);
+                subop = this.to_composite_constructor_expression(elems[i + arroffset], uses_buffer_offset);
             }
 
             base = e ? e.base_expression : <ID>(0);
@@ -13001,13 +12999,13 @@ export class CompilerGLSL extends Compiler
         this.current_emitting_block.invalidate_expressions.push(expr);
     }
 
-    protected args_will_forward(id: number, args: Uint32Array | number[], num_args: number, pure: boolean): boolean
+    protected args_will_forward(id: number, args: Uint32Array | number[], arroffset: number, num_args: number, pure: boolean): boolean
     {
         if (this.forced_temporaries.has(id))
             return false;
 
         for (let i = 0; i < num_args; i++)
-            if (!this.should_forward(args[i]))
+            if (!this.should_forward(args[i + arroffset]))
                 return false;
 
         // We need to forward globals as well.
@@ -13204,14 +13202,14 @@ export class CompilerGLSL extends Compiler
         return this.update_name_cache(variables_primary, variables_secondary, name);
     }
 
-    protected check_function_call_constraints(args: Array<number> | Uint32Array, length: number)
+    protected check_function_call_constraints(args: Array<number> | Uint32Array, arroffset: number, length: number)
     {
         // If our variable is remapped, and we rely on type-remapping information as
         // well, then we cannot pass the variable as a function parameter.
         // Fixing this is non-trivial without stamping out variants of the same function,
         // so for now warn about this and suggest workarounds instead.
         for (let i = 0; i < length; i++) {
-            const var_ = this.maybe_get<SPIRVariable>(SPIRVariable, args[i]);
+            const var_ = this.maybe_get<SPIRVariable>(SPIRVariable, args[arroffset + i]);
             if (!var_ || !var_.remapped_variable)
                 continue;
 
@@ -14389,7 +14387,7 @@ export class CompilerGLSL extends Compiler
         }
     }
 
-    protected get_integer_width_for_glsl_instruction(op: GLSLstd450, ops: Uint32Array| number[], length: number): number
+    protected get_integer_width_for_glsl_instruction(op: GLSLstd450, ops: Uint32Array| number[], arroffs: number, length: number): number
     {
         if (length < 1)
             return 32;
@@ -14405,7 +14403,7 @@ export class CompilerGLSL extends Compiler
             case GLSLstd450.GLSLstd450SClamp:
             case GLSLstd450.GLSLstd450FindSMsb:
             case GLSLstd450.GLSLstd450FindUMsb:
-                return this.expression_type(ops[0]).width;
+                return this.expression_type(ops[arroffs]).width;
 
             default: {
                 // We don't need to care about other opcodes, just return 32.

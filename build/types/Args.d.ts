@@ -43,6 +43,7 @@ export declare class Args {
     glsl_emit_push_constant_as_ubo: boolean;
     glsl_emit_ubo_as_plain_uniforms: boolean;
     glsl_force_flattened_io_blocks: boolean;
+    glsl_unnamed_ubo_to_global_uniforms: boolean;
     glsl_ovr_multiview_view_count: number;
     glsl_ext_framebuffer_fetch: Pair<number, number>[];
     glsl_ext_framebuffer_fetch_noncoherent: boolean;

@@ -62,6 +62,7 @@ export declare class CompilerGLSL extends Compiler {
     protected inout_color_attachments: Pair<number, boolean>[];
     protected masked_output_locations: Set<LocationComponentPair>;
     protected masked_output_builtins: Set<number>;
+    protected removed_structs: Set<number>;
     constructor(parsedIR: ParsedIR);
     remap_pixel_local_storage(inputs: PlsRemap[], outputs: PlsRemap[]): void;
     remap_ext_framebuffer_fetch(input_attachment_index: number, color_location: number, coherent: boolean): void;
@@ -77,7 +78,7 @@ export declare class CompilerGLSL extends Compiler {
     protected require_extension_internal(ext: string): void;
     protected emit_instruction(instruction: Instruction): void;
     protected emit_block_instructions(block: SPIRBlock): void;
-    protected emit_glsl_op(result_type: number, id: number, eop: number, args: number[] | Uint32Array, length: number): void;
+    protected emit_glsl_op(result_type: number, id: number, eop: number, args: number[] | Uint32Array, arroffs: number, length: number): void;
     protected emit_header(): void;
     protected emit_sampled_image_op(result_type: number, result_id: number, image_id: number, samp_id: number): void;
     protected emit_texture_op(i: Instruction, sparse: boolean): void;
@@ -144,6 +145,7 @@ export declare class CompilerGLSL extends Compiler {
     protected emit_struct(type: SPIRType): void;
     protected emit_resources(): void;
     protected emit_extension_workarounds(model: ExecutionModel): void;
+    protected emit_buffer_block_global(var_: SPIRVariable): void;
     protected emit_buffer_block_native(var_: SPIRVariable): void;
     protected emit_buffer_reference_block(type_id: number, forward_declaration: boolean): void;
     protected emit_declared_builtin_block(storage: StorageClass, model: ExecutionModel): void;
@@ -195,16 +197,16 @@ export declare class CompilerGLSL extends Compiler {
     protected expression_read_implies_multiple_reads(id: number): boolean;
     protected emit_op(result_type: number, result_id: number, rhs: string, forwarding: boolean, suppress_usage_tracking?: boolean): SPIRExpression;
     protected access_chain_internal_append_index(expr: string, base: number, type: SPIRType, flags: AccessChainFlags, access_chain_is_arrayed: boolean, index: number): string;
-    protected access_chain_internal(base: number, indices: number[] | Uint32Array, count: number, flags: AccessChainFlags, meta: AccessChainMeta): string;
+    protected access_chain_internal(base: number, indices: number[] | Uint32Array, arroffset: number, count: number, flags: AccessChainFlags, meta: AccessChainMeta): string;
     protected get_expression_effective_storage_class(ptr: number): StorageClass;
     protected access_chain_needs_stage_io_builtin_translation(_: number): boolean;
     protected prepare_access_chain_for_scalar_access(expr: string, type: SPIRType, storage: StorageClass, is_packed: boolean): string;
-    protected access_chain(base: number, indices: Uint32Array, count: number, target_type: SPIRType, meta?: AccessChainMeta, ptr_chain?: boolean): string;
-    protected flattened_access_chain(base: number, indices: Uint32Array | Array<number>, count: number, target_type: SPIRType, offset: number, matrix_stride: number, _array_stride: number, need_transpose: boolean): string;
-    protected flattened_access_chain_struct(base: number, indices: Uint32Array | Array<number>, count: number, target_type: SPIRType, offset: number): string;
-    protected flattened_access_chain_matrix(base: number, indices: Uint32Array | Array<number>, count: number, target_type: SPIRType, offset: number, matrix_stride: number, need_transpose: boolean): string;
-    protected flattened_access_chain_vector(base: number, indices: Uint32Array | Array<number>, count: number, target_type: SPIRType, offset: number, matrix_stride: number, need_transpose: boolean): string;
-    protected flattened_access_chain_offset(basetype: SPIRType, indices: Uint32Array | Array<number>, count: number, offset: number, word_stride: number, out?: {
+    protected access_chain(base: number, indices: Uint32Array, arroffset: number, count: number, target_type: SPIRType, meta?: AccessChainMeta, ptr_chain?: boolean): string;
+    protected flattened_access_chain(base: number, indices: Uint32Array | Array<number>, arroffset: number, count: number, target_type: SPIRType, offset: number, matrix_stride: number, _array_stride: number, need_transpose: boolean): string;
+    protected flattened_access_chain_struct(base: number, indices: Uint32Array | Array<number>, arroffset: number, count: number, target_type: SPIRType, offset: number): string;
+    protected flattened_access_chain_matrix(base: number, indices: Uint32Array | Array<number>, arroffset: number, count: number, target_type: SPIRType, offset: number, matrix_stride: number, need_transpose: boolean): string;
+    protected flattened_access_chain_vector(base: number, indices: Uint32Array | Array<number>, arroffset: number, count: number, target_type: SPIRType, offset: number, matrix_stride: number, need_transpose: boolean): string;
+    protected flattened_access_chain_offset(basetype: SPIRType, indices: Uint32Array | Array<number>, arroffset: number, count: number, offset: number, word_stride: number, out?: {
         need_transpose: boolean;
         matrix_stride: number;
         array_stride: number;
@@ -227,7 +229,7 @@ export declare class CompilerGLSL extends Compiler {
     protected to_pointer_expression(id: number, register_expression_read?: boolean): string;
     protected to_enclosed_pointer_expression(id: number, register_expression_read?: boolean): string;
     protected to_extract_component_expression(id: number, index: number): string;
-    protected to_extract_constant_composite_expression(result_type: number, c: SPIRConstant, chain: Uint32Array | number[], length: number): string;
+    protected to_extract_constant_composite_expression(result_type: number, c: SPIRConstant, chain: Uint32Array | number[], arroffset: number, length: number): string;
     protected enclose_expression(expr: string): string;
     protected dereference_expression(expr_type: SPIRType, expr: string): string;
     protected address_of_expression(expr: string): string;
@@ -264,7 +266,7 @@ export declare class CompilerGLSL extends Compiler {
     protected bitcast_glsl(result_type: SPIRType, argument: number): string;
     protected bitcast_expression(target_type: SPIRTypeBaseType, args: number): string;
     protected bitcast_expression(target_type: SPIRType, expr_type: SPIRTypeBaseType, expr: string): string;
-    protected build_composite_combiner(return_type: number, elems: Array<number> | Uint32Array, length: number): string;
+    protected build_composite_combiner(return_type: number, elems: Array<number> | Uint32Array, arroffset: number, length: number): string;
     protected remove_duplicate_swizzle(op: string): string;
     protected remove_unity_swizzle(base: number, op: string): string;
     protected replace_illegal_names(keywords_?: Set<string>): void;
@@ -285,7 +287,7 @@ export declare class CompilerGLSL extends Compiler {
     protected is_legacy_desktop(): boolean;
     protected register_impure_function_call(): void;
     protected register_control_dependent_expression(expr: number): void;
-    protected args_will_forward(id: number, args: Uint32Array | number[], num_args: number, pure: boolean): boolean;
+    protected args_will_forward(id: number, args: Uint32Array | number[], arroffset: number, num_args: number, pure: boolean): boolean;
     protected register_call_out_argument(id: number): void;
     protected pls_decl(var_: PlsRemap): string;
     protected to_pls_qualifiers_glsl(variable: SPIRVariable): string;
@@ -298,10 +300,11 @@ export declare class CompilerGLSL extends Compiler {
     find_subpass_input_by_attachment_index(index: number): SPIRVariable;
     find_color_output_by_location(location: number): SPIRVariable;
     protected add_variable(variables_primary: Set<string>, variables_secondary: Set<string>, name: string): string;
-    protected check_function_call_constraints(args: Array<number> | Uint32Array, length: number): void;
+    protected check_function_call_constraints(args: Array<number> | Uint32Array, arroffset: number, length: number): void;
     protected handle_invalid_expression(id: number): void;
     private init;
     compile(): string;
+    protected fixup_removed_structs(): string;
     protected find_static_extensions(): void;
     protected emit_for_loop_initializers(block: SPIRBlock): string;
     protected emit_while_loop_initializers(block: SPIRBlock): void;
@@ -326,7 +329,7 @@ export declare class CompilerGLSL extends Compiler {
     protected expression_is_non_value_type_array(ptr: number): boolean;
     protected emit_store_statement(lhs_expression: number, rhs_expression: number): void;
     protected get_integer_width_for_instruction(instr: Instruction): number;
-    protected get_integer_width_for_glsl_instruction(op: GLSLstd450, ops: Uint32Array | number[], length: number): number;
+    protected get_integer_width_for_glsl_instruction(op: GLSLstd450, ops: Uint32Array | number[], arroffs: number, length: number): number;
     protected variable_is_lut(var_: SPIRVariable): boolean;
     protected fixup_type_alias(): void;
     protected reorder_type_alias(): void;

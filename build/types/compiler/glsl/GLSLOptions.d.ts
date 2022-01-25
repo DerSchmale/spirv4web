@@ -14,6 +14,7 @@ export declare class GLSLOptions {
     enable_storage_image_qualifier_deduction: boolean;
     force_zero_initialized_variables: boolean;
     force_flattened_io_blocks: boolean;
+    unnamed_ubo_to_global_uniforms: boolean;
     ovr_multiview_view_count: number;
     vertex: GLSLVertexOptions;
     fragment: GLSLFragmentOptions;
