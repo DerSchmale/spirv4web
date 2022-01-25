@@ -16,7 +16,7 @@ var Args = /** @class */ (function () {
         this.glsl_emit_push_constant_as_ubo = false;
         this.glsl_emit_ubo_as_plain_uniforms = false;
         this.glsl_force_flattened_io_blocks = false;
-        this.glsl_unnamed_ubo_to_global_uniforms = false;
+        this.glsl_keep_unnamed_ubos = false;
         this.glsl_ovr_multiview_view_count = 0;
         this.glsl_ext_framebuffer_fetch = [];
         this.glsl_ext_framebuffer_fetch_noncoherent = false;
@@ -37,6 +37,8 @@ var Args = /** @class */ (function () {
         this.use_420pack_extension = true;
         this.remove_unused = true;
         this.combined_samplers_inherit_bindings = false;
+        this.glsl_remove_attribute_layouts = false;
+        this.specialization_constant_prefix = "SPIRV_CROSS_CONSTANT_ID_";
     }
     return Args;
 }());
@@ -9289,7 +9291,7 @@ var GLSLOptions = /** @class */ (function () {
     function GLSLOptions() {
         // The shading language version. Corresponds to #version $VALUE.
         this.version = 450;
-        this.specConstPrefix = "SPIRV_CROSS_CONSTANT_ID_";
+        this.specialization_constant_prefix = "SPIRV_CROSS_CONSTANT_ID_";
         // Emit the OpenGL ES shading language instead of desktop OpenGL.
         this.es = false;
         // Debug option to always emit temporary variables for all expressions.
@@ -9331,11 +9333,12 @@ var GLSLOptions = /** @class */ (function () {
         // what happens on legacy GLSL targets for blocks and structs.
         this.force_flattened_io_blocks = false;
         // In WebGL 1, when we have unnamed uniform blocks, emit them as global uniforms.
-        this.unnamed_ubo_to_global_uniforms = false;
+        this.keep_unnamed_ubos = false;
         // If non-zero, controls layout(num_views = N) in; in GL_OVR_multiview2.
         this.ovr_multiview_view_count = 0;
         this.vertex = new GLSLVertexOptions();
         this.fragment = new GLSLFragmentOptions();
+        this.remove_attribute_layouts = false;
     }
     return GLSLOptions;
 }());
@@ -13397,7 +13400,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
             this.emit_buffer_block_flattened(var_);
         else if (this.is_legacy() || (!options.es && options.version === 130) ||
             (ubo_block && options.emit_uniform_buffer_as_plain_uniforms)) {
-            if (ir.get_name(var_.self) === "" && options.unnamed_ubo_to_global_uniforms) {
+            if (ir.get_name(var_.self) === "" && options.keep_unnamed_ubos) {
                 this.emit_buffer_block_global(var_);
                 // mark this struct instance as removed
                 this.removed_structs.add(var_.self);
@@ -16821,7 +16824,7 @@ var CompilerGLSL = /** @class */ (function (_super) {
         }
     };
     CompilerGLSL.prototype.constant_value_macro_name = function (id) {
-        return this.options.specConstPrefix + id;
+        return this.options.specialization_constant_prefix + id;
     };
     CompilerGLSL.prototype.get_constant_mapping_to_workgroup_component = function (c) {
         var entry_point = this.get_entry_point();
@@ -20804,11 +20807,13 @@ var CompilerGLSL = /** @class */ (function (_super) {
 
         // Entry point in GLSL is always main().*/
         this.get_entry_point().name = "main";
-        return this.fixup_removed_structs();
+        var code = this.fixup_removed_structs(this.buffer.str());
+        if (this.get_execution_model() === ExecutionModel.ExecutionModelVertex && options.remove_attribute_layouts)
+            code = this.remove_attribute_layouts(code);
+        return code;
     };
-    CompilerGLSL.prototype.fixup_removed_structs = function () {
+    CompilerGLSL.prototype.fixup_removed_structs = function (str) {
         var _this = this;
-        var str = this.buffer.str();
         // this is done as a post-processing step, there's probably better ways to get this done, but for now, this
         // works
         this.removed_structs.forEach(function (id) {
@@ -20816,6 +20821,9 @@ var CompilerGLSL = /** @class */ (function (_super) {
             str = str.replace(regex, "");
         });
         return str;
+    };
+    CompilerGLSL.prototype.remove_attribute_layouts = function (str) {
+        return str.replace(/layout\(location\s*=\s*\d+\)\s+in/g, "in");
     };
     CompilerGLSL.prototype.find_static_extensions = function () {
         var _this = this;
@@ -21972,11 +21980,10 @@ function stage_to_execution_model(stage) {
     else
         throw new Error("Invalid stage!");
 }
-function compile_iteration(args, spirv_file, options) {
+function compile_iteration(args, spirv_file) {
     var spirv_parser = new Parser(spirv_file);
     spirv_parser.parse();
     var compiler = new CompilerGLSL(spirv_parser.get_parsed_ir());
-    compiler.get_common_options().specConstPrefix = options.specializationConstantPrefix;
     if (args.variable_type_remaps.length !== 0) {
         var remap_cb = function (type, name) {
             for (var _i = 0, _a = args.variable_type_remaps; _i < _a.length; _i++) {
@@ -22071,7 +22078,9 @@ function compile_iteration(args, spirv_file, options) {
     opts.emit_push_constant_as_uniform_buffer = args.glsl_emit_push_constant_as_ubo;
     opts.emit_uniform_buffer_as_plain_uniforms = args.glsl_emit_ubo_as_plain_uniforms;
     opts.force_flattened_io_blocks = args.glsl_force_flattened_io_blocks;
-    opts.unnamed_ubo_to_global_uniforms = args.glsl_unnamed_ubo_to_global_uniforms;
+    opts.keep_unnamed_ubos = args.glsl_keep_unnamed_ubos;
+    opts.remove_attribute_layouts = args.glsl_remove_attribute_layouts;
+    opts.specialization_constant_prefix = args.specialization_constant_prefix;
     opts.ovr_multiview_view_count = args.glsl_ovr_multiview_view_count;
     opts.emit_line_directives = args.emit_line_directives;
     opts.enable_storage_image_qualifier_deduction = args.enable_storage_image_qualifier_deduction;
@@ -22197,20 +22206,19 @@ var Version;
 function compile(data, version, options) {
     var args = new Args();
     options = options || {};
-    options.removeUnused = getOrDefault(options.removeUnused, true);
-    options.specializationConstantPrefix = getOrDefault(options.specializationConstantPrefix, "SPIRV_CROSS_CONSTANT_ID_");
-    options.unnamed_ubo_to_global_uniforms = getOrDefault(options.unnamed_ubo_to_global_uniforms, true);
     args.version = version;
     args.set_version = true;
     args.es = true;
     args.set_es = true;
-    args.remove_unused = options.removeUnused;
-    args.glsl_unnamed_ubo_to_global_uniforms = true;
+    args.remove_unused = getOrDefault(options.removeUnused, true);
+    args.glsl_keep_unnamed_ubos = getOrDefault(options.keepUnnamedUBOs, true);
+    args.glsl_remove_attribute_layouts = getOrDefault(options.removeAttributeLayouts, false);
+    args.specialization_constant_prefix = getOrDefault(options.specializationConstantPrefix, "SPIRV_CROSS_CONSTANT_ID_");
     var spirv_file = new Uint32Array(data);
     if (args.reflect && args.reflect !== "") {
         throw new Error("Reflection not yet supported!");
     }
-    return compile_iteration(args, spirv_file, options);
+    return compile_iteration(args, spirv_file);
 }
 function getOrDefault(value, def) {
     return value === undefined || value === null ? def : value;

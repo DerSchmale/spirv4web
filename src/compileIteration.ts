@@ -28,7 +28,7 @@ function stage_to_execution_model(stage: string): ExecutionModel
         throw new Error("Invalid stage!");
 }
 
-export function compile_iteration(args: Args, spirv_file: Uint32Array, options: Options): string
+export function compile_iteration(args: Args, spirv_file: Uint32Array): string
 {
     const spirv_parser = new Parser(spirv_file);
     spirv_parser.parse();
@@ -37,7 +37,6 @@ export function compile_iteration(args: Args, spirv_file: Uint32Array, options: 
     const build_dummy_sampler = false;
 
     const compiler = new CompilerGLSL(spirv_parser.get_parsed_ir());
-    compiler.get_common_options().specConstPrefix = options.specializationConstantPrefix;
 
     if (args.variable_type_remaps.length !== 0)
     {
@@ -150,7 +149,9 @@ export function compile_iteration(args: Args, spirv_file: Uint32Array, options: 
     opts.emit_push_constant_as_uniform_buffer = args.glsl_emit_push_constant_as_ubo;
     opts.emit_uniform_buffer_as_plain_uniforms = args.glsl_emit_ubo_as_plain_uniforms;
     opts.force_flattened_io_blocks = args.glsl_force_flattened_io_blocks;
-    opts.unnamed_ubo_to_global_uniforms = args.glsl_unnamed_ubo_to_global_uniforms;
+    opts.keep_unnamed_ubos = args.glsl_keep_unnamed_ubos;
+    opts.remove_attribute_layouts = args.glsl_remove_attribute_layouts;
+    opts.specialization_constant_prefix = args.specialization_constant_prefix;
     opts.ovr_multiview_view_count = args.glsl_ovr_multiview_view_count;
     opts.emit_line_directives = args.emit_line_directives;
     opts.enable_storage_image_qualifier_deduction = args.enable_storage_image_qualifier_deduction;

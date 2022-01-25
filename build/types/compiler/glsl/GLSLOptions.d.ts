@@ -2,7 +2,7 @@ import { GLSLVertexOptions } from "./GLSLVertexOptions";
 import { GLSLFragmentOptions } from "./GLSLFragmentOptions";
 export declare class GLSLOptions {
     version: number;
-    specConstPrefix: string;
+    specialization_constant_prefix: string;
     es: boolean;
     force_temporary: boolean;
     separate_shader_objects: boolean;
@@ -14,8 +14,9 @@ export declare class GLSLOptions {
     enable_storage_image_qualifier_deduction: boolean;
     force_zero_initialized_variables: boolean;
     force_flattened_io_blocks: boolean;
-    unnamed_ubo_to_global_uniforms: boolean;
+    keep_unnamed_ubos: boolean;
     ovr_multiview_view_count: number;
     vertex: GLSLVertexOptions;
     fragment: GLSLFragmentOptions;
+    remove_attribute_layouts: boolean;
 }

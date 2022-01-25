@@ -15,7 +15,10 @@ export type Options =
 {
     removeUnused?: boolean;
     specializationConstantPrefix?: string;
-    unnamed_ubo_to_global_uniforms?: boolean;
+    keepUnnamedUBOs?: boolean;          // in webgl 1: unnamed ubo members become global uniforms, in webgl 2:
+                                        // unnamed ubos remain unnamed
+    removeAttributeLayouts?: boolean;   // for webgl 2 only, removes attribute layouts. This can be needed when
+                                        // there are too many unused attributes when spirv autogenerates the layouts
 }
 
 export function compile(data: ArrayBuffer, version: Version, options?: Options): string
@@ -23,10 +26,6 @@ export function compile(data: ArrayBuffer, version: Version, options?: Options):
     const args: Args = new Args();
 
     options = options || {};
-    options.removeUnused = getOrDefault(options.removeUnused, true);
-    options.specializationConstantPrefix = getOrDefault(options.specializationConstantPrefix, "SPIRV_CROSS_CONSTANT_ID_");
-    options.unnamed_ubo_to_global_uniforms = getOrDefault(options.unnamed_ubo_to_global_uniforms, true);
-
 
     args.version = version;
     args.set_version = true;
@@ -34,17 +33,18 @@ export function compile(data: ArrayBuffer, version: Version, options?: Options):
     args.es = true;
     args.set_es = true;
 
-    args.remove_unused = options.removeUnused;
-    args.glsl_unnamed_ubo_to_global_uniforms = true;
+    args.remove_unused = getOrDefault(options.removeUnused, true);
+    args.glsl_keep_unnamed_ubos = getOrDefault(options.keepUnnamedUBOs, true);
+    args.glsl_remove_attribute_layouts = getOrDefault(options.removeAttributeLayouts, false);
+    args.specialization_constant_prefix = getOrDefault(options.specializationConstantPrefix, "SPIRV_CROSS_CONSTANT_ID_")
 
     const spirv_file = new Uint32Array(data);
 
     if (args.reflect && args.reflect !== "") {
         throw new Error("Reflection not yet supported!");
-        return;
     }
 
-    return compile_iteration(args, spirv_file, options);
+    return compile_iteration(args, spirv_file);
 }
 
 function getOrDefault<T>(value: T, def: T): T

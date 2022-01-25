@@ -5,6 +5,7 @@ export declare enum Version {
 export declare type Options = {
     removeUnused?: boolean;
     specializationConstantPrefix?: string;
-    unnamed_ubo_to_global_uniforms?: boolean;
+    keepUnnamedUBOs?: boolean;
+    removeAttributeLayouts?: boolean;
 };
 export declare function compile(data: ArrayBuffer, version: Version, options?: Options): string;

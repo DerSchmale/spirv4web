@@ -7,7 +7,7 @@ export class GLSLOptions
     // The shading language version. Corresponds to #version $VALUE.
     version: number = 450;
 
-    specConstPrefix: string = "SPIRV_CROSS_CONSTANT_ID_";
+    specialization_constant_prefix: string = "SPIRV_CROSS_CONSTANT_ID_";
 
     // Emit the OpenGL ES shading language instead of desktop OpenGL.
     es: boolean = false;
@@ -61,11 +61,12 @@ export class GLSLOptions
     force_flattened_io_blocks: boolean = false;
 
     // In WebGL 1, when we have unnamed uniform blocks, emit them as global uniforms.
-    unnamed_ubo_to_global_uniforms: boolean = false;
+    keep_unnamed_ubos: boolean = false;
 
     // If non-zero, controls layout(num_views = N) in; in GL_OVR_multiview2.
     ovr_multiview_view_count: number = 0;
 
     vertex: GLSLVertexOptions = new GLSLVertexOptions();
     fragment: GLSLFragmentOptions = new GLSLFragmentOptions();
+    remove_attribute_layouts: boolean = false;
 }

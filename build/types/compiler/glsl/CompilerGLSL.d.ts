@@ -304,7 +304,8 @@ export declare class CompilerGLSL extends Compiler {
     protected handle_invalid_expression(id: number): void;
     private init;
     compile(): string;
-    protected fixup_removed_structs(): string;
+    protected fixup_removed_structs(str: string): string;
+    protected remove_attribute_layouts(str: string): string;
     protected find_static_extensions(): void;
     protected emit_for_loop_initializers(block: SPIRBlock): string;
     protected emit_while_loop_initializers(block: SPIRBlock): void;

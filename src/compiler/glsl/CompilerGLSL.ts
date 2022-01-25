@@ -4563,7 +4563,7 @@ export class CompilerGLSL extends Compiler
             this.emit_buffer_block_flattened(var_);
         else if (this.is_legacy() || (!options.es && options.version === 130) ||
             (ubo_block && options.emit_uniform_buffer_as_plain_uniforms)) {
-            if (ir.get_name(var_.self) === "" && options.unnamed_ubo_to_global_uniforms) {
+            if (ir.get_name(var_.self) === "" && options.keep_unnamed_ubos) {
                 this.emit_buffer_block_global(var_);
                 // mark this struct instance as removed
                 this.removed_structs.add(var_.self);
@@ -8490,7 +8490,7 @@ export class CompilerGLSL extends Compiler
 
     protected constant_value_macro_name(id: number): string
     {
-        return this.options.specConstPrefix + id;
+        return this.options.specialization_constant_prefix + id;
     }
 
     protected get_constant_mapping_to_workgroup_component(c: SPIRConstant)
@@ -13326,12 +13326,16 @@ export class CompilerGLSL extends Compiler
         // Entry point in GLSL is always main().*/
         this.get_entry_point().name = "main";
 
-        return this.fixup_removed_structs();
+        let code = this.fixup_removed_structs(this.buffer.str());
+
+        if (this.get_execution_model() === ExecutionModel.ExecutionModelVertex && options.remove_attribute_layouts)
+            code = this.remove_attribute_layouts(code);
+
+        return code;
     }
 
-    protected fixup_removed_structs(): string
+    protected fixup_removed_structs(str: string): string
     {
-        let str = this.buffer.str();
         // this is done as a post-processing step, there's probably better ways to get this done, but for now, this
         // works
         this.removed_structs.forEach(id => {
@@ -13340,6 +13344,11 @@ export class CompilerGLSL extends Compiler
         });
 
         return str;
+    }
+
+    protected remove_attribute_layouts(str: string): string
+    {
+        return str.replace(/layout\(location\s*=\s*\d+\)\s+in/g, "in");
     }
 
     protected find_static_extensions()
