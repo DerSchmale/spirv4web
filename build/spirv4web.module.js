@@ -22271,9 +22271,8 @@ function remap_pls(pls_variables, resources, secondary_resources) {
 }
 
 // TODO:
-//  - unnamed structs native
 //  - go through options and remove useless ones --> see compile() for stuff that's always set
-//  - go through enums and remove useless ones
+//  - go through enums and remove useless ones (perhaps keep some for error checking?)
 //  - remove unused functions
 //  - pass in supported extensions and let the compiler handle fallbacks?
 //  - compare more against baseline compiles

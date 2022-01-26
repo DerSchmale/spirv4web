@@ -3,7 +3,7 @@ import { ParsedIR } from "../../parser/ParsedIR";
 import { LocationComponentPair } from "../../common/LocationComponentPair";
 import { Pair } from "../../utils/Pair";
 import { SPIRVariable } from "../../common/SPIRVariable";
-import { SPIRType, SPIRBaseType } from "../../common/SPIRType";
+import { SPIRBaseType, SPIRType } from "../../common/SPIRType";
 import { BackendVariations, GLSLstd450 } from "./glsl";
 import { PlsRemap } from "./PlsRemap";
 import { GLSLOptions } from "./GLSLOptions";
@@ -86,7 +86,7 @@ export declare class CompilerGLSL extends Compiler {
         value: boolean;
     }, inherited_expressions: number[]): string;
     protected emit_line_directive(file_id: number, line_literal: number): void;
-    protected emit_struct_member(type: SPIRType, member_type_id: number, index: number, qualifier?: string, base_offset?: number): void;
+    protected emit_struct_member(type: SPIRType, member_type_id: number, index: number, qualifier?: string, _base_offset?: number): void;
     protected emit_struct_padding_target(_: SPIRType): void;
     protected to_function_name(args: TextureFunctionNameArguments): string;
     protected to_function_args(args: TextureFunctionArguments, p_forward: {
@@ -284,7 +284,6 @@ export declare class CompilerGLSL extends Compiler {
     protected rewrite_load_for_wrapped_row_major(expr: string, loaded_type: TypeID, ptr: ID): string;
     protected is_legacy(): boolean;
     protected is_legacy_es(): boolean;
-    protected is_legacy_desktop(): boolean;
     protected register_impure_function_call(): void;
     protected register_control_dependent_expression(expr: number): void;
     protected args_will_forward(id: number, args: Uint32Array | number[], arroffset: number, num_args: number, pure: boolean): boolean;
