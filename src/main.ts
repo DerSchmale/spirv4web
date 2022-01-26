@@ -2,6 +2,7 @@ import { Args } from "./Args";
 import { compile_iteration } from "./compileIteration";
 
 // TODO:
+//  - unnamed structs native
 //  - go through options and remove useless ones --> see compile() for stuff that's always set
 //  - go through enums and remove useless ones
 //  - remove unused functions

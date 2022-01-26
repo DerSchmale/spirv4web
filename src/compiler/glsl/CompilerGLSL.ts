@@ -5470,9 +5470,7 @@ export class CompilerGLSL extends Compiler
 
     protected statement_inner(...args)
     {
-        let str = "";
         for (let i = 0; i < args.length; ++i) {
-            str += args[i];
             this.buffer.append(args[i]);
             this.statement_count++;
         }
@@ -7926,7 +7924,7 @@ export class CompilerGLSL extends Compiler
     {
         const type = this.get<SPIRType>(SPIRType, var_.basetype);
 
-        const { ir } = this;
+        const { ir, options } = this;
         const flags = ir.get_buffer_block_flags(var_);
         const dec = maplike_get(Meta, ir.meta, type.self).decoration;
         const ssbo = var_.storage === StorageClass.StorageBuffer || var_.storage === StorageClass.ShaderRecordBufferKHR ||
@@ -7984,7 +7982,14 @@ export class CompilerGLSL extends Compiler
         // It will need to be reset if we have to recompile.
         this.preserve_alias_on_reset(var_.self);
         this.add_resource_name(var_.self);
-        this.end_scope_decl(this.to_name(var_.self) + this.type_to_array_glsl(type));
+        let name = "";
+        if (ir.get_name(var_.self) === "" && options.keep_unnamed_ubos) {
+            this.removed_structs.add(var_.self);
+        }
+        else
+            name = this.to_name(var_.self) + this.type_to_array_glsl(type);
+
+        this.end_scope_decl(name);
         this.statement("");
     }
 

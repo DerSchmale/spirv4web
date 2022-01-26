@@ -9525,6 +9525,10 @@ var SPIRV = (function (exports) {
         [".xyz", ".yzw"],
         [""]
     ];
+    /*const workaround_types: string[] = [
+        "int", "ivec2", "ivec3", "ivec4", "uint", "uvec2", "uvec3", "uvec4",
+        "float", "vec2", "vec3", "vec4", "double", "dvec2", "dvec3", "dvec4"
+    ];*/
     var ops = [];
     ops[Op.SNegate] = "-";
     ops[Op.Not] = "~";
@@ -10945,7 +10949,7 @@ var SPIRV = (function (exports) {
                     var type = this.get(SPIRType, result_type);
                     switch (type.vecsize) {
                         case 1:
-                            op = "unpackHalf2x16(packHalf2x16(vec2(" + this.to_expression(arg);
+                            op = "unpackHalf2x16(packHalf2x16(vec2(" + this.to_expression(arg) + "))).x";
                             break;
                         case 2:
                             op = "unpackHalf2x16(packHalf2x16(" + this.to_expression(arg) + "))";
@@ -11371,12 +11375,13 @@ var SPIRV = (function (exports) {
                     var id = ops[1];
                     var img = ops[2];
                     var fname = "textureSize";
-                    if (this.is_legacy_desktop()) {
-                        var type = this.expression_type(img);
-                        var imgtype = this.get(SPIRType, type.self);
+                    /*if (this.is_legacy_desktop()) {
+                        const type = this.expression_type(img);
+                        const imgtype = this.get<SPIRType>(SPIRType, type.self);
                         fname = this.legacy_tex_op(fname, imgtype, img);
                     }
-                    else if (this.is_legacy_es())
+                    else */
+                    if (this.is_legacy_es())
                         throw new Error("textureSize is not supported in ESSL 100.");
                     var expr = fname + "(" + this.convert_separate_image_to_expression(img) + ", " + this.bitcast_expression(SPIRBaseType.Int, ops[3]) + ")";
                     var restype = this.get(SPIRType, ops[0]);
@@ -11462,7 +11467,7 @@ var SPIRV = (function (exports) {
                     }
                     else {
                         var sparse = opcode === Op.ImageSparseRead;
-                        var props = void 0;
+                        var props = { sparse_code_id: 0, sparse_texel_id: 0 };
                         if (sparse)
                             this.emit_sparse_feedback_temporaries(ops[0], ops[1], props);
                         // imageLoad only accepts int coords, not uint.
@@ -12199,9 +12204,15 @@ var SPIRV = (function (exports) {
                 case Op.DemoteToHelperInvocationEXT:
                     // if (!options.vulkan_semantics)
                     throw new Error("GL_EXT_demote_to_helper_invocation is only supported in Vulkan GLSL.");
+                // require_extension_internal("GL_EXT_demote_to_helper_invocation");
+                // statement(backend.demote_literal, ";");
+                // break;
                 case Op.IsHelperInvocationEXT:
                     // if (!options.vulkan_semantics)
                     throw new Error("GL_EXT_demote_to_helper_invocation is only supported in Vulkan GLSL.");
+                // require_extension_internal("GL_EXT_demote_to_helper_invocation");
+                // emit_op(ops[0], ops[1], "helperInvocationEXT()", false);
+                // break;
                 /*case OpBeginInvocationInterlockEXT:
                     // If the interlock is complex, we emit this elsewhere.
                     if (!interlocked_is_complex)
@@ -12225,6 +12236,7 @@ var SPIRV = (function (exports) {
                     console.log("unimplemented op ", instruction.op);
                     this.statement("// unimplemented op ", instruction.op);
                     throw new Error("Unsupported op " + instruction.op);
+                // break;
             }
         };
         CompilerGLSL.prototype.emit_block_instructions = function (block) {
@@ -12243,7 +12255,7 @@ var SPIRV = (function (exports) {
             var integer_width = this.get_integer_width_for_glsl_instruction(op, args, arroffs, length);
             var int_type = to_signed_basetype(integer_width);
             var uint_type = to_unsigned_basetype(integer_width);
-            var _a = this; _a.options; var ir = _a.ir;
+            var ir = this.ir;
             switch (op) {
                 // FP fiddling
                 case GLSLstd450.Round:
@@ -12736,7 +12748,7 @@ var SPIRV = (function (exports) {
                 this.statement(header);
             }
             var inputs = [];
-            var outputs = [];
+            // const outputs: string[] = [];
             switch (execution.model) {
                 case ExecutionModel.Vertex:
                     if (options.ovr_multiview_view_count)
@@ -12878,8 +12890,8 @@ var SPIRV = (function (exports) {
                 }*/
             if (inputs.length > 0)
                 this.statement("layout(", inputs.join(", "), ") in;");
-            if (outputs.length > 0)
-                this.statement("layout(", outputs.join(", "), ") out;");
+            // if (outputs.length > 0)
+            //     this.statement("layout(", outputs.join(", "), ") out;");
             this.statement("");
         };
         CompilerGLSL.prototype.emit_sampled_image_op = function (result_type, result_id, image_id, samp_id) {
@@ -12948,7 +12960,7 @@ var SPIRV = (function (exports) {
             var nonuniform_expression = false;
             var optOffset;
             var result_type = this.get(SPIRType, result_type_id);
-            var _a = this; _a.options; var backend = _a.backend;
+            var backend = this.backend;
             inherited_expressions.push(coord);
             if (this.has_decoration(img, Decoration.NonUniform) && !this.maybe_get_backing_variable(img))
                 nonuniform_expression = true;
@@ -13019,7 +13031,7 @@ var SPIRV = (function (exports) {
             // Bypass pointers because we need the real image struct
             var type = this.expression_type(img);
             var imgtype = this.get(SPIRType, type.self);
-            var coord_components = 0;
+            var coord_components;
             switch (imgtype.image.dim) {
                 case Dim.Dim1D:
                     coord_components = 1;
@@ -13157,7 +13169,7 @@ var SPIRV = (function (exports) {
                 this.statement_no_indent("#line ", line_literal, " \"", this.get(SPIRString, file_id).str, "\"");
             }
         };
-        CompilerGLSL.prototype.emit_struct_member = function (type, member_type_id, index, qualifier, base_offset) {
+        CompilerGLSL.prototype.emit_struct_member = function (type, member_type_id, index, qualifier, _base_offset) {
             if (qualifier === void 0) { qualifier = ""; }
             var membertype = this.get(SPIRType, member_type_id);
             var ir = this.ir;
@@ -13178,7 +13190,6 @@ var SPIRV = (function (exports) {
             // empty
         };
         CompilerGLSL.prototype.to_function_name = function (args) {
-            this.options;
             if (args.has_min_lod) {
                 // if (options.es)
                 throw new Error("Sparse residency is not supported in ESSL.");
@@ -13565,7 +13576,7 @@ var SPIRV = (function (exports) {
             var last_index = indices[indices.length - 1];
             // Pass in the varying qualifier here so it will appear in the correct declaration order.
             // Replace member name while emitting it so it encodes both struct name and member name.
-            this.get_member_name(parent_type.self, last_index);
+            // const backup_name = this.get_member_name(parent_type.self, last_index);
             var member_name = this.to_member_name(parent_type, last_index);
             this.set_member_name(parent_type.self, last_index, flattened_name);
             this.emit_struct_member(parent_type, member_type_id, last_index, qual);
@@ -14063,7 +14074,7 @@ var SPIRV = (function (exports) {
                     var continue_block = this.get(SPIRBlock, block.continue_block);
                     var positive_test = this.execution_is_noop(this.get(SPIRBlock, continue_block.true_block), this.get(SPIRBlock, continue_block.loop_dominator));
                     var current_count = this.statement_count;
-                    this.emit_continue_block(block.continue_block, positive_test, !positive_test);
+                    /*const statements =*/ this.emit_continue_block(block.continue_block, positive_test, !positive_test);
                     if (this.statement_count !== current_count) {
                         // The DoWhile block has side effects, force ComplexLoop pattern next pass.
                         this.get(SPIRBlock, block.continue_block).complex_continue = true;
@@ -14127,7 +14138,6 @@ var SPIRV = (function (exports) {
         };
         CompilerGLSL.prototype.emit_uniform = function (var_) {
             var type = this.get(SPIRType, var_.basetype);
-            this.options;
             if (type.basetype === SPIRBaseType.Image && type.image.sampled === 2 && type.image.dim !== Dim.SubpassData) {
                 /*if (!options.es && options.version < 420)
                     this.require_extension_internal("GL_ARB_shader_image_load_store");
@@ -14209,9 +14219,7 @@ var SPIRV = (function (exports) {
             for (var _i = 0; _i < arguments.length; _i++) {
                 args[_i] = arguments[_i];
             }
-            var str = "";
             for (var i = 0; i < args.length; ++i) {
-                str += args[i];
                 this.buffer.append(args[i]);
                 this.statement_count++;
             }
@@ -14249,10 +14257,10 @@ var SPIRV = (function (exports) {
                     // this distinction into the type system.
                     return this.comparison_ids.has(id) ? "samplerShadow" : "sampler";
                 case SPIRBaseType.AccelerationStructure:
-                    // return this.ray_tracing_is_khr ? "accelerationStructureEXT" : "accelerationStructureNV";
-                    throw new Error("AccelerationStructure is not supported");
+                // return this.ray_tracing_is_khr ? "accelerationStructureEXT" : "accelerationStructureNV";
                 case SPIRBaseType.RayQuery:
                     throw new Error("RayQuery is not supported");
+                // return "rayQueryEXT";
                 case SPIRBaseType.Void:
                     return "void";
             }
@@ -14276,8 +14284,8 @@ var SPIRV = (function (exports) {
                         return backend.basic_int_type;
                     case SPIRBaseType.UInt:
                         return backend.basic_uint_type;
-                    case SPIRBaseType.AtomicCounter:
-                        return "atomic_uint";
+                    /*case SPIRBaseType.AtomicCounter:
+                        return "atomic_uint";*/
                     case SPIRBaseType.Half:
                         return "float16_t";
                     case SPIRBaseType.Float:
@@ -14658,7 +14666,6 @@ var SPIRV = (function (exports) {
             }
             // For half image types, we will force mediump for the sampler, and cast to f16 after any sampling operation.
             // We cannot express a true half texture type in GLSL. Neither for short integer formats for that matter.
-            this.options;
             /*if (type.basetype === SPIRBaseType.Image && type.image.dim === Dim.SubpassData && options.vulkan_semantics)
                 return res + "subpassInput" + (type.image.ms ? "MS" : "");
             else*/
@@ -14716,8 +14723,8 @@ var SPIRV = (function (exports) {
             if (type.image.ms)
                 res += "MS";
             if (type.image.arrayed) {
-                if (this.is_legacy_desktop())
-                    this.require_extension_internal("GL_EXT_texture_array");
+                /*if (this.is_legacy_desktop())
+                    this.require_extension_internal("GL_EXT_texture_array");*/
                 res += "Array";
             }
             // "Shadow" state in GLSL only exists for samplers and combined image samplers.
@@ -14849,7 +14856,7 @@ var SPIRV = (function (exports) {
                 case Op.SRem: {
                     var op0 = cop.arguments[0];
                     var op1 = cop.arguments[1];
-                    return this.to_enclosed_expression(op0) + " - " + this.to_enclosed_expression(op1) + " * (",
+                    return this.to_enclosed_expression(op0) + " - " + this.to_enclosed_expression(op1) + " * (" +
                         this.to_enclosed_expression(op0) + " / " + this.to_enclosed_expression(op1) + ")";
                 }
                 case Op.Select: {
@@ -14890,8 +14897,7 @@ var SPIRV = (function (exports) {
                     return expr;
                 }
                 case Op.CompositeExtract: {
-                    var expr = this.access_chain_internal(cop.arguments[0], cop.arguments, 1, cop.arguments.length - 1, AccessChainFlagBits.INDEX_IS_LITERAL_BIT, null);
-                    return expr;
+                    return this.access_chain_internal(cop.arguments[0], cop.arguments, 1, cop.arguments.length - 1, AccessChainFlagBits.INDEX_IS_LITERAL_BIT, null);
                 }
                 case Op.CompositeInsert:
                     throw new Error("OpCompositeInsert spec constant op is not supported.");
@@ -16390,7 +16396,7 @@ var SPIRV = (function (exports) {
         };
         CompilerGLSL.prototype.emit_buffer_block_native = function (var_) {
             var type = this.get(SPIRType, var_.basetype);
-            var ir = this.ir;
+            var _a = this, ir = _a.ir, options = _a.options;
             var flags = ir.get_buffer_block_flags(var_);
             var dec = maplike_get(Meta, ir.meta, type.self).decoration;
             var ssbo = var_.storage === StorageClass.StorageBuffer || var_.storage === StorageClass.ShaderRecordBufferKHR ||
@@ -16424,8 +16430,8 @@ var SPIRV = (function (exports) {
             this.begin_scope();
             type.member_name_cache.clear();
             var i = 0;
-            for (var _i = 0, _a = type.member_types; _i < _a.length; _i++) {
-                var member = _a[_i];
+            for (var _i = 0, _b = type.member_types; _i < _b.length; _i++) {
+                var member = _b[_i];
                 this.add_member_name(type, i);
                 this.emit_struct_member(type, member, i);
                 i++;
@@ -16435,7 +16441,13 @@ var SPIRV = (function (exports) {
             // It will need to be reset if we have to recompile.
             this.preserve_alias_on_reset(var_.self);
             this.add_resource_name(var_.self);
-            this.end_scope_decl(this.to_name(var_.self) + this.type_to_array_glsl(type));
+            var name = "";
+            if (ir.get_name(var_.self) === "" && options.keep_unnamed_ubos) {
+                this.removed_structs.add(var_.self);
+            }
+            else
+                name = this.to_name(var_.self) + this.type_to_array_glsl(type);
+            this.end_scope_decl(name);
             this.statement("");
         };
         CompilerGLSL.prototype.emit_buffer_reference_block = function (type_id, forward_declaration) {
@@ -16535,7 +16547,7 @@ var SPIRV = (function (exports) {
             var have_any_xfb_offset = false;
             var xfb_stride = 0, xfb_buffer = 0, geom_stream = 0;
             var builtin_xfb_offsets = []; //std::unordered_map<uint32_t, uint32_t> ;
-            var _a = this, ir = _a.ir; _a.options;
+            var ir = this.ir;
             ir.for_each_typed_id(SPIRVariable, function (_, var_) {
                 var type = _this.get(SPIRType, var_.basetype);
                 var block = _this.has_decoration(type.self, Decoration.Block);
@@ -16636,7 +16648,7 @@ var SPIRV = (function (exports) {
             if (emitted_builtins.empty())
                 return;
             if (storage === StorageClass.Output) {
-                var attr = [];
+                // const attr: string[] = [];
                 if (have_xfb_buffer_stride && have_any_xfb_offset) {
                     /*if (!options.es) {
                         if (options.version < 440 && options.version >= 140)
@@ -16659,10 +16671,10 @@ var SPIRV = (function (exports) {
                         this.require_extension_internal("GL_ARB_transform_feedback3");
                     attr.push("stream = " + geom_stream);*/
                 }
-                if (attr.length > 0)
-                    this.statement("layout(", attr.join(", "), ") out gl_PerVertex");
-                else
-                    this.statement("out gl_PerVertex");
+                // if (attr.length > 0)
+                //     this.statement("layout(", attr.join(", "), ") out gl_PerVertex");
+                // else
+                this.statement("out gl_PerVertex");
             }
             else {
                 // If we have passthrough, there is no way PerVertex cannot be passthrough.
@@ -16768,7 +16780,7 @@ var SPIRV = (function (exports) {
         };
         CompilerGLSL.prototype.emit_interface_block = function (var_) {
             var type = this.get(SPIRType, var_.basetype);
-            var _a = this, ir = _a.ir; _a.options;
+            var ir = this.ir;
             /*if (var_.storage === StorageClass.Input && type.basetype === SPIRBaseType.Double &&
                 !options.es && options.version < 410) {
                 this.require_extension_internal("GL_ARB_vertex_attrib_64bit");
@@ -17369,7 +17381,6 @@ var SPIRV = (function (exports) {
                 this.register_write(left);
                 this.register_write(right);
             }
-            var _a = this; _a.backend; _a.options;
             /*let has_boolean_mix = backend.boolean_mix_function &&
                 ((options.es && options.version >= 310) || (!options.es && options.version >= 450));*/
             var mix_op = this.to_trivial_mix_op(restype, left, right, lerp);
@@ -17924,9 +17935,9 @@ var SPIRV = (function (exports) {
                             case BuiltIn.Position:
                             case BuiltIn.PointSize:
                                 if (var_.storage === StorageClass.Input)
-                                    expr = "gl_in[" + this.to_expression(index, register_expression_read);
+                                    expr = "gl_in[" + this.to_expression(index, register_expression_read) + "]." + expr;
                                 else if (var_.storage === StorageClass.Output)
-                                    expr = "gl_out[" + this.to_expression(index, register_expression_read);
+                                    expr = "gl_out[" + this.to_expression(index, register_expression_read) + "]." + expr;
                                 else
                                     append_index(index, is_literal);
                                 break;
@@ -18791,7 +18802,7 @@ var SPIRV = (function (exports) {
             else if (expr.charAt(0) === "*") {
                 // If this expression starts with a dereference operator ('*'), then
                 // just return the part after the operator.
-                return expr.substr(1);
+                return expr.substring(1);
             }
             else
                 return "&" + this.enclose_expression(expr);
@@ -19246,7 +19257,7 @@ var SPIRV = (function (exports) {
             var is_block = this.has_decoration(type.self, Decoration.Block) || this.has_decoration(type.self, Decoration.BufferBlock);
             if (!is_block)
                 return "";
-            var _a = this, ir = _a.ir; _a.options;
+            var ir = this.ir;
             var memb = maplike_get(Meta, ir.meta, type.self).members;
             if (index >= memb.length)
                 return "";
@@ -19735,7 +19746,6 @@ var SPIRV = (function (exports) {
             return true;
         };
         CompilerGLSL.prototype.buffer_to_packing_standard = function (type, support_std430_without_scalar_layout) {
-            this.options;
             if (support_std430_without_scalar_layout && this.buffer_is_packing_standard(type, BufferPackingStandard.Std430))
                 return "std430";
             else if (this.buffer_is_packing_standard(type, BufferPackingStandard.Std140))
@@ -19984,7 +19994,6 @@ var SPIRV = (function (exports) {
             }
             if (out_type.basetype === in_type.basetype)
                 return "";
-            this.options;
             console.assert(out_type.basetype !== SPIRBaseType.Boolean);
             console.assert(in_type.basetype !== SPIRBaseType.Boolean);
             var integral_cast = type_is_integral(out_type) && type_is_integral(in_type);
@@ -20320,7 +20329,6 @@ var SPIRV = (function (exports) {
         };
         CompilerGLSL.prototype.legacy_tex_op = function (op, imgtype, tex) {
             var type;
-            this.options;
             switch (imgtype.image.dim) {
                 case Dim.Dim1D:
                     // type = (imgtype.image.arrayed && !options.es) ? "1DArray" : "1D";
@@ -20359,8 +20367,8 @@ var SPIRV = (function (exports) {
                     legacy_lod_ext = true;
                     this.require_extension_internal("GL_EXT_shader_texture_lod");
                 }
-                else if (this.is_legacy_desktop())
-                    this.require_extension_internal("GL_ARB_shader_texture_lod");
+                /*else if (this.is_legacy_desktop())
+                    this.require_extension_internal("GL_ARB_shader_texture_lod");*/
             }
             if (op === "textureLodOffset" || op === "textureProjLodOffset") {
                 if (this.is_legacy_es())
@@ -20395,13 +20403,13 @@ var SPIRV = (function (exports) {
             else if (op === "textureProj")
                 return type_prefix + type + is_es_and_depth ? "ProjEXT" : "Proj";
             else if (op === "textureGrad")
-                return type_prefix + type + this.is_legacy_es() ? "GradEXT" : this.is_legacy_desktop() ? "GradARB" : "Grad";
+                return type_prefix + type + this.is_legacy_es() ? "GradEXT" : /*this.is_legacy_desktop() ? "GradARB" : */ "Grad";
             else if (op === "textureProjLod")
                 return type_prefix + type + legacy_lod_ext ? "ProjLodEXT" : "ProjLod";
             else if (op === "textureLodOffset")
                 return type_prefix + type + "LodOffset";
             else if (op === "textureProjGrad")
-                return type_prefix + type + this.is_legacy_es() ? "ProjGradEXT" : this.is_legacy_desktop() ? "ProjGradARB" : "ProjGrad";
+                return type_prefix + type + this.is_legacy_es() ? "ProjGradEXT" : /*this.is_legacy_desktop() ? "ProjGradARB" :*/ "ProjGrad";
             else if (op === "textureProjLodOffset")
                 return type_prefix + type + "ProjLodOffset";
             else if (op === "textureSize")
@@ -20568,11 +20576,12 @@ var SPIRV = (function (exports) {
             var options = this.options;
             return options.version < 300;
         };
-        CompilerGLSL.prototype.is_legacy_desktop = function () {
+        /*protected is_legacy_desktop(): boolean
+        {
             return false;
             // const options = this.options;
             // return !options.es && options.version < 130;
-        };
+        }*/
         CompilerGLSL.prototype.register_impure_function_call = function () {
             // Impure functions can modify globals and aliased variables, so invalidate them as well.
             for (var _i = 0, _a = this.global_variables; _i < _a.length; _i++) {
@@ -20996,6 +21005,11 @@ var SPIRV = (function (exports) {
                 switch (cap) {
                     case Capability.ShaderNonUniformEXT:
                         throw new Error("CapabilityShaderNonUniformEXT not supported");
+                    /*if (!options.vulkan_semantics)
+                        this.require_extension_internal("GL_NV_gpu_shader5");
+                    else
+                         require_extension_internal("GL_EXT_nonuniform_qualifier");
+                    break;*/
                     case Capability.RuntimeDescriptorArrayEXT:
                         throw new Error("CapabilityRuntimeDescriptorArrayEXT not supported");
                     /*if (!options.vulkan_semantics)
@@ -21261,10 +21275,10 @@ var SPIRV = (function (exports) {
                 type.basetype = SPIRBaseType.Half;
                 type.vecsize = 1;
                 type.columns = 1;
-                var res_1 = convert_to_string(float_value);
-                if (res_1.indexOf(".") < 0)
-                    res_1 += ".0";
-                res_1 = this.type_to_glsl(type) + "(" + res_1 + ")";
+                res = convert_to_string(float_value);
+                if (res.indexOf(".") < 0)
+                    res += ".0";
+                res = this.type_to_glsl(type) + "(" + res + ")";
             }
             return res;
         };
@@ -21326,10 +21340,23 @@ var SPIRV = (function (exports) {
         CompilerGLSL.prototype.convert_double_to_string = function (c, col, row) {
             var res;
             var double_value = c.scalar_f64(col, row);
-            this.options;
             var backend = this.backend;
             if (isNaN(double_value) || isNaN(double_value)) {
                 throw new Error("64-bit integers/float not supported in ES profile.");
+                // Use special representation.
+                // if (!this.is_legacy()) {
+                /*const out_type = new SPIRType();
+                const in_type = new SPIRType();
+                out_type.basetype = SPIRBaseType.Double;
+                in_type.basetype = SPIRBaseType.UInt64;
+                out_type.vecsize = 1;
+                in_type.vecsize = 1;
+                out_type.width = 64;
+                in_type.width = 64;
+
+                const u64_value = c.scalar_u64(col, row);*/
+                // if (options.es)
+                //     throw new Error("64-bit integers/float not supported in ES profile.");
                 /*this.require_extension_internal("GL_ARB_gpu_shader_int64");
 
                 const print_buffer = "0x" + u64_value.toString() + backend.long_long_literal_suffix ? "ull" : "ul";
@@ -22247,7 +22274,7 @@ var SPIRV = (function (exports) {
     }
 
     // TODO:
-    //  - remove is_legacy_desktop() --> always false
+    //  - unnamed structs native
     //  - go through options and remove useless ones --> see compile() for stuff that's always set
     //  - go through enums and remove useless ones
     //  - remove unused functions
