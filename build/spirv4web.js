@@ -269,6 +269,8 @@ var SPIRV = (function (exports) {
         return c;
     }
     function _clone(src) {
+        if (src === undefined || src === null)
+            return src;
         if (Array.isArray(src)) {
             return src.map(function (elm) { return _clone(elm); });
         }

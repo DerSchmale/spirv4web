@@ -18,6 +18,8 @@ export function defaultClone<T>(classRef: DefaultConstructor<T>, src: T): T
 
 function _clone(src: any): any
 {
+    if (src === undefined || src === null)
+        return src;
     if (Array.isArray(src)) {
         return src.map(elm => _clone(elm));
     }
