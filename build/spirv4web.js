@@ -4875,9 +4875,9 @@ var SPIRV = (function (exports) {
                                         case GLSLstd450.Modf:
                                         case GLSLstd450.Fract:
                                             {
-                                                var var_ = compiler.maybe_get(SPIRVariable, args[offset + 5]);
+                                                var var_ = compiler.maybe_get(SPIRVariable, args[offset + 4]);
                                                 if (var_ && storage_class_is_interface$1(var_.storage))
-                                                    variables.add(args[offset + 5]);
+                                                    variables.add(args[offset + 4]);
                                                 break;
                                             }
                                     }
@@ -22274,23 +22274,32 @@ var SPIRV = (function (exports) {
     }
 
     // TODO:
+    //  - Allow passing in defines that will get injected after the version tag
+    //  - Allow passing in a map constant index => macro name?
+    //  - pass in supported extensions and let the compiler handle fallbacks
+    // TODO optimization:
     //  - go through options and remove useless ones --> see compile() for stuff that's always set
     //  - go through enums and remove useless ones (perhaps keep some for error checking?)
     //  - remove unused functions
-    //  - pass in supported extensions and let the compiler handle fallbacks?
-    //  - compare more against baseline compiles
+    /**
+     * The target driver version to use.
+     */
     exports.Version = void 0;
     (function (Version) {
         Version[Version["WebGL1"] = 100] = "WebGL1";
         Version[Version["WebGL2"] = 300] = "WebGL2";
     })(exports.Version || (exports.Version = {}));
+    /**
+     * Compiles Spir-V bytecode to GLSL.
+     * @param data An ArrayBuffer containing valid Spir-V bytecode.
+     * @param version Either `Version.WebGL1` or `Version.WebGL2`.
+     * @param options An optional object containing optional fields defined in Options.
+     */
     function compile(data, version, options) {
         var args = new Args();
         options = options || {};
         args.version = version;
         args.set_version = true;
-        // args.es = true;
-        // args.set_es = true;
         args.remove_unused = getOrDefault(options.removeUnused, true);
         args.glsl_keep_unnamed_ubos = getOrDefault(options.keepUnnamedUBOs, true);
         args.glsl_remove_attribute_layouts = getOrDefault(options.removeAttributeLayouts, false);

@@ -2,11 +2,14 @@ import { Args } from "./Args";
 import { compile_iteration } from "./compileIteration";
 
 // TODO:
+//  - Allow passing in defines that will get injected after the version tag
+//  - Allow passing in a map constant index => macro name?
+//  - pass in supported extensions and let the compiler handle fallbacks
+
+// TODO optimization:
 //  - go through options and remove useless ones --> see compile() for stuff that's always set
 //  - go through enums and remove useless ones (perhaps keep some for error checking?)
 //  - remove unused functions
-//  - pass in supported extensions and let the compiler handle fallbacks?
-//  - compare more against baseline compiles
 
 /**
  * The target driver version to use.

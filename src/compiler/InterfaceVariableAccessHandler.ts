@@ -130,9 +130,9 @@ export class InterfaceVariableAccessHandler extends OpcodeHandler
                             case GLSLstd450.Modf:
                             case GLSLstd450.Fract:
                             {
-                                const var_ = compiler.maybe_get<SPIRVariable>(SPIRVariable, args[offset + 5]);
+                                const var_ = compiler.maybe_get<SPIRVariable>(SPIRVariable, args[offset + 4]);
                                 if (var_ && storage_class_is_interface(var_.storage))
-                                variables.add(args[offset + 5]);
+                                variables.add(args[offset + 4]);
                                 break;
                             }
 
