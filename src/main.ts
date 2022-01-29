@@ -1,5 +1,6 @@
 import { Args } from "./Args";
 import { compile_iteration } from "./compileIteration";
+import { Dict } from "./utils/Dict";
 
 // TODO:
 //  - Allow passing in defines that will get injected after the version tag
@@ -44,6 +45,12 @@ export type Options =
     keepUnnamedUBOs?: boolean;
 
     /**
+     * If keepUnnamedUBOs === true and UBOs are not supported, this map is used to store the removed
+     * ubos and their members names. This can be used to implement UBO fallbacks on the shader.
+     */
+    unnamedUBOInfo?: Dict<string[]>;
+
+    /**
      * (WebGL2 only) Strips layout information from vertex attributes. This is useful when you've defined more
      * attributes than supported (Depending on `gl.MAX_VERTEX_ATTRIBS`) but not all of them are used. You'll then need
      * to query the attribute locations by name. Defaults to `false`.
@@ -63,6 +70,7 @@ export function compile(data: ArrayBuffer, version: Version, options?: Options):
     const args: Args = new Args();
 
     options = options || {};
+    options.unnamedUBOInfo = getOrDefault(options.unnamedUBOInfo, { });
 
     args.version = version;
     args.set_version = true;
@@ -79,7 +87,7 @@ export function compile(data: ArrayBuffer, version: Version, options?: Options):
         throw new Error("Reflection not yet supported!");
     }
 
-    return compile_iteration(args, spirv_file);
+    return compile_iteration(args, spirv_file, options.unnamedUBOInfo);
 }
 
 function getOrDefault<T>(value: T, def: T): T

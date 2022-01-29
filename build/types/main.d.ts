@@ -1,3 +1,4 @@
+import { Dict } from "./utils/Dict";
 /**
  * The target driver version to use.
  */
@@ -24,6 +25,11 @@ export declare type Options = {
      * `true`.
      */
     keepUnnamedUBOs?: boolean;
+    /**
+     * If keepUnnamedUBOs === true and UBOs are not supported, this map is used to store the removed
+     * ubos and their members names. This can be used to implement UBO fallbacks on the shader.
+     */
+    unnamedUBOInfo?: Dict<string[]>;
     /**
      * (WebGL2 only) Strips layout information from vertex attributes. This is useful when you've defined more
      * attributes than supported (Depending on `gl.MAX_VERTEX_ATTRIBS`) but not all of them are used. You'll then need
