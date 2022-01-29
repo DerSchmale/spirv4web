@@ -16382,13 +16382,17 @@ var CompilerGLSL = /** @class */ (function (_super) {
             meta.decoration.decoration_flags.get(Decoration.BufferBlock);
         if (ssbo)
             throw new Error("SSBOs not supported in legacy targets.");
+        var ubo_members = [];
         var i = 0;
         for (var _i = 0, _a = type.member_types; _i < _a.length; _i++) {
             var member = _a[_i];
             var membertype = this.get(SPIRType, member);
-            this.statement("uniform ", this.variable_decl(membertype, this.to_member_name(type, i)), ";");
+            var membername = this.to_member_name(type, i);
+            ubo_members.push(membername);
+            this.statement("uniform ", this.variable_decl(membertype, membername), ";");
             i++;
         }
+        this.unnamed_ubo_info[this.to_name(type.self)] = ubo_members;
         this.statement("");
     };
     CompilerGLSL.prototype.emit_buffer_block_native = function (var_) {
@@ -22055,10 +22059,11 @@ function stage_to_execution_model(stage) {
     else
         throw new Error("Invalid stage!");
 }
-function compile_iteration(args, spirv_file) {
+function compile_iteration(args, spirv_file, unnamedUBOInfo) {
     var spirv_parser = new Parser(spirv_file);
     spirv_parser.parse();
     var compiler = new CompilerGLSL(spirv_parser.get_parsed_ir());
+    compiler.unnamed_ubo_info = unnamedUBOInfo;
     if (args.variable_type_remaps.length !== 0) {
         var remap_cb = function (type, name) {
             for (var _i = 0, _a = args.variable_type_remaps; _i < _a.length; _i++) {
@@ -22276,18 +22281,26 @@ function remap_pls(pls_variables, resources, secondary_resources) {
 //  - remove unused functions
 //  - pass in supported extensions and let the compiler handle fallbacks?
 //  - compare more against baseline compiles
+/**
+ * The target driver version to use.
+ */
 var Version;
 (function (Version) {
     Version[Version["WebGL1"] = 100] = "WebGL1";
     Version[Version["WebGL2"] = 300] = "WebGL2";
 })(Version || (Version = {}));
+/**
+ * Compiles Spir-V bytecode to GLSL.
+ * @param data An ArrayBuffer containing valid Spir-V bytecode.
+ * @param version Either `Version.WebGL1` or `Version.WebGL2`.
+ * @param options An optional object containing optional fields defined in Options.
+ */
 function compile(data, version, options) {
     var args = new Args();
     options = options || {};
+    options.unnamedUBOInfo = getOrDefault(options.unnamedUBOInfo, {});
     args.version = version;
     args.set_version = true;
-    // args.es = true;
-    // args.set_es = true;
     args.remove_unused = getOrDefault(options.removeUnused, true);
     args.glsl_keep_unnamed_ubos = getOrDefault(options.keepUnnamedUBOs, true);
     args.glsl_remove_attribute_layouts = getOrDefault(options.removeAttributeLayouts, false);
@@ -22297,7 +22310,7 @@ function compile(data, version, options) {
     if (args.reflect && args.reflect !== "") {
         throw new Error("Reflection not yet supported!");
     }
-    return compile_iteration(args, spirv_file);
+    return compile_iteration(args, spirv_file, options.unnamedUBOInfo);
 }
 function getOrDefault(value, def) {
     return value === undefined || value === null ? def : value;

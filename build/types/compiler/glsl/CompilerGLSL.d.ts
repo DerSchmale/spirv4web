@@ -63,6 +63,7 @@ export declare class CompilerGLSL extends Compiler {
     protected masked_output_locations: Set<LocationComponentPair>;
     protected masked_output_builtins: Set<number>;
     protected removed_structs: Set<number>;
+    unnamed_ubo_info: Dict<string[]>;
     constructor(parsedIR: ParsedIR);
     remap_pixel_local_storage(inputs: PlsRemap[], outputs: PlsRemap[]): void;
     remap_ext_framebuffer_fetch(input_attachment_index: number, color_location: number, coherent: boolean): void;

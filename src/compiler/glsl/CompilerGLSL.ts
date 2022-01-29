@@ -245,6 +245,7 @@ export class CompilerGLSL extends Compiler
 
     // used when making unnamed uniform buffers global
     protected removed_structs: Set<number> = new Set();
+    unnamed_ubo_info: Dict<string[]>;
 
 
     constructor(parsedIR: ParsedIR)
@@ -7910,12 +7911,18 @@ export class CompilerGLSL extends Compiler
         if (ssbo)
             throw new Error("SSBOs not supported in legacy targets.");
 
+        const ubo_members: string[] = []
+
         let i = 0;
         for (let member of type.member_types) {
             const membertype = this.get<SPIRType>(SPIRType, member);
-            this.statement("uniform ", this.variable_decl(membertype, this.to_member_name(type, i)), ";");
+            const membername = this.to_member_name(type, i);
+            ubo_members.push(membername);
+            this.statement("uniform ", this.variable_decl(membertype, membername), ";");
             i++;
         }
+
+        this.unnamed_ubo_info[this.to_name(type.self)] = ubo_members;
 
         this.statement("");
     }
