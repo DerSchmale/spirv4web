@@ -1,6 +1,6 @@
 {
   "name": "@derschmale/spirv4web",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "main": "build/spirv4web.js",
   "module": "build/spirv4web.module.js",
   "types": "./build/types/main.d.ts",
