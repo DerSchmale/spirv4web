@@ -16393,7 +16393,7 @@ var SPIRV = (function (exports) {
                 var member = _a[_i];
                 var membertype = this.get(SPIRType, member);
                 var membername = this.to_member_name(type, i);
-                ubo_members.push(membername);
+                ubo_members.push(membername + this.type_to_array_glsl(membertype));
                 this.statement("uniform ", this.variable_decl(membertype, membername), ";");
                 i++;
             }
