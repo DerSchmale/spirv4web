@@ -3955,7 +3955,7 @@ var Parser = /** @class */ (function () {
                 // For stripped names, never consider struct type aliasing.
                 // We risk declaring the same struct multiple times, but type-punning is not allowed
                 // so this is safe.
-                var consider_aliasing = ir.get_name(type.self).length === 0;
+                var consider_aliasing = ir.get_name(type.self).length !== 0;
                 if (consider_aliasing) {
                     for (var _i = 0, _a = this.global_struct_cache; _i < _a.length; _i++) {
                         var other = _a[_i];
@@ -9609,9 +9609,10 @@ var keywords = new Set([
     "while", "writeonly"
 ]);
 function swap(arr, a, b) {
-    var t = a[a];
+    var t = arr[a];
     arr[a] = arr[b];
     arr[b] = t;
+    console.log("swap!");
 }
 function is_block_builtin(builtin) {
     return builtin === BuiltIn.Position || builtin === BuiltIn.PointSize || builtin === BuiltIn.ClipDistance ||
@@ -15754,8 +15755,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
                 else if (id.get_type() === Types.Type) {
                     var type = id.get(SPIRType);
                     var is_natural_struct = type.basetype === SPIRBaseType.Struct && type.array.length === 0 && !type.pointer &&
-                        !this.has_decoration(type.self, Decoration.Block) &&
-                        !this.has_decoration(type.self, Decoration.BufferBlock);
+                        (!this.has_decoration(type.self, Decoration.Block) &&
+                            !this.has_decoration(type.self, Decoration.BufferBlock));
                     // Special case, ray payload and hit attribute blocks are not really blocks, just regular structs.
                     /*if (type.basetype === SPIRBaseType.Struct && type.pointer &&
                         this.has_decoration(type.self, Decoration.Block) &&
@@ -21806,22 +21807,21 @@ var CompilerGLSL = /** @class */ (function (_super) {
         // means declaration of A doesn't happen (yet), and order would be B, ABuffer and not ABuffer, B. Fix this up here.
         var loop_lock = ir.create_loop_hard_lock();
         var type_ids = ir.ids_for_type[Types.Type];
-        for (var _i = 0, type_ids_1 = type_ids; _i < type_ids_1.length; _i++) {
-            var alias_itr = type_ids_1[_i];
-            var type = this.get(SPIRType, alias_itr);
+        for (var alias_itr = 0; alias_itr < type_ids.length; ++alias_itr) {
+            var type = this.get(SPIRType, type_ids[alias_itr]);
             if (type.type_alias !== (0) &&
                 !this.has_extended_decoration(type.type_alias, ExtendedDecorations.BufferBlockRepacked)) {
                 // We will skip declaring this type, so make sure the type_alias type comes before.
-                var master_itr = type_ids.indexOf((type.type_alias));
+                var master_itr = type_ids.indexOf(type.type_alias);
                 console.assert(master_itr >= 0);
                 if (alias_itr < master_itr) {
                     // Must also swap the type order for the constant-type joined array.
                     var joined_types = ir.ids_for_constant_or_type;
-                    var alt_alias_itr = joined_types.indexOf(alias_itr);
-                    var alt_master_itr = joined_types.indexOf(master_itr);
+                    var alt_alias_itr = joined_types.indexOf(type_ids[alias_itr]);
+                    var alt_master_itr = joined_types.indexOf(type_ids[master_itr]);
                     console.assert(alt_alias_itr >= 0);
                     console.assert(alt_master_itr >= 0);
-                    swap(joined_types, alias_itr, master_itr);
+                    swap(type_ids, alias_itr, master_itr);
                     swap(joined_types, alt_alias_itr, alt_master_itr);
                 }
             }

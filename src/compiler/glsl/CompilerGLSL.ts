@@ -167,9 +167,10 @@ type AccessChainFlags = number;
 
 function swap<T>(arr: T[], a: number, b: number)
 {
-    const t = a[a];
+    const t = arr[a];
     arr[a] = arr[b];
     arr[b] = t;
+    console.log("swap!");
 }
 
 function is_block_builtin(builtin: BuiltIn)
@@ -7209,6 +7210,7 @@ export class CompilerGLSL extends Compiler
         //
         {
             const loop_lock = ir.create_loop_hard_lock();
+
             for (const id_ of ir.ids_for_constant_or_type) {
                 const id = ir.ids[id_];
 
@@ -7234,8 +7236,8 @@ export class CompilerGLSL extends Compiler
                     let type = id.get<SPIRType>(SPIRType);
 
                     let is_natural_struct = type.basetype === SPIRBaseType.Struct && type.array.length === 0 && !type.pointer &&
-                            !this.has_decoration(type.self, Decoration.Block) &&
-                            !this.has_decoration(type.self, Decoration.BufferBlock);
+                            (!this.has_decoration(type.self, Decoration.Block) &&
+                             !this.has_decoration(type.self, Decoration.BufferBlock));
 
 
                     // Special case, ray payload and hit attribute blocks are not really blocks, just regular structs.
@@ -14493,23 +14495,23 @@ export class CompilerGLSL extends Compiler
         const loop_lock = ir.create_loop_hard_lock();
 
         const type_ids = ir.ids_for_type[Types.Type];
-        for (let alias_itr of type_ids) {
-            const type = this.get<SPIRType>(SPIRType, alias_itr);
+        for (let alias_itr = 0; alias_itr < type_ids.length; ++alias_itr) {
+            const type = this.get<SPIRType>(SPIRType, type_ids[alias_itr]);
             if (type.type_alias !== <TypeID>(0) &&
                 !this.has_extended_decoration(type.type_alias, ExtendedDecorations.BufferBlockRepacked)) {
                 // We will skip declaring this type, so make sure the type_alias type comes before.
-                const master_itr = type_ids.indexOf(<ID>(type.type_alias));
+                const master_itr = type_ids.indexOf(type.type_alias);
                 console.assert(master_itr >= 0);
 
                 if (alias_itr < master_itr) {
                     // Must also swap the type order for the constant-type joined array.
                     const joined_types = ir.ids_for_constant_or_type;
-                    const alt_alias_itr = joined_types.indexOf(alias_itr);
-                    const alt_master_itr = joined_types.indexOf(master_itr);
+                    const alt_alias_itr = joined_types.indexOf(type_ids[alias_itr]);
+                    const alt_master_itr = joined_types.indexOf(type_ids[master_itr]);
                     console.assert(alt_alias_itr >= 0);
                     console.assert(alt_master_itr >= 0);
 
-                    swap(joined_types, alias_itr, master_itr);
+                    swap(type_ids, alias_itr, master_itr);
                     swap(joined_types, alt_alias_itr, alt_master_itr);
                 }
             }

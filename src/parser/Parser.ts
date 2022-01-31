@@ -609,7 +609,7 @@ export class Parser
                 // For stripped names, never consider struct type aliasing.
                 // We risk declaring the same struct multiple times, but type-punning is not allowed
                 // so this is safe.
-                const consider_aliasing = ir.get_name(type.self).length === 0;
+                const consider_aliasing = ir.get_name(type.self).length !== 0;
                 if (consider_aliasing) {
                     for (let other of this.global_struct_cache) {
                         if (ir.get_name(type.self) === ir.get_name(other) &&
