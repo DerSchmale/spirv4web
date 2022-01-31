@@ -170,7 +170,6 @@ function swap<T>(arr: T[], a: number, b: number)
     const t = arr[a];
     arr[a] = arr[b];
     arr[b] = t;
-    console.log("swap!");
 }
 
 function is_block_builtin(builtin: BuiltIn)

@@ -9615,7 +9615,6 @@ var SPIRV = (function (exports) {
         var t = arr[a];
         arr[a] = arr[b];
         arr[b] = t;
-        console.log("swap!");
     }
     function is_block_builtin(builtin) {
         return builtin === BuiltIn.Position || builtin === BuiltIn.PointSize || builtin === BuiltIn.ClipDistance ||
