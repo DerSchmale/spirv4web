@@ -4110,15 +4110,6 @@ export class CompilerGLSL extends Compiler
         if (imgtype.image.arrayed)
             coord_components++;
 
-        let bias = 0;
-        let lod = 0;
-        let grad_x = 0;
-        let grad_y = 0;
-        let coffset = 0;
-        let offset = 0;
-        let coffsets = 0;
-        let sample = 0;
-        let minlod = 0;
         let flags = 0;
 
         if (length) {
@@ -4126,24 +4117,26 @@ export class CompilerGLSL extends Compiler
             length--;
         }
 
-        const test = (v: number, flag: number) =>
+        const test = (flag: number): number =>
         {
+            let v = 0;
             if (length && (flags & flag)) {
                 v = ops[optOffset++];
                 inherited_expressions.push(v);
                 length--;
             }
+            return v;
         };
 
-        test(bias, ImageOperandsMask.Bias);
-        test(lod, ImageOperandsMask.Lod);
-        test(grad_x, ImageOperandsMask.Grad);
-        test(grad_y, ImageOperandsMask.Grad);
-        test(coffset, ImageOperandsMask.ConstOffset);
-        test(offset, ImageOperandsMask.Offset);
-        test(coffsets, ImageOperandsMask.ConstOffsets);
-        test(sample, ImageOperandsMask.Sample);
-        test(minlod, ImageOperandsMask.MinLod);
+        const bias = test(ImageOperandsMask.Bias);
+        const lod = test(ImageOperandsMask.Lod);
+        const grad_x = test(ImageOperandsMask.Grad);
+        const grad_y = test(ImageOperandsMask.Grad);
+        const coffset = test(ImageOperandsMask.ConstOffset);
+        const offset = test(ImageOperandsMask.Offset);
+        const coffsets = test(ImageOperandsMask.ConstOffsets);
+        const sample = test(ImageOperandsMask.Sample);
+        const minlod = test(ImageOperandsMask.MinLod);
 
         const base_args = new TextureFunctionBaseArguments();
         base_args.img = img;

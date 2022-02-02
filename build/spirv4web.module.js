@@ -13057,36 +13057,29 @@ var CompilerGLSL = /** @class */ (function (_super) {
             coord_components++;
         if (imgtype.image.arrayed)
             coord_components++;
-        var bias = 0;
-        var lod = 0;
-        var grad_x = 0;
-        var grad_y = 0;
-        var coffset = 0;
-        var offset = 0;
-        var coffsets = 0;
-        var sample = 0;
-        var minlod = 0;
         var flags = 0;
         if (length) {
             flags = ops[optOffset++];
             length--;
         }
-        var test = function (v, flag) {
+        var test = function (flag) {
+            var v = 0;
             if (length && (flags & flag)) {
                 v = ops[optOffset++];
                 inherited_expressions.push(v);
                 length--;
             }
+            return v;
         };
-        test(bias, ImageOperandsMask.Bias);
-        test(lod, ImageOperandsMask.Lod);
-        test(grad_x, ImageOperandsMask.Grad);
-        test(grad_y, ImageOperandsMask.Grad);
-        test(coffset, ImageOperandsMask.ConstOffset);
-        test(offset, ImageOperandsMask.Offset);
-        test(coffsets, ImageOperandsMask.ConstOffsets);
-        test(sample, ImageOperandsMask.Sample);
-        test(minlod, ImageOperandsMask.MinLod);
+        var bias = test(ImageOperandsMask.Bias);
+        var lod = test(ImageOperandsMask.Lod);
+        var grad_x = test(ImageOperandsMask.Grad);
+        var grad_y = test(ImageOperandsMask.Grad);
+        var coffset = test(ImageOperandsMask.ConstOffset);
+        var offset = test(ImageOperandsMask.Offset);
+        var coffsets = test(ImageOperandsMask.ConstOffsets);
+        var sample = test(ImageOperandsMask.Sample);
+        var minlod = test(ImageOperandsMask.MinLod);
         var base_args = new TextureFunctionBaseArguments();
         base_args.img = img;
         base_args.imgtype = imgtype;
@@ -13097,8 +13090,8 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var name_args = new TextureFunctionNameArguments();
         name_args.base = base_args;
         name_args.has_array_offsets = coffsets !== 0;
-        name_args.has_offset = offset !== 0;
-        name_args.has_grad = grad_y !== 0;
+        name_args.has_offset = coffset !== 0 || offset !== 0;
+        name_args.has_grad = grad_x !== 0 || grad_y !== 0;
         name_args.has_dref = dref !== 0;
         name_args.is_sparse_feedback = sparse;
         name_args.has_min_lod = minlod !== 0;
