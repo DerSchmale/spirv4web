@@ -20398,17 +20398,17 @@ var SPIRV = (function (exports) {
             if (op === "texture")
                 return is_es_and_depth ? type_prefix + type + "EXT" : type_prefix + type;
             else if (op === "textureLod")
-                return type_prefix + type + legacy_lod_ext ? "LodEXT" : "Lod";
+                return type_prefix + type + (legacy_lod_ext ? "LodEXT" : "Lod");
             else if (op === "textureProj")
-                return type_prefix + type + is_es_and_depth ? "ProjEXT" : "Proj";
+                return type_prefix + type + (is_es_and_depth ? "ProjEXT" : "Proj");
             else if (op === "textureGrad")
-                return type_prefix + type + this.is_legacy_es() ? "GradEXT" : /*this.is_legacy_desktop() ? "GradARB" : */ "Grad";
+                return type_prefix + type + (this.is_legacy_es() ? "GradEXT" : "Grad");
             else if (op === "textureProjLod")
-                return type_prefix + type + legacy_lod_ext ? "ProjLodEXT" : "ProjLod";
+                return type_prefix + type + (legacy_lod_ext ? "ProjLodEXT" : "ProjLod");
             else if (op === "textureLodOffset")
                 return type_prefix + type + "LodOffset";
             else if (op === "textureProjGrad")
-                return type_prefix + type + this.is_legacy_es() ? "ProjGradEXT" : /*this.is_legacy_desktop() ? "ProjGradARB" :*/ "ProjGrad";
+                return type_prefix + type + (this.is_legacy_es() ? "ProjGradEXT" : "ProjGrad");
             else if (op === "textureProjLodOffset")
                 return type_prefix + type + "ProjLodOffset";
             else if (op === "textureSize")
