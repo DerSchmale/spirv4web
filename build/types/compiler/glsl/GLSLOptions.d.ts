@@ -18,4 +18,5 @@ export declare class GLSLOptions {
     vertex: GLSLVertexOptions;
     fragment: GLSLFragmentOptions;
     remove_attribute_layouts: boolean;
+    preprocess_spec_const: boolean;
 }

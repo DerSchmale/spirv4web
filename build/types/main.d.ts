@@ -36,6 +36,10 @@ export declare type Options = {
      * to query the attribute locations by name. Defaults to `false`.
      */
     removeAttributeLayouts?: boolean;
+    /**
+     * Tries to use preprocessor macros as much as possible to handle specialization constants.
+     */
+    preprocess_spec_const?: boolean;
 };
 /**
  * Compiles Spir-V bytecode to GLSL.

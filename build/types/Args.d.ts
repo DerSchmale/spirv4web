@@ -67,4 +67,5 @@ export declare class Args {
     combined_samplers_inherit_bindings: boolean;
     glsl_remove_attribute_layouts: boolean;
     specialization_constant_prefix: string;
+    preprocess_spec_const: boolean;
 }
