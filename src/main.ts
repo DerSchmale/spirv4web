@@ -57,6 +57,11 @@ export type Options =
      */
     removeAttributeLayouts?: boolean;   // for webgl 2 only, removes attribute layouts. This can be needed when
                                         // there are too many unused attributes when spirv autogenerates the layouts
+
+    /**
+     * Tries to use preprocessor macros as much as possible to handle specialization constants.
+     */
+    preprocess_spec_const?: boolean;
 }
 
 /**
@@ -80,6 +85,7 @@ export function compile(data: ArrayBuffer, version: Version, options?: Options):
     args.glsl_remove_attribute_layouts = getOrDefault(options.removeAttributeLayouts, false);
     args.specialization_constant_prefix = getOrDefault(options.specializationConstantPrefix, "SPIRV_CROSS_CONSTANT_ID_");
     args.flatten_multidimensional_arrays = true;
+    args.preprocess_spec_const = getOrDefault(options.preprocess_spec_const, true);
 
     const spirv_file = new Uint32Array(data);
 

@@ -86,4 +86,5 @@ export class Args
     combined_samplers_inherit_bindings: boolean = false;
     glsl_remove_attribute_layouts: boolean = false;
     specialization_constant_prefix: string = "SPIRV_CROSS_CONSTANT_ID_";
+    preprocess_spec_const: boolean = false;
 }

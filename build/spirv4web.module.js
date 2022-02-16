@@ -39,6 +39,7 @@ var Args = /** @class */ (function () {
         this.combined_samplers_inherit_bindings = false;
         this.glsl_remove_attribute_layouts = false;
         this.specialization_constant_prefix = "SPIRV_CROSS_CONSTANT_ID_";
+        this.preprocess_spec_const = false;
     }
     return Args;
 }());
@@ -9344,6 +9345,8 @@ var GLSLOptions = /** @class */ (function () {
         this.vertex = new GLSLVertexOptions();
         this.fragment = new GLSLFragmentOptions();
         this.remove_attribute_layouts = false;
+        // tries to wrap code using spec constants with preprocessor directives wherever possible
+        this.preprocess_spec_const = false;
     }
     return GLSLOptions;
 }());
@@ -16931,11 +16934,23 @@ var CompilerGLSL = /** @class */ (function (_super) {
             {*/
             var macro_name = constant.specialization_constant_macro_name;
             this.statement("#ifndef ", macro_name);
-            this.statement("#define ", macro_name, " ", this.constant_expression(constant));
+            // replace booleans with ints when used in macros
+            var const_expr = this.constant_expression(constant);
+            if (this.options.preprocess_spec_const) {
+                if (const_expr === "true")
+                    const_expr = "1";
+                else if (const_expr === "false")
+                    const_expr = "0";
+            }
+            this.statement("#define ", macro_name, " ", const_expr);
             this.statement("#endif");
             // For workgroup size constants, only emit the macros.
-            if (!is_workgroup_size_constant)
-                this.statement("const ", this.variable_decl(type, name), " = ", macro_name, ";");
+            if (!is_workgroup_size_constant) {
+                if (this.options.preprocess_spec_const)
+                    this.statement("#define ", name, " ", macro_name);
+                else
+                    this.statement("const ", this.variable_decl(type, name), " = ", macro_name, ";");
+            }
         }
         else {
             this.statement("const ", this.variable_decl(type, name), " = ", this.constant_expression(constant), ";");
@@ -16944,7 +16959,10 @@ var CompilerGLSL = /** @class */ (function (_super) {
     CompilerGLSL.prototype.emit_specialization_constant_op = function (constant) {
         var type = this.get(SPIRType, constant.basetype);
         var name = this.to_name(constant.self);
-        this.statement("const ", this.variable_decl(type, name), " = ", this.constant_op_expression(constant), ";");
+        if (this.options.preprocess_spec_const)
+            this.statement("#define ", name, " ", this.constant_op_expression(constant));
+        else
+            this.statement("const ", this.variable_decl(type, name), " = ", this.constant_op_expression(constant), ";");
     };
     CompilerGLSL.prototype.emit_continue_block = function (continue_block, follow_true_block, follow_false_block) {
         var block = this.get(SPIRBlock, continue_block);
@@ -17223,17 +17241,29 @@ var CompilerGLSL = /** @class */ (function (_super) {
         var false_block_needs_code = false_block !== merge_block || this.flush_phi_required(from, false_block);
         if (!true_block_needs_code && !false_block_needs_code)
             return;
+        var cond_type = this.ir.ids[cond].get_type();
+        var as_macro = this.options.preprocess_spec_const && (cond_type === Types.Constant || cond_type === Types.ConstantOp);
         // We might have a loop merge here. Only consider selection flattening constructs.
         // Loop hints are handled explicitly elsewhere.
         if (from_block.hint === SPIRBlockHints.Flatten || from_block.hint === SPIRBlockHints.DontFlatten)
             this.emit_block_hints(from_block);
         if (true_block_needs_code) {
-            this.statement("if (", this.to_expression(cond), ")");
+            if (as_macro) {
+                if (cond_type === Types.Constant)
+                    this.statement("#if ", this.to_enclosed_expression(cond), " == 1");
+                else
+                    this.statement("#if ", this.to_enclosed_expression(cond));
+            }
+            else
+                this.statement("if (", this.to_expression(cond), ")");
             this.begin_scope();
             this.branch(from, true_block);
             this.end_scope();
             if (false_block_needs_code) {
-                this.statement("else");
+                if (as_macro)
+                    this.statement("#else");
+                else
+                    this.statement("else");
                 this.begin_scope();
                 this.branch(from, false_block);
                 this.end_scope();
@@ -17241,11 +17271,20 @@ var CompilerGLSL = /** @class */ (function (_super) {
         }
         else if (false_block_needs_code) {
             // Only need false path, use negative conditional.
-            this.statement("if (!", this.to_enclosed_expression(cond), ")");
+            if (as_macro) {
+                if (cond_type === Types.Constant)
+                    this.statement("#if ", this.to_enclosed_expression(cond), " == 0");
+                else
+                    this.statement("#if !(", this.to_enclosed_expression(cond), ")");
+            }
+            else
+                this.statement("if (!", this.to_enclosed_expression(cond), ")");
             this.begin_scope();
             this.branch(from, false_block);
             this.end_scope();
         }
+        if (as_macro)
+            this.statement("#endif");
     };
     CompilerGLSL.prototype.flush_phi = function (from, to) {
         var child = this.get(SPIRBlock, to);
@@ -22154,6 +22193,7 @@ function compile_iteration(args, spirv_file, unnamedUBOInfo) {
     opts.force_flattened_io_blocks = args.glsl_force_flattened_io_blocks;
     opts.keep_unnamed_ubos = args.glsl_keep_unnamed_ubos;
     opts.remove_attribute_layouts = args.glsl_remove_attribute_layouts;
+    opts.preprocess_spec_const = args.preprocess_spec_const;
     opts.specialization_constant_prefix = args.specialization_constant_prefix;
     opts.ovr_multiview_view_count = args.glsl_ovr_multiview_view_count;
     opts.emit_line_directives = args.emit_line_directives;
@@ -22302,6 +22342,7 @@ function compile(data, version, options) {
     args.glsl_remove_attribute_layouts = getOrDefault(options.removeAttributeLayouts, false);
     args.specialization_constant_prefix = getOrDefault(options.specializationConstantPrefix, "SPIRV_CROSS_CONSTANT_ID_");
     args.flatten_multidimensional_arrays = true;
+    args.preprocess_spec_const = getOrDefault(options.preprocess_spec_const, true);
     var spirv_file = new Uint32Array(data);
     if (args.reflect && args.reflect !== "") {
         throw new Error("Reflection not yet supported!");

@@ -152,6 +152,7 @@ export function compile_iteration(args: Args, spirv_file: Uint32Array, unnamedUB
     opts.force_flattened_io_blocks = args.glsl_force_flattened_io_blocks;
     opts.keep_unnamed_ubos = args.glsl_keep_unnamed_ubos;
     opts.remove_attribute_layouts = args.glsl_remove_attribute_layouts;
+    opts.preprocess_spec_const = args.preprocess_spec_const;
     opts.specialization_constant_prefix = args.specialization_constant_prefix;
     opts.ovr_multiview_view_count = args.glsl_ovr_multiview_view_count;
     opts.emit_line_directives = args.emit_line_directives;

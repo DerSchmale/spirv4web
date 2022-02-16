@@ -70,4 +70,7 @@ export class GLSLOptions
     vertex: GLSLVertexOptions = new GLSLVertexOptions();
     fragment: GLSLFragmentOptions = new GLSLFragmentOptions();
     remove_attribute_layouts: boolean = false;
+
+    // tries to wrap code using spec constants with preprocessor directives wherever possible
+    preprocess_spec_const: boolean = false;
 }
